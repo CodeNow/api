@@ -282,6 +282,8 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
             expect(ContextVersion.updateBy.args[0][2]).to.be.object()
             expect(ContextVersion.updateBy.args[0][2].$set).to.be.object()
             expect(ContextVersion.updateBy.args[0][2].$set['build.containerStarted']).to.be.date()
+            expect(ContextVersion.updateBy.args[0][2].$set['dockerHost']).to.be.string()
+            expect(ContextVersion.updateBy.args[0][2].$set['dockerHost']).to.equal(ctx.data.host)
             expect(ContextVersion.updateBy.args[0][3]).to.be.object()
             expect(ContextVersion.updateBy.args[0][3]).to.deep.equal({ multi: true })
             expect(ContextVersion.updateBy.args[0][4]).to.be.a.function()
@@ -329,7 +331,8 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
         })
 
         it('should log an error if updateBuildErrorByBuildId errors', function (done) {
-          ctx.worker._onError(new Error('hello'), function () {
+          ctx.worker._onError(new Error('hello'), function (err) {
+            expect(err).to.not.exist()
             expect(ContextVersion.updateBuildErrorByBuildId.callCount).to.equal(1)
             expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
               ctx.mockContextVersion.build._id
