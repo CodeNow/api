@@ -6,6 +6,8 @@
 
 require('loadenv')()
 
+var hasKeypaths = require('101/has-keypaths')
+
 // dummy port
 process.env.PORT = 7777
 var Server = require('server')
