@@ -256,7 +256,7 @@ describe('docker: ' + moduleName, function () {
       })
       expect(result).to.equal(false)
     })
-  }) //end _isImageNotFoundErr
+  }) // end _isImageNotFoundErr
 
   describe('createImageBuilder', function () {
     beforeEach(function (done) {
