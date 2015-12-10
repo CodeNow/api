@@ -924,7 +924,8 @@ describe('docker: ' + moduleName, function () {
             Env: ctx.mockInstance.env.concat([
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash
             ]),
-            Image: ctx.mockContextVersion.build.dockerTag
+            Image: ctx.mockContextVersion.build.dockerTag,
+            Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
           }
           sinon.assert.calledWith(
             Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
