@@ -616,6 +616,51 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
+  describe('#updateContextVersion', function () {
+    var id = '1234'
+    var updateObj = {
+      dockRemovedNeedsUserConfirmation: false
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'update').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.update.restore()
+      done()
+    })
+    it('should call the update command in mongo', function (done) {
+      Instance.updateContextVersion(id, updateObj, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.update)
+        sinon.assert.calledWith(Instance.update, {
+          'contextVersion.id': id
+        }, {
+          $set: {
+            'contextVersion.dockRemovedNeedsUserConfirmation': false
+          }
+        }, {
+          multi: true
+        }, sinon.match.func)
+        done()
+      })
+    })
+
+    describe('when mongo fails', function () {
+      var error = new Error('Mongo Error')
+      beforeEach(function (done) {
+        Instance.update.yieldsAsync(error)
+        done()
+      })
+      it('should return the error', function (done) {
+        Instance.updateContextVersion(id, updateObj, function (err) {
+          expect(err).to.equal(error)
+          done()
+        })
+      })
+    })
+  })
+
   describe('#findInstancesByParent', function () {
     it('should return empty [] for if no children were found', function (done) {
       Instance.findInstancesByParent('a5agn3', function (err, instances) {
