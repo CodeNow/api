@@ -33,6 +33,9 @@ var redisClient = redis.createClient(
 var Instance = require('models/mongo/instance')
 var User = require('models/mongo/user')
 
+var instancesMissingHipache = [];
+var instancesWithHipache = [];
+
 server.start(function () {
   console.log('server started')
   mongoose.connect(process.env.MONGO, function () {
@@ -108,8 +111,10 @@ server.start(function () {
               if (err) { throw err }
               console.log('response', response)
               if (!response.length) {
+                instancesMissingHipache.push([key, instance._id])
                 console.log('userland-hipache redis entry __NOT__ found: '+key)
               } else {
+                instancesWithHipache.push([key, instance._id])
                 console.log('userland-hipache redis entry found: '+key)
               }
               cb();
@@ -117,6 +122,10 @@ server.start(function () {
           }, cb);
 
         })
+      }, function () {
+        console.log('----------------------------------------------')
+        console.log('NOT_MISSING', instancesWithHipache)
+        console.log('MISSING', instancesMissingHipache)
       })
     })
   })
