@@ -31,7 +31,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
 
   describe('worker', function () {
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findInstancesByDockerHost')
+      sinon.stub(Instance, 'findInstancesRunningOrStartingByDockerHost')
       sinon.stub(ContextVersion, 'markDockRemovedByDockerHost').yieldsAsync()
       sinon.stub(Instance, 'setStoppingAsStoppedByDockerHost').yieldsAsync()
       sinon.stub(Worker, '_redeploy')
@@ -45,7 +45,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       Worker._redeploy.restore()
       Worker._updateFrontendInstances.restore()
 
-      Instance.findInstancesByDockerHost.restore()
+      Instance.findInstancesRunningOrStartingByDockerHost.restore()
       ContextVersion.markDockRemovedByDockerHost.restore()
       Instance.setStoppingAsStoppedByDockerHost.restore()
       done()
@@ -354,20 +354,20 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       host: 'http://10.12.12.14:4242'
     }
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findInstancesByDockerHost')
+      sinon.stub(Instance, 'findInstancesRunningOrStartingByDockerHost')
       sinon.stub(Worker, '_redeployContainers').returns()
       done()
     })
 
     afterEach(function (done) {
-      Instance.findInstancesByDockerHost.restore()
+      Instance.findInstancesRunningOrStartingByDockerHost.restore()
       Worker._redeployContainers.restore()
       done()
     })
 
-    describe('#findInstancesByDockerHost fails', function () {
+    describe('#findInstancesRunningOrStartingByDockerHost fails', function () {
       beforeEach(function (done) {
-        Instance.findInstancesByDockerHost.yieldsAsync(testErr)
+        Instance.findInstancesRunningOrStartingByDockerHost.yieldsAsync(testErr)
         done()
       })
 
@@ -375,20 +375,20 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
         Worker._redeploy({}, testData)
           .asCallback(function (err) {
             expect(err.message).to.equal(testErr.message)
-            sinon.assert.calledOnce(Instance.findInstancesByDockerHost)
-            sinon.assert.calledWith(Instance.findInstancesByDockerHost, testData.host)
+            sinon.assert.calledOnce(Instance.findInstancesRunningOrStartingByDockerHost)
+            sinon.assert.calledWith(Instance.findInstancesRunningOrStartingByDockerHost, testData.host)
             done()
           })
       })
     })
 
-    describe('#findInstancesByDockerHost returns 2 instances', function () {
+    describe('#findInstancesRunningOrStartingByDockerHost returns 2 instances', function () {
       var instances = [
         { _id: '1' },
         { _id: '2' }
       ]
       beforeEach(function (done) {
-        Instance.findInstancesByDockerHost.yieldsAsync(null, instances)
+        Instance.findInstancesRunningOrStartingByDockerHost.yieldsAsync(null, instances)
         done()
       })
 
@@ -396,8 +396,8 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
         Worker._redeploy({}, testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
-            sinon.assert.calledOnce(Instance.findInstancesByDockerHost)
-            sinon.assert.calledWith(Instance.findInstancesByDockerHost, testData.host)
+            sinon.assert.calledOnce(Instance.findInstancesRunningOrStartingByDockerHost)
+            sinon.assert.calledWith(Instance.findInstancesRunningOrStartingByDockerHost, testData.host)
             sinon.assert.calledOnce(Worker._redeployContainers)
             sinon.assert.calledWith(Worker._redeployContainers, instances)
             done()

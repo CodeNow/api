@@ -185,7 +185,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  describe('#findInstancesByDockerHost', function () {
+  describe('#findInstancesRunningOrStartingByDockerHost', function () {
     var instance1
     var instance2
     var instance3
@@ -225,16 +225,17 @@ describe('Instance Model Tests ' + moduleName, function () {
       instance4.save(done)
     })
     it('should get all instances from testHost', function (done) {
-      Instance.findInstancesByDockerHost(testHost, function (err, instances) {
+      Instance.findInstancesRunningOrStartingByDockerHost(testHost, function (err, instances) {
         expect(err).to.be.null()
-        expect(instances.length).to.equal(3)
+        expect(instances.length).to.equal(2)
         instances.forEach(function (instance) {
+          expect(instance._id).to.not.equal(instance1._id)
           expect(instance._id).to.not.equal(instance4._id)
         })
         done()
       })
     })
-  }) // end findInstancesByDockerHost
+  }) // end findInstancesRunningOrStartingByDockerHost
 
   describe('#setStoppingAsStoppedByDockerHost', function () {
     var dockerHost = 'http://10.0.0.1:4242'
