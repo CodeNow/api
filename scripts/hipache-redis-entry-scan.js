@@ -2,7 +2,7 @@
  * Compare instance documents in API mongodb database to userland-hipache redis entries to find any
  * potentially missing hipache redis entries.
  *
- * ORG=codenow USER_CONTENT_TLD=runnable2.net NODE_PATH=lib/ node hipache-redis-entry-scan.js
+ * ORG=codenow USER_CONTENT_TLD=runnable2.net NODE_PATH=lib/ node scripts/hipache-redis-entry-scan.js
  */
 'use strict';
 
@@ -107,9 +107,10 @@ server.start(function () {
             redisClient.lrange(key, 0, 1, function (err, response) {
               if (err) { throw err }
               console.log('response', response)
-              if (!response) {
-                console.log('userland-hipache redis entry not found: '+key)
-                process.exit(1)
+              if (!response.length) {
+                console.log('userland-hipache redis entry __NOT__ found: '+key)
+              } else {
+                console.log('userland-hipache redis entry found: '+key)
               }
               cb();
             })
