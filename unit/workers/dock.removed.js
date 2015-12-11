@@ -348,6 +348,122 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     })
   })
 
+  describe('#_redeploy', function () {
+    var testErr = new Error('Mongo erro')
+    var testData = {
+      host: 'http://10.12.12.14:4242'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findInstancesByDockerHost')
+      sinon.stub(Worker, '_redeployContainers').returns()
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findInstancesByDockerHost.restore()
+      Worker._redeployContainers.restore()
+      done()
+    })
+
+    describe('#findInstancesByDockerHost fails', function () {
+      beforeEach(function (done) {
+        Instance.findInstancesByDockerHost.yieldsAsync(testErr)
+        done()
+      })
+
+      it('should callback with error', function (done) {
+        Worker._redeploy({}, testData)
+          .asCallback(function (err) {
+            expect(err.message).to.equal(testErr.message)
+            sinon.assert.calledOnce(Instance.findInstancesByDockerHost)
+            sinon.assert.calledWith(Instance.findInstancesByDockerHost, testData.host)
+            done()
+          })
+      })
+    })
+
+    describe('#findInstancesByDockerHost returns 2 instances', function () {
+      var instances = [
+        { _id: '1' },
+        { _id: '2' }
+      ]
+      beforeEach(function (done) {
+        Instance.findInstancesByDockerHost.yieldsAsync(null, instances)
+        done()
+      })
+
+      it('should return successfully', function (done) {
+        Worker._redeploy({}, testData)
+          .asCallback(function (err) {
+            expect(err).to.not.exist()
+            sinon.assert.calledOnce(Instance.findInstancesByDockerHost)
+            sinon.assert.calledWith(Instance.findInstancesByDockerHost, testData.host)
+            sinon.assert.calledOnce(Worker._redeployContainers)
+            sinon.assert.calledWith(Worker._redeployContainers, instances)
+            done()
+          })
+      })
+    })
+  })
+
+  describe('#_rebuild', function () {
+    var testErr = new Error('Mongo erro')
+    var testData = {
+      host: 'http://10.12.12.14:4242'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findInstancesBuildingOnDockerHost')
+      sinon.stub(Worker, '_rebuildInstances').returns()
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findInstancesBuildingOnDockerHost.restore()
+      Worker._rebuildInstances.restore()
+      done()
+    })
+
+    describe('#findInstancesBuildingOnDockerHost fails', function () {
+      beforeEach(function (done) {
+        Instance.findInstancesBuildingOnDockerHost.yieldsAsync(testErr)
+        done()
+      })
+
+      it('should callback with error', function (done) {
+        Worker._rebuild({}, testData)
+          .asCallback(function (err) {
+            expect(err.message).to.equal(testErr.message)
+            sinon.assert.calledOnce(Instance.findInstancesBuildingOnDockerHost)
+            sinon.assert.calledWith(Instance.findInstancesBuildingOnDockerHost, testData.host)
+            done()
+          })
+      })
+    })
+
+    describe('#findInstancesBuildingOnDockerHost returns 2 instances', function () {
+      var instances = [
+        { _id: '1' },
+        { _id: '2' }
+      ]
+      beforeEach(function (done) {
+        Instance.findInstancesBuildingOnDockerHost.yieldsAsync(null, instances)
+        done()
+      })
+
+      it('should return successfully', function (done) {
+        Worker._rebuild({}, testData)
+          .asCallback(function (err) {
+            expect(err).to.not.exist()
+            sinon.assert.calledOnce(Instance.findInstancesBuildingOnDockerHost)
+            sinon.assert.calledWith(Instance.findInstancesBuildingOnDockerHost, testData.host)
+            sinon.assert.calledOnce(Worker._rebuildInstances)
+            sinon.assert.calledWith(Worker._rebuildInstances, instances)
+            done()
+          })
+      })
+    })
+  })
+
   describe('#_updateFrontendInstances', function () {
     var testErr = 'Problem!'
     var testData = [{
