@@ -267,9 +267,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
         }
       }
       var buildModel = {
-        attrs: {
-          _id: 'new-build-id-1'
-        },
+        _id: 'new-build-id-1',
         deepCopy: function (cb) {
           cb(null, buildModel)
         },
@@ -312,7 +310,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
               noCache: true
             })
             sinon.assert.calledOnce(instanceModel.update)
-            sinon.assert.calledWith(instanceModel.update, { build: buildModel.attrs._id })
+            sinon.assert.calledWith(instanceModel.update, { build: buildModel._id })
             done()
           })
       })
@@ -336,9 +334,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
         }
       }
       var buildModel = {
-        attrs: {
-          _id: 'new-build-id-1'
-        },
+        _id: 'new-build-id-1',
         deepCopy: function (cb) {
           cb(null, buildModel)
         },
@@ -380,7 +376,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
               noCache: true
             })
             sinon.assert.calledOnce(instanceModel.update)
-            sinon.assert.calledWith(instanceModel.update, { build: buildModel.attrs._id })
+            sinon.assert.calledWith(instanceModel.update, { build: buildModel._id })
             done()
           })
       })

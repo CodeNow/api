@@ -570,7 +570,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
 
     it('should publish to the `instance.rebuild` queue', function (done) {
       var payload = {
-        instanceId: '507f1f77bcf86cd799439011'
+        instanceId: '507f1f77bcf86cd799439011',
+        instanceShortHash: 'a61m9'
       }
       ctx.rabbitMQ.publishInstanceRebuild(payload)
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
