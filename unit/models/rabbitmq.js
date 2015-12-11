@@ -56,6 +56,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       done()
     })
   })
+
   describe('connect', function () {
     it('should call hermes connect and attach error handler', function (done) {
       var rabbit = new rabbitMQ.constructor()
@@ -111,6 +112,39 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       rabbit.hermesClient.emit('error', new Error('Some hermes error'))
     })
   })
+
+  describe('_validate', function () {
+    it('should pass validation', function (done) {
+      var payload = {
+        instance: {
+          _id: 1,
+          owner: {
+            github: 2
+          }
+        }
+      }
+      var keys = [ 'instance._id', 'instance.owner.github' ]
+      ctx.rabbitMQ._validate(payload, keys, 'job.name')
+      done()
+    })
+    it('should fail validation', function (done) {
+      var payload = {
+        instance: {
+          _id: 1,
+          owner: null
+        }
+      }
+      var keys = [ 'instance._id', 'instance.owner.github' ]
+      try {
+        ctx.rabbitMQ._validate(payload, keys, 'job.name')
+        done(new Error('Should never happen'))
+      } catch (e) {
+        expect(e.message).to.equal('Validation failed: "instance.owner.github" is required')
+        done()
+      }
+    })
+  })
+
   describe('CreateImageBuilderContainer', function () {
     beforeEach(function (done) {
       // this normally set after connect
