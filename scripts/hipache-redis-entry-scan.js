@@ -89,20 +89,8 @@ server.start(function () {
                 '.',
                 process.env.USER_CONTENT_TLD].join('').toLowerCase()
             ].join('').toLowerCase()
-            var elasticUrlKey = [
-              'frontend:',
-              port,
-              '.',
-              // hostname: ex, pd-php-test-staging-paulrduffy.runnableapp.com
-              [instance.name,
-                '-staging-',
-                // user.accounts.github.username,
-                process.env.ORG,
-                '.',
-                process.env.USER_CONTENT_TLD].join('').toLowerCase()
-            ].join('').toLowerCase()
             redisKeys.push(directUrlKey)
-            redisKeys.push(elasticUrlKey)
+            redisKeys.push(directUrlKey.replace(instance.shortHash + '-', '')) // elasticUrl
           })
 
           async.eachSeries(redisKeys, function (key, cb) {
