@@ -2,7 +2,7 @@
  * Compare instance documents in API mongodb database to userland-hipache redis entries to find any
  * potentially missing hipache redis entries.
  *
- * USER_CONTENT_TLD=runnable2.net NODE_PATH=lib/ node hipache-redis-entry-scan.js
+ * ORG=codenow USER_CONTENT_TLD=runnable2.net NODE_PATH=lib/ node hipache-redis-entry-scan.js
  */
 'use strict';
 
@@ -20,7 +20,8 @@ var async = require('async')
 var mongoose = require('mongoose')
 var redis = require('redis');
 
-if (!hasKeypaths(process.env, ['MONGO', 'REDIS_PORT', 'REDIS_IPADDRESS', 'USER_CONTENT_TLD'])) {
+if (!hasKeypaths(process.env, ['MONGO',
+    'REDIS_PORT', 'REDIS_IPADDRESS', 'USER_CONTENT_TLD', 'ORG'])) {
   throw new Error('missing required ENV!')
 }
 
@@ -80,7 +81,8 @@ server.start(function () {
                 '-',
                 instance.name,
                 '-staging-',
-                user.accounts.github.username,
+                //user.accounts.github.username,
+                process.env.ORG,
                 '.',
                 process.env.USER_CONTENT_TLD].join('').toLowerCase()
             ].join('').toLowerCase()
@@ -91,7 +93,8 @@ server.start(function () {
               //hostname: ex, pd-php-test-staging-paulrduffy.runnableapp.com
               [instance.name,
                 '-staging-',
-                user.accounts.github.username,
+                //user.accounts.github.username,
+                process.env.ORG,
                 '.',
                 process.env.USER_CONTENT_TLD].join('').toLowerCase()
             ].join('').toLowerCase()
