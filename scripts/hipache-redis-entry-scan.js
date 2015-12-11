@@ -4,7 +4,7 @@
  *
  * ORG=codenow USER_CONTENT_TLD=runnable2.net NODE_PATH=lib/ node scripts/hipache-redis-entry-scan.js
  */
-'use strict';
+'use strict'
 
 require('loadenv')()
 
@@ -18,7 +18,7 @@ var server = new Server()
 
 var async = require('async')
 var mongoose = require('mongoose')
-var redis = require('redis');
+var redis = require('redis')
 
 if (!hasKeypaths(process.env, ['MONGO',
     'REDIS_PORT', 'REDIS_IPADDRESS', 'USER_CONTENT_TLD', 'ORG'])) {
@@ -33,8 +33,8 @@ var redisClient = redis.createClient(
 var Instance = require('models/mongo/instance')
 var User = require('models/mongo/user')
 
-var instancesMissingHipache = [];
-var instancesWithHipache = [];
+var instancesMissingHipache = []
+var instancesWithHipache = []
 
 server.start(function () {
   console.log('server started')
@@ -57,7 +57,7 @@ server.start(function () {
           if (err) { throw err }
           if (!users.length) { throw new Error('User not found') }
 
-          var user = users[0]
+          // var user = users[0]
 
           if (!isObject(instance.container.ports)) {
             console.log('instance does not have ports', instance._id, instance.container.ports)
@@ -79,12 +79,12 @@ server.start(function () {
               'frontend:',
               port,
               '.',
-              //hostname: ex, 2zrr96-pd-php-test-staging-paulrduffy.runnableapp.com
+              // hostname: ex, 2zrr96-pd-php-test-staging-paulrduffy.runnableapp.com
               [instance.shortHash,
                 '-',
                 instance.name,
                 '-staging-',
-                //user.accounts.github.username,
+                // user.accounts.github.username,
                 process.env.ORG,
                 '.',
                 process.env.USER_CONTENT_TLD].join('').toLowerCase()
@@ -93,10 +93,10 @@ server.start(function () {
               'frontend:',
               port,
               '.',
-              //hostname: ex, pd-php-test-staging-paulrduffy.runnableapp.com
+              // hostname: ex, pd-php-test-staging-paulrduffy.runnableapp.com
               [instance.name,
                 '-staging-',
-                //user.accounts.github.username,
+                // user.accounts.github.username,
                 process.env.ORG,
                 '.',
                 process.env.USER_CONTENT_TLD].join('').toLowerCase()
@@ -112,21 +112,20 @@ server.start(function () {
               console.log('response', response)
               if (!response.length) {
                 instancesMissingHipache.push([key, instance._id])
-                console.log('userland-hipache redis entry __NOT__ found: '+key)
+                console.log('userland-hipache redis entry __NOT__ found: ' + key)
               } else {
                 instancesWithHipache.push([key, instance._id])
-                console.log('userland-hipache redis entry found: '+key)
+                console.log('userland-hipache redis entry found: ' + key)
               }
-              cb();
+              cb()
             })
-          }, cb);
-
+          }, cb)
         })
       }, function () {
         console.log('----------------------------------------------')
         console.log('NOT_MISSING', instancesWithHipache.length, instancesWithHipache)
         console.log('MISSING', instancesMissingHipache.length, instancesMissingHipache)
-        process.exit(0);
+        process.exit(0)
       })
     })
   })
