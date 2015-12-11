@@ -157,7 +157,7 @@
       "2.1.18",
       "2.2.0"
     ],
-    "defaultVersion": "0.10.35",
+    "defaultVersion": "4.2.3",
     "defaultNpmVersion": "0.2.0",
     "ports": "80, 8000, 8080, 3000",
     "startCommand": ["npm start", "node app.js"],
