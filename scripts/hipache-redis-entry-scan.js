@@ -51,63 +51,54 @@ server.start(function () {
       }
       console.log('found ' + instances.length + ' instances with containers')
       async.eachSeries(instances, function (instance, cb) {
-        User.find({
-          'accounts.github.id': instance.createdBy.github
-        }, function (err, users) {
-          if (err) { throw err }
-          if (!users.length) { throw new Error('User not found') }
+        if (!isObject(instance.container.ports)) {
+          console.log('instance does not have ports', instance._id, instance.container.ports)
+          return cb()
+        }
+        console.log('instance does have ports, proceeding', instance._id)
 
-          // var user = users[0]
-
-          if (!isObject(instance.container.ports)) {
-            console.log('instance does not have ports', instance._id, instance.container.ports)
-            return cb()
-          }
-          console.log('instance does have ports, proceeding', instance._id)
-
-          var instancePorts = Object.keys(instance.container.ports).map(function (portString) {
-            return portString.replace(/\/tcp$/, '')
-          })
-
-          /**
-           * Generate array of all elasticUrl and directUrl redis keys (one for each port) on the
-           * instance
-           */
-          var redisKeys = []
-          instancePorts.forEach(function (port) {
-            var directUrlKey = [
-              'frontend:',
-              port,
-              '.',
-              // hostname: ex, 2zrr96-pd-php-test-staging-paulrduffy.runnableapp.com
-              [instance.shortHash,
-                '-',
-                instance.name,
-                '-staging-',
-                process.env.ORG,
-                '.',
-                process.env.USER_CONTENT_TLD].join('').toLowerCase()
-            ].join('').toLowerCase()
-            redisKeys.push(directUrlKey)
-            redisKeys.push(directUrlKey.replace(instance.shortHash + '-', '')) // elasticUrl
-          })
-
-          async.eachSeries(redisKeys, function (key, cb) {
-            console.log('checking: ' + key)
-            redisClient.lrange(key, 0, 1, function (err, response) {
-              if (err) { throw err }
-              console.log('response', response)
-              if (!response.length) {
-                instancesMissingHipache.push([key, instance._id])
-                console.log('userland-hipache redis entry __NOT__ found: ' + key)
-              } else {
-                instancesWithHipache.push([key, instance._id])
-                console.log('userland-hipache redis entry found: ' + key)
-              }
-              cb()
-            })
-          }, cb)
+        var instancePorts = Object.keys(instance.container.ports).map(function (portString) {
+          return portString.replace(/\/tcp$/, '')
         })
+
+        /**
+         * Generate array of all elasticUrl and directUrl redis keys (one for each port) on the
+         * instance
+         */
+        var redisKeys = []
+        instancePorts.forEach(function (port) {
+          var directUrlKey = [
+            'frontend:',
+            port,
+            '.',
+            // hostname: ex, 2zrr96-pd-php-test-staging-paulrduffy.runnableapp.com
+            [instance.shortHash,
+              '-',
+              instance.name,
+              '-staging-',
+              process.env.ORG,
+              '.',
+              process.env.USER_CONTENT_TLD].join('').toLowerCase()
+          ].join('').toLowerCase()
+          redisKeys.push(directUrlKey)
+          redisKeys.push(directUrlKey.replace(instance.shortHash + '-', '')) // elasticUrl
+        })
+
+        async.eachSeries(redisKeys, function (key, cb) {
+          console.log('checking: ' + key)
+          redisClient.lrange(key, 0, 1, function (err, response) {
+            if (err) { throw err }
+            console.log('response', response)
+            if (!response.length) {
+              instancesMissingHipache.push([key, instance._id])
+              console.log('userland-hipache redis entry __NOT__ found: ' + key)
+            } else {
+              instancesWithHipache.push([key, instance._id])
+              console.log('userland-hipache redis entry found: ' + key)
+            }
+            cb()
+          })
+        }, cb)
       }, function () {
         console.log('----------------------------------------------')
         console.log('NOT_MISSING', instancesWithHipache.length, instancesWithHipache)
