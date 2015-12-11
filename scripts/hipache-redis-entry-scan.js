@@ -1,12 +1,15 @@
 /**
  * Compare instance documents in API mongodb database to userland-hipache redis entries to find any
  * potentially missing hipache redis entries.
+ *
+ * USER_CONTENT_TLD=runnable2.net NODE_PATH=lib/ node hipache-redis-entry-scan.js
  */
 'use strict';
 
 require('loadenv')()
 
 var hasKeypaths = require('101/has-keypaths')
+var isObject = require('101/is-object')
 
 // dummy port
 process.env.PORT = 7777
@@ -17,7 +20,7 @@ var async = require('async')
 var mongoose = require('mongoose')
 var redis = require('redis');
 
-if (!hasKeypaths(process.env, ['MONGO', 'REDIS_PORT', 'REDIS_IPADDRESS'])) {
+if (!hasKeypaths(process.env, ['MONGO', 'REDIS_PORT', 'REDIS_IPADDRESS', 'USER_CONTENT_TLD'])) {
   throw new Error('missing required ENV!')
 }
 
@@ -52,7 +55,13 @@ server.start(function () {
 
           var user = users[0]
 
-          var instancePorts = Object.keys(instance.ports).map(function (portString) {
+          if (!isObject(instance.container.ports)) {
+            console.log('instance does not have ports', instance._id, instance.container.ports)
+            return cb()
+          }
+          console.log('instance does have ports, proceeding', instance._id)
+
+          var instancePorts = Object.keys(instance.container.ports).map(function (portString) {
             return portString.replace(/\/tcp$/, '')
           })
 
@@ -68,28 +77,31 @@ server.start(function () {
               '.',
               //hostname: ex, 2zrr96-pd-php-test-staging-paulrduffy.runnableapp.com
               [instance.shortHash,
+                '-',
                 instance.name,
-                'staging',
+                '-staging-',
                 user.accounts.github.username,
-                '.runnableapp.com'].join('-')
-            ].join('')
+                '.',
+                process.env.USER_CONTENT_TLD].join('').toLowerCase()
+            ].join('').toLowerCase()
             var elasticUrlKey = [
               'frontend:',
               port,
               '.',
               //hostname: ex, pd-php-test-staging-paulrduffy.runnableapp.com
               [instance.name,
-                'staging',
+                '-staging-',
                 user.accounts.github.username,
-                '.runnableapp.com'].join('-')
-            ].join('')
+                '.',
+                process.env.USER_CONTENT_TLD].join('').toLowerCase()
+            ].join('').toLowerCase()
             redisKeys.push(directUrlKey)
             redisKeys.push(elasticUrlKey)
           })
 
           async.eachSeries(redisKeys, function (key, cb) {
             console.log('checking: ' + key)
-            redis.lrange(key, 0, 1, function (err, response) {
+            redisClient.lrange(key, 0, 1, function (err, response) {
               if (err) { throw err }
               console.log('response', response)
               if (!response) {
