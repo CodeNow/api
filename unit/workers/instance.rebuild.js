@@ -13,7 +13,6 @@ var expect = Code.expect
 var Runnable = require('runnable')
 
 var sinon = require('sinon')
-var Instance = require('models/mongo/instance')
 var Worker = require('workers/instance.rebuild')
 var TaskFatalError = require('ponos').TaskFatalError
 
@@ -22,20 +21,20 @@ var moduleName = path.relative(process.cwd(), __filename)
 
 describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
   var testInstanceId = '507f1f77bcf86cd799439011'
+  var testInstanceShortHash = '2p8kye'
   var testData = {
-    instanceId: testInstanceId
+    instanceId: testInstanceId,
+    instanceShortHash: testInstanceShortHash
   }
 
   describe('worker', function () {
     beforeEach(function (done) {
       sinon.stub(Runnable.prototype, 'githubLogin')
-      sinon.stub(Instance, 'findById')
       done()
     })
 
     afterEach(function (done) {
       Runnable.prototype.githubLogin.restore()
-      Instance.findById.restore()
       done()
     })
 
@@ -52,6 +51,22 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
         Worker({instanceId: {}}).asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
           expect(err.message).to.contain('instanceId')
+          expect(err.message).to.contain('a string')
+          done()
+        })
+      })
+      it('should throw a task fatal error if the job is missing a instanceShortHash', function (done) {
+        Worker({ instanceId: 'some-mongo-id' }).asCallback(function (err) {
+          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('instanceShortHash')
+          expect(err.message).to.contain('required')
+          done()
+        })
+      })
+      it('should throw a task fatal error if the instanceShortHash is not a string', function (done) {
+        Worker({instanceId: 'some-mongo-id', instanceShortHash: {}}).asCallback(function (err) {
+          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('instanceShortHash')
           expect(err.message).to.contain('a string')
           done()
         })
@@ -84,7 +99,6 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.equal(loginError.message)
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.notCalled(Instance.findById)
             done()
           })
       })
@@ -94,7 +108,6 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       var mongoError = new Error('Mongo failed')
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(mongoError)
         done()
       })
 
@@ -110,7 +123,12 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
     describe('instance was not found', function () {
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(null, null)
+        var instanceModel = {
+          fetch: function (cb) {
+            cb(new Error('Fetch error'))
+          }
+        }
+        sinon.stub(Runnable.prototype, 'newInstance').returns(instanceModel)
         done()
       })
 
@@ -118,9 +136,9 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
         Worker(testData)
           .asCallback(function (err) {
             expect(err).to.be.instanceOf(TaskFatalError)
-            expect(err.message).to.contain('Instance not found')
+            expect(err.message).to.contain('Fetch error')
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledOnce(Instance.findById)
+            // sinon.assert.calledOnce(Instance.findById)
             done()
           })
       })
