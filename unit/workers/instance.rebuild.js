@@ -99,166 +99,220 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.equal(loginError.message)
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
+            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
             done()
           })
       })
     })
 
     describe('instance lookup fails', function () {
-      var mongoError = new Error('Mongo failed')
+      var fetchError = new Error('Fetch error')
+      var instanceModel = {
+        fetch: function (cb) {
+          cb(new Error('Fetch error'))
+        }
+      }
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
+        sinon.stub(Runnable.prototype, 'newInstance').returns(instanceModel)
+        sinon.spy(instanceModel, 'fetch')
         done()
       })
-
+      afterEach(function (done) {
+        Runnable.prototype.newInstance.restore()
+        done()
+      })
       it('should callback with error', function (done) {
         Worker(testData)
           .asCallback(function (err) {
-            expect(err.message).to.equal(mongoError.message)
-            done()
-          })
-      })
-    })
-
-    describe('instance was not found', function () {
-      beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yields(null)
-        var instanceModel = {
-          fetch: function (cb) {
-            cb(new Error('Fetch error'))
-          }
-        }
-        sinon.stub(Runnable.prototype, 'newInstance').returns(instanceModel)
-        done()
-      })
-
-      it('should callback with fatal error', function (done) {
-        Worker(testData)
-          .asCallback(function (err) {
-            expect(err).to.be.instanceOf(TaskFatalError)
-            expect(err.message).to.contain('Fetch error')
+            expect(err.message).to.equal(fetchError.message)
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            // sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledOnce(Runnable.prototype.newInstance)
+            sinon.assert.calledWith(Runnable.prototype.newInstance, testData.instanceShortHash)
+            sinon.assert.calledOnce(instanceModel.fetch)
             done()
           })
       })
     })
 
     describe('build deep copy failed', function () {
+      var deepCopyError = new Error('Deep copy error')
       var testInstance = {
         shortHash: 'va61'
       }
       var instanceModel = {
-        build: {
-          deepCopy: function (cb) {
-            cb(new Error('Deep copy error'))
+        attrs: {
+          build: {
+            _id: 'build-id-1'
           }
+        },
+        fetch: function (cb) {
+          cb(null, testInstance)
+        }
+      }
+      var buildModel = {
+        deepCopy: function (cb) {
+          cb(deepCopyError)
         }
       }
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(null, testInstance)
         sinon.stub(Runnable.prototype, 'newInstance').returns(instanceModel)
+        sinon.stub(Runnable.prototype, 'newBuild').returns(buildModel)
+        sinon.spy(instanceModel, 'fetch')
+        sinon.spy(buildModel, 'deepCopy')
         done()
       })
 
       afterEach(function (done) {
         Runnable.prototype.newInstance.restore()
+        Runnable.prototype.newBuild.restore()
         done()
       })
       it('should callback with fatal error', function (done) {
         Worker(testData)
           .asCallback(function (err) {
-            expect(err.message).to.contain('Deep copy error')
+            expect(err.message).to.contain(deepCopyError.message)
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledOnce(Runnable.prototype.newInstance)
+            sinon.assert.calledWith(Runnable.prototype.newInstance, testData.instanceShortHash)
+            sinon.assert.calledOnce(instanceModel.fetch)
+            sinon.assert.calledOnce(Runnable.prototype.newBuild)
+            sinon.assert.calledWith(Runnable.prototype.newBuild, instanceModel.attrs.build._id)
+            sinon.assert.calledOnce(buildModel.deepCopy)
             done()
           })
       })
     })
 
     describe('build build failed', function () {
+      var buildError = new Error('Build error')
       var testInstance = {
         shortHash: 'va61'
       }
-      var buildModel = {
-        build: function (opts, cb) {
-          expect(opts.message).to.equal('Recovery build')
-          expect(opts.noCache).to.be.true()
-          cb(new Error('Build failed'))
+      var instanceModel = {
+        attrs: {
+          build: {
+            _id: 'build-id-1'
+          }
+        },
+        fetch: function (cb) {
+          cb(null, testInstance)
         }
       }
-      var instanceModel = {
-        build: {
-          deepCopy: function (cb) {
-            cb(null, buildModel)
-          }
+      var buildModel = {
+        deepCopy: function (cb) {
+          cb(null, buildModel)
+        },
+        build: function (opts, cb) {
+          cb(buildError)
         }
       }
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(null, testInstance)
         sinon.stub(Runnable.prototype, 'newInstance').returns(instanceModel)
+        sinon.stub(Runnable.prototype, 'newBuild').returns(buildModel)
+        sinon.spy(instanceModel, 'fetch')
+        sinon.spy(buildModel, 'deepCopy')
+        sinon.spy(buildModel, 'build')
         done()
       })
 
       afterEach(function (done) {
         Runnable.prototype.newInstance.restore()
+        Runnable.prototype.newBuild.restore()
         done()
       })
+
       it('should callback with fatal error', function (done) {
         Worker(testData)
           .asCallback(function (err) {
-            expect(err.message).to.contain('Build failed')
-            sinon.assert.calledOnce(Runnable.prototype.newInstance)
+            expect(err.message).to.contain(buildError.message)
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledOnce(Runnable.prototype.newInstance)
+            sinon.assert.calledWith(Runnable.prototype.newInstance, testData.instanceShortHash)
+            sinon.assert.calledOnce(instanceModel.fetch)
+            sinon.assert.calledTwice(Runnable.prototype.newBuild)
+            sinon.assert.calledWith(Runnable.prototype.newBuild, instanceModel.attrs.build._id)
+            sinon.assert.calledOnce(buildModel.deepCopy)
+            sinon.assert.calledOnce(buildModel.build)
+            sinon.assert.calledWith(buildModel.build, {
+              message: 'Recovery build',
+              noCache: true
+            })
             done()
           })
       })
     })
 
     describe('instance updated failed', function () {
+      var updateError = new Error('Update error')
       var testInstance = {
         shortHash: 'va61'
       }
-      var buildModel = {
-        _id: '507f191e810c19729de860ea',
-        build: function (opts, cb) {
-          expect(opts.message).to.equal('Recovery build')
-          expect(opts.noCache).to.be.true()
-          cb(null)
-        }
-      }
       var instanceModel = {
-        build: {
-          deepCopy: function (cb) {
-            cb(null, buildModel)
+        attrs: {
+          build: {
+            _id: 'build-id-1'
           }
         },
+        fetch: function (cb) {
+          cb(null, testInstance)
+        },
         update: function (opts, cb) {
-          expect(opts.build).to.equal(buildModel._id)
-          cb(new Error('Update failed'))
+          cb(updateError)
+        }
+      }
+      var buildModel = {
+        attrs: {
+          _id: 'new-build-id-1'
+        },
+        deepCopy: function (cb) {
+          cb(null, buildModel)
+        },
+        build: function (opts, cb) {
+          cb(null, buildModel)
         }
       }
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(null, testInstance)
         sinon.stub(Runnable.prototype, 'newInstance').returns(instanceModel)
+        sinon.stub(Runnable.prototype, 'newBuild').returns(buildModel)
+        sinon.spy(instanceModel, 'fetch')
+        sinon.spy(instanceModel, 'update')
+        sinon.spy(buildModel, 'deepCopy')
+        sinon.spy(buildModel, 'build')
         done()
       })
 
       afterEach(function (done) {
         Runnable.prototype.newInstance.restore()
+        Runnable.prototype.newBuild.restore()
         done()
       })
+
       it('should callback with fatal error', function (done) {
         Worker(testData)
           .asCallback(function (err) {
-            expect(err.message).to.contain('Update failed')
+            expect(err.message).to.contain(updateError.message)
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledOnce(Runnable.prototype.newInstance)
-            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledTwice(Runnable.prototype.newInstance)
+            sinon.assert.calledWith(Runnable.prototype.newInstance, testData.instanceShortHash)
+            sinon.assert.calledOnce(instanceModel.fetch)
+            sinon.assert.calledTwice(Runnable.prototype.newBuild)
+            sinon.assert.calledWith(Runnable.prototype.newBuild, instanceModel.attrs.build._id)
+            sinon.assert.calledOnce(buildModel.deepCopy)
+            sinon.assert.calledOnce(buildModel.build)
+            sinon.assert.calledWith(buildModel.build, {
+              message: 'Recovery build',
+              noCache: true
+            })
+            sinon.assert.calledOnce(instanceModel.update)
+            sinon.assert.calledWith(instanceModel.update, { build: buildModel.attrs._id })
             done()
           })
       })
@@ -268,34 +322,44 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       var testInstance = {
         shortHash: 'va61'
       }
-      var buildModel = {
-        _id: '507f191e810c19729de860ea',
-        build: function (opts, cb) {
-          expect(opts.message).to.equal('Recovery build')
-          expect(opts.noCache).to.be.true()
-          cb(null)
-        }
-      }
       var instanceModel = {
-        build: {
-          deepCopy: function (cb) {
-            cb(null, buildModel)
+        attrs: {
+          build: {
+            _id: 'build-id-1'
           }
         },
+        fetch: function (cb) {
+          cb(null, testInstance)
+        },
         update: function (opts, cb) {
-          expect(opts.build).to.equal(buildModel._id)
-          cb(null)
+          cb(null, instanceModel)
+        }
+      }
+      var buildModel = {
+        attrs: {
+          _id: 'new-build-id-1'
+        },
+        deepCopy: function (cb) {
+          cb(null, buildModel)
+        },
+        build: function (opts, cb) {
+          cb(null, buildModel)
         }
       }
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(null, testInstance)
         sinon.stub(Runnable.prototype, 'newInstance').returns(instanceModel)
+        sinon.stub(Runnable.prototype, 'newBuild').returns(buildModel)
+        sinon.spy(instanceModel, 'fetch')
+        sinon.spy(instanceModel, 'update')
+        sinon.spy(buildModel, 'deepCopy')
+        sinon.spy(buildModel, 'build')
         done()
       })
 
       afterEach(function (done) {
         Runnable.prototype.newInstance.restore()
+        Runnable.prototype.newBuild.restore()
         done()
       })
       it('should callback with fatal error', function (done) {
@@ -303,8 +367,20 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledOnce(Runnable.prototype.newInstance)
-            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledTwice(Runnable.prototype.newInstance)
+            sinon.assert.calledWith(Runnable.prototype.newInstance, testData.instanceShortHash)
+            sinon.assert.calledOnce(instanceModel.fetch)
+            sinon.assert.calledTwice(Runnable.prototype.newBuild)
+            sinon.assert.calledWith(Runnable.prototype.newBuild, instanceModel.attrs.build._id)
+            sinon.assert.calledOnce(buildModel.deepCopy)
+            sinon.assert.calledOnce(buildModel.build)
+            sinon.assert.calledWith(buildModel.build, {
+              message: 'Recovery build',
+              noCache: true
+            })
+            sinon.assert.calledOnce(instanceModel.update)
+            sinon.assert.calledWith(instanceModel.update, { build: buildModel.attrs._id })
             done()
           })
       })
