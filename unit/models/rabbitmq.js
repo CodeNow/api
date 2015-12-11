@@ -560,11 +560,13 @@ describe('RabbitMQ Model: ' + moduleName, function () {
   describe('publishInstanceRebuild', function () {
     beforeEach(function (done) {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      sinon.spy(ctx.rabbitMQ, '_validate')
       done()
     })
 
     afterEach(function (done) {
       ctx.rabbitMQ.hermesClient.publish.restore()
+      ctx.rabbitMQ._validate.restore()
       done()
     })
 
@@ -574,6 +576,9 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         instanceShortHash: 'a61m9'
       }
       ctx.rabbitMQ.publishInstanceRebuild(payload)
+      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
+      var keys = [ 'instanceId', 'instanceShortHash']
+      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.rebuild')
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
       sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.rebuild', payload)
       done()
@@ -582,6 +587,9 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       var payload = {}
       expect(ctx.rabbitMQ.publishInstanceRebuild.bind(ctx.rabbitMQ, payload))
         .to.throw(Error, /Validation failed/)
+      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
+      var keys = [ 'instanceId', 'instanceShortHash']
+      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.rebuild')
       sinon.assert.notCalled(ctx.rabbitMQ.hermesClient.publish)
       done()
     })

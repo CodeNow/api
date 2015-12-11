@@ -64,7 +64,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
         })
       })
       it('should throw a task fatal error if the instanceShortHash is not a string', function (done) {
-        Worker({instanceId: 'some-mongo-id', instanceShortHash: {}}).asCallback(function (err) {
+        Worker({ instanceId: 'some-mongo-id', instanceShortHash: {} }).asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
           expect(err.message).to.contain('instanceShortHash')
           expect(err.message).to.contain('a string')
@@ -109,7 +109,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       var fetchError = new Error('Fetch error')
       var instanceModel = {
         fetch: function (cb) {
-          cb(new Error('Fetch error'))
+          cb(fetchError)
         }
       }
       beforeEach(function (done) {
