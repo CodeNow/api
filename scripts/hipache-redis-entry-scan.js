@@ -124,8 +124,9 @@ server.start(function () {
         })
       }, function () {
         console.log('----------------------------------------------')
-        console.log('NOT_MISSING', instancesWithHipache)
-        console.log('MISSING', instancesMissingHipache)
+        console.log('NOT_MISSING', instancesWithHipache.length, instancesWithHipache)
+        console.log('MISSING', instancesMissingHipache.length, instancesMissingHipache)
+        process.exit(0);
       })
     })
   })
