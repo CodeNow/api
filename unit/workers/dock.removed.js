@@ -260,6 +260,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
   })
 
   describe('#_redeployContainers', function () {
+    // we are not going to validate instances that should be redeployed at this point
     var instances = [{
       _id: '1',
       container: {
@@ -303,7 +304,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
 
     it('should callback with no error', function (done) {
       Worker._redeployContainers(instances)
-      expect(rabbitMQ.redeployInstanceContainer.calledTwice).to.be.true()
+      expect(rabbitMQ.redeployInstanceContainer.callCount).to.equal(3)
       var call1 = rabbitMQ.redeployInstanceContainer.getCall(0).args
       expect(call1[0]).to.deep.equal({
         instanceId: instances[0]._id,
@@ -311,6 +312,11 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
       var call2 = rabbitMQ.redeployInstanceContainer.getCall(1).args
       expect(call2[0]).to.deep.equal({
+        instanceId: instances[1]._id,
+        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID
+      })
+      var call3 = rabbitMQ.redeployInstanceContainer.getCall(2).args
+      expect(call3[0]).to.deep.equal({
         instanceId: instances[2]._id,
         sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID
       })
