@@ -84,7 +84,6 @@ server.start(function () {
                 '-',
                 instance.name,
                 '-staging-',
-                // user.accounts.github.username,
                 process.env.ORG,
                 '.',
                 process.env.USER_CONTENT_TLD].join('').toLowerCase()
