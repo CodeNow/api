@@ -31,7 +31,6 @@ var redisClient = redis.createClient(
 )
 
 var Instance = require('models/mongo/instance')
-var User = require('models/mongo/user')
 
 var instancesMissingHipache = []
 var instancesWithHipache = []
