@@ -16,6 +16,7 @@ var request = require('request')
 var randStr = require('randomstring').generate
 var githubUserOrgsMock = require('./fixtures/mocks/github/user-orgs.js')
 var nock = require('nock')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var sinon = require('sinon')
 var SendGrid = require('models/apis/sendgrid')
 
@@ -36,6 +37,18 @@ var createInvitation = function (done) {
   }
   ctx.user.createTeammateInvitation(opts, done)
 }
+beforeEach(
+  mockGetUserById.stubBefore(function () {
+    return [{
+      id: ctx.orgGithubId,
+      username: 'super-org'
+    }, {
+      id: 777,
+      username: 'hello'
+    }]
+  })
+)
+afterEach(mockGetUserById.stubAfter)
 
 describe('TeammateInvitation', function () {
   before(api.start.bind(ctx))

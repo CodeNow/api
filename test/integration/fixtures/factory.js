@@ -68,7 +68,7 @@ module.exports = {
       _id: '012345678901234567890123',
       hash: uuid(),
       started: new Date(),
-      dockerContainer: '012345678901234567890123'
+      dockerContainer: uuid()
     })
     var data = this.cvTemplate(
       ownerGithubId,

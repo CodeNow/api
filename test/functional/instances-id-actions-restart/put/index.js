@@ -27,6 +27,7 @@ var api = require('../../fixtures/api-control')
 var dock = require('../../fixtures/dock')
 var dockerMockEvents = require('../../fixtures/docker-mock-events')
 var expects = require('../../fixtures/expects')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 var rabbitMQ = require('models/rabbitmq/index')
@@ -52,7 +53,19 @@ describe('PUT /instances/:id/actions/restart', function () {
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
   after(require('../../fixtures/mocks/api-client').clean)
-
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = []
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   function initExpected (done) {
     ctx.expected = {
       _id: exists,

@@ -36,7 +36,8 @@ function ensureIndexes (cb) {
 // this create exchanges that is used by api
 var publishedEvents = [
   'container.network.attached',
-  'container.network.attach-failed'
+  'container.network.attach-failed',
+  'dock.removed'
 ]
 
 var opts = {
@@ -44,7 +45,7 @@ var opts = {
   password: process.env.RABBITMQ_PASSWORD,
   port: process.env.RABBITMQ_PORT,
   username: process.env.RABBITMQ_USERNAME,
-  name: '10.12.13.11.sauron'
+  name: 'mavis-sauron'
 }
 var rabbitPublisher = new Hermes(put({
   publishedEvents: publishedEvents

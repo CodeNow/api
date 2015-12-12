@@ -19,9 +19,22 @@ var clone = require('101/clone')
 var not = require('101/not')
 var exists = require('101/exists')
 var createCount = require('callback-count')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 
 describe('Build Copy - /builds/:id/actions/copy', function () {
   var ctx = {}
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return [{
+        id: 1,
+        username: 'Runnable'
+      }, {
+        id: 2,
+        username: 'otherOrg'
+      }]
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
     multi.createContextVersion(function (err, contextVersion, context, build, user) {
       ctx.contextVersion = contextVersion

@@ -32,6 +32,7 @@ var api = require('../../fixtures/api-control')
 var dock = require('../../fixtures/dock')
 var dockerMockEvents = require('../../fixtures/docker-mock-events')
 var expects = require('../../fixtures/expects')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 var sinon = require('sinon')
@@ -61,6 +62,37 @@ describe('Instance - PATCH /instances/:id', function () {
     done()
   })
 
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 1001,
+        username: 'Runnable'
+      }, {
+        id: 100,
+        username: 'otherOrg'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      if (ctx.moderator) {
+        array.push({
+          id: ctx.moderator.attrs.accounts.github.id,
+          username: ctx.moderator.attrs.accounts.github.username
+        })
+      }
+      if (ctx.nonOwner) {
+        array.push({
+          id: ctx.nonOwner.attrs.accounts.github.id,
+          username: ctx.nonOwner.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   /**
    * Patching has a couple of different jobs.  It allows the user to edit the name of the instance,
    * modify it's public/private flag, and now, change it's build.  These tests should not only

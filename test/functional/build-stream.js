@@ -13,6 +13,7 @@ var expect = Code.expect
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
 var dockerMockEvents = require('./fixtures/docker-mock-events')
@@ -40,6 +41,12 @@ describe('Build Stream', function () {
   after(primus.disconnect)
   after(dock.stop.bind(ctx))
   after(api.stop.bind(ctx))
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return []
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   describe('POST', function () {
     beforeEach(function (done) {

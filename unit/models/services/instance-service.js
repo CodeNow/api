@@ -7,6 +7,7 @@ var lab = exports.lab = Lab.script()
 var sinon = require('sinon')
 var Boom = require('dat-middleware').Boom
 var Code = require('code')
+var Promise = require('bluebird')
 
 var cleanMongo = require('../../../test/functional/fixtures/clean-mongo.js')
 var ContextVersion = require('models/mongo/context-version')
@@ -16,10 +17,11 @@ var mongo = require('../../fixtures/mongo')
 var Hashids = require('hashids')
 var InstanceService = require('models/services/instance-service')
 var Instance = require('models/mongo/instance')
-var Mavis = require('models/apis/mavis')
 var joi = require('utils/joi')
 var rabbitMQ = require('models/rabbitmq')
 var validation = require('../../fixtures/validation')(lab)
+var messenger = require('socket/messenger')
+var User = require('models/mongo/user')
 
 var afterEach = lab.afterEach
 var after = lab.after
@@ -228,7 +230,7 @@ describe('InstanceService: ' + moduleName, function () {
     })
   })
 
-  describe('updateOnContainerStart', function () {
+  describe('modifyExistingContainerInspect', function () {
     describe('with db calls', function () {
       var ctx = {}
 
@@ -278,7 +280,7 @@ describe('InstanceService: ' + moduleName, function () {
       })
       it('should return modified instance from database', function (done) {
         var instanceService = new InstanceService()
-        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.2', ctx.inspect,
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.2',
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id.toString()).to.equal(ctx.instance._id.toString())
@@ -351,7 +353,7 @@ describe('InstanceService: ' + moduleName, function () {
         var instanceService = new InstanceService()
         var mongoErr = new Error('Mongo error')
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr)
-        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect, function (err) {
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
           expect(err.message).to.equal('Mongo error')
           done()
         })
@@ -359,9 +361,9 @@ describe('InstanceService: ' + moduleName, function () {
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
         var instanceService = new InstanceService()
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
-        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect, function (err) {
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
           expect(err.output.statusCode).to.equal(409)
-          var errMsg = "Container IP was not updated, instance's container has changed"
+          var errMsg = "Container was not updated, instance's container has changed"
           expect(err.output.payload.message).to.equal(errMsg)
           done()
         })
@@ -370,7 +372,7 @@ describe('InstanceService: ' + moduleName, function () {
         var instanceService = new InstanceService()
         var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
-        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect,
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1',
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id).to.equal(ctx.instance._id)
@@ -381,7 +383,7 @@ describe('InstanceService: ' + moduleName, function () {
     })
   })
 
-  describe('updateOnContainerDie', function () {
+  describe('modifyExistingContainerInspect (without ip address)', function () {
     describe('with db calls', function () {
       var ctx = {}
 
@@ -431,7 +433,7 @@ describe('InstanceService: ' + moduleName, function () {
       })
       it('should return modified instance from database', function (done) {
         var instanceService = new InstanceService()
-        instanceService.updateOnContainerDie(ctx.instance, ctx.containerId, ctx.inspect,
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect,
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id.toString()).to.equal(ctx.instance._id.toString())
@@ -502,7 +504,7 @@ describe('InstanceService: ' + moduleName, function () {
         var instanceService = new InstanceService()
         var mongoErr = new Error('Mongo error')
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr)
-        instanceService.updateOnContainerDie(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
           expect(err.message).to.equal('Mongo error')
           done()
         })
@@ -510,9 +512,9 @@ describe('InstanceService: ' + moduleName, function () {
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
         var instanceService = new InstanceService()
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
-        instanceService.updateOnContainerDie(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
           expect(err.output.statusCode).to.equal(409)
-          var errMsg = "Container inspect data was not updated, instance's container has changed"
+          var errMsg = "Container was not updated, instance's container has changed"
           expect(err.output.payload.message).to.equal(errMsg)
           done()
         })
@@ -521,7 +523,7 @@ describe('InstanceService: ' + moduleName, function () {
         var instanceService = new InstanceService()
         var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
-        instanceService.updateOnContainerDie(ctx.instance, ctx.containerId, ctx.inspect,
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect,
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id).to.equal(ctx.instance._id)
@@ -542,7 +544,9 @@ describe('InstanceService: ' + moduleName, function () {
         contextVersionId: '123456789012345678901234',
         ownerUsername: 'runnable'
       }
-      ctx.mockContextVersion = {}
+      ctx.mockContextVersion = {
+        handleRecovery: sinon.stub().yieldsAsync()
+      }
       ctx.mockInstance = {}
       ctx.mockContainer = {}
       ctx.mockMongoData = {
@@ -584,6 +588,7 @@ describe('InstanceService: ' + moduleName, function () {
             sinon.match.object,
             sinon.match.func
           )
+          sinon.assert.calledOnce(ctx.mockContextVersion.handleRecovery)
           var _createDockerContainerOpts = InstanceService._createDockerContainer.args[0][0]
           expect(_createDockerContainerOpts)
             .to.deep.contain(ctx.mockMongoData)
@@ -631,6 +636,21 @@ describe('InstanceService: ' + moduleName, function () {
           InstanceService._createDockerContainer.yieldsAsync(ctx.err)
           done()
         })
+        it('should callback the error', function (done) {
+          InstanceService.createContainer(ctx.opts, expectErr(ctx.err, done))
+        })
+      })
+      describe('contextVersion.handleRecovery error', function () {
+        beforeEach(function (done) {
+          sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
+            cb(null, data)
+          })
+          InstanceService._findInstanceAndContextVersion.yieldsAsync(null, ctx.mockMongoData)
+          InstanceService._createDockerContainer.yieldsAsync(null, ctx.mockContainer)
+          ctx.mockContextVersion.handleRecovery.yieldsAsync(ctx.err)
+          done()
+        })
+
         it('should callback the error', function (done) {
           InstanceService.createContainer(ctx.opts, expectErr(ctx.err, done))
         })
@@ -782,19 +802,16 @@ describe('InstanceService: ' + moduleName, function () {
       }
       // results
       ctx.mockContainer = {}
-      sinon.stub(Mavis.prototype, 'findDockForContainer')
       sinon.stub(Docker.prototype, 'createUserContainer')
       done()
     })
     afterEach(function (done) {
-      Mavis.prototype.findDockForContainer.restore()
       Docker.prototype.createUserContainer.restore()
       done()
     })
 
     describe('success', function () {
       beforeEach(function (done) {
-        Mavis.prototype.findDockForContainer.yieldsAsync(null, 'http://10.0.1.10:4242')
         Docker.prototype.createUserContainer.yieldsAsync(null, ctx.mockContainer)
         done()
       })
@@ -802,10 +819,6 @@ describe('InstanceService: ' + moduleName, function () {
       it('should create a docker container', function (done) {
         InstanceService._createDockerContainer(ctx.opts, function (err, container) {
           if (err) { return done(err) }
-          sinon.assert.calledWith(
-            Mavis.prototype.findDockForContainer,
-            ctx.opts.contextVersion, sinon.match.func
-          )
           var createOpts = clone(ctx.opts)
           sinon.assert.calledWith(
             Docker.prototype.createUserContainer, createOpts, sinon.match.func
@@ -822,21 +835,8 @@ describe('InstanceService: ' + moduleName, function () {
         done()
       })
 
-      describe('mavis error', function () {
-        beforeEach(function (done) {
-          Mavis.prototype.findDockForContainer.yieldsAsync(ctx.err)
-          Docker.prototype.createUserContainer.yieldsAsync(null, ctx.mockContainer)
-          done()
-        })
-
-        it('should callback the error', function (done) {
-          InstanceService._createDockerContainer(ctx.opts, expectErr(ctx.err, done))
-        })
-      })
-
       describe('docker error', function () {
         beforeEach(function (done) {
-          Mavis.prototype.findDockForContainer.yieldsAsync(null, 'http://10.0.1.10:4242')
           Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer)
           done()
         })
@@ -850,7 +850,6 @@ describe('InstanceService: ' + moduleName, function () {
         beforeEach(function (done) {
           ctx.err = Boom.notFound('Image not found')
           ctx.opts.instance = new Instance()
-          Mavis.prototype.findDockForContainer.yieldsAsync(null, 'http://10.0.1.10:4242')
           Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer)
           done()
         })
@@ -904,7 +903,6 @@ describe('InstanceService: ' + moduleName, function () {
         beforeEach(function (done) {
           ctx.err = Boom.notFound('Image not found')
           ctx.opts.instance = new Instance()
-          Mavis.prototype.findDockForContainer.yieldsAsync(null, 'http://10.0.1.10:4242')
           Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer)
           sinon.stub(Docker, 'isImageNotFoundForCreateErr').returns(true)
           sinon.stub(InstanceService, '_handleImageNotFoundErr').yieldsAsync()
@@ -963,6 +961,168 @@ describe('InstanceService: ' + moduleName, function () {
         )
         done()
       })
+    })
+  })
+
+  describe('emitInstanceUpdate', function () {
+    var instance
+
+    beforeEach(function (done) {
+      sinon.stub(User, 'findByGithubIdAsync').returns(Promise.resolve())
+      sinon.stub(messenger, 'emitInstanceUpdateAsync')
+      instance = {
+        createdBy: {
+          github: 123454
+        },
+        updateCvAsync: sinon.stub().returns(Promise.resolve()),
+        populateModelsAsync: sinon.stub().returns(Promise.resolve()),
+        populateOwnerAndCreatedByAsync: sinon.stub().returns(Promise.resolve())
+      }
+      done()
+    })
+
+    afterEach(function (done) {
+      User.findByGithubIdAsync.restore()
+      messenger.emitInstanceUpdateAsync.restore()
+      done()
+    })
+
+    it('should fail when findByGithubId fails', function (done) {
+      var testErr = 'Find By GithubID Failed'
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      User.findByGithubIdAsync.returns(rejectionPromise)
+
+      InstanceService.emitInstanceUpdate(instance, null)
+        .asCallback(function (err) {
+          expect(err).to.equal(testErr)
+          sinon.assert.notCalled(instance.populateModelsAsync)
+          sinon.assert.notCalled(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.notCalled(instance.updateCvAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          done()
+        })
+    })
+
+    it('should use the passed in github user if one is provided', function (done) {
+      var testUser = 1234
+      InstanceService.emitInstanceUpdate(instance, testUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(User.findByGithubIdAsync)
+          sinon.assert.calledWith(User.findByGithubIdAsync, testUser)
+          done()
+        })
+    })
+
+    it('should use the created by github userId if one is not passed', function (done) {
+      InstanceService.emitInstanceUpdate(instance)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(User.findByGithubIdAsync)
+          sinon.assert.calledWith(User.findByGithubIdAsync, instance.createdBy.github)
+          done()
+        })
+    })
+
+    it('should fail when populateModels fails', function (done) {
+      var testErr = 'Populate Models Failed'
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      instance.populateModelsAsync.returns(rejectionPromise)
+
+      InstanceService.emitInstanceUpdate(instance, null)
+        .asCallback(function (err) {
+          expect(err).to.equal(testErr)
+          sinon.assert.calledOnce(instance.populateModelsAsync)
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.notCalled(instance.updateCvAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          done()
+        })
+    })
+
+    it('should fail when populateOwnerAndCreatedByAsync fails', function (done) {
+      var testErr = 'Populate Owner Failed'
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      instance.populateOwnerAndCreatedByAsync.returns(rejectionPromise)
+
+      InstanceService.emitInstanceUpdate(instance, null)
+        .asCallback(function (err) {
+          expect(err).to.equal(testErr)
+          sinon.assert.calledOnce(instance.populateModelsAsync)
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.notCalled(instance.updateCvAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          done()
+        })
+    })
+
+    it('should pass the results of findByGithubID into populateOwnerAndCreatedByAsync', function (done) {
+      var findResults = {key: 'value'}
+      User.findByGithubIdAsync.returns(Promise.resolve(findResults))
+      InstanceService.emitInstanceUpdate(instance, null)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.calledWith(instance.populateOwnerAndCreatedByAsync, findResults)
+          done()
+        })
+    })
+
+    it('should fail is the messenger fails', function (done) {
+      var testErr = 'Emit Instance Update Failed'
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      messenger.emitInstanceUpdateAsync.returns(rejectionPromise)
+
+      InstanceService.emitInstanceUpdate(instance)
+        .asCallback(function (err) {
+          expect(err).to.equal(testErr)
+          sinon.assert.calledOnce(instance.populateModelsAsync)
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.notCalled(instance.updateCvAsync)
+          done()
+        })
+    })
+
+    it('should pass the instance into emitInstanceUpdateAsync', function (done) {
+      InstanceService.emitInstanceUpdate(instance)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
+          sinon.assert.calledWith(messenger.emitInstanceUpdateAsync, instance)
+          done()
+        })
+    })
+
+    it('should pass if everything passes', function (done) {
+      var updateMessage = 'update'
+      InstanceService.emitInstanceUpdate(instance, null, updateMessage)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(instance.populateModelsAsync)
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
+          sinon.assert.calledWith(messenger.emitInstanceUpdateAsync, instance, updateMessage)
+          sinon.assert.notCalled(instance.updateCvAsync)
+          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, messenger.emitInstanceUpdateAsync)
+          done()
+        })
+    })
+
+    it('should force update the context version if flag is set', function (done) {
+      InstanceService.emitInstanceUpdate(instance, null, 'update', true)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(instance.populateModelsAsync)
+          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
+          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
+          sinon.assert.calledOnce(instance.updateCvAsync)
+          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, instance.updateCvAsync, messenger.emitInstanceUpdateAsync)
+          done()
+        })
     })
   })
 })

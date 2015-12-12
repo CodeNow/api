@@ -24,6 +24,7 @@ var it = lab.it
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
 var expects = require('./fixtures/expects')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
 
@@ -53,7 +54,15 @@ describe('BDD - Create Build and Deploy Instance', function () {
     rabbitMQ.deleteInstance.restore()
     done()
   })
-
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return [{
+        id: 11111,
+        username: 'Runnable'
+      }]
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   describe('create a cv to test dudupe logic with', function () {
     beforeEach(function (done) {
       multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {

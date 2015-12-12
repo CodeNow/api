@@ -185,7 +185,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  describe('#findActiveInstancesByDockerHost', function () {
+  describe('#findInstancesByDockerHost', function () {
     var instance1
     var instance2
     var instance3
@@ -225,7 +225,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       instance4.save(done)
     })
     it('should get all instances from testHost', function (done) {
-      Instance.findActiveInstancesByDockerHost(testHost, function (err, instances) {
+      Instance.findInstancesByDockerHost(testHost, function (err, instances) {
         expect(err).to.be.null()
         expect(instances.length).to.equal(3)
         instances.forEach(function (instance) {
@@ -234,7 +234,68 @@ describe('Instance Model Tests ' + moduleName, function () {
         done()
       })
     })
-  }) // end findActiveInstancesByDockerHost
+  }) // end findInstancesByDockerHost
+
+  describe('#setStoppingAsStoppedByDockerHost', function () {
+    var dockerHost = 'http://10.0.0.1:4242'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'update')
+      done()
+    })
+    afterEach(function (done) {
+      Instance.update.restore()
+      done()
+    })
+    describe('if mongo passes', function () {
+      beforeEach(function (done) {
+        Instance.update.yieldsAsync()
+        done()
+      })
+
+      it('should call update with the right parameters', function (done) {
+        Instance.setStoppingAsStoppedByDockerHost(dockerHost, function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.update)
+          sinon.assert.calledWith(Instance.update,
+            {
+              'container.dockerHost': dockerHost,
+              'container.inspect.State.Stopping': true
+            }, {
+              $set: {
+                'container.inspect.State.Pid': 0,
+                'container.inspect.State.Running': false,
+                'container.inspect.State.Restarting': false,
+                'container.inspect.State.Paused': false,
+                'container.inspect.State.FinishedAt': sinon.match.string,
+                'container.inspect.State.ExitCode': 0
+              },
+              $unset: {
+                'container.inspect.State.Stopping': ''
+              }
+            }, {
+              multi: true
+            }
+          )
+          done()
+        })
+      })
+    })
+
+    describe('on mongoError', function () {
+      var error = 'heaters'
+      beforeEach(function (done) {
+        Instance.update.yieldsAsync(error)
+        done()
+      })
+      it('should propegate the error to the cb function', function (done) {
+        Instance.setStoppingAsStoppedByDockerHost(dockerHost, function (err) {
+          expect(err).to.equal(error)
+          sinon.assert.calledOnce(Instance.update)
+          done()
+        })
+      })
+    })
+  })
 
   describe('atomic set container state', function () {
     it('should not set container state to Starting if container on instance has changed', function (done) {
@@ -551,6 +612,51 @@ describe('Instance Model Tests ' + moduleName, function () {
         if (err) { return done(err) }
         expect(insts.length).to.equal(0)
         done()
+      })
+    })
+  })
+
+  describe('#updateContextVersion', function () {
+    var id = '1234'
+    var updateObj = {
+      dockRemovedNeedsUserConfirmation: false
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'update').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.update.restore()
+      done()
+    })
+    it('should call the update command in mongo', function (done) {
+      Instance.updateContextVersion(id, updateObj, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.update)
+        sinon.assert.calledWith(Instance.update, {
+          'contextVersion.id': id
+        }, {
+          $set: {
+            'contextVersion.dockRemovedNeedsUserConfirmation': false
+          }
+        }, {
+          multi: true
+        }, sinon.match.func)
+        done()
+      })
+    })
+
+    describe('when mongo fails', function () {
+      var error = new Error('Mongo Error')
+      beforeEach(function (done) {
+        Instance.update.yieldsAsync(error)
+        done()
+      })
+      it('should return the error', function (done) {
+        Instance.updateContextVersion(id, updateObj, function (err) {
+          expect(err).to.equal(error)
+          done()
+        })
       })
     })
   })
