@@ -235,6 +235,13 @@ describe('Instance Model Tests ' + moduleName, function () {
         done()
       })
     })
+    it('should get an [] if no instances were found', function (done) {
+      Instance.findInstancesRunningOrStartingByDockerHost('http://10.0.0.3:4242', function (err, instances) {
+        expect(err).to.be.null()
+        expect(instances.length).to.equal(0)
+        done()
+      })
+    })
   }) // end findInstancesRunningOrStartingByDockerHost
 
   describe('#setStoppingAsStoppedByDockerHost', function () {

@@ -347,7 +347,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       done()
     })
     it('should not publish jobs if nothing was passed', function (done) {
-      var instances = null
+      var instances = []
       Worker._rebuildInstances(instances)
       sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
       done()
