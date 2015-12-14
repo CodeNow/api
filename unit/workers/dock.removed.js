@@ -109,6 +109,10 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
         Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(testError)
+
+        Worker._redeploy.returns(Promise.resolve())
+        Worker._rebuild.returns(Promise.resolve())
+        Worker._updateFrontendInstances.returns(Promise.resolve())
         done()
       })
 
@@ -119,8 +123,8 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
           sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
           sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
-          sinon.assert.notCalled(Worker._redeploy)
-          sinon.assert.notCalled(Worker._rebuild)
+          sinon.assert.calledOnce(Worker._redeploy)
+          sinon.assert.calledOnce(Worker._rebuild)
           done()
         })
       })
@@ -134,6 +138,9 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
         var rejectionPromise = Promise.reject(testError)
         rejectionPromise.suppressUnhandledRejections()
         Worker._redeploy.returns(rejectionPromise)
+
+        Worker._rebuild.returns(Promise.resolve())
+        Worker._updateFrontendInstances.returns(Promise.resolve())
         done()
       })
 
@@ -145,8 +152,8 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
           sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._redeploy)
-          sinon.assert.notCalled(Worker._updateFrontendInstances)
-          sinon.assert.notCalled(Worker._rebuild)
+          sinon.assert.calledOnce(Worker._updateFrontendInstances)
+          sinon.assert.calledOnce(Worker._rebuild)
           done()
         })
       })
@@ -172,8 +179,8 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
           sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._redeploy)
-          sinon.assert.calledOnce(Worker._updateFrontendInstances)
-          sinon.assert.notCalled(Worker._rebuild)
+          sinon.assert.calledTwice(Worker._updateFrontendInstances)
+          sinon.assert.calledOnce(Worker._rebuild)
           done()
         })
       })
