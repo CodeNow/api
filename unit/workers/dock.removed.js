@@ -378,7 +378,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
 
       it('should callback with error', function (done) {
-        Worker._redeploy({}, testData)
+        Worker._redeploy(testData)
           .asCallback(function (err) {
             expect(err.message).to.equal(testErr.message)
             sinon.assert.calledOnce(Instance.findInstancesRunningOrStartingByDockerHost)
@@ -399,7 +399,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
 
       it('should return successfully', function (done) {
-        Worker._redeploy({}, testData)
+        Worker._redeploy(testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledOnce(Instance.findInstancesRunningOrStartingByDockerHost)
@@ -436,7 +436,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
 
       it('should callback with error', function (done) {
-        Worker._rebuild({}, testData)
+        Worker._rebuild(testData)
           .asCallback(function (err) {
             expect(err.message).to.equal(testErr.message)
             sinon.assert.calledOnce(Instance.findInstancesBuildingOnDockerHost)
@@ -457,7 +457,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
 
       it('should return successfully', function (done) {
-        Worker._rebuild({}, testData)
+        Worker._rebuild(testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledOnce(Instance.findInstancesBuildingOnDockerHost)
@@ -497,7 +497,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
 
       it('should callback with error', function (done) {
-        Worker._updateFrontendInstances({}, testData)
+        Worker._updateFrontendInstances(testData)
           .asCallback(function (err) {
             expect(err).to.equal(testErr)
             sinon.assert.called(InstanceService.emitInstanceUpdate)
@@ -513,7 +513,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
 
       it('should return successfully', function (done) {
-        Worker._updateFrontendInstances({}, testData)
+        Worker._updateFrontendInstances(testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledTwice(InstanceService.emitInstanceUpdate)
