@@ -54,6 +54,7 @@ server.start(function () {
       if (err) {
         throw err
       }
+
       body = JSON.parse(body)
       console.log('owner.github', body.id)
 
@@ -61,9 +62,7 @@ server.start(function () {
         container: {
           $exists: true
         },
-        owner: {
-          github: body.id
-        }
+        'owner.github': body.id
       }, function (err, instances) {
         if (err) {
           throw err
