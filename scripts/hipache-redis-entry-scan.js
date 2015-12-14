@@ -124,7 +124,6 @@ server.start(function () {
           process.exit(0)
         })
       })
-
     })
   })
 })
