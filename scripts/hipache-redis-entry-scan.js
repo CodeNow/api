@@ -10,6 +10,7 @@ require('loadenv')()
 
 var hasKeypaths = require('101/has-keypaths')
 var isObject = require('101/is-object')
+var request = require('request')
 
 // dummy port
 process.env.PORT = 7777
@@ -40,70 +41,82 @@ server.start(function () {
   mongoose.connect(process.env.MONGO, function () {
     console.log('mongo connected')
 
-    Instance.find({
-      container: {
-        $exists: true
-      }
-    }, function (err, instances) {
+    request.get('https://api.github.com/users/' + process.env.ORG, function (err, res, body) {
       if (err) {
         throw err
       }
-      console.log('found ' + instances.length + ' instances with containers')
-      async.eachSeries(instances, function (instance, cb) {
-        if (!isObject(instance.container.ports)) {
-          console.log('instance does not have ports', instance._id, instance.container.ports)
-          return cb()
+      body = JSON.parse(body)
+      console.log('owner.github', body.id)
+
+      Instance.find({
+        container: {
+          $exists: true
+        },
+        owner: {
+          github: body.id
         }
-        console.log('instance does have ports, proceeding', instance._id)
+      }, function (err, instances) {
+        if (err) {
+          throw err
+        }
+        console.log('found ' + instances.length + ' instances with containers')
+        async.eachSeries(instances, function (instance, cb) {
+          if (!isObject(instance.container.ports)) {
+            console.log('instance does not have ports', instance._id, instance.container.ports)
+            return cb()
+          }
+          console.log('instance does have ports, proceeding', instance._id)
 
-        var instancePorts = Object.keys(instance.container.ports).map(function (portString) {
-          return portString.replace(/\/tcp$/, '')
-        })
-
-        /**
-         * Generate array of all elasticUrl and directUrl redis keys (one for each port) on the
-         * instance
-         */
-        var redisKeys = []
-        instancePorts.forEach(function (port) {
-          var directUrlKey = [
-            'frontend:',
-            port,
-            '.',
-            // hostname: ex, 2zrr96-pd-php-test-staging-paulrduffy.runnableapp.com
-            [instance.shortHash,
-              '-',
-              instance.name,
-              '-staging-',
-              process.env.ORG,
-              '.',
-              process.env.USER_CONTENT_TLD].join('').toLowerCase()
-          ].join('').toLowerCase()
-          redisKeys.push(directUrlKey)
-          redisKeys.push(directUrlKey.replace(instance.shortHash + '-', '')) // elasticUrl
-        })
-
-        async.eachSeries(redisKeys, function (key, cb) {
-          console.log('checking: ' + key)
-          redisClient.lrange(key, 0, 1, function (err, response) {
-            if (err) { throw err }
-            console.log('response', response)
-            if (!response.length) {
-              instancesMissingHipache.push([key, instance._id])
-              console.log('userland-hipache redis entry __NOT__ found: ' + key)
-            } else {
-              instancesWithHipache.push([key, instance._id])
-              console.log('userland-hipache redis entry found: ' + key)
-            }
-            cb()
+          var instancePorts = Object.keys(instance.container.ports).map(function (portString) {
+            return portString.replace(/\/tcp$/, '')
           })
-        }, cb)
-      }, function () {
-        console.log('----------------------------------------------')
-        console.log('NOT_MISSING', instancesWithHipache.length, instancesWithHipache)
-        console.log('MISSING', instancesMissingHipache.length, instancesMissingHipache)
-        process.exit(0)
+
+          /**
+           * Generate array of all elasticUrl and directUrl redis keys (one for each port) on the
+           * instance
+           */
+          var redisKeys = []
+          instancePorts.forEach(function (port) {
+            var directUrlKey = [
+              'frontend:',
+              port,
+              '.',
+              // hostname: ex, 2zrr96-pd-php-test-staging-paulrduffy.runnableapp.com
+              [instance.shortHash,
+                '-',
+                instance.name,
+                '-staging-',
+                process.env.ORG,
+                '.',
+                process.env.USER_CONTENT_TLD].join('').toLowerCase()
+            ].join('').toLowerCase()
+            redisKeys.push(directUrlKey)
+            redisKeys.push(directUrlKey.replace(instance.shortHash + '-', '')) // elasticUrl
+          })
+
+          async.eachSeries(redisKeys, function (key, cb) {
+            console.log('checking: ' + key)
+            redisClient.lrange(key, 0, 1, function (err, response) {
+              if (err) { throw err }
+              console.log('response', response)
+              if (!response.length) {
+                instancesMissingHipache.push([key, instance._id])
+                console.log('userland-hipache redis entry __NOT__ found: ' + key)
+              } else {
+                instancesWithHipache.push([key, instance._id])
+                console.log('userland-hipache redis entry found: ' + key)
+              }
+              cb()
+            })
+          }, cb)
+        }, function () {
+          console.log('----------------------------------------------')
+          console.log('NOT_MISSING', instancesWithHipache.length, instancesWithHipache)
+          console.log('MISSING', instancesMissingHipache.length, instancesMissingHipache)
+          process.exit(0)
+        })
       })
+
     })
   })
 })
