@@ -92,7 +92,7 @@ server.start(function () {
               // hostname: ex, 2zrr96-pd-php-test-staging-paulrduffy.runnableapp.com
               [instance.shortHash,
                 '-',
-                instance.name,
+                instance.contextVersion.appCodeVersions[0].lowerRepo.split('/')[1],
                 '-staging-',
                 process.env.ORG,
                 '.',
