@@ -36,12 +36,21 @@ var Instance = require('models/mongo/instance')
 var instancesMissingHipache = []
 var instancesWithHipache = []
 
+var userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like' +
+  ' Gecko) Chrome/47.0.2526.80 Safari/537.36'
+
 server.start(function () {
   console.log('server started')
   mongoose.connect(process.env.MONGO, function () {
     console.log('mongo connected')
 
-    request.get('https://api.github.com/users/' + process.env.ORG, function (err, res, body) {
+    request.get({
+      method: 'GET',
+      url: 'https://api.github.com/users/' + process.env.ORG,
+      headers: {
+        'User-Agent': userAgent
+      }
+    }, function (err, res, body) {
       if (err) {
         throw err
       }
