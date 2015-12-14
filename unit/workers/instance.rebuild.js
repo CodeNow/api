@@ -10,6 +10,7 @@ var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var Code = require('code')
 var expect = Code.expect
+var Promise = require('bluebird')
 var Runnable = require('runnable')
 var Instance = require('models/mongo/instance')
 
@@ -94,7 +95,9 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       var fetchError = new Error('Fetch error')
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(fetchError)
+        var rejectionPromise = Promise.reject(fetchError)
+        rejectionPromise.suppressUnhandledRejections()
+        Instance.findById.returns(rejectionPromise)
         done()
       })
       it('should callback with error', function (done) {
@@ -113,7 +116,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
     describe('instance not found', function () {
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(null, null)
+        Instance.findById.returns(Promise.resolve(null))
         done()
       })
       it('should callback with error', function (done) {
@@ -143,7 +146,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       }
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(null, testInstance)
+        Instance.findById.returns(Promise.resolve(testInstance))
         sinon.stub(Runnable.prototype, 'newBuild').returns(buildModel)
         sinon.spy(buildModel, 'deepCopy')
         done()
@@ -186,7 +189,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       }
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(null, testInstance)
+        Instance.findById.returns(Promise.resolve(testInstance))
         sinon.stub(Runnable.prototype, 'newBuild').returns(buildModel)
         sinon.spy(buildModel, 'deepCopy')
         sinon.spy(buildModel, 'build')
@@ -242,7 +245,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       }
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(null, testInstance)
+        Instance.findById.returns(Promise.resolve(testInstance))
         sinon.stub(Runnable.prototype, 'newBuild').returns(buildModel)
         sinon.stub(Runnable.prototype, 'newInstance').returns(instanceModel)
         sinon.spy(instanceModel, 'update')
@@ -302,7 +305,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       }
       beforeEach(function (done) {
         Runnable.prototype.githubLogin.yields(null)
-        Instance.findById.yields(null, testInstance)
+        Instance.findById.returns(Promise.resolve(testInstance))
         sinon.stub(Runnable.prototype, 'newBuild').returns(buildModel)
         sinon.stub(Runnable.prototype, 'newInstance').returns(instanceModel)
         sinon.spy(instanceModel, 'update')
