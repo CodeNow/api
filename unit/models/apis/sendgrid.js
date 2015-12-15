@@ -12,6 +12,7 @@ var sinon = require('sinon')
 var SendGridModel = require('models/apis/sendgrid')
 var Promise = require('bluebird')
 var lab = exports.lab = Lab.script()
+var noop = require('101/noop')
 
 var describe = lab.describe
 var expect = Code.expect
@@ -19,6 +20,7 @@ var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 var it = lab.it
 var moduleName = path.relative(process.cwd(), __filename)
+var SendGridEmail = require('sendgrid/lib/email')
 
 function thisShouldNotBeCalled (cb) {
   return function (err) {
@@ -31,11 +33,16 @@ function thisShouldNotBeCalled (cb) {
 }
 describe('sendgrid: ' + moduleName, function () {
   describe('sendEmail', function () {
-    var sendgrid
+    var sendgrid = new SendGridModel()
     var error
 
     beforeEach(function (done) {
       sendgrid = new SendGridModel()
+      sendgrid._sendgrid = {
+        sendAsync: noop,
+        Email: SendGridEmail
+      }
+      sendgrid.logData = {}
       error = new Error('this is an error')
       done()
     })
@@ -153,7 +160,8 @@ describe('sendgrid: ' + moduleName, function () {
           displayName: 'nathan',
           id: 'sadfasf23r2q31234'
         }
-      }
+      },
+      findGithubOrgByGithubId: noop
     }
     var recipient = {
       email: 'nathan@runnable.com',
@@ -168,9 +176,17 @@ describe('sendgrid: ' + moduleName, function () {
 
     beforeEach(function (done) {
       sendgrid = new SendGridModel()
+      sendgrid._sendgrid = {
+        sendAsync: noop,
+        Email: SendGridEmail
+      }
+      sendgrid.logData = {}
       done()
     })
-
+    afterEach(function (done) {
+      sessionUser.findGithubOrgByGithubId.restore()
+      done()
+    })
     it('should attempt to send emails with the given arguments', function (done) {
       sinon.stub(sessionUser, 'findGithubOrgByGithubId').yieldsAsync(null, githubOrgResponse)
       sinon.stub(sendgrid, 'sendEmail').returns(Promise.resolve(true))
@@ -252,9 +268,19 @@ describe('sendgrid: ' + moduleName, function () {
     }
     var error = new Error('This is an error')
     var message = 'hello'
+    var sendgrid
 
+    beforeEach(function (done) {
+      sendgrid = new SendGridModel()
+      error = new Error('This is an error')
+      sendgrid._sendgrid = {
+        sendAsync: noop,
+        Email: SendGridEmail
+      }
+      sendgrid.logData = {}
+      done()
+    })
     it('should attempt to send admin emails with the given arguments', function (done) {
-      var sendgrid = new SendGridModel()
       sinon.stub(sendgrid, 'sendEmail').returns(Promise.resolve(true))
 
       sendgrid.inviteAdmin(recipient, sessionUser, message)
@@ -276,7 +302,6 @@ describe('sendgrid: ' + moduleName, function () {
     })
 
     it('should log the error and return it', function (done) {
-      var sendgrid = new SendGridModel()
       sinon.stub(sendgrid, 'sendEmail').returns(Promise.reject(error))
 
       sendgrid.inviteAdmin(recipient, sessionUser, message)
