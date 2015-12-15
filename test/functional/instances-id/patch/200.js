@@ -70,7 +70,10 @@ describe('200 PATCH /instances/:id', function () {
 
   before(function (done) {
     // container to update test w/ later
-    docker = ctx.docker = new Docker()
+    docker = ctx.docker = new Docker({
+      host: 'localhost',
+      port: 4243
+    })
     done()
   })
   before(function (done) {
