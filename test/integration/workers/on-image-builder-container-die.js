@@ -106,19 +106,10 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
           }
           ctx.cv.populate('infraCodeVersion', function () {
             if (err) { return done(err) }
-            var docker = new Docker()
-            ctx.cv.dockerHost = dockerHost
-            var opts = {
-              manualBuild: true,
-              sessionUser: ctx.user,
-              ownerUsername: ctx.user.accounts.github.username,
-              contextVersion: ctx.cv,
-              network: {
-                hostIp: '1.1.1.1'
-              },
-              tid: 1
-            }
-            ctx.cv.populate('infraCodeVersion', function () {
+            ctx.cv.infraCodeVersion = {
+              context: ctx.cv.context
+            } // mock
+            docker.createImageBuilder(opts, function (err, container) {
               if (err) { return done(err) }
               ctx.usedDockerContainer = container
               ContextVersion.updateBy('_id', ctx.cv._id, {
