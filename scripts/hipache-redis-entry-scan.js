@@ -85,6 +85,9 @@ server.start(function () {
            */
           var redisKeys = []
           instancePorts.forEach(function (port) {
+            var instanceName = (instance.contextVersion.appCodeVersions[0])
+              ? instance.contextVersion.appCodeVersions[0].lowerRepo.split('/')[1]
+              : instance.lowerName
             var directUrlKey = [
               'frontend:',
               port,
@@ -92,7 +95,7 @@ server.start(function () {
               // hostname: ex, 2zrr96-pd-php-test-staging-paulrduffy.runnableapp.com
               [instance.shortHash,
                 '-',
-                instance.contextVersion.appCodeVersions[0].lowerRepo.split('/')[1],
+                instanceName,
                 '-staging-',
                 process.env.ORG,
                 '.',
