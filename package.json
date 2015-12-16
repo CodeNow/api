@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "5.3.1",
+  "version": "5.5.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"

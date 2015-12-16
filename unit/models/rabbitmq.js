@@ -56,6 +56,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       done()
     })
   })
+
   describe('connect', function () {
     it('should call hermes connect and attach error handler', function (done) {
       var rabbit = new rabbitMQ.constructor()
@@ -111,6 +112,39 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       rabbit.hermesClient.emit('error', new Error('Some hermes error'))
     })
   })
+
+  describe('_validate', function () {
+    it('should pass validation', function (done) {
+      var payload = {
+        instance: {
+          _id: 1,
+          owner: {
+            github: 2
+          }
+        }
+      }
+      var keys = [ 'instance._id', 'instance.owner.github' ]
+      ctx.rabbitMQ._validate(payload, keys, 'job.name')
+      done()
+    })
+    it('should fail validation', function (done) {
+      var payload = {
+        instance: {
+          _id: 1,
+          owner: null
+        }
+      }
+      var keys = [ 'instance._id', 'instance.owner.github' ]
+      try {
+        ctx.rabbitMQ._validate(payload, keys, 'job.name')
+        done(new Error('Should never happen'))
+      } catch (e) {
+        expect(e.message).to.equal('Validation failed: "instance.owner.github" is required')
+        done()
+      }
+    })
+  })
+
   describe('CreateImageBuilderContainer', function () {
     beforeEach(function (done) {
       // this normally set after connect
@@ -554,6 +588,43 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0)
         done()
       })
+    })
+  })
+
+  describe('publishInstanceRebuild', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      sinon.spy(ctx.rabbitMQ, '_validate')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      ctx.rabbitMQ._validate.restore()
+      done()
+    })
+
+    it('should publish to the `instance.rebuild` queue', function (done) {
+      var payload = {
+        instanceId: '507f1f77bcf86cd799439011'
+      }
+      ctx.rabbitMQ.publishInstanceRebuild(payload)
+      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
+      var keys = [ 'instanceId' ]
+      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.rebuild')
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.rebuild', payload)
+      done()
+    })
+    it('should fail to publish to the `instance.rebuild` queue if validation failed', function (done) {
+      var payload = {}
+      expect(ctx.rabbitMQ.publishInstanceRebuild.bind(ctx.rabbitMQ, payload))
+        .to.throw(Error, /Validation failed/)
+      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
+      var keys = [ 'instanceId' ]
+      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.rebuild')
+      sinon.assert.notCalled(ctx.rabbitMQ.hermesClient.publish)
+      done()
     })
   })
 
