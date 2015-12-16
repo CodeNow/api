@@ -102,9 +102,12 @@ describe('docker: ' + moduleName, function () {
     })
 
     it('should throw if invalid host', function (done) {
+      var test
       expect(function () {
-        new Docker({ host: 1234 })
+        test = new Docker({ host: 1234 })
       }).to.throw()
+      // hack for standard
+      expect(test).to.not.exist()
       done()
     })
   }) // end constructor
