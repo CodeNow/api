@@ -9,8 +9,8 @@ var instanceIds = [
   ObjectId('5549acb46825b3100080a5c9'),
   ObjectId('54db9c96791e4a1000e898f9'),
   ObjectId('5593e47a1c50680d00d0c106'),
-  ObjectId('55b27bd263a8be0d00ce727d') 
-];
+  ObjectId('55b27bd263a8be0d00ce727d')
+]
 
 var x = db.instances.update({
   _id: { $in: instanceIds }
@@ -23,9 +23,7 @@ var x = db.instances.update({
     }
   }
 }, {
- multi: true
-});
+  multi: true
+})
 
-print(x);
-
-
+print(x)

@@ -1,10 +1,10 @@
-var url = require('url');
+var url = require('url')
 
 var defaultHeaders = {
   host: process.env.ROOT_DOMAIN,
   accept: '*/*',
   'content-type': 'application/json'
-};
+}
 
 function buildUrlAndPath (pathname) {
   return url.format({
@@ -12,7 +12,7 @@ function buildUrlAndPath (pathname) {
     slashes: true,
     host: process.env.ROOT_DOMAIN,
     pathname: pathname
-  });
+  })
 }
 
 module.exports = {
@@ -27,4 +27,4 @@ module.exports = {
     },
     headers: defaultHeaders
   }
-};
+}

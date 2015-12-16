@@ -12,7 +12,7 @@
 
     // Development.
     "debug"         : false,  // Allow debugger statements e.g. browser breakpoints.
-    "devel"         : true,   // Allow developments statements e.g. `console.log();`.
+    "devel"         : true,   // Allow developments statements e.g. `console.log()`.
 
 
     // ECMAScript 5.
@@ -31,15 +31,15 @@
     "evil"          : false,  // Tolerate use of `eval`.
     "expr"          : true,  // Tolerate `ExpressionStatement` as Programs.
     "forin"         : false,  // Tolerate `for in` loops without `hasOwnPrototype`.
-    "immed"         : true,   // Require immediate invocations to be wrapped in parens e.g. `( function(){}() );`
+    "immed"         : true,   // Require immediate invocations to be wrapped in parens e.g. `( function(){}() )`
     "latedef"       : false,   // Prohipit variable use before definition.
     "loopfunc"      : false,  // Allow functions to be defined within loops.
     "noarg"         : true,   // Prohibit use of `arguments.caller` and `arguments.callee`.
     "regexp"        : true,   // Prohibit `.` and `[^...]` in regular expressions.
     "regexdash"     : false,  // Tolerate unescaped last dash i.e. `[-...]`.
     "scripturl"     : true,   // Tolerate script-targeted URLs.
-    "shadow"        : false,  // Allows re-define variables later in code e.g. `var x=1; x=2;`.
-    "supernew"      : false,  // Tolerate `new function () { ... };` and `new Object;`.
+    "shadow"        : false,  // Allows re-define variables later in code e.g. `var x=1 x=2`.
+    "supernew"      : false,  // Tolerate `new function () { ... }` and `new Object`.
     "undef"         : false,   // Require all non-global variables be declared before they are used.
 
 

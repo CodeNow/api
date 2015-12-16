@@ -1,32 +1,32 @@
-var nock = require('nock');
-var multiline = require('multiline');
-var keypather = require('keypather')();
-var randStr = require('randomstring').generate;
+var nock = require('nock')
+var multiline = require('multiline')
+var keypather = require('keypather')()
+var randStr = require('randomstring').generate
 
-var _orgId = 1000; // these should not intersect with github user-ids
+var _orgId = 1000 // these should not intersect with github user-ids
 function nextOrgId () {
-  _orgId++;
-  return _orgId;
+  _orgId++
+  return _orgId
 }
 
 module.exports = function (userObject, orgId, orgName) {
   if (arguments.length === 2) {
-    orgName = orgId;
-    orgId = userObject;
-    userObject = {};
+    orgName = orgId
+    orgId = userObject
+    userObject = {}
   }
   var token = keypather.get(userObject, 'accounts.github.access_token') ||
-    keypather.get(userObject, 'attrs.accounts.github.access_token');
-  orgName = orgName || randStr(5);
-  orgId = orgId || nextOrgId();
-  var n = nock('https://api.github.com:443');
+    keypather.get(userObject, 'attrs.accounts.github.access_token')
+  orgName = orgName || randStr(5)
+  orgId = orgId || nextOrgId()
+  var n = nock('https://api.github.com:443')
   if (token) {
-    n = n.get('/user/orgs?access_token=' + token);
+    n = n.get('/user/orgs?access_token=' + token)
   } else {
     n = n.filteringPath(/\/user\/orgs\?.+/, '/user/orgs')
-      .get('/user/orgs');
+      .get('/user/orgs')
   }
-  n.reply(200, [
+  n = n.reply(200, [
     {
       login: orgName,
       id: orgId,
@@ -36,7 +36,7 @@ module.exports = function (userObject, orgId, orgName) {
   ], {
     server: 'GitHub.com',
     date: 'Tue, 24 Jun 2014 23:32:26 GMT',
-    'content-type': 'application/json; charset=utf-8',
+    'content-type': 'application/json charset=utf-8',
     status: '200 OK',
     'x-ratelimit-limit': '5000',
     'x-ratelimit-remaining': '4969',
@@ -47,13 +47,13 @@ module.exports = function (userObject, orgId, orgName) {
     'x-oauth-scopes': 'read:repo_hook, repo, user:email',
     'x-accepted-oauth-scopes': '',
     vary: 'Accept, Authorization, Cookie, X-GitHub-OTP',
-    'x-github-media-type': 'github.v3; format=json',
-    'x-xss-protection': '1; mode=block',
+    'x-github-media-type': 'github.v3 format=json',
+    'x-xss-protection': '1 mode=block',
     'x-frame-options': 'deny',
-    'content-security-policy': 'default-src \'none\'',
+    'content-security-policy': "default-src 'none'",
     'content-length': '1158',
     'access-control-allow-credentials': 'true',
-    'access-control-expose-headers': multiline(function () {/*
+    'access-control-expose-headers': multiline(function () { /*
       'ETag,
       Link,
       X-GitHub-OTP,
@@ -70,9 +70,10 @@ module.exports = function (userObject, orgId, orgName) {
     'strict-transport-security': 'max-age=31536000',
     'x-content-type-options': 'nosniff',
     'x-served-by': '03d91026ad8428f4d9966d7434f9d82e'
-  });
+  })
   return {
+    scope: n,
     orgName: orgName,
     orgId: orgId
-  };
-};
+  }
+}
