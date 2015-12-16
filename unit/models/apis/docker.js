@@ -71,10 +71,8 @@ describe('docker: ' + moduleName, function () {
 
   describe('constructor', function () {
     it('should load docker with no args with swarm', function (done) {
-      var client
-      expect(function () {
-        client = new Docker()
-      }).to.not.throw()
+      var client = new Docker()
+
       var parsed = url.parse(process.env.SWARM_HOST)
       expect(client.dockerHost).to.equal(parsed.protocol + '//' + parsed.host)
       expect(client.port).to.equal(parsed.port)
@@ -83,10 +81,8 @@ describe('docker: ' + moduleName, function () {
     })
 
     it('should load docker with non host args with swarm', function (done) {
-      var client
-      expect(function () {
-        client = new Docker({ timeout: 99999 })
-      }).to.not.throw()
+      var client = new Docker({ timeout: 99999 })
+
       var parsed = url.parse(process.env.SWARM_HOST)
       expect(client.dockerHost).to.equal(parsed.protocol + '//' + parsed.host)
       expect(client.port).to.equal(parsed.port)
@@ -95,15 +91,20 @@ describe('docker: ' + moduleName, function () {
     })
 
     it('should load docker with host args with passed host', function (done) {
-      var client
       var testHost = 'http://test:4242'
-      expect(function () {
-        client = new Docker({ host: testHost })
-      }).to.not.throw()
+      var client = new Docker({ host: testHost })
+
       var parsed = url.parse(testHost)
       expect(client.dockerHost).to.equal(parsed.protocol + '//' + parsed.host)
       expect(client.port).to.equal(parsed.port)
       expect(client.docker).to.exist()
+      done()
+    })
+
+    it('should throw if invalid host', function (done) {
+      expect(function () {
+        new Docker({ host: 1234 })
+      }).to.throw()
       done()
     })
   }) // end constructor
