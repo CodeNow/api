@@ -240,6 +240,26 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end _isOutOfResources
 
+  describe('_isImageNotFoundErr', function () {
+    it('should return true if error matches', function (done) {
+      var result = Docker._isImageNotFoundErr({
+        statusCode: 500,
+        message: 'image 157693/558dae5e7562460d0024f5a8:5668ccbacdab6c1e0054a780 not found'
+      })
+      expect(result).to.equal(true)
+      done()
+    })
+
+    it('should return false if error does not match', function (done) {
+      var result = Docker._isImageNotFoundErr({
+        statusCode: 400,
+        message: 'unknown error'
+      })
+      expect(result).to.equal(false)
+      done()
+    })
+  }) // end _isImageNotFoundErr
+
   describe('createImageBuilder', function () {
     beforeEach(function (done) {
       ctx.mockDockerTag = 'mockDockerTag'
