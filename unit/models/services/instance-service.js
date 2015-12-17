@@ -969,7 +969,7 @@ describe('InstanceService: ' + moduleName, function () {
 
     beforeEach(function (done) {
       sinon.stub(User, 'findByGithubIdAsync').returns(Promise.resolve())
-      sinon.stub(messenger, 'emitInstanceUpdateAsync')
+      sinon.stub(messenger, 'emitInstanceUpdate')
       instance = {
         createdBy: {
           github: 123454
@@ -983,7 +983,7 @@ describe('InstanceService: ' + moduleName, function () {
 
     afterEach(function (done) {
       User.findByGithubIdAsync.restore()
-      messenger.emitInstanceUpdateAsync.restore()
+      messenger.emitInstanceUpdate.restore()
       done()
     })
 
@@ -999,7 +999,7 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.notCalled(instance.populateModelsAsync)
           sinon.assert.notCalled(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.notCalled(instance.updateCvAsync)
-          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdate)
           done()
         })
     })
@@ -1037,7 +1037,7 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.notCalled(instance.updateCvAsync)
-          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdate)
           done()
         })
     })
@@ -1054,7 +1054,7 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.notCalled(instance.updateCvAsync)
-          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdate)
           done()
         })
     })
@@ -1072,14 +1072,12 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     it('should fail is the messenger fails', function (done) {
-      var testErr = 'Emit Instance Update Failed'
-      var rejectionPromise = Promise.reject(testErr)
-      rejectionPromise.suppressUnhandledRejections()
-      messenger.emitInstanceUpdateAsync.returns(rejectionPromise)
+      var testErr = new Error('Emit Instance Update Failed')
+      messenger.emitInstanceUpdate.throws(testErr)
 
       InstanceService.emitInstanceUpdate(instance)
         .asCallback(function (err) {
-          expect(err).to.equal(testErr)
+          expect(err.message).to.equal(testErr.message)
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.notCalled(instance.updateCvAsync)
@@ -1091,8 +1089,8 @@ describe('InstanceService: ' + moduleName, function () {
       InstanceService.emitInstanceUpdate(instance)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
-          sinon.assert.calledWith(messenger.emitInstanceUpdateAsync, instance)
+          sinon.assert.calledOnce(messenger.emitInstanceUpdate)
+          sinon.assert.calledWith(messenger.emitInstanceUpdate, instance)
           done()
         })
     })
@@ -1104,10 +1102,10 @@ describe('InstanceService: ' + moduleName, function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
-          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
-          sinon.assert.calledWith(messenger.emitInstanceUpdateAsync, instance, updateMessage)
+          sinon.assert.calledOnce(messenger.emitInstanceUpdate)
+          sinon.assert.calledWith(messenger.emitInstanceUpdate, instance, updateMessage)
           sinon.assert.notCalled(instance.updateCvAsync)
-          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, messenger.emitInstanceUpdateAsync)
+          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, messenger.emitInstanceUpdate)
           done()
         })
     })
@@ -1118,9 +1116,9 @@ describe('InstanceService: ' + moduleName, function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
-          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
+          sinon.assert.calledOnce(messenger.emitInstanceUpdate)
           sinon.assert.calledOnce(instance.updateCvAsync)
-          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, instance.updateCvAsync, messenger.emitInstanceUpdateAsync)
+          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, instance.updateCvAsync, messenger.emitInstanceUpdate)
           done()
         })
     })

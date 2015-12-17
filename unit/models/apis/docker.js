@@ -22,6 +22,7 @@ var pluck = require('101/pluck')
 var path = require('path')
 var sinon = require('sinon')
 var through2 = require('through2')
+var url = require('url')
 
 var Docker = require('models/apis/docker')
 
@@ -65,8 +66,51 @@ var dockerLogs = {
 }
 
 describe('docker: ' + moduleName, function () {
-  var model = new Docker('http://fake.host.com')
+  var model = new Docker()
   var ctx
+
+  describe('constructor', function () {
+    it('should load docker with no args with swarm', function (done) {
+      var client = new Docker()
+
+      var parsed = url.parse(process.env.SWARM_HOST)
+      expect(client.dockerHost).to.equal(parsed.protocol + '//' + parsed.host)
+      expect(client.port).to.equal(parsed.port)
+      expect(client.docker).to.exist()
+      done()
+    })
+
+    it('should load docker with non host args with swarm', function (done) {
+      var client = new Docker({ timeout: 99999 })
+
+      var parsed = url.parse(process.env.SWARM_HOST)
+      expect(client.dockerHost).to.equal(parsed.protocol + '//' + parsed.host)
+      expect(client.port).to.equal(parsed.port)
+      expect(client.docker).to.exist()
+      done()
+    })
+
+    it('should load docker with host args with passed host', function (done) {
+      var testHost = 'http://test:4242'
+      var client = new Docker({ host: testHost })
+
+      var parsed = url.parse(testHost)
+      expect(client.dockerHost).to.equal(parsed.protocol + '//' + parsed.host)
+      expect(client.port).to.equal(parsed.port)
+      expect(client.docker).to.exist()
+      done()
+    })
+
+    it('should throw if invalid host', function (done) {
+      var test
+      expect(function () {
+        test = new Docker({ host: 1234 })
+      }).to.throw()
+      // hack for standard
+      expect(test).to.not.exist()
+      done()
+    })
+  }) // end constructor
 
   beforeEach(function (done) {
     ctx = {
@@ -239,6 +283,26 @@ describe('docker: ' + moduleName, function () {
       done()
     })
   }) // end _isOutOfResources
+
+  describe('_isImageNotFoundErr', function () {
+    it('should return true if error matches', function (done) {
+      var result = Docker._isImageNotFoundErr({
+        statusCode: 500,
+        message: 'image 157693/558dae5e7562460d0024f5a8:5668ccbacdab6c1e0054a780 not found'
+      })
+      expect(result).to.equal(true)
+      done()
+    })
+
+    it('should return false if error does not match', function (done) {
+      var result = Docker._isImageNotFoundErr({
+        statusCode: 400,
+        message: 'unknown error'
+      })
+      expect(result).to.equal(false)
+      done()
+    })
+  }) // end _isImageNotFoundErr
 
   describe('createImageBuilder', function () {
     beforeEach(function (done) {
@@ -1114,7 +1178,7 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should return callback with', function (done) {
-        var docker = new Docker('https://localhost:4242')
+        var docker = new Docker()
         docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err, result) {
           expect(err).to.be.undefined()
           expect(result.dockerContainer).to.equal('some-container-id')
@@ -1137,7 +1201,7 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should call original docker method 5 times and return error', function (done) {
-        var docker = new Docker('https://localhost:4242')
+        var docker = new Docker()
         docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err) {
           expect(err.output.statusCode).to.equal(404)
           expect(err.output.payload.message).to.equal('Docker error')
@@ -1147,7 +1211,7 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should not retry if ignoreStatusCode was specified', function (done) {
-        var docker = new Docker('https://localhost:4242')
+        var docker = new Docker()
         docker.inspectContainerWithRetry({ times: 6, ignoreStatusCode: 404 }, 'some-container-id', function (err) {
           expect(err).to.be.null()
           expect(Docker.prototype.inspectContainer.callCount).to.equal(1)
@@ -1177,7 +1241,7 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should call original docker method with retries on error and final success', function (done) {
-        var docker = new Docker('https://localhost:4242')
+        var docker = new Docker()
 
         docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err, result) {
           expect(err).to.be.undefined()
