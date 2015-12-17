@@ -508,7 +508,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       beforeEach(function (done) {
         sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
-          expect(eventName).to.equal('cluster-provision')
+          expect(eventName).to.equal('asg.create')
           expect(eventData).to.equal(ctx.validJobData)
         })
         done()
