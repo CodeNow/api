@@ -323,7 +323,7 @@ describe('sendgrid: ' + moduleName, function () {
         sendgrid = new SendGridModel()
         thisShouldNotBeCalled(done)()
       } catch (e) {
-        expect(e).to.be.an.error
+        expect(e).to.be.an.object()
         expect(e.message).to.equal('SENDGRID: stubbing sendgrid, no SENDGRID_KEY')
         done()
       }
@@ -334,7 +334,7 @@ describe('sendgrid: ' + moduleName, function () {
         sendgrid = new SendGridModel()
         thisShouldNotBeCalled(done)()
       } catch (e) {
-        expect(e).to.be.an.error
+        expect(e).to.be.an.object()
         expect(e.message).to.equal('SENDGRID: no user invite template id given, missing SENDGRID_USER_INVITE_TEMPLATE')
         done()
       }
