@@ -22,12 +22,8 @@ var it = lab.it
 var moduleName = path.relative(process.cwd(), __filename)
 
 function thisShouldNotBeCalled (cb) {
-  return function (err) {
-    if (err && err.message) {
-      cb(err)
-    } else {
-      cb(new Error('This shouldn\'t have been called'))
-    }
+  return function () {
+    cb(new Error('This shouldn\'t have been called'))
   }
 }
 describe('sendgrid: ' + moduleName, function () {
@@ -84,7 +80,7 @@ describe('sendgrid: ' + moduleName, function () {
               expect(emailObject.html, 'html').to.equal(emailOpts.htmlBody)
               done()
             })
-            .catch(thisShouldNotBeCalled(done))
+            .catch(done)
         })
 
         it('should send an email with substitutions and a template', function (done) {
@@ -118,7 +114,7 @@ describe('sendgrid: ' + moduleName, function () {
               })
               done()
             })
-            .catch(thisShouldNotBeCalled(done))
+            .catch(done)
         })
       })
       describe('failure', function () {
@@ -133,13 +129,12 @@ describe('sendgrid: ' + moduleName, function () {
             subject: 'asdasdasd',
             body: '11212312313'
           })
-            .then(thisShouldNotBeCalled(done))
             .catch(function (err) {
-              sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
               expect(error).to.equal(err)
+              sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
               done()
             })
-            .catch(thisShouldNotBeCalled(done))
+            .catch(done)
         })
 
         it('should throw a Boom error when the failure !isOperational', function (done) {
@@ -148,16 +143,15 @@ describe('sendgrid: ' + moduleName, function () {
             subject: 'asdasdasd',
             body: '11212312313'
           })
-            .then(thisShouldNotBeCalled(done))
             .catch(function (err) {
-              sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
+              expect(err).to.be.an.object()
               expect(err.isBoom).to.be.true()
               expect(err.output.payload.message).to.equal(error.message)
               expect(err.output.payload.error).to.equal('Bad Gateway')
-
+              sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
               done()
             })
-            .catch(thisShouldNotBeCalled(done))
+            .catch(done)
         })
       })
     })
@@ -224,7 +218,7 @@ describe('sendgrid: ' + moduleName, function () {
               expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('nathan')
               done()
             })
-            .catch(thisShouldNotBeCalled(done))
+            .catch(done)
         })
         describe('error handling', function () {
           it('should log the github error if one happens', function (done) {
@@ -232,7 +226,6 @@ describe('sendgrid: ' + moduleName, function () {
             sendgrid.sendEmail.returns(Promise.resolve(true))
 
             sendgrid.inviteUser(recipient, sessionUserMe, githubOrgResponse.id)
-              .then(thisShouldNotBeCalled(done))
               .catch(function (err) {
                 expect(err.message).to.equal(error.message)
                 sinon.assert.calledOnce(sessionUserMe.findGithubOrgByGithubId)
@@ -240,7 +233,7 @@ describe('sendgrid: ' + moduleName, function () {
                 sinon.assert.notCalled(sendgrid.sendEmail)
                 done()
               })
-              .catch(thisShouldNotBeCalled(done))
+              .catch(done)
           })
 
           it('should log the error from SendGrid if there is one', function (done) {
@@ -248,7 +241,6 @@ describe('sendgrid: ' + moduleName, function () {
             sendgrid.sendEmail.returns(rejectionPromise)
 
             sendgrid.inviteUser(recipient, sessionUserMe, githubOrgResponse.id)
-              .then(thisShouldNotBeCalled(done))
               .catch(function (err) {
                 expect(err.message).to.equal(error.message)
                 sinon.assert.calledOnce(sessionUserMe.findGithubOrgByGithubId)
@@ -256,7 +248,7 @@ describe('sendgrid: ' + moduleName, function () {
                 sinon.assert.calledOnce(sendgrid.sendEmail)
                 done()
               })
-              .catch(thisShouldNotBeCalled(done))
+              .catch(done)
           })
         })
       })
@@ -282,23 +274,19 @@ describe('sendgrid: ' + moduleName, function () {
               expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('ted')
               done()
             })
-            .catch(thisShouldNotBeCalled(done))
+            .catch(done)
         })
         describe('error handling', function () {
           it('should log the error from SendGrid if there is one', function (done) {
             sendgrid.sendEmail.returns(rejectionPromise)
 
             sendgrid.inviteAdmin(recipient, sessionUserThem, message)
-              .then(thisShouldNotBeCalled(done))
               .catch(function (err) {
-                if (!err) {
-                  return thisShouldNotBeCalled(done)()
-                }
                 expect(err).to.equal(error)
                 sinon.assert.calledOnce(sendgrid.sendEmail)
                 done()
               })
-              .catch(thisShouldNotBeCalled(done))
+              .catch(done)
           })
         })
       })
@@ -319,25 +307,13 @@ describe('sendgrid: ' + moduleName, function () {
     })
     it('should throw an exception if the key is missing', function (done) {
       process.env.SENDGRID_KEY = null
-      try {
-        sendgrid = new SendGridModel()
-        thisShouldNotBeCalled(done)()
-      } catch (e) {
-        expect(e).to.be.an.object()
-        expect(e.message).to.equal('SENDGRID: stubbing sendgrid, no SENDGRID_KEY')
-        done()
-      }
+      expect(function () { sendgrid = new SendGridModel() }).to.throw('SENDGRID: stubbing sendgrid, no SENDGRID_KEY')
+      done()
     })
     it('should throw an exception if the key is missing', function (done) {
       process.env.SENDGRID_USER_INVITE_TEMPLATE = null
-      try {
-        sendgrid = new SendGridModel()
-        thisShouldNotBeCalled(done)()
-      } catch (e) {
-        expect(e).to.be.an.object()
-        expect(e.message).to.equal('SENDGRID: no user invite template id given, missing SENDGRID_USER_INVITE_TEMPLATE')
-        done()
-      }
+      expect(function () { sendgrid = new SendGridModel() }).to.throw('SENDGRID: no user invite template id given, missing SENDGRID_USER_INVITE_TEMPLATE')
+      done()
     })
   })
 })
