@@ -15,12 +15,13 @@ var expect = Code.expect
 var request = require('request')
 var randStr = require('randomstring').generate
 var githubUserOrgsMock = require('./fixtures/mocks/github/user-orgs.js')
-var nock = require('nock')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
+var nock = require('nock')
 var sinon = require('sinon')
-var SendGrid = require('models/apis/sendgrid')
-var Promise = require('bluebird')
+
 var Boom = require('dat-middleware').Boom
+var Promise = require('bluebird')
+var SendGrid = require('models/apis/sendgrid')
 
 var api = require('./fixtures/api-control')
 var ctx = {
