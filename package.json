@@ -90,6 +90,7 @@
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.7.1",
     "runnable-hostname": "git+ssh://git@github.com:CodeNow/runnable-hostname#v1.0.4",
     "s3-stream-upload": "0.0.6",
+    "sendgrid": "^1.9.2",
     "shimmer": "^1.0.0",
     "simple-api-client": "^0.5.9",
     "slack-client": "^1.4.0",
@@ -102,8 +103,7 @@
     "underscore.string": "^3.0.2",
     "uuid": "~1.4.1",
     "ws": "^0.4.31",
-    "xtend": "3.0.0",
-    "sendgrid": "^1.9.2"
+    "xtend": "3.0.0"
   },
   "devDependencies": {
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.6",

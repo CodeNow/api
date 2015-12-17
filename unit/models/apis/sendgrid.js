@@ -20,7 +20,6 @@ var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 var it = lab.it
 var moduleName = path.relative(process.cwd(), __filename)
-var SendGridEmail = require('sendgrid/lib/email')
 
 function thisShouldNotBeCalled (cb) {
   return function (err) {
@@ -32,18 +31,28 @@ function thisShouldNotBeCalled (cb) {
   }
 }
 describe('sendgrid: ' + moduleName, function () {
-  describe('sendEmail', function () {
-    var sendgrid = new SendGridModel()
-    var error
-
+  var error
+  var sendgrid
+  var rejectionPromise
+  var successPromise
+  var sessionUserMe
+  var sessionUserThem
+  var recipient
+  var githubOrgResponse = {
+    login: 'AcmeCorp',
+    id: '1234sfasdf'
+  }
+  beforeEach(function (done) {
+    error = new Error('this is an error')
+    rejectionPromise = Promise.reject(error)
+    rejectionPromise.suppressUnhandledRejections()
+    successPromise = Promise.resolve(true)
+    done()
+  })
+  describe('testing all successfull functionality', function () {
     beforeEach(function (done) {
       sendgrid = new SendGridModel()
-      sendgrid._sendgrid = {
-        sendAsync: noop,
-        Email: SendGridEmail
-      }
-      sendgrid.logData = {}
-      error = new Error('this is an error')
+      sinon.stub(sendgrid._sendgrid, 'sendAsync')
       done()
     })
     afterEach(function (done) {
@@ -51,270 +60,284 @@ describe('sendgrid: ' + moduleName, function () {
       done()
     })
 
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(sendgrid._sendgrid, 'sendAsync').returns(Promise.resolve(true))
-        done()
-      })
-      it('should send emails with the given arguments', function (done) {
-        var emailOpts = {
-          email: 'hello',
-          subject: 'asdasdasd',
-          body: '11212312313',
-          htmlBody: 'asdfasdfadsfadsf'
-        }
+    describe('sendEmail', function () {
+      describe('success', function () {
+        beforeEach(function (done) {
+          sendgrid._sendgrid.sendAsync.returns(successPromise)
+          done()
+        })
+        it('should send emails with the given arguments', function (done) {
+          var emailOpts = {
+            email: 'hello',
+            subject: 'asdasdasd',
+            body: '11212312313',
+            htmlBody: 'asdfasdfadsfadsf'
+          }
 
-        sendgrid.sendEmail(emailOpts)
-          .then(function () {
-            sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
-            var emailObject = sendgrid._sendgrid.sendAsync.args[0][0]
-            expect(emailObject.to, 'to').to.equal(emailOpts.email)
-            expect(emailObject.subject, 'subject').to.equal(emailOpts.subject)
-            expect(emailObject.text, 'text').to.equal(emailOpts.body)
-            expect(emailObject.html, 'html').to.equal(emailOpts.htmlBody)
-            done()
-          })
-          .catch(thisShouldNotBeCalled(done))
-      })
-
-      it('should send an email with substitutions and a template', function (done) {
-        var emailOpts = {
-          email: 'hello',
-          subject: 'asdasdasd',
-          body: '11212312313',
-          htmlBody: 'asdfasdfadsfadsf',
-          substitutions: {
-            'hello': 'chickenbutt'
-          },
-          template: 'asdasdasd'
-        }
-
-        sendgrid.sendEmail(emailOpts)
-          .then(function () {
-            sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
-            var emailObject = sendgrid._sendgrid.sendAsync.args[0][0]
-            expect(emailObject.to, 'to').to.equal(emailOpts.email)
-            expect(emailObject.subject, 'subject').to.equal(emailOpts.subject)
-            expect(emailObject.text, 'text').to.equal(emailOpts.body)
-            expect(emailObject.html, 'html').to.equal(emailOpts.htmlBody)
-            expect(emailObject.smtpapi.header.sub.hello, 'sub').to.deep.equal([emailOpts.substitutions.hello])
-            expect(emailObject.smtpapi.header.filters, 'template').to.deep.equal({
-              'templates': {
-                'settings': {
-                  'enable': 1,
-                  'template_id': emailOpts.template
-                }
-              }
+          sendgrid.sendEmail(emailOpts)
+            .then(function () {
+              sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
+              var emailObject = sendgrid._sendgrid.sendAsync.args[0][0]
+              expect(emailObject.to, 'to').to.equal(emailOpts.email)
+              expect(emailObject.subject, 'subject').to.equal(emailOpts.subject)
+              expect(emailObject.text, 'text').to.equal(emailOpts.body)
+              expect(emailObject.html, 'html').to.equal(emailOpts.htmlBody)
+              done()
             })
-            done()
+            .catch(thisShouldNotBeCalled(done))
+        })
+
+        it('should send an email with substitutions and a template', function (done) {
+          var emailOpts = {
+            email: 'hello',
+            subject: 'asdasdasd',
+            body: '11212312313',
+            htmlBody: 'asdfasdfadsfadsf',
+            substitutions: {
+              'hello': 'chickenbutt'
+            },
+            template: 'asdasdasd'
+          }
+
+          sendgrid.sendEmail(emailOpts)
+            .then(function () {
+              sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
+              var emailObject = sendgrid._sendgrid.sendAsync.args[0][0]
+              expect(emailObject.to, 'to').to.equal(emailOpts.email)
+              expect(emailObject.subject, 'subject').to.equal(emailOpts.subject)
+              expect(emailObject.text, 'text').to.equal(emailOpts.body)
+              expect(emailObject.html, 'html').to.equal(emailOpts.htmlBody)
+              expect(emailObject.smtpapi.header.sub.hello, 'sub').to.deep.equal([emailOpts.substitutions.hello])
+              expect(emailObject.smtpapi.header.filters, 'template').to.deep.equal({
+                'templates': {
+                  'settings': {
+                    'enable': 1,
+                    'template_id': emailOpts.template
+                  }
+                }
+              })
+              done()
+            })
+            .catch(thisShouldNotBeCalled(done))
+        })
+      })
+      describe('failure', function () {
+        beforeEach(function (done) {
+          sendgrid._sendgrid.sendAsync.returns(rejectionPromise)
+          done()
+        })
+        it('should return the normal error when isOperational', function (done) {
+          error.isOperational = true
+          sendgrid.sendEmail({
+            email: 'hello',
+            subject: 'asdasdasd',
+            body: '11212312313'
           })
-          .catch(thisShouldNotBeCalled(done))
+            .then(thisShouldNotBeCalled(done))
+            .catch(function (err) {
+              sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
+              expect(error).to.equal(err)
+              done()
+            })
+            .catch(thisShouldNotBeCalled(done))
+        })
+
+        it('should throw a Boom error when the failure !isOperational', function (done) {
+          sendgrid.sendEmail({
+            email: 'hello',
+            subject: 'asdasdasd',
+            body: '11212312313'
+          })
+            .then(thisShouldNotBeCalled(done))
+            .catch(function (err) {
+              sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
+              expect(err.isBoom).to.be.true()
+              expect(err.output.payload.message).to.equal(error.message)
+              expect(err.output.payload.error).to.equal('Bad Gateway')
+
+              done()
+            })
+            .catch(thisShouldNotBeCalled(done))
+        })
       })
     })
+    describe('invite helper functions', function () {
+      beforeEach(function (done) {
+        githubOrgResponse = {
+          login: 'AcmeCorp',
+          id: '1234sfasdf'
+        }
+        sessionUserMe = {
+          accounts: {
+            github: {
+              displayName: 'nathan',
+              id: 'sadfasf23r2q31234'
+            }
+          },
+          findGithubOrgByGithubId: noop
+        }
+        sessionUserThem = {
+          email: 'ted@something.com',
+          accounts: {
+            github: {
+              displayName: 'ted',
+              id: 'sadfasf23r2q31234'
+            }
+          }
+        }
+        recipient = {
+          email: 'nathan@runnable.com',
+          github: 'adsfasdfadsf'
+        }
+        sinon.stub(sessionUserMe, 'findGithubOrgByGithubId')
+        sinon.stub(sendgrid, 'sendEmail')
+        done()
+      })
+      afterEach(function (done) {
+        sessionUserMe.findGithubOrgByGithubId.restore()
+        sendgrid.sendEmail.restore()
+        done()
+      })
+      describe('inviteUser (using sessionUserMe)', function () {
+        it('should attempt to send emails with the given arguments', function (done) {
+          sessionUserMe.findGithubOrgByGithubId.yieldsAsync(null, githubOrgResponse)
+          sendgrid.sendEmail.returns(Promise.resolve(true))
 
-    describe('failure', function () {
-      it('should return the normal error when isOperational', function (done) {
-        error.isOperational = true
-        sinon.stub(sendgrid._sendgrid, 'sendAsync').returns(Promise.reject(error))
+          sendgrid.inviteUser(recipient, sessionUserMe, githubOrgResponse.id)
+            .then(function () {
+              sinon.assert.calledOnce(sessionUserMe.findGithubOrgByGithubId)
+              sinon.assert.calledWith(sessionUserMe.findGithubOrgByGithubId, '1234sfasdf')
+              sinon.assert.calledOnce(sendgrid.sendEmail)
+              var sendEmailOptions = sendgrid.sendEmail.args[0][0]
 
-        sendgrid.sendEmail({
-          email: 'hello',
-          subject: 'asdasdasd',
-          body: '11212312313'
+              expect(sendEmailOptions.email, 'email').to.equal(recipient.email)
+              expect(sendEmailOptions.from, 'from').to.equal('invites@runnable.com')
+              expect(sendEmailOptions.fromname, 'fromname').to.equal('Runnable Invites')
+              expect(sendEmailOptions.subject, 'subject').to.equal('%requester% has invited you to Runnable')
+              expect(sendEmailOptions.body, 'body').to.contains('%requester% has invited you to the %orgName%')
+              expect(sendEmailOptions.htmlBody, 'htmlBody').to.contains('%requester% has invited you to the %orgName%')
+              expect(sendEmailOptions.htmlBody, 'htmlBody').to.contains('<br class="br">')
+              expect(sendEmailOptions.template, 'template').to.be.a.string()
+              expect(sendEmailOptions.substitutions, 'substitutions').to.be.an.object()
+              expect(sendEmailOptions.substitutions['%email%'], '%email%').to.equal('nathan@runnable.com')
+              expect(sendEmailOptions.substitutions['%orgName%'], '%orgName%').to.equal('AcmeCorp')
+              expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('nathan')
+              done()
+            })
+            .catch(thisShouldNotBeCalled(done))
         })
-          .then(thisShouldNotBeCalled(done))
-          .catch(function (err) {
-            sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
-            expect(error).to.equal(err)
-            done()
+        describe('error handling', function () {
+          it('should log the github error if one happens', function (done) {
+            sessionUserMe.findGithubOrgByGithubId.yieldsAsync(error)
+            sendgrid.sendEmail.returns(Promise.resolve(true))
+
+            sendgrid.inviteUser(recipient, sessionUserMe, githubOrgResponse.id)
+              .then(thisShouldNotBeCalled(done))
+              .catch(function (err) {
+                expect(err.message).to.equal(error.message)
+                sinon.assert.calledOnce(sessionUserMe.findGithubOrgByGithubId)
+                sinon.assert.calledWith(sessionUserMe.findGithubOrgByGithubId, '1234sfasdf')
+                sinon.assert.notCalled(sendgrid.sendEmail)
+                done()
+              })
+              .catch(thisShouldNotBeCalled(done))
           })
-          .catch(thisShouldNotBeCalled(done))
+
+          it('should log the error from SendGrid if there is one', function (done) {
+            sessionUserMe.findGithubOrgByGithubId.yieldsAsync(null, githubOrgResponse)
+            sendgrid.sendEmail.returns(rejectionPromise)
+
+            sendgrid.inviteUser(recipient, sessionUserMe, githubOrgResponse.id)
+              .then(thisShouldNotBeCalled(done))
+              .catch(function (err) {
+                expect(err.message).to.equal(error.message)
+                sinon.assert.calledOnce(sessionUserMe.findGithubOrgByGithubId)
+                sinon.assert.calledWith(sessionUserMe.findGithubOrgByGithubId, '1234sfasdf')
+                sinon.assert.calledOnce(sendgrid.sendEmail)
+                done()
+              })
+              .catch(thisShouldNotBeCalled(done))
+          })
+        })
       })
 
-      it('should throw a Boom error when the failure !isOperational', function (done) {
-        sinon.stub(sendgrid._sendgrid, 'sendAsync').returns(Promise.reject(error))
+      describe('inviteAdmin (using sessionUserThem)', function () {
+        var message = 'hello'
 
-        sendgrid.sendEmail({
-          email: 'hello',
-          subject: 'asdasdasd',
-          body: '11212312313'
+        it('should attempt to send admin emails with the given arguments', function (done) {
+          sendgrid.sendEmail.returns(Promise.resolve(true))
+
+          sendgrid.inviteAdmin(recipient, sessionUserThem, message)
+            .then(function () {
+              sinon.assert.calledOnce(sendgrid.sendEmail)
+              var sendEmailOptions = sendgrid.sendEmail.args[0][0]
+
+              expect(sendEmailOptions.email, 'email').to.equal(recipient.email)
+              expect(sendEmailOptions.from, 'from').to.equal('ted@something.com')
+              expect(sendEmailOptions.fromname, 'fromname').to.equal('ted')
+              expect(sendEmailOptions.subject, 'subject').to.equal('%requester% has invited you to be an admin for a Runnable Team')
+              expect(sendEmailOptions.body, 'body').to.contains(message)
+              expect(sendEmailOptions.template, 'template').to.be.undefined()
+              expect(sendEmailOptions.substitutions, 'substitutions').to.be.an.object()
+              expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('ted')
+              done()
+            })
+            .catch(thisShouldNotBeCalled(done))
         })
-          .then(thisShouldNotBeCalled(done))
-          .catch(function (err) {
-            sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
-            expect(err.isBoom).to.be.true()
-            expect(err.output.payload.message).to.equal(error.message)
-            expect(err.output.payload.error).to.equal('Bad Gateway')
+        describe('error handling', function () {
+          it('should log the error from SendGrid if there is one', function (done) {
+            sendgrid.sendEmail.returns(rejectionPromise)
 
-            done()
+            sendgrid.inviteAdmin(recipient, sessionUserThem, message)
+              .then(thisShouldNotBeCalled(done))
+              .catch(function (err) {
+                if (!err) {
+                  return thisShouldNotBeCalled(done)()
+                }
+                expect(err).to.equal(error)
+                sinon.assert.calledOnce(sendgrid.sendEmail)
+                done()
+              })
+              .catch(thisShouldNotBeCalled(done))
           })
-          .catch(thisShouldNotBeCalled(done))
+        })
       })
     })
   })
-
-  describe('inviteUser', function () {
-    var sessionUser = {
-      accounts: {
-        github: {
-          displayName: 'nathan',
-          id: 'sadfasf23r2q31234'
-        }
-      },
-      findGithubOrgByGithubId: noop
-    }
-    var recipient = {
-      email: 'nathan@runnable.com',
-      github: 'adsfasdfadsf'
-    }
-    var githubOrgResponse = {
-      login: 'AcmeCorp',
-      id: '1234sfasdf'
-    }
-    var error = new Error('This is an error')
-    var sendgrid
-
+  describe('Testing the ENV requirement', function () {
+    var SENDGRID_KEY_backup
+    var SENDGRID_USER_INVITE_TEMPLATE_backup
     beforeEach(function (done) {
-      sendgrid = new SendGridModel()
-      sendgrid._sendgrid = {
-        sendAsync: noop,
-        Email: SendGridEmail
-      }
-      sendgrid.logData = {}
+      SENDGRID_KEY_backup = process.env.SENDGRID_KEY
+      SENDGRID_USER_INVITE_TEMPLATE_backup = process.env.SENDGRID_USER_INVITE_TEMPLATE
       done()
     })
     afterEach(function (done) {
-      sessionUser.findGithubOrgByGithubId.restore()
+      process.env.SENDGRID_KEY = SENDGRID_KEY_backup
+      process.env.SENDGRID_USER_INVITE_TEMPLATE = SENDGRID_USER_INVITE_TEMPLATE_backup
       done()
     })
-    it('should attempt to send emails with the given arguments', function (done) {
-      sinon.stub(sessionUser, 'findGithubOrgByGithubId').yieldsAsync(null, githubOrgResponse)
-      sinon.stub(sendgrid, 'sendEmail').returns(Promise.resolve(true))
-
-      sendgrid.inviteUser(recipient, sessionUser, githubOrgResponse.id)
-        .then(function () {
-          sinon.assert.calledOnce(sessionUser.findGithubOrgByGithubId)
-          sinon.assert.calledWith(sessionUser.findGithubOrgByGithubId, '1234sfasdf')
-          sinon.assert.calledOnce(sendgrid.sendEmail)
-          var sendEmailOptions = sendgrid.sendEmail.args[0][0]
-
-          expect(sendEmailOptions.email, 'email').to.equal(recipient.email)
-          expect(sendEmailOptions.from, 'from').to.equal('invites@runnable.com')
-          expect(sendEmailOptions.fromname, 'fromname').to.equal('Runnable Invites')
-          expect(sendEmailOptions.subject, 'subject').to.equal('%requester% has invited you to Runnable')
-          expect(sendEmailOptions.body, 'body').to.contains('%requester% has invited you to the %orgName%')
-          expect(sendEmailOptions.htmlBody, 'htmlBody').to.contains('%requester% has invited you to the %orgName%')
-          expect(sendEmailOptions.htmlBody, 'htmlBody').to.contains('<br class="br">')
-          expect(sendEmailOptions.template, 'template').to.be.a.string()
-          expect(sendEmailOptions.substitutions, 'substitutions').to.be.an.object()
-          expect(sendEmailOptions.substitutions['%email%'], '%email%').to.equal('nathan@runnable.com')
-          expect(sendEmailOptions.substitutions['%orgName%'], '%orgName%').to.equal('AcmeCorp')
-          expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('nathan')
-          done()
-        })
-        .catch(thisShouldNotBeCalled(done))
-    })
-
-    it('should log the github error if one happens', function (done) {
-      sinon.stub(sessionUser, 'findGithubOrgByGithubId').yieldsAsync(error)
-      sinon.stub(sendgrid, 'sendEmail').returns(Promise.resolve(true))
-
-      sendgrid.inviteUser(recipient, sessionUser, githubOrgResponse.id)
-        .then(thisShouldNotBeCalled(done))
-        .catch(function (err) {
-          expect(err.message).to.equal(error.message)
-          sinon.assert.calledOnce(sessionUser.findGithubOrgByGithubId)
-          sinon.assert.calledWith(sessionUser.findGithubOrgByGithubId, '1234sfasdf')
-          sinon.assert.notCalled(sendgrid.sendEmail)
-          done()
-        })
-        .catch(thisShouldNotBeCalled(done))
-    })
-
-    it('should log the error and return it', function (done) {
-      sinon.stub(sessionUser, 'findGithubOrgByGithubId').yieldsAsync(null, githubOrgResponse)
-      // Stub this like this so that the rejected promise isn't generated until the function is called
-      // If you do it as a .returns, the promise is created immediately, and it throws a warning
-      // during the test
-      sendgrid.sendEmail = sinon.spy(function () {
-        return Promise.reject(error)
-      })
-      sendgrid.inviteUser(recipient, sessionUser, githubOrgResponse.id)
-        .then(thisShouldNotBeCalled(done))
-        .catch(function (err) {
-          expect(err.message).to.equal(error.message)
-          sinon.assert.calledOnce(sessionUser.findGithubOrgByGithubId)
-          sinon.assert.calledWith(sessionUser.findGithubOrgByGithubId, '1234sfasdf')
-          sinon.assert.calledOnce(sendgrid.sendEmail)
-          done()
-        })
-        .catch(thisShouldNotBeCalled(done))
-    })
-  })
-
-  describe('inviteAdmin', function () {
-    var sessionUser = {
-      email: 'ted@something.com',
-      accounts: {
-        github: {
-          displayName: 'ted',
-          id: 'sadfasf23r2q31234'
-        }
+    it('should throw an exception if the key is missing', function (done) {
+      process.env.SENDGRID_KEY = null
+      try {
+        sendgrid = new SendGridModel()
+        thisShouldNotBeCalled(done)()
+      } catch (e) {
+        expect(e).to.be.an.error
+        expect(e.message).to.equal('SENDGRID: stubbing sendgrid, no SENDGRID_KEY')
+        done()
       }
-    }
-    var recipient = {
-      email: 'nathan@runnable.com',
-      github: 'adsfasdfadsf'
-    }
-    var error = new Error('This is an error')
-    var message = 'hello'
-    var sendgrid
-
-    beforeEach(function (done) {
-      sendgrid = new SendGridModel()
-      error = new Error('This is an error')
-      sendgrid._sendgrid = {
-        sendAsync: noop,
-        Email: SendGridEmail
+    })
+    it('should throw an exception if the key is missing', function (done) {
+      process.env.SENDGRID_USER_INVITE_TEMPLATE = null
+      try {
+        sendgrid = new SendGridModel()
+        thisShouldNotBeCalled(done)()
+      } catch (e) {
+        expect(e).to.be.an.error
+        expect(e.message).to.equal('SENDGRID: no user invite template id given, missing SENDGRID_USER_INVITE_TEMPLATE')
+        done()
       }
-      sendgrid.logData = {}
-      done()
-    })
-    it('should attempt to send admin emails with the given arguments', function (done) {
-      sinon.stub(sendgrid, 'sendEmail').returns(Promise.resolve(true))
-
-      sendgrid.inviteAdmin(recipient, sessionUser, message)
-        .then(function () {
-          sinon.assert.calledOnce(sendgrid.sendEmail)
-          var sendEmailOptions = sendgrid.sendEmail.args[0][0]
-
-          expect(sendEmailOptions.email, 'email').to.equal(recipient.email)
-          expect(sendEmailOptions.from, 'from').to.equal('ted@something.com')
-          expect(sendEmailOptions.fromname, 'fromname').to.equal('ted')
-          expect(sendEmailOptions.subject, 'subject').to.equal('%requester% has invited you to be an admin for a Runnable Team')
-          expect(sendEmailOptions.body, 'body').to.contains(message)
-          expect(sendEmailOptions.template, 'template').to.be.undefined()
-          expect(sendEmailOptions.substitutions, 'substitutions').to.be.an.object()
-          expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('ted')
-          done()
-        })
-        .catch(thisShouldNotBeCalled(done))
-    })
-
-    it('should log the error and return it', function (done) {
-      sinon.stub(sendgrid, 'sendEmail').returns(Promise.reject(error))
-
-      sendgrid.inviteAdmin(recipient, sessionUser, message)
-        .then(thisShouldNotBeCalled(done))
-        .catch(function (err) {
-          if (!err) {
-            return thisShouldNotBeCalled(done)()
-          }
-          expect(err).to.equal(error)
-          sinon.assert.calledOnce(sendgrid.sendEmail)
-          done()
-        })
-        .catch(thisShouldNotBeCalled(done))
     })
   })
 })
