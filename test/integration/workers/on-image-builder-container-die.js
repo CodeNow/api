@@ -92,7 +92,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         })
         function createImageBuilder (err) {
           if (err) { return done(err) }
-          var docker = new Docker(process.env.SWARM_HOST)
+          var docker = new Docker()
           ctx.cv.dockerHost = process.env.SWARM_HOST
           var opts = {
             manualBuild: true,

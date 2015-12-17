@@ -263,7 +263,7 @@ expects.deletedContainer = function (container, cb) {
   if (!container.dockerContainer) {
     throw new Error('container must have dockerContainer')
   }
-  var docker = new Docker(container.dockerHost)
+  var docker = new Docker()
   docker.inspectContainer(container, function (err) {
     expect(err, 'deleted container ' + container.dockerContainer).to.exist()
     expect(err.output.statusCode, 'deleted container ' + container.dockerContainer).to.equal(404)
