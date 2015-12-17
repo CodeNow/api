@@ -21,11 +21,6 @@ var afterEach = lab.afterEach
 var it = lab.it
 var moduleName = path.relative(process.cwd(), __filename)
 
-function thisShouldNotBeCalled (cb) {
-  return function () {
-    cb(new Error('This shouldn\'t have been called'))
-  }
-}
 describe('sendgrid: ' + moduleName, function () {
   var error
   var sendgrid
