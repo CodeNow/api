@@ -185,7 +185,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  describe('#findActiveInstancesByDockerHost', function () {
+  describe('#findInstancesRunningOrStartingByDockerHost', function () {
     var instance1
     var instance2
     var instance3
@@ -225,16 +225,24 @@ describe('Instance Model Tests ' + moduleName, function () {
       instance4.save(done)
     })
     it('should get all instances from testHost', function (done) {
-      Instance.findActiveInstancesByDockerHost(testHost, function (err, instances) {
+      Instance.findInstancesRunningOrStartingByDockerHost(testHost, function (err, instances) {
         expect(err).to.be.null()
-        expect(instances.length).to.equal(3)
+        expect(instances.length).to.equal(2)
         instances.forEach(function (instance) {
+          expect(instance._id).to.not.equal(instance1._id)
           expect(instance._id).to.not.equal(instance4._id)
         })
         done()
       })
     })
-  }) // end findActiveInstancesByDockerHost
+    it('should get an [] if no instances were found', function (done) {
+      Instance.findInstancesRunningOrStartingByDockerHost('http://10.0.0.3:4242', function (err, instances) {
+        expect(err).to.be.null()
+        expect(instances.length).to.equal(0)
+        done()
+      })
+    })
+  }) // end findInstancesRunningOrStartingByDockerHost
 
   describe('#setStoppingAsStoppedByDockerHost', function () {
     var dockerHost = 'http://10.0.0.1:4242'
@@ -612,6 +620,51 @@ describe('Instance Model Tests ' + moduleName, function () {
         if (err) { return done(err) }
         expect(insts.length).to.equal(0)
         done()
+      })
+    })
+  })
+
+  describe('#updateContextVersion', function () {
+    var id = '1234'
+    var updateObj = {
+      dockRemovedNeedsUserConfirmation: false
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'update').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.update.restore()
+      done()
+    })
+    it('should call the update command in mongo', function (done) {
+      Instance.updateContextVersion(id, updateObj, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.update)
+        sinon.assert.calledWith(Instance.update, {
+          'contextVersion.id': id
+        }, {
+          $set: {
+            'contextVersion.dockRemovedNeedsUserConfirmation': false
+          }
+        }, {
+          multi: true
+        }, sinon.match.func)
+        done()
+      })
+    })
+
+    describe('when mongo fails', function () {
+      var error = new Error('Mongo Error')
+      beforeEach(function (done) {
+        Instance.update.yieldsAsync(error)
+        done()
+      })
+      it('should return the error', function (done) {
+        Instance.updateContextVersion(id, updateObj, function (err) {
+          expect(err).to.equal(error)
+          done()
+        })
       })
     })
   })

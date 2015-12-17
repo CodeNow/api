@@ -12,6 +12,7 @@ var afterEach = lab.afterEach
 var expect = require('code').expect
 var api = require('../../fixtures/api-control')
 var dock = require('../../fixtures/dock')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 var createCount = require('callback-count')
@@ -28,6 +29,12 @@ describe('Dependencies - /instances/:id/dependencies', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return []
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   describe('User Instances', function () {
     beforeEach(function (done) {

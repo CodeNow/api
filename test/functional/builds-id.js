@@ -10,6 +10,7 @@ var after = lab.after
 var afterEach = lab.afterEach
 
 var api = require('./fixtures/api-control')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var expects = require('./fixtures/expects')
 
@@ -29,6 +30,12 @@ function createModeratorBuild (build, done) {
     done(err)
   })
 }
+beforeEach(
+  mockGetUserById.stubBefore(function () {
+    return []
+  })
+)
+afterEach(mockGetUserById.stubAfter)
 
 describe('Build - /builds/:id', function () {
   ctx = {}

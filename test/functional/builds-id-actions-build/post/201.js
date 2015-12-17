@@ -30,6 +30,8 @@ var multi = require('./../../fixtures/multi-factory')
 var primus = require('./../../fixtures/primus')
 var randStr = require('randomstring').generate
 
+var mockGetUserById = require('./../../fixtures/mocks/github/getByUserId')
+
 describe('201 POST /builds/:id/actions/build', function () {
   var ctx = {}
 
@@ -52,6 +54,22 @@ describe('201 POST /builds/:id/actions/build', function () {
   beforeEach(function (done) {
     primus.joinOrgRoom(ctx.user.json().accounts.github.id, done)
   })
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 11111,
+        username: 'Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   describe('for User', function () {
     beforeEach(function (done) {
@@ -290,7 +308,7 @@ function itShouldBuildTheBuild (ctx) {
           ctx.build.fetch(expects.success(200, ctx.expectBuilt, function (err) {
             if (err) { return done(err) }
 
-            var docker = new Docker(cv.dockerHost)
+            var docker = new Docker()
             docker.docker.getContainer(cv.containerId).inspect(function (err, data) {
               if (err) { return done(err) }
 

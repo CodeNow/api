@@ -230,7 +230,7 @@ describe('InstanceService: ' + moduleName, function () {
     })
   })
 
-  describe('updateOnContainerStart', function () {
+  describe('modifyExistingContainerInspect', function () {
     describe('with db calls', function () {
       var ctx = {}
 
@@ -280,7 +280,7 @@ describe('InstanceService: ' + moduleName, function () {
       })
       it('should return modified instance from database', function (done) {
         var instanceService = new InstanceService()
-        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.2', ctx.inspect,
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.2',
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id.toString()).to.equal(ctx.instance._id.toString())
@@ -353,7 +353,7 @@ describe('InstanceService: ' + moduleName, function () {
         var instanceService = new InstanceService()
         var mongoErr = new Error('Mongo error')
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr)
-        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect, function (err) {
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
           expect(err.message).to.equal('Mongo error')
           done()
         })
@@ -361,9 +361,9 @@ describe('InstanceService: ' + moduleName, function () {
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
         var instanceService = new InstanceService()
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
-        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect, function (err) {
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
           expect(err.output.statusCode).to.equal(409)
-          var errMsg = "Container IP was not updated, instance's container has changed"
+          var errMsg = "Container was not updated, instance's container has changed"
           expect(err.output.payload.message).to.equal(errMsg)
           done()
         })
@@ -372,7 +372,7 @@ describe('InstanceService: ' + moduleName, function () {
         var instanceService = new InstanceService()
         var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
-        instanceService.updateOnContainerStart(ctx.instance, ctx.containerId, '127.0.0.1', ctx.inspect,
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1',
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id).to.equal(ctx.instance._id)
@@ -383,7 +383,7 @@ describe('InstanceService: ' + moduleName, function () {
     })
   })
 
-  describe('updateOnContainerDie', function () {
+  describe('modifyExistingContainerInspect (without ip address)', function () {
     describe('with db calls', function () {
       var ctx = {}
 
@@ -433,7 +433,7 @@ describe('InstanceService: ' + moduleName, function () {
       })
       it('should return modified instance from database', function (done) {
         var instanceService = new InstanceService()
-        instanceService.updateOnContainerDie(ctx.instance, ctx.containerId, ctx.inspect,
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect,
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id.toString()).to.equal(ctx.instance._id.toString())
@@ -504,7 +504,7 @@ describe('InstanceService: ' + moduleName, function () {
         var instanceService = new InstanceService()
         var mongoErr = new Error('Mongo error')
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr)
-        instanceService.updateOnContainerDie(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
           expect(err.message).to.equal('Mongo error')
           done()
         })
@@ -512,9 +512,9 @@ describe('InstanceService: ' + moduleName, function () {
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
         var instanceService = new InstanceService()
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
-        instanceService.updateOnContainerDie(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
           expect(err.output.statusCode).to.equal(409)
-          var errMsg = "Container inspect data was not updated, instance's container has changed"
+          var errMsg = "Container was not updated, instance's container has changed"
           expect(err.output.payload.message).to.equal(errMsg)
           done()
         })
@@ -523,7 +523,7 @@ describe('InstanceService: ' + moduleName, function () {
         var instanceService = new InstanceService()
         var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
-        instanceService.updateOnContainerDie(ctx.instance, ctx.containerId, ctx.inspect,
+        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect,
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id).to.equal(ctx.instance._id)
@@ -969,7 +969,7 @@ describe('InstanceService: ' + moduleName, function () {
 
     beforeEach(function (done) {
       sinon.stub(User, 'findByGithubIdAsync').returns(Promise.resolve())
-      sinon.stub(messenger, 'emitInstanceUpdateAsync')
+      sinon.stub(messenger, 'emitInstanceUpdate')
       instance = {
         createdBy: {
           github: 123454
@@ -983,11 +983,11 @@ describe('InstanceService: ' + moduleName, function () {
 
     afterEach(function (done) {
       User.findByGithubIdAsync.restore()
-      messenger.emitInstanceUpdateAsync.restore()
+      messenger.emitInstanceUpdate.restore()
       done()
     })
 
-    it('should fail when findBygithubId fails', function (done) {
+    it('should fail when findByGithubId fails', function (done) {
       var testErr = 'Find By GithubID Failed'
       var rejectionPromise = Promise.reject(testErr)
       rejectionPromise.suppressUnhandledRejections()
@@ -999,7 +999,7 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.notCalled(instance.populateModelsAsync)
           sinon.assert.notCalled(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.notCalled(instance.updateCvAsync)
-          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdate)
           done()
         })
     })
@@ -1037,7 +1037,7 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.notCalled(instance.updateCvAsync)
-          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdate)
           done()
         })
     })
@@ -1054,7 +1054,7 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.notCalled(instance.updateCvAsync)
-          sinon.assert.notCalled(messenger.emitInstanceUpdateAsync)
+          sinon.assert.notCalled(messenger.emitInstanceUpdate)
           done()
         })
     })
@@ -1072,14 +1072,12 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     it('should fail is the messenger fails', function (done) {
-      var testErr = 'Emit Instance Update Failed'
-      var rejectionPromise = Promise.reject(testErr)
-      rejectionPromise.suppressUnhandledRejections()
-      messenger.emitInstanceUpdateAsync.returns(rejectionPromise)
+      var testErr = new Error('Emit Instance Update Failed')
+      messenger.emitInstanceUpdate.throws(testErr)
 
       InstanceService.emitInstanceUpdate(instance)
         .asCallback(function (err) {
-          expect(err).to.equal(testErr)
+          expect(err.message).to.equal(testErr.message)
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.notCalled(instance.updateCvAsync)
@@ -1091,8 +1089,8 @@ describe('InstanceService: ' + moduleName, function () {
       InstanceService.emitInstanceUpdate(instance)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
-          sinon.assert.calledWith(messenger.emitInstanceUpdateAsync, instance)
+          sinon.assert.calledOnce(messenger.emitInstanceUpdate)
+          sinon.assert.calledWith(messenger.emitInstanceUpdate, instance)
           done()
         })
     })
@@ -1104,10 +1102,10 @@ describe('InstanceService: ' + moduleName, function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
-          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
-          sinon.assert.calledWith(messenger.emitInstanceUpdateAsync, instance, updateMessage)
+          sinon.assert.calledOnce(messenger.emitInstanceUpdate)
+          sinon.assert.calledWith(messenger.emitInstanceUpdate, instance, updateMessage)
           sinon.assert.notCalled(instance.updateCvAsync)
-          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, messenger.emitInstanceUpdateAsync)
+          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, messenger.emitInstanceUpdate)
           done()
         })
     })
@@ -1118,9 +1116,9 @@ describe('InstanceService: ' + moduleName, function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
-          sinon.assert.calledOnce(messenger.emitInstanceUpdateAsync)
+          sinon.assert.calledOnce(messenger.emitInstanceUpdate)
           sinon.assert.calledOnce(instance.updateCvAsync)
-          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, instance.updateCvAsync, messenger.emitInstanceUpdateAsync)
+          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, instance.updateCvAsync, messenger.emitInstanceUpdate)
           done()
         })
     })

@@ -10,6 +10,7 @@ var afterEach = lab.afterEach
 
 var api = require('../../fixtures/api-control')
 var dock = require('../../fixtures/dock')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var typesTests = require('../../fixtures/types-test-util')
 var primus = require('../../fixtures/primus')
@@ -26,6 +27,19 @@ describe('400  POST /instances/:id/actions/copy', function () {
   after(dock.stop.bind(ctx))
   after(require('../../fixtures/mocks/api-client').clean)
 
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = []
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
     multi.createAndTailInstance(primus, function (err, instance, build, user) {
       if (err) { return done(err) }

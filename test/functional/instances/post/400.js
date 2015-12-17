@@ -13,6 +13,7 @@ var dock = require('../../fixtures/dock')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 var dockerMockEvents = require('../../fixtures/docker-mock-events')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 var typesTests = require('../../fixtures/types-test-util')
 var uuid = require('uuid')
@@ -30,6 +31,28 @@ describe('400 POST /instances', function () {
   after(dock.stop.bind(ctx))
   after(require('../../fixtures/mocks/api-client').clean)
 
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 11111,
+        username: 'Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      if (ctx.user2) {
+        array.push({
+          id: ctx.user2.attrs.accounts.github.id,
+          username: ctx.user2.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   describe('invalid types', function () {
     beforeEach(function (done) {
       multi.createContextVersion(function (err, contextVersion, context, build, user) {

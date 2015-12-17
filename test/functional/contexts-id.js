@@ -10,6 +10,7 @@ var after = lab.after
 var afterEach = lab.afterEach
 
 var api = require('./fixtures/api-control')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var expects = require('./fixtures/expects')
 var randStr = require('randomstring').generate
@@ -24,6 +25,12 @@ describe('Context - /contexts/:id', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return []
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   beforeEach(function (done) {
     multi.createContext(function (err, context, user) {

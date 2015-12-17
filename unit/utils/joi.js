@@ -62,6 +62,30 @@ describe('joi: ' + moduleName, function () {
     })
 
     describe('errors', function () {
+      it('should callback badRequest err if data is null', function (done) {
+        var schema = {}
+        var opts = {}
+        joi.validateOrBoom(null, schema, opts, function (err) {
+          expect(err.isBoom).to.be.true()
+          expect(err.message).to.match(/Value does not exist/i)
+          expect(err.output.statusCode).to.equal(400)
+          expect(err.data.err).to.equal(ctx.err)
+          done()
+        })
+      })
+
+      it('should callback badRequest err if data is undefined', function (done) {
+        var schema = {}
+        var opts = {}
+        joi.validateOrBoom(undefined, schema, opts, function (err) {
+          expect(err.isBoom).to.be.true()
+          expect(err.message).to.match(/Value does not exist/i)
+          expect(err.output.statusCode).to.equal(400)
+          expect(err.data.err).to.equal(ctx.err)
+          done()
+        })
+      })
+
       describe('unknown error', function () {
         beforeEach(function (done) {
           ctx.err = new Error('boom')

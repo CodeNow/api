@@ -16,6 +16,7 @@ var multi = require('../../fixtures/multi-factory')
 var typesTests = require('../../fixtures/types-test-util')
 var uuid = require('uuid')
 var primus = require('../../fixtures/primus')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 describe('400 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function () {
   var ctx = {}
@@ -26,7 +27,16 @@ describe('400 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
   afterEach(primus.disconnect)
   after(api.stop.bind(ctx))
   after(require('../../fixtures/mocks/api-client').clean)
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return [{
+        id: ctx.user.attrs.accounts.github.id,
+        username: ctx.user.attrs.accounts.github.username
+      }]
+    })
+  )
 
+  afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
     multi.createContextVersion(function (err, contextVersion, context, build, user) {
       if (err) { return done(err) }

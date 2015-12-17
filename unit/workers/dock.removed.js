@@ -11,7 +11,7 @@ var beforeEach = lab.beforeEach
 var Code = require('code')
 var expect = Code.expect
 var Promise = require('bluebird')
-var Runnable = require('runnable')
+var rabbitMQ = require('models/rabbitmq')
 
 var sinon = require('sinon')
 var Instance = require('models/mongo/instance')
@@ -30,21 +30,22 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
   }
 
   describe('worker', function () {
-    var testErr = 'kamehameha'
-
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findActiveInstancesByDockerHost')
+      sinon.stub(Instance, 'findInstancesRunningOrStartingByDockerHost')
       sinon.stub(ContextVersion, 'markDockRemovedByDockerHost').yieldsAsync()
       sinon.stub(Instance, 'setStoppingAsStoppedByDockerHost').yieldsAsync()
-      sinon.stub(Worker, '_redeployContainers')
+      sinon.stub(Worker, '_redeploy')
+      sinon.stub(Worker, '_rebuild')
       sinon.stub(Worker, '_updateFrontendInstances')
       done()
     })
 
     afterEach(function (done) {
-      Worker._redeployContainers.restore()
+      Worker._rebuild.restore()
+      Worker._redeploy.restore()
       Worker._updateFrontendInstances.restore()
-      Instance.findActiveInstancesByDockerHost.restore()
+
+      Instance.findInstancesRunningOrStartingByDockerHost.restore()
       ContextVersion.markDockRemovedByDockerHost.restore()
       Instance.setStoppingAsStoppedByDockerHost.restore()
       done()
@@ -70,7 +71,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       it('should throw a task fatal error if the job is missing entirely', function (done) {
         Worker().asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('must be an object')
+          expect(err.message).to.contain('Value does not exist')
           done()
         })
       })
@@ -83,134 +84,182 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
     })
 
-    describe('findActiveInstancesByDockerHost errors', function () {
-      beforeEach(function (done) {
-        Instance.findActiveInstancesByDockerHost.yieldsAsync(testErr)
-        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null, [])
-        done()
-      })
-
-      it('should cb err', function (done) {
-        Worker(testData).asCallback(function (err) {
-          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHost)
-          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHost, testHost)
-          expect(err.message).to.equal(testErr)
-          done()
-        })
-      })
-
-      it('should still run other sub-tasks', function (done) {
-        Worker(testData).asCallback(function (err) {
-          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
-          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
-          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
-          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
-          expect(err.message).to.equal(testErr)
-          done()
-        })
-      })
-    })
-
-    describe('findActiveInstancesByDockerHost return empty', function () {
-      beforeEach(function (done) {
-        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, [])
-        done()
-      })
-
-      it('should cb without calling redeploy containers', function (done) {
-        Worker(testData).asCallback(function (err) {
-          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHost)
-          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHost, testHost)
-          sinon.assert.notCalled(Worker._redeployContainers)
-          sinon.assert.notCalled(Worker._updateFrontendInstances)
-          expect(err).to.not.exist()
-          done()
-        })
-      })
-    })
-
-    describe('findActiveInstancesByDockerHost returns array', function () {
-      var testArray = ['1', '2']
-      beforeEach(function (done) {
-        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, testArray)
-        Worker._redeployContainers.returns(Promise.resolve())
-        done()
-      })
-
-      it('should call _redeployContainers', function (done) {
-        Worker(testData).asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.findActiveInstancesByDockerHost)
-          sinon.assert.calledWith(Instance.findActiveInstancesByDockerHost, testHost)
-          sinon.assert.calledOnce(Worker._redeployContainers)
-          sinon.assert.calledWith(Worker._redeployContainers, testArray)
-          done()
-        })
-      })
-
-      it('should emit instance updates after everything has completed', function (done) {
-        Worker(testData).asCallback(function () {
-          sinon.assert.calledOnce(Worker._updateFrontendInstances)
-          sinon.assert.calledWith(Worker._updateFrontendInstances, testArray)
-          done()
-        })
-      })
-    })
-
     describe('ContextVersion.markDockRemovedByDockerHost returns error', function () {
-      var testArray = ['1', '2']
+      var testError = new Error('Mongo error')
       beforeEach(function (done) {
-        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(testErr)
-        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, testArray)
-        Worker._redeployContainers.yieldsAsync()
+        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(testError)
         done()
       })
 
       it('should error', function (done) {
         Worker(testData).asCallback(function (err) {
-          expect(err.message).to.equal(testErr)
-          done()
-        })
-      })
-
-      it('should not run the other methods', function (done) {
-        Worker(testData).asCallback(function () {
+          expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
           sinon.assert.notCalled(Instance.setStoppingAsStoppedByDockerHost)
-          sinon.assert.notCalled(Instance.findActiveInstancesByDockerHost)
-          sinon.assert.notCalled(Worker._redeployContainers)
-          sinon.assert.notCalled(Worker._updateFrontendInstances)
+          sinon.assert.notCalled(Worker._redeploy)
+          sinon.assert.notCalled(Worker._rebuild)
           done()
         })
       })
     })
 
     describe('Instance.setStoppingAsStoppedByDockerHost returns error', function () {
-      var testArray = ['1', '2']
+      var testError = new Error('Mongo error')
       beforeEach(function (done) {
-        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(testErr)
-        Instance.findActiveInstancesByDockerHost.yieldsAsync(null, testArray)
-        Worker._redeployContainers.yieldsAsync()
+        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
+        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(testError)
+
+        Worker._redeploy.returns(Promise.resolve())
+        Worker._rebuild.returns(Promise.resolve())
+        Worker._updateFrontendInstances.returns(Promise.resolve())
         done()
       })
 
       it('should error', function (done) {
         Worker(testData).asCallback(function (err) {
-          expect(err.message).to.equal(testErr)
-          done()
-        })
-      })
-
-      it('should not run the other methods', function (done) {
-        Worker(testData).asCallback(function () {
+          expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
           sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
           sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
-          sinon.assert.notCalled(Instance.findActiveInstancesByDockerHost)
-          sinon.assert.notCalled(Worker._redeployContainers)
-          sinon.assert.notCalled(Worker._updateFrontendInstances)
+          sinon.assert.calledOnce(Worker._redeploy)
+          sinon.assert.calledOnce(Worker._rebuild)
+          done()
+        })
+      })
+    })
+
+    describe('_redeploy returns error', function () {
+      var testError = new Error('Redeploy error')
+      beforeEach(function (done) {
+        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
+        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(null)
+        var rejectionPromise = Promise.reject(testError)
+        rejectionPromise.suppressUnhandledRejections()
+        Worker._redeploy.returns(rejectionPromise)
+
+        Worker._rebuild.returns(Promise.resolve())
+        Worker._updateFrontendInstances.returns(Promise.resolve())
+        done()
+      })
+
+      it('should error', function (done) {
+        Worker(testData).asCallback(function (err) {
+          expect(err.message).to.equal(testError.message)
+          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
+          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
+          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
+          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
+          sinon.assert.calledOnce(Worker._redeploy)
+          sinon.assert.calledOnce(Worker._updateFrontendInstances)
+          sinon.assert.calledOnce(Worker._rebuild)
+          done()
+        })
+      })
+    })
+    describe('_updateFrontendInstances returns error', function () {
+      var testError = new Error('Update error')
+      beforeEach(function (done) {
+        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
+        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(null)
+        Worker._redeploy.returns(Promise.resolve())
+        Worker._rebuild.returns(Promise.resolve())
+        var rejectionPromise = Promise.reject(testError)
+        rejectionPromise.suppressUnhandledRejections()
+        Worker._updateFrontendInstances.returns(rejectionPromise)
+        done()
+      })
+
+      it('should error', function (done) {
+        Worker(testData).asCallback(function (err) {
+          expect(err.message).to.equal(testError.message)
+          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
+          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
+          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
+          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
+          sinon.assert.calledOnce(Worker._redeploy)
+          sinon.assert.calledTwice(Worker._updateFrontendInstances)
+          sinon.assert.calledOnce(Worker._rebuild)
+          done()
+        })
+      })
+    })
+    describe('_rebuild returns error', function () {
+      var testError = new Error('Rebuild error')
+      beforeEach(function (done) {
+        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
+        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(null)
+        Worker._redeploy.returns(Promise.resolve())
+        Worker._updateFrontendInstances.returns(Promise.resolve())
+        var rejectionPromise = Promise.reject(testError)
+        rejectionPromise.suppressUnhandledRejections()
+        Worker._rebuild.returns(rejectionPromise)
+        done()
+      })
+
+      it('should error', function (done) {
+        Worker(testData).asCallback(function (err) {
+          expect(err.message).to.equal(testError.message)
+          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
+          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
+          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
+          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
+          sinon.assert.calledOnce(Worker._redeploy)
+          sinon.assert.calledOnce(Worker._updateFrontendInstances)
+          sinon.assert.calledOnce(Worker._rebuild)
+          done()
+        })
+      })
+    })
+    describe('_updateFrontendInstances returns error on second call', function () {
+      var testError = new Error('Update error')
+      beforeEach(function (done) {
+        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
+        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(null)
+        Worker._redeploy.returns(Promise.resolve())
+        Worker._rebuild.returns(Promise.resolve())
+        var rejectionPromise = Promise.reject(testError)
+        rejectionPromise.suppressUnhandledRejections()
+        Worker._updateFrontendInstances.onCall(0).returns(Promise.resolve())
+        Worker._updateFrontendInstances.onCall(1).returns(rejectionPromise)
+        done()
+      })
+
+      it('should error', function (done) {
+        Worker(testData).asCallback(function (err) {
+          expect(err.message).to.equal(testError.message)
+          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
+          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
+          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
+          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
+          sinon.assert.calledOnce(Worker._redeploy)
+          sinon.assert.calledOnce(Worker._rebuild)
+          sinon.assert.calledTwice(Worker._updateFrontendInstances)
+          done()
+        })
+      })
+    })
+    describe('no errors', function () {
+      beforeEach(function (done) {
+        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
+        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(null)
+        Worker._redeploy.returns(Promise.resolve())
+        Worker._updateFrontendInstances.returns(Promise.resolve())
+        Worker._rebuild.returns(Promise.resolve())
+        done()
+      })
+
+      it('should pass', function (done) {
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
+          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
+          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
+          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
+          sinon.assert.calledOnce(Worker._redeploy)
+          sinon.assert.calledTwice(Worker._updateFrontendInstances)
+          sinon.assert.calledOnce(Worker._rebuild)
           done()
         })
       })
@@ -218,74 +267,210 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
   })
 
   describe('#_redeployContainers', function () {
-    var testErr = 'fire'
-    var testData = [{
-      id: '1'
+    // we are not going to validate instances that should be redeployed at this point
+    var instances = [{
+      _id: '1',
+      container: {
+        inspect: {
+          dockerContainer: '1b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
+          State: {
+            Running: true
+          }
+        }
+      }
     }, {
-      id: '2'
+      _id: '2',
+      container: {
+        inspect: {
+          dockerContainer: '2b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
+          State: {
+            Running: false
+          }
+        }
+      }
+    }, {
+      _id: '3',
+      container: {
+        inspect: {
+          dockerContainer: '3b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
+          State: {
+            Running: true
+          }
+        }
+      }
     }]
-    var redeployStub
     beforeEach(function (done) {
-      redeployStub = sinon.stub()
-      sinon.stub(Runnable.prototype, 'githubLogin')
-      sinon.stub(Runnable.prototype, 'newInstance').returns({
-        redeploy: redeployStub
-      })
+      sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       done()
     })
 
     afterEach(function (done) {
-      Runnable.prototype.githubLogin.restore()
-      Runnable.prototype.newInstance.restore()
+      rabbitMQ.redeployInstanceContainer.restore()
       done()
     })
 
-    describe('user login fails', function () {
+    it('should callback with no error', function (done) {
+      Worker._redeployContainers(instances)
+      expect(rabbitMQ.redeployInstanceContainer.callCount).to.equal(3)
+      var call1 = rabbitMQ.redeployInstanceContainer.getCall(0).args
+      expect(call1[0]).to.deep.equal({
+        instanceId: instances[0]._id,
+        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID
+      })
+      var call2 = rabbitMQ.redeployInstanceContainer.getCall(1).args
+      expect(call2[0]).to.deep.equal({
+        instanceId: instances[1]._id,
+        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID
+      })
+      var call3 = rabbitMQ.redeployInstanceContainer.getCall(2).args
+      expect(call3[0]).to.deep.equal({
+        instanceId: instances[2]._id,
+        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID
+      })
+      done()
+    })
+  }) // end _redeployContainers
+
+  describe('#_rebuildInstances', function () {
+    beforeEach(function (done) {
+      sinon.stub(rabbitMQ, 'publishInstanceRebuild')
+      done()
+    })
+
+    afterEach(function (done) {
+      rabbitMQ.publishInstanceRebuild.restore()
+      done()
+    })
+
+    it('should publish job for each instance', function (done) {
+      var instances = [
+        {_id: '1', build: { completed: true, failed: false }},
+        {_id: '2', build: { completed: false, failed: false }}
+      ]
+      Worker._rebuildInstances(instances)
+      sinon.assert.calledTwice(rabbitMQ.publishInstanceRebuild)
+      expect(rabbitMQ.publishInstanceRebuild.getCall(0).args[0].instanceId).to.equal('1')
+      expect(rabbitMQ.publishInstanceRebuild.getCall(1).args[0].instanceId).to.equal('2')
+      done()
+    })
+    it('should not publish jobs if nothing was passed', function (done) {
+      var instances = []
+      Worker._rebuildInstances(instances)
+      sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
+      done()
+    })
+  })
+
+  describe('#_redeploy', function () {
+    var testErr = new Error('Mongo erro')
+    var testData = {
+      host: 'http://10.12.12.14:4242'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findInstancesRunningOrStartingByDockerHost')
+      sinon.stub(Worker, '_redeployContainers').returns()
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findInstancesRunningOrStartingByDockerHost.restore()
+      Worker._redeployContainers.restore()
+      done()
+    })
+
+    describe('#findInstancesRunningOrStartingByDockerHost fails', function () {
       beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yields(new Error(testErr))
+        Instance.findInstancesRunningOrStartingByDockerHost.yieldsAsync(testErr)
         done()
       })
 
       it('should callback with error', function (done) {
-        Worker._redeployContainers(testData)
+        Worker._redeploy(testData)
           .asCallback(function (err) {
-            expect(err.message).to.equal(testErr)
-            sinon.assert.notCalled(redeployStub)
+            expect(err.message).to.equal(testErr.message)
+            sinon.assert.calledOnce(Instance.findInstancesRunningOrStartingByDockerHost)
+            sinon.assert.calledWith(Instance.findInstancesRunningOrStartingByDockerHost, testData.host)
             done()
           })
       })
     })
 
-    describe('redeploy fails for one instance', function () {
+    describe('#findInstancesRunningOrStartingByDockerHost returns 2 instances', function () {
+      var instances = [
+        { _id: '1' },
+        { _id: '2' }
+      ]
       beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yields()
-        redeployStub.onCall(0).yieldsAsync(testErr)
-        redeployStub.onCall(1).yieldsAsync()
+        Instance.findInstancesRunningOrStartingByDockerHost.yieldsAsync(null, instances)
         done()
       })
 
-      it('should callback with error', function (done) {
-        Worker._redeployContainers(testData)
-          .asCallback(function (err) {
-            expect(err.message).to.equal(testErr)
-            sinon.assert.called(redeployStub)
-            done()
-          })
-      })
-    })
-
-    describe('redeploy passes', function () {
-      beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yields()
-        redeployStub.yieldsAsync()
-        done()
-      })
-
-      it('should callback with no error', function (done) {
-        Worker._redeployContainers(testData)
+      it('should return successfully', function (done) {
+        Worker._redeploy(testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
-            sinon.assert.calledTwice(redeployStub)
+            sinon.assert.calledOnce(Instance.findInstancesRunningOrStartingByDockerHost)
+            sinon.assert.calledWith(Instance.findInstancesRunningOrStartingByDockerHost, testData.host)
+            sinon.assert.calledOnce(Worker._redeployContainers)
+            sinon.assert.calledWith(Worker._redeployContainers, instances)
+            done()
+          })
+      })
+    })
+  })
+
+  describe('#_rebuild', function () {
+    var testErr = new Error('Mongo erro')
+    var testData = {
+      host: 'http://10.12.12.14:4242'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findInstancesBuildingOnDockerHost')
+      sinon.stub(Worker, '_rebuildInstances').returns()
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findInstancesBuildingOnDockerHost.restore()
+      Worker._rebuildInstances.restore()
+      done()
+    })
+
+    describe('#findInstancesBuildingOnDockerHost fails', function () {
+      beforeEach(function (done) {
+        Instance.findInstancesBuildingOnDockerHost.yieldsAsync(testErr)
+        done()
+      })
+
+      it('should callback with error', function (done) {
+        Worker._rebuild(testData)
+          .asCallback(function (err) {
+            expect(err.message).to.equal(testErr.message)
+            sinon.assert.calledOnce(Instance.findInstancesBuildingOnDockerHost)
+            sinon.assert.calledWith(Instance.findInstancesBuildingOnDockerHost, testData.host)
+            done()
+          })
+      })
+    })
+
+    describe('#findInstancesBuildingOnDockerHost returns 2 instances', function () {
+      var instances = [
+        { _id: '1' },
+        { _id: '2' }
+      ]
+      beforeEach(function (done) {
+        Instance.findInstancesBuildingOnDockerHost.yieldsAsync(null, instances)
+        done()
+      })
+
+      it('should return successfully', function (done) {
+        Worker._rebuild(testData)
+          .asCallback(function (err) {
+            expect(err).to.not.exist()
+            sinon.assert.calledOnce(Instance.findInstancesBuildingOnDockerHost)
+            sinon.assert.calledWith(Instance.findInstancesBuildingOnDockerHost, testData.host)
+            sinon.assert.calledOnce(Worker._rebuildInstances)
+            sinon.assert.calledWith(Worker._rebuildInstances, instances)
             done()
           })
       })
@@ -309,7 +494,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       done()
     })
 
-    describe('update fails for one instance', function () {
+    describe('emitUpdate fails for one instance', function () {
       beforeEach(function (done) {
         var rejectionPromise = Promise.reject(testErr)
         rejectionPromise.suppressUnhandledRejections()
@@ -328,7 +513,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
     })
 
-    describe('updates pass', function () {
+    describe('emitUpdate pass', function () {
       beforeEach(function (done) {
         InstanceService.emitInstanceUpdate.returns(Promise.resolve())
         done()
@@ -339,6 +524,16 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledTwice(InstanceService.emitInstanceUpdate)
+            var call1 = InstanceService.emitInstanceUpdate.getCall(0).args
+            expect(call1[0]).to.deep.equal(testData[0])
+            expect(call1[1]).to.be.null()
+            expect(call1[2]).to.equal('update')
+            expect(call1[3]).to.be.true()
+            var call2 = InstanceService.emitInstanceUpdate.getCall(1).args
+            expect(call2[0]).to.deep.equal(testData[1])
+            expect(call2[1]).to.be.null()
+            expect(call2[2]).to.equal('update')
+            expect(call2[3]).to.be.true()
             done()
           })
       })

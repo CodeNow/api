@@ -12,6 +12,7 @@ var Code = require('code')
 var expect = Code.expect
 
 var ObjectId = require('mongoose').Types.ObjectId
+var mockGetUserById = require('../fixtures/mocks/github/getByUserId')
 
 var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
@@ -31,6 +32,18 @@ describe('201 POST /contexts/:id/versions/:id/actions/build', function () {
     ctx.postBuildAssertions = []
     done()
   })
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return [{
+        id: ctx.user.attrs.accounts.github.id,
+        username: ctx.user.attrs.accounts.github.username
+      }, {
+        id: 11111,
+        username: 'Runnable'
+      }]
+    })
+  )
+
   before(api.start.bind(ctx))
   before(require('../fixtures/mocks/api-client').setup)
   before(dock.start.bind(ctx))
@@ -42,7 +55,7 @@ describe('201 POST /contexts/:id/versions/:id/actions/build', function () {
   afterEach(require('../fixtures/clean-mongo').removeEverything)
   afterEach(require('../fixtures/clean-ctx')(ctx))
   afterEach(require('../fixtures/clean-nock'))
-
+  afterEach(mockGetUserById.stubAfter)
   describe('for User', function () {
     beforeEach(function (done) {
       multi.createContextVersion(function (err, contextVersion, context, build, user) {
