@@ -245,6 +245,13 @@ describe('docker: ' + moduleName, function () {
         sinon.assert.notCalled(Docker.prototype.createContainer)
         sinon.assert.calledOnce(monitor.event)
         sinon.assert.calledOnce(error.log)
+        sinon.assert.calledWith(
+          error.log, {
+            data: {
+              level: 'critical'
+            }
+          }
+        )
         done()
       })
     })
