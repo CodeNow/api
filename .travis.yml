@@ -6,11 +6,12 @@ matrix:
   fast_finish: true
 env:
   global:
-  - LOG_LEVEL_STDOUT=error
-  - CIRCLE_NODE_TOTAL=2
+  - LOG_LEVEL_STDOUT=none
+  - CIRCLE_NODE_TOTAL=3
   matrix:
   - CIRCLE_NODE_INDEX=0
   - CIRCLE_NODE_INDEX=1
+  - CIRCLE_NODE_INDEX=2
 cache:
 - directories:
   - /tmp/downloads
@@ -25,8 +26,9 @@ before_install:
 - ./scripts/download-neo4j.sh
 - /tmp/neo4j-community-2.1.8/bin/neo4j start
 - timeout 1m ./scripts/set-neo4j-constraint.sh
+before_script:
+- npm run lint
 script:
-- ./scripts/run-command-conditionally.sh npm run lint
 - timeout 3m ./scripts/run-command-conditionally.sh npm run unit
 - timeout 10m ./scripts/npm-bdd-split-files.sh
 after_script:
@@ -34,8 +36,7 @@ after_script:
 notifications:
   email: false
   slack:
-    rooms:
-    - SZMv1t5nvj0YktlyWrfTPQd95cfvz3dFxvb4+7Zq2qz/xHmo54SaoNkDESeR0EYBu1xQV0oBUIXEwXEpm7T7SCt7O9OYredA91Xslb6tIgzAwwEuohSjf0E6O5rXSE07IepUjSUAR1hvEcbPCrQuuUeyCU5ortfw8HAJTS9BRpQ=
-    - iWYjYkT1KFFAwwICseENreL4esXsLXcoIehxoYT3Voscw4P9h79LJyGf0fp4sx0w8qBN2oHrkQ0N9/K1Cu4hCaNSXjevhcQbyoJoWZPHa9/nP1VdFptiqJuw4iaMsisWXefVqk7+iW7agFF0NMjCnKZO0vE9wNTz35sQntfGguc=
     on_success: change
     on_failure: change
+    rooms:
+    - secure: Q8OJnQnA0a7pbVBOxwjOGhrwDXPkSGODndxFdeNI3Pfi2qgV+8AE/vJvKRlOw4Dv5BshdCD8ObAd4rU+bwjpRNt81fL7taIssOZ8YyeE34FAqo/ykLUXdIliuVWoCuT0H+OWKkSAhp6ltCG4rXOAUfuowUfb0d031YRWiu22jiI=

@@ -1,36 +1,35 @@
-'use strict';
+'use strict'
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var it = lab.it;
-var before = lab.before;
-var afterEach = lab.afterEach;
+var Lab = require('lab')
+var lab = exports.lab = Lab.script()
+var describe = lab.describe
+var it = lab.it
+var before = lab.before
+var afterEach = lab.afterEach
 
-var validation = require('../../../fixtures/validation')(lab);
-var schemaValidators = require('models/mongo/schemas/schema-validators');
-var Hashids = require('hashids');
+var validation = require('../../../fixtures/validation')(lab)
+var schemaValidators = require('models/mongo/schemas/schema-validators')
+var Hashids = require('hashids')
 
-var Instance = require('models/mongo/instance');
-var Version = require('models/mongo/context-version');
+var Instance = require('models/mongo/instance')
+var Version = require('models/mongo/context-version')
 
-var id = 0;
+var id = 0
 function getNextId () {
-  id++;
-  return id;
+  id++
+  return id
 }
 function getNextHash () {
-  var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH);
-  return hashids.encrypt(getNextId())[0];
+  var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH)
+  return hashids.encrypt(getNextId())[0]
 }
 
-var path = require('path');
-var moduleName = path.relative(process.cwd(), __filename);
+var path = require('path')
+var moduleName = path.relative(process.cwd(), __filename)
 
 describe('Instance Schema Isolation Tests: ' + moduleName, function () {
-  before(require('../../../fixtures/mongo').connect);
-  afterEach(require('../../../../test/functional/fixtures/clean-mongo').removeEverything);
-
+  before(require('../../../fixtures/mongo').connect)
+  afterEach(require('../../../../test/functional/fixtures/clean-mongo').removeEverything)
 
   function createNewVersion (opts) {
     return new Version({
@@ -55,11 +54,11 @@ describe('Instance Schema Isolation Tests: ' + moduleName, function () {
         branch: opts.branch || 'master',
         commit: 'deadbeef'
       }]
-    });
+    })
   }
 
   function createNewInstance (name, opts) {
-    opts = opts || {};
+    opts = opts || {}
     return new Instance({
       name: name || 'name',
       shortHash: getNextHash(),
@@ -87,46 +86,45 @@ describe('Instance Schema Isolation Tests: ' + moduleName, function () {
       },
       containers: [],
       network: {
-        networkIp: '1.1.1.1',
         hostIp: '1.1.1.100'
       }
-    });
+    })
   }
 
   describe('Name Validation', function () {
     validation.NOT_ALPHA_NUM_SAFE.forEach(function (string) {
       it('should fail validation for ' + string, function (done) {
-        var instance = createNewInstance();
-        instance.name = string;
+        var instance = createNewInstance()
+        instance.name = string
         validation.errorCheck(
           instance,
           done,
           'name',
-          schemaValidators.validationMessages.characters);
-      });
-    });
+          schemaValidators.validationMessages.characters)
+      })
+    })
     validation.ALPHA_NUM_SAFE.forEach(function (string) {
       it('should succeed validation for ' + string, function (done) {
-        var instance = createNewInstance();
-        instance.name = string;
-        validation.successCheck(instance, done, 'name');
-      });
-    });
-    validation.stringLengthValidationChecking(createNewInstance, 'name', 100);
-    validation.requiredValidationChecking(createNewInstance, 'name');
-  });
+        var instance = createNewInstance()
+        instance.name = string
+        validation.successCheck(instance, done, 'name')
+      })
+    })
+    validation.stringLengthValidationChecking(createNewInstance, 'name', 100)
+    validation.requiredValidationChecking(createNewInstance, 'name')
+  })
 
   describe('Github Owner Id Validation', function () {
-    validation.githubUserRefValidationChecking(createNewInstance, 'owner.github');
-    validation.requiredValidationChecking(createNewInstance, 'owner');
-  });
+    validation.githubUserRefValidationChecking(createNewInstance, 'owner.github')
+    validation.requiredValidationChecking(createNewInstance, 'owner')
+  })
 
   describe('Github CreatedBy Validation', function () {
-    validation.githubUserRefValidationChecking(createNewInstance, 'createdBy.github');
-    validation.requiredValidationChecking(createNewInstance, 'createdBy');
-  });
+    validation.githubUserRefValidationChecking(createNewInstance, 'createdBy.github')
+    validation.requiredValidationChecking(createNewInstance, 'createdBy')
+  })
 
   describe('Isoalted Validation', function () {
-    validation.objectIdValidationChecking(createNewInstance, 'isolated');
-  });
-});
+    validation.objectIdValidationChecking(createNewInstance, 'isolated')
+  })
+})

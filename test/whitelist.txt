@@ -43,6 +43,7 @@
 ./test/functional/contexts-id-versions-id-infracodeversion-actions-copy.js
 ./test/functional/contexts-id-versions-id.js
 ./test/functional/contexts-id-versions-id/patch/200.js
+./test/functional/contexts-id-versions-id/patch/400.js
 ./test/functional/contexts-id-versions.js
 ./test/functional/contexts-id-versions/post/400.js
 ./test/functional/contexts-id.js
@@ -52,6 +53,7 @@
 ./test/functional/instance-dependency-health.js
 ./test/functional/instances-id-actions-copy/post/400.js
 ./test/functional/instances-id-actions-copy/post/index.js
+./test/functional/instances-id-actions-redeploy/post/index.js
 ./test/functional/instances-id-actions-restart/put/index.js
 ./test/functional/instances-id-actions-start/put/index.js
 ./test/functional/instances-id-actions-stop/put/index.js
@@ -80,13 +82,14 @@
 ./test/functional/settings/patch/index.js
 ./test/functional/settings/post/201.js
 ./test/functional/settings/post/400.js
+./test/functional/teammate-invitation.js
 ./test/functional/templates/get/200.js
 ./test/functional/terminal-stream.js
 ./test/functional/test-errors.js
+./test/functional/user.js
 ./test/functional/users-id-routes-id/index.js
 ./test/functional/users-id-routes/index.js
 ./test/functional/users-id.js
 ./test/integration/fixtures/factory.js
 ./test/integration/models/mongo/context-version.js
-./test/integration/workers/deploy-instance.js
 ./test/integration/workers/on-image-builder-container-die.js
