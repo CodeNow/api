@@ -14,19 +14,18 @@ var sinon = require('sinon')
 var Boom = require('dat-middleware').Boom
 var isObject = require('101/is-object')
 
-var Github = require('models/apis/github')
-var messenger = require('socket/messenger')
-
 var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
+var Github = require('models/apis/github')
 var InfraCodeVersion = require('models/mongo/infra-code-version')
 var User = require('models/mongo/user')
+var messenger = require('socket/messenger')
 
-var ctx = {}
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('Context Version: ' + moduleName, function () {
+  var ctx = {}
   before(require('../../fixtures/mongo').connect)
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
 
@@ -623,6 +622,59 @@ describe('Context Version: ' + moduleName, function () {
       })
     })
   }) // end 'modifyAppCodeVersionWithLatestCommit'
+
+  describe('#modifyAppCodeVersionByRepo', function () {
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'findOneAndUpdate').yieldsAsync()
+      done()
+    })
+    afterEach(function (done) {
+      ContextVersion.findOneAndUpdate.restore()
+      done()
+    })
+
+    it('updates a context version with repo information and return it', function (done) {
+      var repo = 'CodeNow'
+      var branch = 'SAN-master'
+      var commit = 'deadbeef'
+      ContextVersion.findOneAndUpdate.yieldsAsync(null, ctx.mockContextVersion)
+      ContextVersion.modifyAppCodeVersionByRepo(
+        ctx.mockContextVersion._id,
+        repo,
+        branch,
+        commit,
+        function (err, doc) {
+          if (err) { return done(err) }
+          expect(doc).to.deep.equal(ctx.mockContextVersion)
+          sinon.assert.calledWith(
+            ContextVersion.findOneAndUpdate,
+            {
+              _id: ctx.mockContextVersion._id,
+              'appCodeVersions.lowerRepo': repo.toLowerCase()
+            },
+            {
+              $set: {
+                'appCodeVersions.$.branch': branch,
+                'appCodeVersions.$.lowerBranch': branch.toLowerCase(),
+                'appCodeVersions.$.commit': commit
+              }
+            },
+            sinon.match.func
+          )
+          done()
+        }
+      )
+    })
+
+    it('should bubble update errors', function (done) {
+      var error = new Error('KAAAHHHNNN')
+      ContextVersion.findOneAndUpdate.yieldsAsync(error)
+      ContextVersion.modifyAppCodeVersionByRepo('hi', 'hi', 'hi', 'hi', function (err) {
+        expect(err).to.equal(error)
+        done()
+      })
+    })
+  })
 
   describe('addAppCodeVersionQuery', function () {
     var cv
