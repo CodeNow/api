@@ -1510,7 +1510,6 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
       it('should populate the owner and created by', function (done) {
         ctx.instance.populateOwnerAndCreatedBy(ctx.mockSessionUser, function (err) {
-          console.log(err);
           expect(err).to.not.exist()
           expect(ctx.instance.owner.username).to.equal('TEST-login')
           expect(ctx.instance.createdBy.username).to.equal('TEST-login')
@@ -1540,7 +1539,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     describe('when owner and created by exist', function () {
       beforeEach(function (done) {
         ownerCreatedByKeypaths.forEach(function (path) {
-          keypather.set(ctx.instance, path, 'TEST-'+path)
+          keypather.set(ctx.instance, path, 'TEST-' + path)
         })
         keypather.set(ctx.instance, 'owner.github', 1234)
         keypather.set(ctx.instance, 'createdBy.github', 5678)
@@ -1578,8 +1577,8 @@ describe('Instance Model Tests ' + moduleName, function () {
     describe('when instances are all populated', function () {
       beforeEach(function (done) {
         ownerCreatedByKeypaths.forEach(function (path) {
-          keypather.set(ctx.instance1, path, 'TEST-'+path)
-          keypather.set(ctx.instance2, path, 'TEST-'+path)
+          keypather.set(ctx.instance1, path, 'TEST-' + path)
+          keypather.set(ctx.instance2, path, 'TEST-' + path)
         })
         keypather.set(ctx.instance1, 'owner.github', 1234)
         keypather.set(ctx.instance1, 'createdBy.github', 5678)
@@ -1629,7 +1628,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       beforeEach(function (done) {
         ctx.mockSessionUser.findGithubUserByGithubId.yieldsAsync(testErr)
         done()
-      })A
+      })
       it('should ignore the error completely and just keep going', function (done) {
         Instance.populateOwnerAndCreatedByForInstances(ctx.mockSessionUser, ctx.instances, function (err) {
           expect(err).to.not.exist()
