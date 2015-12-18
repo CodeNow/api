@@ -57,7 +57,7 @@ describe('/auth/github routes', function () {
 
     it('should pass one time use token', function (done) {
       var j = request.jar()
-      var testRedir = 'http://thisredir:9283/datPath?thisqs=great'
+      var testRedir = 'http://runnablecloud.com:9283/datPath?thisqs=great'
       require('../fixtures/mocks/github/user')(ctx.user, null, testToken)
       request.get({
         jar: j,
@@ -80,7 +80,7 @@ describe('/auth/github routes', function () {
           var qs = querystring.parse(testUrl.query)
           expect(res.statusCode).to.equal(302)
           expect(testUrl.protocol).to.equal('http:')
-          expect(testUrl.host).to.equal('thisredir:9283')
+          expect(testUrl.host).to.equal('runnablecloud.com:9283')
           expect(testUrl.pathname).to.equal('/datPath')
           expect(qs.runnableappAccessToken).to.exist()
           expect(qs.thisqs).to.equal('great')
