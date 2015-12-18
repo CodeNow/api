@@ -12,14 +12,16 @@ var Container = require('dockerode/lib/container')
 var createCount = require('callback-count')
 var dockerFrame = require('docker-frame')
 var Dockerode = require('dockerode')
+var error = require('error')
 var indexBy = require('101/index-by')
 var joi = require('utils/joi')
 var keypather = require('keypather')()
 var Lab = require('lab')
 var Modem = require('docker-modem')
+var monitor = require('monitor-dog')
 var multiline = require('multiline')
-var pluck = require('101/pluck')
 var path = require('path')
+var pluck = require('101/pluck')
 var sinon = require('sinon')
 var through2 = require('through2')
 var url = require('url')
@@ -192,6 +194,8 @@ describe('docker: ' + moduleName, function () {
       sinon.stub(Docker, '_isConstraintFailure')
       sinon.stub(Docker, '_isOutOfResources')
       sinon.stub(Docker.prototype, 'createContainer')
+      sinon.stub(monitor, 'event')
+      sinon.stub(error, 'log')
       done()
     })
 
@@ -199,6 +203,8 @@ describe('docker: ' + moduleName, function () {
       Docker._isConstraintFailure.restore()
       Docker._isOutOfResources.restore()
       Docker.prototype.createContainer.restore()
+      monitor.event.restore()
+      error.log.restore()
       done()
     })
 
@@ -223,19 +229,29 @@ describe('docker: ' + moduleName, function () {
       })
     })
 
-    it('should create container without memory limit', function (done) {
+    it('should alert datadog and rollbar if our of resources', function (done) {
       var testOpts = {
-        Memory: 999999
+        Memory: 999999,
+        Labels: {}
       }
+      testOpts.Labels['com.docker.swarm.constraints'] = 'test'
       Docker._isConstraintFailure.returns(false)
       Docker._isOutOfResources.returns(true)
-      Docker.prototype.createContainer.yieldsAsync()
+      monitor.event.returns()
+      error.log.returns()
 
       model._handleCreateContainerError({}, testOpts, function (err) {
-        expect(err).to.not.exist()
-        expect(Docker.prototype.createContainer.withArgs({}).called)
-          .to.be.true()
-
+        expect(err).to.exist()
+        sinon.assert.notCalled(Docker.prototype.createContainer)
+        sinon.assert.calledOnce(monitor.event)
+        sinon.assert.calledOnce(error.log)
+        sinon.assert.calledWith(
+          error.log, {
+            data: {
+              level: 'critical'
+            }
+          }
+        )
         done()
       })
     })
