@@ -21,6 +21,10 @@ var afterEach = lab.afterEach
 var it = lab.it
 var moduleName = path.relative(process.cwd(), __filename)
 
+function thisShouldNotBeCalled () {
+  throw new Error('This should not be called')
+}
+
 describe('sendgrid: ' + moduleName, function () {
   var error
   var sendgrid
@@ -124,6 +128,7 @@ describe('sendgrid: ' + moduleName, function () {
             subject: 'asdasdasd',
             body: '11212312313'
           })
+            .then(thisShouldNotBeCalled)
             .catch(function (err) {
               expect(error).to.equal(err)
               sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
@@ -138,6 +143,7 @@ describe('sendgrid: ' + moduleName, function () {
             subject: 'asdasdasd',
             body: '11212312313'
           })
+            .then(thisShouldNotBeCalled)
             .catch(function (err) {
               expect(err).to.be.an.object()
               expect(err.isBoom).to.be.true()
@@ -200,8 +206,8 @@ describe('sendgrid: ' + moduleName, function () {
               var sendEmailOptions = sendgrid.sendEmail.args[0][0]
 
               expect(sendEmailOptions.email, 'email').to.equal(recipient.email)
-              expect(sendEmailOptions.from, 'from').to.equal('invites@runnable.com')
-              expect(sendEmailOptions.fromname, 'fromname').to.equal('Runnable Invites')
+              expect(sendEmailOptions.from, 'from').to.equal(process.env.SENDGRID_USER_INVITE_SENDER_EMAIL)
+              expect(sendEmailOptions.fromname, 'fromname').to.equal(process.env.SENDGRID_USER_INVITE_SENDER_NAME)
               expect(sendEmailOptions.subject, 'subject').to.equal('%requester% has invited you to Runnable')
               expect(sendEmailOptions.body, 'body').to.contains('%requester% has invited you to the %orgName%')
               expect(sendEmailOptions.htmlBody, 'htmlBody').to.contains('%requester% has invited you to the %orgName%')
@@ -221,6 +227,7 @@ describe('sendgrid: ' + moduleName, function () {
             sendgrid.sendEmail.returns(Promise.resolve(true))
 
             sendgrid.inviteUser(recipient, sessionUserMe, githubOrgResponse.id)
+              .then(thisShouldNotBeCalled)
               .catch(function (err) {
                 expect(err.message).to.equal(error.message)
                 sinon.assert.calledOnce(sessionUserMe.findGithubOrgByGithubId)
@@ -236,6 +243,7 @@ describe('sendgrid: ' + moduleName, function () {
             sendgrid.sendEmail.returns(rejectionPromise)
 
             sendgrid.inviteUser(recipient, sessionUserMe, githubOrgResponse.id)
+              .then(thisShouldNotBeCalled)
               .catch(function (err) {
                 expect(err.message).to.equal(error.message)
                 sinon.assert.calledOnce(sessionUserMe.findGithubOrgByGithubId)
@@ -276,6 +284,7 @@ describe('sendgrid: ' + moduleName, function () {
             sendgrid.sendEmail.returns(rejectionPromise)
 
             sendgrid.inviteAdmin(recipient, sessionUserThem, message)
+              .then(thisShouldNotBeCalled)
               .catch(function (err) {
                 expect(err).to.equal(error)
                 sinon.assert.calledOnce(sendgrid.sendEmail)
@@ -290,14 +299,20 @@ describe('sendgrid: ' + moduleName, function () {
   describe('Testing the ENV requirement', function () {
     var SENDGRID_KEY_backup
     var SENDGRID_USER_INVITE_TEMPLATE_backup
+    var SENDGRID_USER_INVITE_SENDER_NAME_backup
+    var SENDGRID_USER_INVITE_SENDER_EMAIL_backup
     beforeEach(function (done) {
       SENDGRID_KEY_backup = process.env.SENDGRID_KEY
       SENDGRID_USER_INVITE_TEMPLATE_backup = process.env.SENDGRID_USER_INVITE_TEMPLATE
+      SENDGRID_USER_INVITE_SENDER_NAME_backup = process.env.SENDGRID_USER_INVITE_SENDER_NAME
+      SENDGRID_USER_INVITE_SENDER_EMAIL_backup = process.env.SENDGRID_USER_INVITE_SENDER_EMAIL
       done()
     })
     afterEach(function (done) {
       process.env.SENDGRID_KEY = SENDGRID_KEY_backup
       process.env.SENDGRID_USER_INVITE_TEMPLATE = SENDGRID_USER_INVITE_TEMPLATE_backup
+      process.env.SENDGRID_USER_INVITE_SENDER_NAME = SENDGRID_USER_INVITE_SENDER_NAME_backup
+      process.env.SENDGRID_USER_INVITE_SENDER_EMAIL = SENDGRID_USER_INVITE_SENDER_EMAIL_backup
       done()
     })
     it('should throw an exception if the key is missing', function (done) {
@@ -305,9 +320,19 @@ describe('sendgrid: ' + moduleName, function () {
       expect(function () { sendgrid = new SendGridModel() }).to.throw('SENDGRID: stubbing sendgrid, no SENDGRID_KEY')
       done()
     })
-    it('should throw an exception if the key is missing', function (done) {
+    it('should throw an exception if the SENDGRID_USER_INVITE_TEMPLATE key is missing', function (done) {
       process.env.SENDGRID_USER_INVITE_TEMPLATE = null
       expect(function () { sendgrid = new SendGridModel() }).to.throw('SENDGRID: no user invite template id given, missing SENDGRID_USER_INVITE_TEMPLATE')
+      done()
+    })
+    it('should throw an exception if the SENDGRID_USER_INVITE_SENDER_NAME key is missing', function (done) {
+      process.env.SENDGRID_USER_INVITE_SENDER_NAME = null
+      expect(function () { sendgrid = new SendGridModel() }).to.throw('SENDGRID: no user invite sender name given, missing SENDGRID_USER_INVITE_SENDER_NAME')
+      done()
+    })
+    it('should throw an exception if the SENDGRID_USER_INVITE_SENDER_EMAIL key is missing', function (done) {
+      process.env.SENDGRID_USER_INVITE_SENDER_EMAIL = null
+      expect(function () { sendgrid = new SendGridModel() }).to.throw('SENDGRID: no user invite sender email given, missing SENDGRID_USER_INVITE_SENDER_EMAIL')
       done()
     })
   })
