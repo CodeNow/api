@@ -7,6 +7,8 @@ var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
+var beforeEach = lab.beforeEach
+var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 
@@ -18,6 +20,65 @@ var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('Messenger: ' + moduleName, function () {
+  describe('emitInstanceUpdate', function () {
+    beforeEach(function (done) {
+      sinon.stub(Messenger, '_emitInstanceUpdateAction')
+      done()
+    })
+    afterEach(function (done) {
+      Messenger._emitInstanceUpdateAction.restore()
+      done()
+    })
+    it('should throw if instance is null', function (done) {
+      try {
+        Messenger.emitInstanceUpdate(null, 'update')
+        done(new Error('Should never happen'))
+      } catch (err) {
+        expect(err.message).to.equal('emitInstanceUpdate missing instance or action')
+        sinon.assert.notCalled(Messenger._emitInstanceUpdateAction)
+        done()
+      }
+    })
+    it('should throw if action is null', function (done) {
+      try {
+        Messenger.emitInstanceUpdate({ _id: 'some-id' }, null)
+        done(new Error('Should never happen'))
+      } catch (err) {
+        expect(err.message).to.equal('emitInstanceUpdate missing instance or action')
+        sinon.assert.notCalled(Messenger._emitInstanceUpdateAction)
+        done()
+      }
+    })
+    it('should throw if instance was not fully populated', function (done) {
+      try {
+        Messenger.emitInstanceUpdate({ _id: 'some-id' }, 'update')
+        done(new Error('Should never happen'))
+      } catch (err) {
+        expect(err.message).to.equal('emitInstanceUpdate malformed instance')
+        sinon.assert.notCalled(Messenger._emitInstanceUpdateAction)
+        done()
+      }
+    })
+    it('should call _emitInstanceUpdateAction if validation passed', function (done) {
+      var instance = {
+        _id: 'some-id',
+        owner: {
+          github: 1,
+          username: 'anton',
+          gravatar: 'https://gravatar.com/anton'
+        },
+        createdBy: {
+          github: 2,
+          username: 'peter',
+          gravatar: 'https://gravatar.com/peter'
+        }
+      }
+      Messenger.emitInstanceUpdate(instance, 'update')
+      sinon.assert.calledOnce(Messenger._emitInstanceUpdateAction)
+      sinon.assert.calledWith(Messenger._emitInstanceUpdateAction, instance, 'update')
+      done()
+    })
+  })
   describe('#canJoin', function () {
     it('should return true if authToken provided', function (done) {
       var socket = {
