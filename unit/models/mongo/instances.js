@@ -1475,4 +1475,50 @@ describe('Instance Model Tests ' + moduleName, function () {
         })
     })
   })
+
+  describe('updateCv', function () {
+    beforeEach(function (done) {
+      ctx.instance = createNewInstance()
+      ctx.mockCv = createNewVersion({})
+      sinon.stub(Version, 'findById').yieldsAsync(null, ctx.mockCv)
+      sinon.stub(ctx.instance, 'update').yieldsAsync(null)
+      done()
+    })
+
+    afterEach(function (done) {
+      Version.findById.restore()
+      done()
+    })
+
+    it('should update the context version', function (done) {
+      var originalCvId = ctx.instance.contextVersion._id
+      ctx.instance.updateCv(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Version.findById)
+        sinon.assert.calledWith(Version.findById, originalCvId, sinon.match.func)
+        sinon.assert.calledOnce(ctx.instance.update)
+        sinon.assert.calledWith(ctx.instance.update, {
+          $set: {
+            contextVersion: ctx.mockCv.toJSON()
+          }
+        }, sinon.match.func)
+        done()
+      })
+    })
+
+    describe('when the db fails', function () {
+      var TestErr = new Error('Test Err')
+      beforeEach(function (done) {
+        Version.findById.yieldsAsync(TestErr)
+        done()
+      })
+      it('should pass the error through', function (done) {
+        ctx.instance.updateCv(function (err) {
+          expect(err).to.equal(TestErr)
+          sinon.assert.notCalled(ctx.instance.update)
+          done()
+        })
+      })
+    })
+  })
 })
