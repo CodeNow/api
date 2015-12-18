@@ -57,12 +57,12 @@ describe('lib/middlewares/validate-auth-redirect', function () {
   it('should not delete req.query.redirect if hostname of value is in whitelist', function (done) {
     var req = {
       query: {
-        redirect: 'http://runnablecloud.com/hello'
+        redirect: 'http://runnableapp.com/hello'
       }
     }
     validateAuthRedirect(req, {}, function (err) {
       expect(err).to.be.undefined()
-      expect(req.query.redirect).to.equal('http://runnablecloud.com/hello')
+      expect(req.query.redirect).to.equal('http://runnableapp.com/hello')
       done()
     })
   })
