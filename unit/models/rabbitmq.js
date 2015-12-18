@@ -493,7 +493,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
   })
 
-  describe('publishClusterProvision', function () {
+  describe('publishASGCreate', function () {
     var testOrgId = 18274533
     beforeEach(function (done) {
       // this normally set after connect
@@ -518,7 +518,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         done()
       })
       it('should publish a job with required data', function (done) {
-        ctx.rabbitMQ.publishClusterProvision(ctx.validJobData)
+        ctx.rabbitMQ.publishASGCreate(ctx.validJobData)
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1)
         done()
       })
@@ -534,7 +534,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         done()
       })
       it('should not publish a job without required data', function (done) {
-        expect(ctx.rabbitMQ.publishClusterProvision.bind(ctx.rabbitMQ, {}))
+        expect(ctx.rabbitMQ.publishASGCreate.bind(ctx.rabbitMQ, {}))
           .to.throw(Error, /Validation failed/)
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0)
         done()
