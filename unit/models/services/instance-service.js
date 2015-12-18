@@ -1123,4 +1123,64 @@ describe('InstanceService: ' + moduleName, function () {
         })
     })
   })
+
+  describe('#deleteAllInstanceForks', function () {
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findInstancesByParent')
+      sinon.stub(rabbitMQ, 'deleteInstance').returns()
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findInstancesByParent.restore()
+      rabbitMQ.deleteInstance.restore()
+      done()
+    })
+    it('should return immediately if masterPod !== true', function (done) {
+      InstanceService.deleteAllInstanceForks({
+        _id: '507f1f77bcf86cd799439011',
+        masterPod: false
+      }, '507f191e810c19729de860ea').asCallback(function (err, instances) {
+        expect(err).to.be.null()
+        expect(instances.length).to.equal(0)
+        sinon.assert.notCalled(Instance.findInstancesByParent)
+        sinon.assert.notCalled(rabbitMQ.deleteInstance)
+        done()
+      })
+    })
+
+    it('should return error if findInstancesByParent failed', function (done) {
+      Instance.findInstancesByParent
+        .yieldsAsync(Boom.badRequest('findInstancesByParent failed'))
+      InstanceService.deleteAllInstanceForks({
+        _id: '507f1f77bcf86cd799439011',
+        shortHash: 'abc1',
+        masterPod: true
+      }, '507f191e810c19729de860ea').asCallback(function (err, instances) {
+        expect(err).to.exist()
+        expect(instances).to.not.exist()
+        expect(err.output.statusCode).to.equal(400)
+        expect(err.output.payload.message).to.equal('findInstancesByParent failed')
+        sinon.assert.calledOnce(Instance.findInstancesByParent)
+        sinon.assert.calledWith(Instance.findInstancesByParent, 'abc1')
+        sinon.assert.notCalled(rabbitMQ.deleteInstance)
+        done()
+      })
+    })
+    //
+    it('should create new jobs', function (done) {
+      Instance.findInstancesByParent.yieldsAsync(null, [{_id: '507f1f77bcf86cd799439012'}, {_id: '507f1f77bcf86cd799439013'}])
+      InstanceService.deleteAllInstanceForks({
+        _id: '507f1f77bcf86cd799439011',
+        shortHash: 'abc1',
+        masterPod: true
+      }, '507f191e810c19729de860ea').asCallback(function (err, instances) {
+        expect(err).to.be.null()
+        expect(instances.length).to.equal(2)
+        sinon.assert.calledOnce(Instance.findInstancesByParent)
+        sinon.assert.calledWith(Instance.findInstancesByParent, 'abc1')
+        sinon.assert.calledTwice(rabbitMQ.deleteInstance)
+        done()
+      })
+    })
+  })
 })
