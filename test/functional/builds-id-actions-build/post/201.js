@@ -308,7 +308,7 @@ function itShouldBuildTheBuild (ctx) {
           ctx.build.fetch(expects.success(200, ctx.expectBuilt, function (err) {
             if (err) { return done(err) }
 
-            var docker = new Docker(cv.dockerHost)
+            var docker = new Docker()
             docker.docker.getContainer(cv.containerId).inspect(function (err, data) {
               if (err) { return done(err) }
 

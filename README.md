@@ -53,7 +53,7 @@
 # Logs
 
 #### [Guide to Using Log Levels](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Using-Log-Levels)
-#### [Guide to Development CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)
+#### [Guide to Development & Production CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)
 #### [Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)
 
 # Running Tests
