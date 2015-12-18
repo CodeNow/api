@@ -11,6 +11,7 @@ var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
+var keypather = require('keypather')()
 
 var Graph = require('models/apis/graph')
 var Hashids = require('hashids')
@@ -140,6 +141,7 @@ var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('Instance Model Tests ' + moduleName, function () {
+  var ownerCreatedByKeypaths = ['owner.username', 'owner.gravatar', 'createdBy.username', 'createdBy.gravatar']
   // jshint maxcomplexity:5
   var ctx
   before(require('../../fixtures/mongo').connect)
@@ -1481,6 +1483,158 @@ describe('Instance Model Tests ' + moduleName, function () {
           expect(instance.toJSON().imagePull).to.not.exist()
           done()
         })
+    })
+  })
+
+  describe('populateOwnerAndCreatedBy', function () {
+    beforeEach(function (done) {
+      ctx.instance = createNewInstance()
+      sinon.stub(ctx.instance, 'update').yieldsAsync(null)
+      ctx.mockSessionUser = {
+        findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
+          login: 'TEST-login',
+          avatar_url: 'TEST-avatar_url'
+        })
+      }
+      done()
+    })
+    afterEach(function (done) {
+      ctx.instance.update.restore()
+      done()
+    })
+    describe('when owner and created by don\'t exist', function () {
+      beforeEach(function (done) {
+        keypather.set(ctx.instance, 'owner.github', 1234)
+        keypather.set(ctx.instance, 'createdBy.github', 5678)
+        done()
+      })
+      it('should populate the owner and created by', function (done) {
+        ctx.instance.populateOwnerAndCreatedBy(ctx.mockSessionUser, function (err) {
+          expect(err).to.not.exist()
+          expect(ctx.instance.owner.username).to.equal('TEST-login')
+          expect(ctx.instance.createdBy.username).to.equal('TEST-login')
+          expect(ctx.instance.owner.gravatar).to.equal('TEST-avatar_url')
+          expect(ctx.instance.createdBy.gravatar).to.equal('TEST-avatar_url')
+          sinon.assert.calledTwice(ctx.mockSessionUser.findGithubUserByGithubId)
+          sinon.assert.calledWith(ctx.mockSessionUser.findGithubUserByGithubId, ctx.instance.owner.github)
+          sinon.assert.calledWith(ctx.mockSessionUser.findGithubUserByGithubId, ctx.instance.createdBy.github)
+          done()
+        })
+      })
+    })
+    describe('when there is an error fetching github user by github id', function () {
+      var testErr = new Error('Test Error!')
+      beforeEach(function (done) {
+        ctx.mockSessionUser.findGithubUserByGithubId.yieldsAsync(testErr)
+        done()
+      })
+      it('should pass through the error', function (done) {
+        ctx.instance.populateOwnerAndCreatedBy(ctx.mockSessionUser, function (err) {
+          expect(err).to.exist()
+          expect(err).to.equal(testErr)
+          done()
+        })
+      })
+    })
+    describe('when owner and created by exist', function () {
+      beforeEach(function (done) {
+        ownerCreatedByKeypaths.forEach(function (path) {
+          keypather.set(ctx.instance, path, 'TEST-' + path)
+        })
+        keypather.set(ctx.instance, 'owner.github', 1234)
+        keypather.set(ctx.instance, 'createdBy.github', 5678)
+        done()
+      })
+      it('should do nothing!', function (done) {
+        ctx.instance.populateOwnerAndCreatedBy(ctx.mockSessionUser, function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(ctx.mockSessionUser.findGithubUserByGithubId)
+          done()
+        })
+      })
+    })
+  })
+
+  describe('#populateOwnerAndCreatedByForInstances', function () {
+    beforeEach(function (done) {
+      ctx.instance1 = createNewInstance()
+      ctx.instance2 = createNewInstance()
+      ctx.instances = [ctx.instance1, ctx.instance2]
+      ctx.mockSessionUser = {
+        findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
+          login: 'TEST-login',
+          avatar_url: 'TEST-avatar_url'
+        }),
+        accounts: {
+          github: {
+            id: 1234
+          }
+        }
+      }
+      done()
+    })
+
+    describe('when instances are all populated', function () {
+      beforeEach(function (done) {
+        ownerCreatedByKeypaths.forEach(function (path) {
+          keypather.set(ctx.instance1, path, 'TEST-' + path)
+          keypather.set(ctx.instance2, path, 'TEST-' + path)
+        })
+        keypather.set(ctx.instance1, 'owner.github', 1234)
+        keypather.set(ctx.instance1, 'createdBy.github', 5678)
+        keypather.set(ctx.instance2, 'owner.github', 1234)
+        keypather.set(ctx.instance2, 'createdBy.github', 5678)
+        done()
+      })
+      it('should do nothing!', function (done) {
+        Instance.populateOwnerAndCreatedByForInstances(ctx.mockSessionUser, ctx.instances, function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(ctx.mockSessionUser.findGithubUserByGithubId)
+          done()
+        })
+      })
+    })
+
+    describe('when instances are not all populated', function () {
+      beforeEach(function (done) {
+        keypather.set(ctx.instance1, 'owner.github', 1234)
+        keypather.set(ctx.instance1, 'createdBy.github', 5678)
+        keypather.set(ctx.instance2, 'owner.github', 1234)
+        keypather.set(ctx.instance2, 'createdBy.github', 5678)
+        done()
+      })
+      it('should fetch github user and populate', function (done) {
+        Instance.populateOwnerAndCreatedByForInstances(ctx.mockSessionUser, ctx.instances, function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(ctx.mockSessionUser.findGithubUserByGithubId)
+          sinon.assert.calledWith(ctx.mockSessionUser.findGithubUserByGithubId, ctx.instance1.owner.github)
+          sinon.assert.calledWith(ctx.mockSessionUser.findGithubUserByGithubId, ctx.instance1.createdBy.github)
+
+          expect(ctx.instance1.owner.username).to.equal('TEST-login')
+          expect(ctx.instance2.owner.username).to.equal('TEST-login')
+          expect(ctx.instance1.createdBy.username).to.equal('TEST-login')
+          expect(ctx.instance2.createdBy.username).to.equal('TEST-login')
+          expect(ctx.instance1.owner.gravatar).to.equal('TEST-avatar_url')
+          expect(ctx.instance2.owner.gravatar).to.equal('TEST-avatar_url')
+          expect(ctx.instance1.createdBy.gravatar).to.equal('TEST-avatar_url')
+          expect(ctx.instance2.createdBy.gravatar).to.equal('TEST-avatar_url')
+          done()
+        })
+      })
+    })
+
+    describe('when there is an error fetching github user by github id', function () {
+      var testErr = new Error('Test Error!')
+      beforeEach(function (done) {
+        ctx.mockSessionUser.findGithubUserByGithubId.yieldsAsync(testErr)
+        done()
+      })
+      it('should ignore the error completely and just keep going', function (done) {
+        Instance.populateOwnerAndCreatedByForInstances(ctx.mockSessionUser, ctx.instances, function (err) {
+          expect(err).to.not.exist()
+          done()
+        })
+      })
     })
   })
 })
