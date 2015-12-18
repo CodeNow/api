@@ -144,14 +144,10 @@ module.exports = {
       name: name,
       lowerName: name.toLowerCase(),
       owner: {
-        github: ownerGithubId,
-        username: 'sdfasdfasdf',
-        gravatar: 'gravatar'
+        github: ownerGithubId
       },
       createdBy: {
-        github: ownerGithubId,
-        username: 'sdfasdfasdf',
-        gravatar: 'gravatar'
+        github: ownerGithubId
       },
       parent: 'sdf',
       build: build._id,
