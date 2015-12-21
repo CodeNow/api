@@ -191,7 +191,7 @@ describe('InstanceContainerDelete: ' + moduleName, function () {
       })
     })
 
-    describe('removing hossts failed', function () {
+    describe('removing hosts failed', function () {
       var hostsError = new Error('Hosts failed')
       beforeEach(function (done) {
         Hosts.prototype.removeHostsForInstance.yields(hostsError)
@@ -220,349 +220,105 @@ describe('InstanceContainerDelete: ' + moduleName, function () {
       })
     })
 
-    // describe('instance container was not found', function () {
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, {})
-    //     done()
-    //   })
-    //
-    //   it('should callback with fatal error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err).to.be.instanceOf(TaskFatalError)
-    //         expect(err.message).to.contain('Cannot redeploy an instance without a container')
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('user lookup fails', function () {
-    //   var mongoError = new Error('Mongo failed')
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, new Instance(ctx.mockInstance))
-    //     User.findByGithubId.yields(mongoError)
-    //     done()
-    //   })
-    //
-    //   it('should callback with error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err.message).to.equal(mongoError.message)
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('user was not found', function () {
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, new Instance(ctx.mockInstance))
-    //     User.findByGithubId.yields(null, null)
-    //     done()
-    //   })
-    //
-    //   it('should callback with fatal error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err).to.be.instanceOf(TaskFatalError)
-    //         expect(err.message).to.contain('User not found')
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('build lookup fails', function () {
-    //   var mongoError = new Error('Mongo failed')
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, new Instance(ctx.mockInstance))
-    //     User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
-    //     Build.findById.yields(mongoError)
-    //     done()
-    //   })
-    //
-    //   it('should callback with error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err.message).to.equal(mongoError.message)
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         sinon.assert.calledOnce(Build.findById)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('build was not found', function () {
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, new Instance(ctx.mockInstance))
-    //     User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
-    //     Build.findById.yields(null, null)
-    //     done()
-    //   })
-    //
-    //   it('should callback with fatal error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err).to.be.instanceOf(TaskFatalError)
-    //         expect(err.message).to.contain('Build not found')
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         sinon.assert.calledOnce(Build.findById)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('build was not successfull', function () {
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, new Instance(ctx.mockInstance))
-    //     User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
-    //     Build.findById.yields(null, { successful: false })
-    //     done()
-    //   })
-    //
-    //   it('should callback with fatal error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err).to.be.instanceOf(TaskFatalError)
-    //         expect(err.message).to.contain('Cannot redeploy an instance with an unsuccessful build')
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         sinon.assert.calledOnce(Build.findById)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('cv lookup fails', function () {
-    //   var mongoError = new Error('Mongo failed')
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, new Instance(ctx.mockInstance))
-    //     User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
-    //     Build.findById.yields(null, { successful: true,
-    //       contextVersions: ['507f191e810c19729de860e1'] })
-    //     ContextVersion.findById.yields(mongoError)
-    //     done()
-    //   })
-    //
-    //   it('should callback with error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err.message).to.equal(mongoError.message)
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         sinon.assert.calledOnce(Build.findById)
-    //         sinon.assert.calledOnce(ContextVersion.findById)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('cv was not found', function () {
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, new Instance(ctx.mockInstance))
-    //     User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
-    //     Build.findById.yields(null, { successful: true,
-    //       contextVersions: ['507f191e810c19729de860e1'] })
-    //     ContextVersion.findById.yields(null, null)
-    //     done()
-    //   })
-    //
-    //   it('should callback with fatal error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err).to.be.instanceOf(TaskFatalError)
-    //         expect(err.message).to.contain('ContextVersion not found')
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         sinon.assert.calledOnce(Build.findById)
-    //         sinon.assert.calledOnce(ContextVersion.findById)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('cv updated failed', function () {
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, new Instance(ctx.mockInstance))
-    //     User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
-    //     Build.findById.yields(null, { successful: true,
-    //       contextVersions: ['507f191e810c19729de860e1'] })
-    //     ContextVersion.findById.yields(null, new ContextVersion({}))
-    //     ContextVersion.prototype.clearDockerHost.yields(new Error('Mongo error'))
-    //     done()
-    //   })
-    //
-    //   it('should callback with error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err.message).to.contain('Mongo error')
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         sinon.assert.calledOnce(Build.findById)
-    //         sinon.assert.calledOnce(ContextVersion.findById)
-    //         sinon.assert.calledOnce(ContextVersion.prototype.clearDockerHost)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('instance update failed', function () {
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, new Instance(ctx.mockInstance))
-    //     User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
-    //     Build.findById.yields(null, { successful: true,
-    //       contextVersions: ['507f191e810c19729de860e1'] })
-    //     var cv = new ContextVersion({})
-    //     ContextVersion.findById.yields(null, cv)
-    //     ContextVersion.prototype.clearDockerHost.yields(null, cv)
-    //     Instance.prototype.update.yields(new Error('Mongo error'))
-    //     done()
-    //   })
-    //
-    //   it('should callback with error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err.message).to.contain('Mongo error')
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         sinon.assert.calledOnce(Build.findById)
-    //         sinon.assert.calledOnce(ContextVersion.findById)
-    //         sinon.assert.calledOnce(ContextVersion.prototype.clearDockerHost)
-    //         sinon.assert.calledOnce(Instance.prototype.update)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('owner username search failed', function () {
-    //   beforeEach(function (done) {
-    //     var instance = new Instance(ctx.mockInstance)
-    //     Instance.findById.yields(null, instance)
-    //     User.findByGithubId.yields(null, new User({_id: '507f191e810c19729de860eb'}))
-    //     Build.findById.yields(null, { successful: true,
-    //       contextVersions: ['507f191e810c19729de860e1'] })
-    //     var cv = new ContextVersion({})
-    //     ContextVersion.findById.yields(null, cv)
-    //     ContextVersion.prototype.clearDockerHost.yields(null, cv)
-    //     Instance.prototype.update.yields(null, instance)
-    //     User.prototype.findGithubUsernameByGithubId.yields(new Error('Mongo error'))
-    //     done()
-    //   })
-    //
-    //   it('should callback with error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err.message).to.contain('Mongo error')
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         sinon.assert.calledOnce(Build.findById)
-    //         sinon.assert.calledOnce(ContextVersion.findById)
-    //         sinon.assert.calledOnce(ContextVersion.prototype.clearDockerHost)
-    //         sinon.assert.calledOnce(Instance.prototype.update)
-    //         sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('emit event failed', function () {
-    //   beforeEach(function (done) {
-    //     var instance = new Instance(ctx.mockInstance)
-    //     Instance.findById.yields(null, instance)
-    //     var user = new User({_id: '507f191e810c19729de860eb'})
-    //     User.findByGithubId.yields(null, user)
-    //     Build.findById.yields(null, { successful: true,
-    //       contextVersions: ['507f191e810c19729de860e1'] })
-    //     var cv = new ContextVersion({})
-    //     ContextVersion.findById.yields(null, cv)
-    //     ContextVersion.prototype.clearDockerHost.yields(null, cv)
-    //     Instance.prototype.update.yields(null, instance)
-    //     User.prototype.findGithubUsernameByGithubId.yields(null, 'codenow')
-    //     var rejectionPromise = Promise.reject(new Error('Primus error'))
-    //     rejectionPromise.suppressUnhandledRejections()
-    //     InstanceService.emitInstanceUpdate.onCall(0).returns(rejectionPromise)
-    //     done()
-    //   })
-    //
-    //   it('should callback with error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err.message).to.contain('Primus error')
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         sinon.assert.calledOnce(Build.findById)
-    //         sinon.assert.calledOnce(ContextVersion.findById)
-    //         sinon.assert.calledOnce(ContextVersion.prototype.clearDockerHost)
-    //         sinon.assert.calledOnce(Instance.prototype.update)
-    //         sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
-    //         sinon.assert.calledOnce(Worker._deleteOldContainer)
-    //         sinon.assert.calledOnce(Worker._createNewContainer)
-    //         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
-    //         done()
-    //       })
-    //   })
-    // })
-    //
-    // describe('pass', function () {
-    //   var instance = new Instance(ctx.mockInstance)
-    //   var user = new User({_id: '507f191e810c19729de860eb'})
-    //   var build = new Build({
-    //     _id: '507f191e810c19729de860e2',
-    //     completed: Date.now(),
-    //     failed: false,
-    //     contextVersions: ['507f191e810c19729de860e1'] })
-    //   var cv = new ContextVersion({_id: '507f191e810c19729de860e1'})
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, instance)
-    //     User.findByGithubId.yields(null, user)
-    //     Build.findById.yields(null, build)
-    //     ContextVersion.findById.yields(null, cv)
-    //     ContextVersion.prototype.clearDockerHost.yields(null, cv)
-    //     Instance.prototype.update.yields(null, instance)
-    //     User.prototype.findGithubUsernameByGithubId.yields(null, 'codenow')
-    //     InstanceService.emitInstanceUpdate.onCall(0).returns(Promise.resolve())
-    //     done()
-    //   })
-    //
-    //   it('should return no error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err).to.not.exist()
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledWith(Instance.findById, testData.instanceId)
-    //
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         sinon.assert.calledWith(User.findByGithubId, testData.sessionUserGithubId)
-    //
-    //         sinon.assert.calledOnce(Build.findById)
-    //         sinon.assert.calledWith(Build.findById, instance.build)
-    //
-    //         sinon.assert.calledOnce(ContextVersion.findById)
-    //         sinon.assert.calledWith(ContextVersion.findById, build.contextVersions[0])
-    //
-    //         sinon.assert.calledOnce(ContextVersion.prototype.clearDockerHost)
-    //
-    //         sinon.assert.calledOnce(Instance.prototype.update)
-    //         var query = Instance.prototype.update.getCall(0).args[0]
-    //         expect(query['$unset'].container).to.equal(1)
-    //         expect(query['$set']['contextVersion._id']).to.equal(build.contextVersions[0])
-    //
-    //         sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
-    //         sinon.assert.calledWith(User.prototype.findGithubUsernameByGithubId, instance.owner.github)
-    //
-    //         sinon.assert.calledOnce(Worker._deleteOldContainer)
-    //         sinon.assert.calledOnce(Worker._createNewContainer)
-    //         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
-    //         sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
-    //           instance, testData.sessionUserGithubId, 'redeploy', true)
-    //         done()
-    //       })
-    //   })
-    // })
+    describe('stopping container', function () {
+      var dockerError = new Error('Docker stop failed')
+      beforeEach(function (done) {
+        Docker.prototype.stopContainerWithRetry.yields(dockerError)
+        done()
+      })
+
+      it('should callback with fatal error', function (done) {
+        Worker(testData)
+          .asCallback(function (err) {
+            expect(err.message).to.contain(dockerError.message)
+            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(Hosts.prototype.removeHostsForInstance)
+            sinon.assert.calledWith(Hosts.prototype.removeHostsForInstance, {
+              ownerUsername: mockInstance.owner.username,
+              ownerGithub: mockInstance.owner.github,
+              masterPod: mockInstance.masterPod,
+              shortHash: mockInstance.shortHash,
+              instanceName: mockInstance.name,
+              branch: mockInstance.contextVersion.appCodeVersions[0].lowerBranch
+            }, mockInstance.container.ports)
+            sinon.assert.calledOnce(Docker.prototype.stopContainerWithRetry)
+            sinon.assert.calledWith(Docker.prototype.stopContainerWithRetry, {
+              times: process.env.WORKER_STOP_CONTAINER_NUMBER_RETRY_ATTEMPTS,
+              ignoreStatusCode: 404
+            }, testConatinerId, true)
+            sinon.assert.notCalled(Docker.prototype.removeContainerWithRetry)
+            done()
+          })
+      })
+    })
+
+    describe('removing container', function () {
+      var dockerError = new Error('Docker stop failed')
+      beforeEach(function (done) {
+        Docker.prototype.removeContainerWithRetry.yields(dockerError)
+        done()
+      })
+
+      it('should callback with fatal error', function (done) {
+        Worker(testData)
+          .asCallback(function (err) {
+            expect(err.message).to.contain(dockerError.message)
+            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(Hosts.prototype.removeHostsForInstance)
+            sinon.assert.calledWith(Hosts.prototype.removeHostsForInstance, {
+              ownerUsername: mockInstance.owner.username,
+              ownerGithub: mockInstance.owner.github,
+              masterPod: mockInstance.masterPod,
+              shortHash: mockInstance.shortHash,
+              instanceName: mockInstance.name,
+              branch: mockInstance.contextVersion.appCodeVersions[0].lowerBranch
+            }, mockInstance.container.ports)
+            sinon.assert.calledOnce(Docker.prototype.stopContainerWithRetry)
+            sinon.assert.calledWith(Docker.prototype.stopContainerWithRetry, {
+              times: process.env.WORKER_STOP_CONTAINER_NUMBER_RETRY_ATTEMPTS,
+              ignoreStatusCode: 404
+            }, testConatinerId, true)
+            sinon.assert.calledOnce(Docker.prototype.removeContainerWithRetry)
+            sinon.assert.calledWith(Docker.prototype.removeContainerWithRetry, {
+              times: process.env.WORKER_REMOVE_CONTAINER_NUMBER_RETRY_ATTEMPTS,
+              ignoreStatusCode: 404
+            }, testConatinerId)
+            done()
+          })
+      })
+    })
+
+    describe('pass', function () {
+      it('should return no error', function (done) {
+        Worker(testData)
+          .asCallback(function (err) {
+            expect(err).to.not.exist()
+            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(Hosts.prototype.removeHostsForInstance)
+            sinon.assert.calledWith(Hosts.prototype.removeHostsForInstance, {
+              ownerUsername: mockInstance.owner.username,
+              ownerGithub: mockInstance.owner.github,
+              masterPod: mockInstance.masterPod,
+              shortHash: mockInstance.shortHash,
+              instanceName: mockInstance.name,
+              branch: mockInstance.contextVersion.appCodeVersions[0].lowerBranch
+            }, mockInstance.container.ports)
+            sinon.assert.calledOnce(Docker.prototype.stopContainerWithRetry)
+            sinon.assert.calledWith(Docker.prototype.stopContainerWithRetry, {
+              times: process.env.WORKER_STOP_CONTAINER_NUMBER_RETRY_ATTEMPTS,
+              ignoreStatusCode: 404
+            }, testConatinerId, true)
+            sinon.assert.calledOnce(Docker.prototype.removeContainerWithRetry)
+            sinon.assert.calledWith(Docker.prototype.removeContainerWithRetry, {
+              times: process.env.WORKER_REMOVE_CONTAINER_NUMBER_RETRY_ATTEMPTS,
+              ignoreStatusCode: 404
+            }, testConatinerId)
+            done()
+          })
+      })
+    })
   })
 })
