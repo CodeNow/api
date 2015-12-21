@@ -44,7 +44,7 @@ describe('Hosts: ' + moduleName, function () {
         instanceName: ctx.instanceName,
         shortHash: ctx.instance.shortHash
       }
-      ctx.hosts.removeHostsForInstance(entry, ctx.instance.container, done)
+      ctx.hosts.removeHostsForInstance(entry, ctx.instance.container.ports, done)
     })
 
     it('should parse a username from a container hostname', function (done) {
