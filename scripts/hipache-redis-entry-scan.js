@@ -1,4 +1,12 @@
 /**
+ * Little bit of background on this for anyone that comes along later.
+ * This script was originally intended to automate finding instances that didn't have corresponding
+ * userland-hipache redis routing entries back when we thought the API was periodically not
+ * inserting these keys into redis from workers. Later we discovered that there wasn't a bug with
+ * API, and it was a frontend bug that involved failing to append ports to direct urls being
+ * mistakenly interpreted for an API bug. Keeping this script because it may still be useful in the
+ * future.
+ *
  * Compare instance documents in API mongodb database to userland-hipache redis entries to find any
  * potentially missing hipache redis entries.
  *
