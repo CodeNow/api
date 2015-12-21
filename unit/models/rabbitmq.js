@@ -393,7 +393,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       }
       ctx.rabbitMQ.deleteInstance(payload)
       sinon.assert.calledOnce(ctx.rabbitMQ._validate)
-      var keys = [ 'instanceId']
+      var keys = [ 'instanceId' ]
       sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'delete-instance')
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
       sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'delete-instance', payload)
@@ -430,7 +430,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       }
       ctx.rabbitMQ.deleteInstanceContainer(payload)
       sinon.assert.calledOnce(ctx.rabbitMQ._validate)
-      var keys = [ 'instanceId', 'containerId']
+      var keys = [ 'instanceId', 'containerId' ]
       sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.container.delete')
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
       sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.container.delete', payload)
