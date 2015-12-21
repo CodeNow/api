@@ -324,55 +324,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
   })
 
-  describe('deleteInstance', function () {
-    beforeEach(function (done) {
-      // this normally set after connect
-      ctx.rabbitMQ.hermesClient = {
-        publish: noop
-      }
-      ctx.validJobData = {
-        instanceId: '507f1f77bcf86cd799439011'
-      }
-      // missing sessionUserId
-      ctx.invalidJobData = {}
-      done()
-    })
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
-          expect(eventName).to.equal('delete-instance')
-          expect(eventData).to.equal(ctx.validJobData)
-        })
-        done()
-      })
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore()
-        done()
-      })
-      it('should publish a job with required data', function (done) {
-        ctx.rabbitMQ.deleteInstance(ctx.validJobData)
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1)
-        done()
-      })
-    })
-    describe('failure', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {})
-        done()
-      })
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore()
-        done()
-      })
-      it('should not publish a job without required data', function (done) {
-        expect(ctx.rabbitMQ.deleteInstance.bind(ctx.rabbitMQ, ctx.invalidJobData))
-          .to.throw(Error, /Validation failed/)
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0)
-        done()
-      })
-    })
-  })
-
   describe('redeployInstanceContainer', function () {
     beforeEach(function (done) {
       // this normally set after connect
@@ -422,6 +373,41 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0)
         done()
       })
+    })
+  })
+
+  describe('deleteInstance', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish').returns()
+      sinon.spy(ctx.rabbitMQ, '_validate')
+      done()
+    })
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      ctx.rabbitMQ._validate.restore()
+      done()
+    })
+    it('should publish to the `delete-instance` queue', function (done) {
+      var payload = {
+        instanceId: '507f1f77bcf86cd799439011'
+      }
+      ctx.rabbitMQ.deleteInstance(payload)
+      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
+      var keys = [ 'instanceId']
+      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'delete-instance')
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'delete-instance', payload)
+      done()
+    })
+    it('should fail to publish to the `delete-instance` queue', function (done) {
+      var payload = {}
+      expect(ctx.rabbitMQ.deleteInstance.bind(ctx.rabbitMQ, payload))
+        .to.throw(Error, /Validation failed/)
+      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
+      var keys = [ 'instanceId' ]
+      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'delete-instance')
+      sinon.assert.notCalled(ctx.rabbitMQ.hermesClient.publish)
+      done()
     })
   })
 
