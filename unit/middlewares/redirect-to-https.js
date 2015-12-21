@@ -7,8 +7,6 @@ require('loadenv')()
 
 var Code = require('code')
 var Lab = require('lab')
-var noop = require('101/noop')
-var path = require('path')
 var sinon = require('sinon')
 
 var redirectToHTTPS = require('middlewares/redirect-to-https')
