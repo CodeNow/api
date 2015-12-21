@@ -141,11 +141,12 @@ describe('Worker: delete-instance: ' + moduleName, function () {
       })
     })
     it('should success if everything was successful', function (done) {
+      var instanceId = '507f1f77bcf86cd799439011'
       var worker = new DeleteInstance({
-        instanceId: '507f1f77bcf86cd799439011'
+        instanceId: instanceId
       })
       var instanceData = {
-        _id: '507f1f77bcf86cd799439011',
+        _id: instanceId,
         shortHash: 'a6aj1',
         name: 'api',
         masterPod: false,
@@ -178,15 +179,10 @@ describe('Worker: delete-instance: ' + moduleName, function () {
         sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
         sinon.assert.calledOnce(Instance.prototype.remove)
         sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
-        var deleteContainerTask = rabbitMQ.deleteInstanceContainer.getCall(0).args[0]
-        // expect(deleteContainerTask.instanceShortHash).to.equal(instanceData.shortHash)
-        // expect(deleteContainerTask.instanceName).to.equal(instanceData.name)
-        // expect(deleteContainerTask.instanceMasterPod).to.equal(instanceData.masterPod)
-        // expect(deleteContainerTask.instanceMasterBranch)
-        //   .to.equal(instanceData.contextVersion.appCodeVersions[0].lowerBranch)
-        // expect(deleteContainerTask.container).to.deep.equal(instanceData.container)
-        // expect(deleteContainerTask.ownerGithubId).to.equal(instanceData.owner.github)
-        // expect(deleteContainerTask.sessionUserId).to.equal('507f191e810c19729de860ea')
+        sinon.assert.calledWith(rabbitMQ.deleteInstanceContainer, {
+          instanceId: instance._id,
+          containerId: instanceData.container.dockerContainer
+        })
         sinon.assert.calledOnce(messenger.emitInstanceDelete)
         sinon.assert.calledWith(messenger.emitInstanceDelete, instance)
         expect(messenger.emitInstanceDelete.callCount).to.equal(1)
