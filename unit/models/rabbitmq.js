@@ -426,11 +426,15 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     it('should publish to the `instance.container.delete` queue', function (done) {
       var payload = {
         instanceId: '507f1f77bcf86cd799439011',
-        containerId: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
+        containerId: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8',
+        containerPorts: {
+          '3000/tcp': [ { HostIp: '0.0.0.0', HostPort: '32987' } ],
+          '80/tcp': [ { HostIp: '0.0.0.0', HostPort: '32988' } ]
+        }
       }
       ctx.rabbitMQ.deleteInstanceContainer(payload)
       sinon.assert.calledOnce(ctx.rabbitMQ._validate)
-      var keys = [ 'instanceId', 'containerId' ]
+      var keys = [ 'instanceId', 'containerId', 'containerPorts' ]
       sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.container.delete')
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
       sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.container.delete', payload)
@@ -441,7 +445,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       expect(ctx.rabbitMQ.deleteInstanceContainer.bind(ctx.rabbitMQ, payload))
         .to.throw(Error, /Validation failed/)
       sinon.assert.calledOnce(ctx.rabbitMQ._validate)
-      var keys = [ 'instanceId', 'containerId' ]
+      var keys = [ 'instanceId', 'containerId', 'containerPorts' ]
       sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.container.delete')
       sinon.assert.notCalled(ctx.rabbitMQ.hermesClient.publish)
       done()

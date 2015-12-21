@@ -158,7 +158,11 @@ describe('Worker: delete-instance: ' + moduleName, function () {
         },
         container: {
           dockerHost: 'https://localhost:4242',
-          dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
+          dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8',
+          ports: {
+            '3000/tcp': [ { HostIp: '0.0.0.0', HostPort: '32987' } ],
+            '80/tcp': [ { HostIp: '0.0.0.0', HostPort: '32988' } ]
+          }
         },
         contextVersion: {
           appCodeVersions: [
@@ -181,7 +185,8 @@ describe('Worker: delete-instance: ' + moduleName, function () {
         sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
         sinon.assert.calledWith(rabbitMQ.deleteInstanceContainer, {
           instanceId: instance._id,
-          containerId: instanceData.container.dockerContainer
+          containerId: instanceData.container.dockerContainer,
+          containerPorts: instanceData.container.ports
         })
         sinon.assert.calledOnce(messenger.emitInstanceDelete)
         sinon.assert.calledWith(messenger.emitInstanceDelete, instance)
