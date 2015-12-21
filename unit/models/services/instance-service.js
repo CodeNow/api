@@ -219,10 +219,8 @@ describe('InstanceService: ' + moduleName, function () {
           expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
           var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
           expect(arg1.instanceId).to.equal('inst-1')
-          expect(arg1.sessionUserId).to.equal('user-id')
           var arg2 = rabbitMQ.deleteInstance.getCall(1).args[0]
           expect(arg2.instanceId).to.equal('inst-3')
-          expect(arg2.sessionUserId).to.equal('user-id')
           Instance.findForkedInstances.restore()
           rabbitMQ.deleteInstance.restore()
           done()
@@ -1139,7 +1137,7 @@ describe('InstanceService: ' + moduleName, function () {
       InstanceService.deleteAllInstanceForks({
         _id: '507f1f77bcf86cd799439011',
         masterPod: false
-      }, '507f191e810c19729de860ea').asCallback(function (err, instances) {
+      }).asCallback(function (err, instances) {
         expect(err).to.be.null()
         expect(instances.length).to.equal(0)
         sinon.assert.notCalled(Instance.findInstancesByParent)
@@ -1155,7 +1153,7 @@ describe('InstanceService: ' + moduleName, function () {
         _id: '507f1f77bcf86cd799439011',
         shortHash: 'abc1',
         masterPod: true
-      }, '507f191e810c19729de860ea').asCallback(function (err, instances) {
+      }).asCallback(function (err, instances) {
         expect(err).to.exist()
         expect(instances).to.not.exist()
         expect(err.output.statusCode).to.equal(400)
@@ -1173,7 +1171,7 @@ describe('InstanceService: ' + moduleName, function () {
         _id: '507f1f77bcf86cd799439011',
         shortHash: 'abc1',
         masterPod: true
-      }, '507f191e810c19729de860ea').asCallback(function (err, instances) {
+      }).asCallback(function (err, instances) {
         expect(err).to.be.null()
         expect(instances.length).to.equal(2)
         sinon.assert.calledOnce(Instance.findInstancesByParent)

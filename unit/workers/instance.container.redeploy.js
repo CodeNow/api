@@ -547,20 +547,14 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
         instance: new Instance(ctx.mockInstance),
         oldContainer: {
           dockerContainer: '46080d6253c8db55b8bbb9408654896964b86c63e863f1b3b0301057d1ad92ba'
-        },
-        user: new User({_id: '507f191e810c19729de860eb'})
+        }
       }
       Worker._deleteOldContainer(data)
-      expect(rabbitMQ.deleteInstanceContainer.calledOnce).to.be.true()
-      var jobData = rabbitMQ.deleteInstanceContainer.getCall(0).args[0]
-      expect(jobData.instanceShortHash).to.equal(data.instance.shortHash)
-      expect(jobData.instanceName).to.equal(data.instance.name)
-      expect(jobData.instanceName).to.equal(data.instance.name)
-      expect(jobData.instanceMasterPod).to.equal(data.instance.masterPod)
-      expect(jobData.instanceMasterBranch).to.equal('develop')
-      expect(jobData.container).to.equal(data.oldContainer)
-      expect(jobData.ownerGithubId).to.equal(data.instance.owner.github)
-      expect(jobData.sessionUserId).to.equal(data.user._id)
+      sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
+      sinon.assert.calledWith(rabbitMQ.deleteInstanceContainer, {
+        instanceId: data.instance._id,
+        containerId: data.oldContainer.dockerContainer
+      })
       done()
     })
   })
