@@ -54,7 +54,7 @@ describe('POST /auth/whitelist', function () {
       jar: ctx.j
     }
     var count = createCount(2, done)
-    rabbitMQ.hermesClient.subscribe('cluster-provision', function (data, cb) {
+    rabbitMQ.hermesClient.subscribe('asg.create', function (data, cb) {
       expect(data.githubId).to.equal(testId)
       cb()
       count.next()
