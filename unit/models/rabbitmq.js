@@ -399,7 +399,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       ]
       sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.delete')
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'delete-instance', payload)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.delete', payload)
       done()
     })
     it('should fail to publish to the `instance.delete` queue if validation failed', function (done) {
