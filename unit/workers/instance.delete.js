@@ -37,6 +37,7 @@ describe('InstanceDelete: ' + moduleName, function () {
       _id: testInstanceId,
       name: 'name1',
       shortHash: 'asd51a1',
+      masterPod: true,
       owner: {
         github: 124,
         username: 'codenow',
@@ -316,6 +317,31 @@ describe('InstanceDelete: ' + moduleName, function () {
               sinon.assert.calledWith(Instance.markAsDeletedByIdAsync, testInstanceId)
               sinon.assert.calledOnce(Instance.markAsDeletedByParentAsync)
               sinon.assert.calledWith(Instance.markAsDeletedByParentAsync, testInstance.shortHash)
+              sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+              sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
+              sinon.assert.calledOnce(Instance.prototype.remove)
+              sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
+              sinon.assert.calledWith(InstanceService.deleteAllInstanceForks, testInstance)
+              sinon.assert.calledOnce(messenger.emitInstanceDelete)
+              sinon.assert.calledWith(messenger.emitInstanceDelete, testInstance)
+              done()
+            })
+        })
+      })
+      describe('not a master instance', function () {
+        beforeEach(function (done) {
+          testInstance.masterPod = false
+          testInstance.container = null
+          Instance.markAsDeletedByIdAsync.returns(Promise.resolve(testInstance))
+          done()
+        })
+        it('should not mark forks if not master', function (done) {
+          Worker(testData)
+            .asCallback(function (err) {
+              expect(err).to.not.exists()
+              sinon.assert.calledOnce(Instance.markAsDeletedByIdAsync)
+              sinon.assert.calledWith(Instance.markAsDeletedByIdAsync, testInstanceId)
+              sinon.assert.notCalled(Instance.markAsDeletedByParentAsync)
               sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
               sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
               sinon.assert.calledOnce(Instance.prototype.remove)
