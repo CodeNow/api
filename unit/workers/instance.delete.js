@@ -64,7 +64,7 @@ describe('InstanceDelete: ' + moduleName, function () {
       }
     })
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findById').yieldsAsync(testInstance)
+      sinon.stub(Instance, 'findById').yieldsAsync(null, testInstance)
       sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
       sinon.stub(Instance.prototype, 'removeSelfFromGraph').yieldsAsync()
       sinon.stub(Instance.prototype, 'remove').yieldsAsync()
@@ -128,6 +128,12 @@ describe('InstanceDelete: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.equal(mongoError.message)
             sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+            sinon.assert.notCalled(Instance.prototype.removeSelfFromGraph)
+            sinon.assert.notCalled(Instance.prototype.remove)
+            sinon.assert.notCalled(InstanceService.deleteAllInstanceForks)
+            sinon.assert.notCalled(messenger.emitInstanceDelete)
             done()
           })
       })
@@ -145,66 +151,139 @@ describe('InstanceDelete: ' + moduleName, function () {
             expect(err).to.be.instanceOf(TaskFatalError)
             expect(err.message).to.contain('Instance not found')
             sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+            sinon.assert.notCalled(Instance.prototype.removeSelfFromGraph)
+            sinon.assert.notCalled(Instance.prototype.remove)
+            sinon.assert.notCalled(InstanceService.deleteAllInstanceForks)
+            sinon.assert.notCalled(messenger.emitInstanceDelete)
             done()
           })
       })
     })
 
-    // describe('pass', function () {
-    //   var instance = new Instance(ctx.mockInstance)
-    //   var user = new User({_id: '507f191e810c19729de860eb'})
-    //   var build = new Build({
-    //     _id: '507f191e810c19729de860e2',
-    //     completed: Date.now(),
-    //     failed: false,
-    //     contextVersions: ['507f191e810c19729de860e1'] })
-    //   var cv = new ContextVersion({_id: '507f191e810c19729de860e1'})
-    //   beforeEach(function (done) {
-    //     Instance.findById.yields(null, instance)
-    //     User.findByGithubId.yields(null, user)
-    //     Build.findById.yields(null, build)
-    //     ContextVersion.findById.yields(null, cv)
-    //     ContextVersion.prototype.clearDockerHost.yields(null, cv)
-    //     Instance.prototype.update.yields(null, instance)
-    //     User.prototype.findGithubUsernameByGithubId.yields(null, 'codenow')
-    //     InstanceService.emitInstanceUpdate.onCall(0).returns(Promise.resolve())
-    //     done()
-    //   })
-    //
-    //   it('should return no error', function (done) {
-    //     Worker(testData)
-    //       .asCallback(function (err) {
-    //         expect(err).to.not.exist()
-    //         sinon.assert.calledOnce(Instance.findById)
-    //         sinon.assert.calledWith(Instance.findById, testData.instanceId)
-    //
-    //         sinon.assert.calledOnce(User.findByGithubId)
-    //         sinon.assert.calledWith(User.findByGithubId, testData.sessionUserGithubId)
-    //
-    //         sinon.assert.calledOnce(Build.findById)
-    //         sinon.assert.calledWith(Build.findById, instance.build)
-    //
-    //         sinon.assert.calledOnce(ContextVersion.findById)
-    //         sinon.assert.calledWith(ContextVersion.findById, build.contextVersions[0])
-    //
-    //         sinon.assert.calledOnce(ContextVersion.prototype.clearDockerHost)
-    //
-    //         sinon.assert.calledOnce(Instance.prototype.update)
-    //         var query = Instance.prototype.update.getCall(0).args[0]
-    //         expect(query['$unset'].container).to.equal(1)
-    //         expect(query['$set']['contextVersion._id']).to.equal(build.contextVersions[0])
-    //
-    //         sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
-    //         sinon.assert.calledWith(User.prototype.findGithubUsernameByGithubId, instance.owner.github)
-    //
-    //         sinon.assert.calledOnce(Worker._deleteOldContainer)
-    //         sinon.assert.calledOnce(Worker._createNewContainer)
-    //         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
-    //         sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
-    //           instance, testData.sessionUserGithubId, 'redeploy', true)
-    //         done()
-    //       })
-    //   })
-    // })
+    describe('removeSelfFromGraph failed', function () {
+      var neoError = new Error('Neo failed')
+      beforeEach(function (done) {
+        Instance.prototype.removeSelfFromGraph.yields(neoError)
+        done()
+      })
+
+      it('should callback with fatal error', function (done) {
+        Worker(testData)
+          .asCallback(function (err) {
+            expect(err.message).to.equal(neoError.message)
+            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
+            sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
+            sinon.assert.notCalled(Instance.prototype.remove)
+            sinon.assert.notCalled(InstanceService.deleteAllInstanceForks)
+            sinon.assert.notCalled(messenger.emitInstanceDelete)
+            done()
+          })
+      })
+    })
+
+    describe('remove failed', function () {
+      var mongoError = new Error('Mongo failed')
+      beforeEach(function (done) {
+        Instance.prototype.remove.yields(mongoError)
+        done()
+      })
+
+      it('should callback with fatal error', function (done) {
+        Worker(testData)
+          .asCallback(function (err) {
+            expect(err.message).to.equal(mongoError.message)
+            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
+            sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
+            sinon.assert.calledOnce(Instance.prototype.remove)
+            sinon.assert.notCalled(InstanceService.deleteAllInstanceForks)
+            sinon.assert.notCalled(messenger.emitInstanceDelete)
+            done()
+          })
+      })
+    })
+
+    describe('delete forks failed', function () {
+      var mongoError = new Error('Mongo failed')
+      beforeEach(function (done) {
+        var rejectionPromise = Promise.reject(mongoError)
+        rejectionPromise.suppressUnhandledRejections()
+        InstanceService.deleteAllInstanceForks.returns(rejectionPromise)
+        done()
+      })
+
+      it('should callback with fatal error', function (done) {
+        Worker(testData)
+          .asCallback(function (err) {
+            expect(err.message).to.equal(mongoError.message)
+            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
+            sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
+            sinon.assert.calledOnce(Instance.prototype.remove)
+            sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
+            sinon.assert.calledWith(InstanceService.deleteAllInstanceForks, testInstance)
+            sinon.assert.notCalled(messenger.emitInstanceDelete)
+            done()
+          })
+      })
+    })
+
+    describe('pass', function () {
+      it('should return no error', function (done) {
+        Worker(testData)
+          .asCallback(function (err) {
+            expect(err).to.not.exists()
+            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
+            sinon.assert.calledWith(rabbitMQ.deleteInstanceContainer, {
+              instanceShortHash: testInstance.shortHash,
+              instanceName: testInstance.name,
+              instanceMasterPod: testInstance.masterPod,
+              instanceMasterBranch: testInstance.contextVersion.appCodeVersions[0].lowerBranch,
+              container: testInstance.container,
+              ownerGithubId: testInstance.owner.github,
+              ownerGithubUsername: testInstance.owner.username
+            })
+            sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
+            sinon.assert.calledOnce(Instance.prototype.remove)
+            sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
+            sinon.assert.calledWith(InstanceService.deleteAllInstanceForks, testInstance)
+            sinon.assert.calledOnce(messenger.emitInstanceDelete)
+            sinon.assert.calledWith(messenger.emitInstanceDelete, testInstance)
+            done()
+          })
+      })
+
+      describe('no container', function () {
+        beforeEach(function (done) {
+          testInstance.container = null
+          Instance.findById.yieldsAsync(null, testInstance)
+          done()
+        })
+        it('should not delete container if there is no container', function (done) {
+          Worker(testData)
+            .asCallback(function (err) {
+              expect(err).to.not.exists()
+              sinon.assert.calledOnce(Instance.findById)
+              sinon.assert.calledWith(Instance.findById, testInstanceId)
+              sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+              sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
+              sinon.assert.calledOnce(Instance.prototype.remove)
+              sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
+              sinon.assert.calledWith(InstanceService.deleteAllInstanceForks, testInstance)
+              sinon.assert.calledOnce(messenger.emitInstanceDelete)
+              sinon.assert.calledWith(messenger.emitInstanceDelete, testInstance)
+              done()
+            })
+        })
+      })
+    })
   })
 })
