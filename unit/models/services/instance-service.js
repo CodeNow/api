@@ -135,19 +135,7 @@ describe('InstanceService: ' + moduleName, function () {
     it('should return if instanceId param is missing', function (done) {
       var instanceService = new InstanceService()
       sinon.spy(Instance, 'findForkedInstances')
-      instanceService.deleteForkedInstancesByRepoAndBranch(null, 'user-id', 'api', 'master',
-        function (err) {
-          expect(err).to.not.exist()
-          expect(Instance.findForkedInstances.callCount).to.equal(0)
-          Instance.findForkedInstances.restore()
-          done()
-        })
-    })
-
-    it('should return if user param is missing', function (done) {
-      var instanceService = new InstanceService()
-      sinon.spy(Instance, 'findForkedInstances')
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', null, 'api', 'master',
+      instanceService.deleteForkedInstancesByRepoAndBranch(null, 'api', 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
@@ -159,7 +147,7 @@ describe('InstanceService: ' + moduleName, function () {
     it('should return if repo param is missing', function (done) {
       var instanceService = new InstanceService()
       sinon.spy(Instance, 'findForkedInstances')
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', null, 'master',
+      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', null, 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
@@ -171,7 +159,7 @@ describe('InstanceService: ' + moduleName, function () {
     it('should return if branch param is missing', function (done) {
       var instanceService = new InstanceService()
       sinon.spy(Instance, 'findForkedInstances')
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', 'api', null,
+      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', null,
         function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
@@ -184,7 +172,7 @@ describe('InstanceService: ' + moduleName, function () {
       var instanceService = new InstanceService()
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(new Error('Some error'))
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', 'api', 'master',
+      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
         function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal('Some error')
@@ -198,7 +186,7 @@ describe('InstanceService: ' + moduleName, function () {
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(null, [])
       sinon.stub(rabbitMQ, 'deleteInstance')
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', 'api', 'master',
+      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
@@ -213,16 +201,14 @@ describe('InstanceService: ' + moduleName, function () {
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
       sinon.stub(rabbitMQ, 'deleteInstance')
-      instanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'user-id', 'api', 'master',
+      instanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
           var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
           expect(arg1.instanceId).to.equal('inst-1')
-          expect(arg1.sessionUserId).to.equal('user-id')
           var arg2 = rabbitMQ.deleteInstance.getCall(1).args[0]
           expect(arg2.instanceId).to.equal('inst-3')
-          expect(arg2.sessionUserId).to.equal('user-id')
           Instance.findForkedInstances.restore()
           rabbitMQ.deleteInstance.restore()
           done()
