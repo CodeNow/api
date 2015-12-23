@@ -91,12 +91,12 @@ describe('OnInstanceContainerStartWorker: ' + moduleName, function () {
 
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(InstanceService.prototype, 'modifyExistingContainerInspect')
+        sinon.stub(InstanceService, 'modifyExistingContainerInspect')
           .yieldsAsync(null, ctx.mockInstance)
         done()
       })
       afterEach(function (done) {
-        InstanceService.prototype.modifyExistingContainerInspect.restore()
+        InstanceService.modifyExistingContainerInspect.restore()
         done()
       })
 
@@ -104,9 +104,9 @@ describe('OnInstanceContainerStartWorker: ' + moduleName, function () {
         ctx.worker.handle(function (err) {
           expect(err).to.be.null()
           expect(ctx.worker._baseWorkerFindInstance.callCount).to.equal(1)
-          expect(InstanceService.prototype.modifyExistingContainerInspect.callCount).to.equal(1)
+          expect(InstanceService.modifyExistingContainerInspect.callCount).to.equal(1)
           sinon.assert.calledWith(
-            InstanceService.prototype.modifyExistingContainerInspect,
+            InstanceService.modifyExistingContainerInspect,
             ctx.mockInstance,
             ctx.data.id,
             ctx.data.inspectData
@@ -122,13 +122,13 @@ describe('OnInstanceContainerStartWorker: ' + moduleName, function () {
     })
     describe('failure', function () {
       beforeEach(function (done) {
-        sinon.stub(InstanceService.prototype, 'modifyExistingContainerInspect')
+        sinon.stub(InstanceService, 'modifyExistingContainerInspect')
           .yieldsAsync(new Error('this is an error'))
         done()
       })
 
       afterEach(function (done) {
-        InstanceService.prototype.modifyExistingContainerInspect.restore()
+        InstanceService.modifyExistingContainerInspect.restore()
         done()
       })
 
@@ -141,7 +141,7 @@ describe('OnInstanceContainerStartWorker: ' + moduleName, function () {
           expect(Hosts.prototype.upsertHostsForInstance.args[0][0])
             .to.equal(ctx.labels.ownerUsername)
           expect(Hosts.prototype.upsertHostsForInstance.args[0][1]).to.equal(ctx.mockInstance)
-          expect(InstanceService.prototype.modifyExistingContainerInspect.callCount).to.equal(1)
+          expect(InstanceService.modifyExistingContainerInspect.callCount).to.equal(1)
           expect(ctx.worker._baseWorkerUpdateInstanceFrontend.callCount).to.equal(1)
           done()
         })
@@ -157,22 +157,22 @@ describe('OnInstanceContainerStartWorker: ' + moduleName, function () {
     })
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(InstanceService.prototype, 'modifyExistingContainerInspect')
+        sinon.stub(InstanceService, 'modifyExistingContainerInspect')
           .yieldsAsync(null, ctx.mockInstance)
         done()
       })
 
       afterEach(function (done) {
-        InstanceService.prototype.modifyExistingContainerInspect.restore()
+        InstanceService.modifyExistingContainerInspect.restore()
         done()
       })
 
       it('should find and update instance with container', function (done) {
         ctx.worker._updateInstance(function (err) {
           expect(err).to.be.undefined()
-          expect(InstanceService.prototype.modifyExistingContainerInspect.callCount).to.equal(1)
+          expect(InstanceService.modifyExistingContainerInspect.callCount).to.equal(1)
           sinon.assert.calledWith(
-            InstanceService.prototype.modifyExistingContainerInspect,
+            InstanceService.modifyExistingContainerInspect,
             ctx.mockInstance,
             ctx.data.id,
             ctx.data.inspectData
@@ -183,20 +183,20 @@ describe('OnInstanceContainerStartWorker: ' + moduleName, function () {
     })
     describe('failure', function () {
       beforeEach(function (done) {
-        sinon.stub(InstanceService.prototype, 'modifyExistingContainerInspect')
+        sinon.stub(InstanceService, 'modifyExistingContainerInspect')
           .yieldsAsync(new Error('this is an error'))
         done()
       })
 
       afterEach(function (done) {
-        InstanceService.prototype.modifyExistingContainerInspect.restore()
+        InstanceService.modifyExistingContainerInspect.restore()
         done()
       })
 
       it('should find and update instance with container', function (done) {
         ctx.worker._updateInstance(function (err) {
           expect(err.message).to.equal('this is an error')
-          expect(InstanceService.prototype.modifyExistingContainerInspect.callCount).to.equal(1)
+          expect(InstanceService.modifyExistingContainerInspect.callCount).to.equal(1)
           done()
         })
       })
