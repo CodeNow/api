@@ -135,19 +135,7 @@ describe('InstanceService: ' + moduleName, function () {
     it('should return if instanceId param is missing', function (done) {
       var instanceService = new InstanceService()
       sinon.spy(Instance, 'findForkedInstances')
-      instanceService.deleteForkedInstancesByRepoAndBranch(null, 'user-id', 'api', 'master',
-        function (err) {
-          expect(err).to.not.exist()
-          expect(Instance.findForkedInstances.callCount).to.equal(0)
-          Instance.findForkedInstances.restore()
-          done()
-        })
-    })
-
-    it('should return if user param is missing', function (done) {
-      var instanceService = new InstanceService()
-      sinon.spy(Instance, 'findForkedInstances')
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', null, 'api', 'master',
+      instanceService.deleteForkedInstancesByRepoAndBranch(null, 'api', 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
@@ -159,7 +147,7 @@ describe('InstanceService: ' + moduleName, function () {
     it('should return if repo param is missing', function (done) {
       var instanceService = new InstanceService()
       sinon.spy(Instance, 'findForkedInstances')
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', null, 'master',
+      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', null, 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
@@ -171,7 +159,7 @@ describe('InstanceService: ' + moduleName, function () {
     it('should return if branch param is missing', function (done) {
       var instanceService = new InstanceService()
       sinon.spy(Instance, 'findForkedInstances')
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', 'api', null,
+      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', null,
         function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
@@ -184,7 +172,7 @@ describe('InstanceService: ' + moduleName, function () {
       var instanceService = new InstanceService()
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(new Error('Some error'))
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', 'api', 'master',
+      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
         function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal('Some error')
@@ -198,7 +186,7 @@ describe('InstanceService: ' + moduleName, function () {
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(null, [])
       sinon.stub(rabbitMQ, 'deleteInstance')
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'user-id', 'api', 'master',
+      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
@@ -213,16 +201,14 @@ describe('InstanceService: ' + moduleName, function () {
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
       sinon.stub(rabbitMQ, 'deleteInstance')
-      instanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'user-id', 'api', 'master',
+      instanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
           var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
           expect(arg1.instanceId).to.equal('inst-1')
-          expect(arg1.sessionUserId).to.equal('user-id')
           var arg2 = rabbitMQ.deleteInstance.getCall(1).args[0]
           expect(arg2.instanceId).to.equal('inst-3')
-          expect(arg2.sessionUserId).to.equal('user-id')
           Instance.findForkedInstances.restore()
           rabbitMQ.deleteInstance.restore()
           done()
@@ -1121,6 +1107,65 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, instance.updateCvAsync, messenger.emitInstanceUpdate)
           done()
         })
+    })
+  })
+  describe('#deleteAllInstanceForks', function () {
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findInstancesByParent')
+      sinon.stub(rabbitMQ, 'deleteInstance').returns()
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findInstancesByParent.restore()
+      rabbitMQ.deleteInstance.restore()
+      done()
+    })
+    it('should return immediately if masterPod !== true', function (done) {
+      InstanceService.deleteAllInstanceForks({
+        _id: '507f1f77bcf86cd799439011',
+        masterPod: false
+      }).asCallback(function (err, instances) {
+        expect(err).to.be.null()
+        expect(instances.length).to.equal(0)
+        sinon.assert.notCalled(Instance.findInstancesByParent)
+        sinon.assert.notCalled(rabbitMQ.deleteInstance)
+        done()
+      })
+    })
+
+    it('should return error if findInstancesByParent failed', function (done) {
+      Instance.findInstancesByParent
+        .yieldsAsync(Boom.badRequest('findInstancesByParent failed'))
+      InstanceService.deleteAllInstanceForks({
+        _id: '507f1f77bcf86cd799439011',
+        shortHash: 'abc1',
+        masterPod: true
+      }).asCallback(function (err, instances) {
+        expect(err).to.exist()
+        expect(instances).to.not.exist()
+        expect(err.output.statusCode).to.equal(400)
+        expect(err.output.payload.message).to.equal('findInstancesByParent failed')
+        sinon.assert.calledOnce(Instance.findInstancesByParent)
+        sinon.assert.calledWith(Instance.findInstancesByParent, 'abc1')
+        sinon.assert.notCalled(rabbitMQ.deleteInstance)
+        done()
+      })
+    })
+    //
+    it('should create new jobs', function (done) {
+      Instance.findInstancesByParent.yieldsAsync(null, [{_id: '507f1f77bcf86cd799439012'}, {_id: '507f1f77bcf86cd799439013'}])
+      InstanceService.deleteAllInstanceForks({
+        _id: '507f1f77bcf86cd799439011',
+        shortHash: 'abc1',
+        masterPod: true
+      }).asCallback(function (err, instances) {
+        expect(err).to.be.null()
+        expect(instances.length).to.equal(2)
+        sinon.assert.calledOnce(Instance.findInstancesByParent)
+        sinon.assert.calledWith(Instance.findInstancesByParent, 'abc1')
+        sinon.assert.calledTwice(rabbitMQ.deleteInstance)
+        done()
+      })
     })
   })
 })
