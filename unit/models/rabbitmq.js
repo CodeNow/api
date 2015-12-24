@@ -429,7 +429,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       done()
     })
 
-    it('should publish to the `instance.container.delete` queue', function (done) {
+    it('should publish to the `delete-instance-container` queue', function (done) {
       var payload = {
         instanceShortHash: 'd1as5f',
         instanceName: 'api',
@@ -453,12 +453,12 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         'ownerGithubId',
         'ownerGithubUsername'
       ]
-      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.container.delete')
+      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'delete-instance-container')
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
       sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'delete-instance-container', payload)
       done()
     })
-    it('should fail to publish to the `instance.container.delete` queue if validation failed', function (done) {
+    it('should fail to publish to the `delete-instance-container` queue if validation failed', function (done) {
       var payload = {}
       expect(ctx.rabbitMQ.deleteInstanceContainer.bind(ctx.rabbitMQ, payload))
         .to.throw(Error, /Validation failed/)
@@ -472,7 +472,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         'ownerGithubId',
         'ownerGithubUsername'
       ]
-      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.container.delete')
+      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'delete-instance-container')
       sinon.assert.notCalled(ctx.rabbitMQ.hermesClient.publish)
       done()
     })
