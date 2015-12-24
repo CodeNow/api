@@ -560,7 +560,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       expect(jobData.instanceMasterBranch).to.equal('develop')
       expect(jobData.container).to.equal(data.oldContainer)
       expect(jobData.ownerGithubId).to.equal(data.instance.owner.github)
-      expect(jobData.sessionUserId).to.equal(data.user._id)
+      expect(jobData.ownerGithubUsername).to.equal(data.instance.owner.username)
       done()
     })
   })

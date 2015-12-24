@@ -169,9 +169,8 @@ describe('200 PATCH /instances/:id', function () {
           var acv = ctx.cv.appCodeVersions.models[0].attrs
           var args = InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.getCall(0).args
           expect(args[0].toString()).to.equal(ctx.instance.id().toString())
-          expect(args[1]).to.equal(ctx.user.id())
-          expect(args[2]).to.equal(acv.lowerRepo)
-          expect(args[3]).to.equal(acv.lowerBranch)
+          expect(args[1]).to.equal(acv.lowerRepo)
+          expect(args[2]).to.equal(acv.lowerBranch)
           InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.restore()
           count.next()
         })
