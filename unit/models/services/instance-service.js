@@ -134,9 +134,8 @@ describe('InstanceService: ' + moduleName, function () {
 
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
     it('should return if instanceId param is missing', function (done) {
-      var instanceService = new InstanceService()
       sinon.spy(Instance, 'findForkedInstances')
-      instanceService.deleteForkedInstancesByRepoAndBranch(null, 'api', 'master',
+      InstanceService.deleteForkedInstancesByRepoAndBranch(null, 'api', 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
@@ -146,9 +145,8 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     it('should return if repo param is missing', function (done) {
-      var instanceService = new InstanceService()
       sinon.spy(Instance, 'findForkedInstances')
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', null, 'master',
+      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', null, 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
@@ -158,9 +156,8 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     it('should return if branch param is missing', function (done) {
-      var instanceService = new InstanceService()
       sinon.spy(Instance, 'findForkedInstances')
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', null,
+      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', null,
         function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
@@ -170,10 +167,9 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     it('should return error if #findForkedInstances failed', function (done) {
-      var instanceService = new InstanceService()
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(new Error('Some error'))
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
+      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
         function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal('Some error')
@@ -183,11 +179,10 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     it('should not create new jobs if instances were not found', function (done) {
-      var instanceService = new InstanceService()
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(null, [])
       sinon.stub(rabbitMQ, 'deleteInstance')
-      instanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
+      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
@@ -198,11 +193,10 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     it('should create 2 jobs if 3 instances were found and 1 filtered', function (done) {
-      var instanceService = new InstanceService()
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
       sinon.stub(rabbitMQ, 'deleteInstance')
-      instanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
+      InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
         function (err) {
           expect(err).to.not.exist()
           expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
@@ -266,8 +260,7 @@ describe('InstanceService: ' + moduleName, function () {
         done()
       })
       it('should return modified instance from database', function (done) {
-        var instanceService = new InstanceService()
-        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.2',
+        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.2',
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id.toString()).to.equal(ctx.instance._id.toString())
@@ -337,18 +330,16 @@ describe('InstanceService: ' + moduleName, function () {
       })
 
       it('should return an error if findOneAndUpdate failed', function (done) {
-        var instanceService = new InstanceService()
         var mongoErr = new Error('Mongo error')
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr)
-        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
+        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
           expect(err.message).to.equal('Mongo error')
           done()
         })
       })
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
-        var instanceService = new InstanceService()
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
-        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
+        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
           expect(err.output.statusCode).to.equal(409)
           var errMsg = "Container was not updated, instance's container has changed"
           expect(err.output.payload.message).to.equal(errMsg)
@@ -356,10 +347,9 @@ describe('InstanceService: ' + moduleName, function () {
         })
       })
       it('should return modified instance', function (done) {
-        var instanceService = new InstanceService()
         var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
-        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1',
+        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1',
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id).to.equal(ctx.instance._id)
@@ -419,8 +409,7 @@ describe('InstanceService: ' + moduleName, function () {
         done()
       })
       it('should return modified instance from database', function (done) {
-        var instanceService = new InstanceService()
-        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect,
+        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect,
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id.toString()).to.equal(ctx.instance._id.toString())
@@ -488,18 +477,16 @@ describe('InstanceService: ' + moduleName, function () {
       })
 
       it('should return an error if findOneAndUpdate failed', function (done) {
-        var instanceService = new InstanceService()
         var mongoErr = new Error('Mongo error')
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr)
-        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
+        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
           expect(err.message).to.equal('Mongo error')
           done()
         })
       })
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
-        var instanceService = new InstanceService()
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
-        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
+        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
           expect(err.output.statusCode).to.equal(409)
           var errMsg = "Container was not updated, instance's container has changed"
           expect(err.output.payload.message).to.equal(errMsg)
@@ -507,10 +494,9 @@ describe('InstanceService: ' + moduleName, function () {
         })
       })
       it('should return modified instance', function (done) {
-        var instanceService = new InstanceService()
         var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
-        instanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect,
+        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect,
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id).to.equal(ctx.instance._id)
