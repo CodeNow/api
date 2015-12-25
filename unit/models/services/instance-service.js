@@ -52,10 +52,7 @@ function getNextHash () {
 }
 
 function createNewVersion (opts) {
-  var dockRemoved = false
-  if (opts.dockRemoved) {
-    dockRemoved = true
-  }
+  var dockRemoved = opts.dockRemoved ? true: false
   return new ContextVersion({
     message: 'test',
     owner: { github: validation.VALID_GITHUB_ID },
