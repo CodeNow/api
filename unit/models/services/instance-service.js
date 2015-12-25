@@ -52,7 +52,6 @@ function getNextHash () {
 }
 
 function createNewVersion (opts) {
-  var dockRemoved = opts.dockRemoved ? true: false
   return new ContextVersion({
     message: 'test',
     owner: { github: validation.VALID_GITHUB_ID },
@@ -60,7 +59,7 @@ function createNewVersion (opts) {
     config: validation.VALID_OBJECT_ID,
     created: Date.now(),
     context: validation.VALID_OBJECT_ID,
-    dockRemoved: dockRemoved,
+    dockRemoved: opts.dockRemoved,
     files: [{
       Key: 'test',
       ETag: 'test',
