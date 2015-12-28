@@ -37,6 +37,7 @@ describe('InstanceDelete: ' + moduleName, function () {
       _id: testInstanceId,
       name: 'name1',
       shortHash: 'asd51a1',
+      masterPod: true,
       owner: {
         github: 124,
         username: 'codenow',
@@ -64,7 +65,8 @@ describe('InstanceDelete: ' + moduleName, function () {
       }
     })
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findById').yieldsAsync(null, testInstance)
+      sinon.stub(Instance, 'markAsDeletedByIdAsync').returns(Promise.resolve(testInstance))
+      sinon.stub(Instance, 'markAsDeletedByParentAsync').returns(Promise.resolve())
       sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
       sinon.stub(Instance.prototype, 'removeSelfFromGraph').yieldsAsync()
       sinon.stub(Instance.prototype, 'remove').yieldsAsync()
@@ -74,7 +76,8 @@ describe('InstanceDelete: ' + moduleName, function () {
     })
 
     afterEach(function (done) {
-      Instance.findById.restore()
+      Instance.markAsDeletedByIdAsync.restore()
+      Instance.markAsDeletedByParentAsync.restore()
       rabbitMQ.deleteInstanceContainer.restore()
       Instance.prototype.removeSelfFromGraph.restore()
       Instance.prototype.remove.restore()
@@ -116,10 +119,12 @@ describe('InstanceDelete: ' + moduleName, function () {
       })
     })
 
-    describe('instance lookup fails', function () {
+    describe('instance lookup/setting deleted flag fails', function () {
       var mongoError = new Error('Mongo failed')
       beforeEach(function (done) {
-        Instance.findById.yields(mongoError)
+        var rejectionPromise = Promise.reject(mongoError)
+        rejectionPromise.suppressUnhandledRejections()
+        Instance.markAsDeletedByIdAsync.returns(rejectionPromise)
         done()
       })
 
@@ -127,8 +132,9 @@ describe('InstanceDelete: ' + moduleName, function () {
         Worker(testData)
           .asCallback(function (err) {
             expect(err.message).to.equal(mongoError.message)
-            sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(Instance.markAsDeletedByIdAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByIdAsync, testInstanceId)
+            sinon.assert.notCalled(Instance.markAsDeletedByParentAsync)
             sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
             sinon.assert.notCalled(Instance.prototype.removeSelfFromGraph)
             sinon.assert.notCalled(Instance.prototype.remove)
@@ -141,7 +147,7 @@ describe('InstanceDelete: ' + moduleName, function () {
 
     describe('instance was not found', function () {
       beforeEach(function (done) {
-        Instance.findById.yields(null, null)
+        Instance.markAsDeletedByIdAsync.returns(Promise.resolve(null))
         done()
       })
 
@@ -150,8 +156,36 @@ describe('InstanceDelete: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err).to.be.instanceOf(TaskFatalError)
             expect(err.message).to.contain('Instance not found')
-            sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(Instance.markAsDeletedByIdAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByIdAsync, testInstanceId)
+            sinon.assert.notCalled(Instance.markAsDeletedByParentAsync)
+            sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+            sinon.assert.notCalled(Instance.prototype.removeSelfFromGraph)
+            sinon.assert.notCalled(Instance.prototype.remove)
+            sinon.assert.notCalled(InstanceService.deleteAllInstanceForks)
+            sinon.assert.notCalled(messenger.emitInstanceDelete)
+            done()
+          })
+      })
+    })
+
+    describe('marking forks as deleted failed', function () {
+      var mongoError = new Error('Mongo failed')
+      beforeEach(function (done) {
+        var rejectionPromise = Promise.reject(mongoError)
+        rejectionPromise.suppressUnhandledRejections()
+        Instance.markAsDeletedByParentAsync.returns(rejectionPromise)
+        done()
+      })
+
+      it('should callback with fatal error', function (done) {
+        Worker(testData)
+          .asCallback(function (err) {
+            expect(err.message).to.equal(mongoError.message)
+            sinon.assert.calledOnce(Instance.markAsDeletedByIdAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByIdAsync, testInstanceId)
+            sinon.assert.calledOnce(Instance.markAsDeletedByParentAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByParentAsync, testInstance.shortHash)
             sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
             sinon.assert.notCalled(Instance.prototype.removeSelfFromGraph)
             sinon.assert.notCalled(Instance.prototype.remove)
@@ -173,8 +207,10 @@ describe('InstanceDelete: ' + moduleName, function () {
         Worker(testData)
           .asCallback(function (err) {
             expect(err.message).to.equal(neoError.message)
-            sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(Instance.markAsDeletedByIdAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByIdAsync, testInstanceId)
+            sinon.assert.calledOnce(Instance.markAsDeletedByParentAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByParentAsync, testInstance.shortHash)
             sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
             sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
             sinon.assert.notCalled(Instance.prototype.remove)
@@ -196,8 +232,10 @@ describe('InstanceDelete: ' + moduleName, function () {
         Worker(testData)
           .asCallback(function (err) {
             expect(err.message).to.equal(mongoError.message)
-            sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(Instance.markAsDeletedByIdAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByIdAsync, testInstanceId)
+            sinon.assert.calledOnce(Instance.markAsDeletedByParentAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByParentAsync, testInstance.shortHash)
             sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
             sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
             sinon.assert.calledOnce(Instance.prototype.remove)
@@ -221,8 +259,10 @@ describe('InstanceDelete: ' + moduleName, function () {
         Worker(testData)
           .asCallback(function (err) {
             expect(err.message).to.equal(mongoError.message)
-            sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(Instance.markAsDeletedByIdAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByIdAsync, testInstanceId)
+            sinon.assert.calledOnce(Instance.markAsDeletedByParentAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByParentAsync, testInstance.shortHash)
             sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
             sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
             sinon.assert.calledOnce(Instance.prototype.remove)
@@ -239,8 +279,10 @@ describe('InstanceDelete: ' + moduleName, function () {
         Worker(testData)
           .asCallback(function (err) {
             expect(err).to.not.exists()
-            sinon.assert.calledOnce(Instance.findById)
-            sinon.assert.calledWith(Instance.findById, testInstanceId)
+            sinon.assert.calledOnce(Instance.markAsDeletedByIdAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByIdAsync, testInstanceId)
+            sinon.assert.calledOnce(Instance.markAsDeletedByParentAsync)
+            sinon.assert.calledWith(Instance.markAsDeletedByParentAsync, testInstance.shortHash)
             sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
             sinon.assert.calledWith(rabbitMQ.deleteInstanceContainer, {
               instanceShortHash: testInstance.shortHash,
@@ -264,15 +306,42 @@ describe('InstanceDelete: ' + moduleName, function () {
       describe('no container', function () {
         beforeEach(function (done) {
           testInstance.container = null
-          Instance.findById.yieldsAsync(null, testInstance)
+          Instance.markAsDeletedByIdAsync.returns(Promise.resolve(testInstance))
           done()
         })
         it('should not delete container if there is no container', function (done) {
           Worker(testData)
             .asCallback(function (err) {
               expect(err).to.not.exists()
-              sinon.assert.calledOnce(Instance.findById)
-              sinon.assert.calledWith(Instance.findById, testInstanceId)
+              sinon.assert.calledOnce(Instance.markAsDeletedByIdAsync)
+              sinon.assert.calledWith(Instance.markAsDeletedByIdAsync, testInstanceId)
+              sinon.assert.calledOnce(Instance.markAsDeletedByParentAsync)
+              sinon.assert.calledWith(Instance.markAsDeletedByParentAsync, testInstance.shortHash)
+              sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+              sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
+              sinon.assert.calledOnce(Instance.prototype.remove)
+              sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
+              sinon.assert.calledWith(InstanceService.deleteAllInstanceForks, testInstance)
+              sinon.assert.calledOnce(messenger.emitInstanceDelete)
+              sinon.assert.calledWith(messenger.emitInstanceDelete, testInstance)
+              done()
+            })
+        })
+      })
+      describe('not a master instance', function () {
+        beforeEach(function (done) {
+          testInstance.masterPod = false
+          testInstance.container = null
+          Instance.markAsDeletedByIdAsync.returns(Promise.resolve(testInstance))
+          done()
+        })
+        it('should not mark forks if not master', function (done) {
+          Worker(testData)
+            .asCallback(function (err) {
+              expect(err).to.not.exists()
+              sinon.assert.calledOnce(Instance.markAsDeletedByIdAsync)
+              sinon.assert.calledWith(Instance.markAsDeletedByIdAsync, testInstanceId)
+              sinon.assert.notCalled(Instance.markAsDeletedByParentAsync)
               sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
               sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
               sinon.assert.calledOnce(Instance.prototype.remove)
