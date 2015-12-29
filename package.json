@@ -99,6 +99,7 @@
     "substream": "0.2.0",
     "substream-pump": "^1.0.1",
     "sync-exec": "^0.6.1",
+    "tailable-capped-array": "^0.1.0",
     "through2": "^2.0.0",
     "times-loop": "^1.0.0",
     "underscore.string": "^3.0.2",
