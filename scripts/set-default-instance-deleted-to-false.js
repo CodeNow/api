@@ -31,7 +31,7 @@ async.waterfall([
     async.eachLimit(instances, 10, function (instance, eachCb) {
       instance.update({ $set: { deleted: false } }, function (err, instance) {
         if (err) {
-          console.log('error updating instance', insatnce)
+          console.log('error updating instance', instance)
           return eachCb()
         }
         eachCb()
