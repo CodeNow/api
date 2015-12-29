@@ -6,10 +6,7 @@ var async = require('async')
 var mongoose = require('mongoose')
 
 var dryRun = !process.env.ACTUALLY_RUN
-if (!process.env.API_HOST) {
-  console.log('need API_HOST')
-  process.exit(1)
-}
+
 if (!process.env.MONGO) {
   console.log('need MONGO')
   process.exit(1)
