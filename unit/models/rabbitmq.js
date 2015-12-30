@@ -486,7 +486,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         publish: function () {}
       }
       ctx.validJobData = {
-        githubId: testOrgId
+        githubId: testOrgId.toString()
       }
       done()
     })
