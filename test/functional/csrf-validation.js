@@ -52,7 +52,7 @@ describe('CSRF Validation', function () {
   })
   afterEach(require('./fixtures/clean-mongo').removeEverything)
 
-  describe('without proper XSRF token', function () {
+  describe('without proper CSRF token', function () {
     it('should fail a delete request', function (done) {
       var opts = {
         method: 'DELETE',
@@ -63,13 +63,13 @@ describe('CSRF Validation', function () {
       request(opts, function (err, res) {
         expect(err).to.not.exist()
         expect(res.statusCode).to.equal(403)
-        expect(res.body.message).to.contain('XSRF')
+        expect(res.body.message).to.contain('CSRF')
         done()
       })
     })
   })
 
-  describe('with proper XSRF token', function () {
+  describe('with proper CSRF token', function () {
     it('should allow the request through', function (done) {
       var opts = {
         method: 'GET',
@@ -80,26 +80,26 @@ describe('CSRF Validation', function () {
       request(opts, function (err, res) {
         expect(err).to.not.exist()
         expect(res.statusCode).to.equal(401)
-        var xsrfCookie = null
+        var csrfCookie = null
         res.headers['set-cookie'].forEach(function (header) {
-          if (header.indexOf('XSRF-TOKEN') === 0) {
-            xsrfCookie = header
+          if (header.indexOf('CSRF-TOKEN') === 0) {
+            csrfCookie = header
           }
         })
-        var xsrfToken = xsrfCookie.split('=')[1].split(';')[0]
+        var csrfToken = csrfCookie.split('=')[1].split(';')[0]
         var opts = {
           method: 'DELETE',
           url: process.env.FULL_API_DOMAIN + '/auth',
           json: true,
           headers: {
-            'X-CSRF-TOKEN': xsrfToken
+            'X-CSRF-TOKEN': csrfToken
           },
           jar: ctx.j
         }
         request(opts, function (err, res) {
           expect(err).to.not.exist()
           expect(res.statusCode).to.equal(200)
-          expect(res.body.message).to.not.contain('XSRF')
+          expect(res.body.message).to.not.contain('CSRF')
           expect(res.body.message).to.contain('success')
           done()
         })
