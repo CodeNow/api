@@ -25,6 +25,7 @@ describe('CSRF Validation', function () {
 
     // Need to kill the cache so we can change the env and re-execute setting up the app...
     delete require.cache[require.resolve('express-app')]
+    delete require.cache[require.resolve('middlewares/csrf')]
     delete require.cache[require.resolve('../../app')]
     delete require.cache[require.resolve('./fixtures/api-control')]
 
