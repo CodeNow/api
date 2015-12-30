@@ -66,10 +66,9 @@ describe('lib/middlewares/apis/jobs.js unit test: ' + moduleName, function () {
       it('should publish job', function (done) {
         jobs.publishASGCreate(testReq, {}, function (err) {
           expect(err).to.not.exist()
-          expect(rabbitMQ.publishASGCreate
-            .withArgs({
-              githubId: testId.toString()
-            }).called).to.be.true()
+          sinon.assert.calledWith(rabbitMQ.publishASGCreate, sinon.match({
+            githubId: testId.toString()
+          }))
           done()
         })
       })
