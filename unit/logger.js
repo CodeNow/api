@@ -13,6 +13,9 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.test
 
+var clone = require('101/clone')
+var keypath = require('keypather')()
+
 var logger = require('logger')
 
 describe('lib/logger.js unit test', function () {
@@ -83,4 +86,73 @@ describe('lib/logger.js unit test', function () {
       })
     })
   })
+  describe('_removeExtraKeys', function () {
+    it('should remove nothing', function (done) {
+      var testObj = {
+        do: 'not',
+        remove: ['me'],
+        insta: 'instance',
+        cat: 'key'
+      }
+      var out = logger._removeExtraKeys(testObj)
+      expect(out).to.deep.equal(testObj)
+      done()
+    })
+
+    it('should remove extra keys', function (done) {
+      var testObj = {
+        keep: 'me',
+        build: {
+          keep: 'me'
+        },
+        instance: {
+          contextVersion: {
+            keep: {
+              keep: 'me'
+            },
+            build: {
+              keep: 'me'
+            }
+          },
+          contextVersions: [{
+            keep: {
+              keep: 'me'
+            },
+            build: {
+              keep: 'me'
+            }
+          }],
+          keep: 'me'
+        },
+        contextVersion: {
+          keep: {
+            keep: 'me'
+          },
+          build: {
+            keep: 'me'
+          }
+        },
+        contextVersions: [{
+          keep: {
+            keep: 'me'
+          },
+          build: {
+            keep: 'me'
+          }
+        }]
+      }
+      var inputData = clone(testObj)
+      keypath.set(inputData, 'instance.contextVersion.build.log', 'bad')
+      keypath.set(inputData, 'instance.contextVersions[0].build.log', 'bad')
+      keypath.set(inputData, 'contextVersion.build.log', 'bad')
+      keypath.set(inputData, 'contextVersions[0].build.log', 'bad')
+      keypath.set(inputData, 'build.log', 'bad')
+      keypath.set(inputData, 'ca', 'bad')
+      keypath.set(inputData, 'cert', 'bad')
+      keypath.set(inputData, 'key', 'bad')
+      var out = logger._removeExtraKeys(inputData)
+      expect(out).to.deep.equal(testObj)
+      done()
+    })
+  }) // end _removeExtraKeys
 })
