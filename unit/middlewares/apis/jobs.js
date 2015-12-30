@@ -68,7 +68,7 @@ describe('lib/middlewares/apis/jobs.js unit test: ' + moduleName, function () {
           expect(err).to.not.exist()
           expect(rabbitMQ.publishASGCreate
             .withArgs({
-              githubId: testId
+              githubId: testId.toString()
             }).called).to.be.true()
           done()
         })
