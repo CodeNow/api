@@ -598,14 +598,13 @@ describe('Instance Model Tests ' + moduleName, function () {
       instance.save(done)
     })
     before(function (done) {
-      var instance = createNewInstance('instance2', { locked: false})
+      var instance = createNewInstance('instance2', { locked: false })
       instance.save(done)
     })
     before(function (done) {
       var instance = createNewInstance('instance3', { locked: true, repo: 'podviaznikov/hello' })
       instance.save(done)
     })
-
 
     it('should find instances using repo name and branch', function (done) {
       Instance.findInstancesLinkedToBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, insts) {
