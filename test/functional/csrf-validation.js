@@ -18,29 +18,11 @@ var randStr = require('randomstring').generate
 
 var ctx = {}
 describe('CSRF Validation', function () {
-  var oldEnv = null
-  before(function (done) {
-    oldEnv = process.env.CSRF_IGNORED_METHODS
-    process.env.CSRF_IGNORED_METHODS = 'GET,HEAD,OPTIONS'
-
-    // Need to kill the cache so we can change the env and re-execute setting up the app...
-    delete require.cache[require.resolve('express-app')]
-    delete require.cache[require.resolve('middlewares/csrf')]
-    delete require.cache[require.resolve('../../app')]
-    delete require.cache[require.resolve('./fixtures/api-control')]
-
-    api = require('./fixtures/api-control')
-    done()
-  })
   before(function (done) {
     api.start(done)
   })
   after(function (done) {
     api.stop(done)
-  })
-  after(function (done) {
-    process.env.CSRF_IGNORED_METHODS = oldEnv
-    done()
   })
   beforeEach(function (done) {
     ctx.name = randStr(5)
@@ -58,7 +40,10 @@ describe('CSRF Validation', function () {
         method: 'DELETE',
         url: process.env.FULL_API_DOMAIN + '/auth',
         json: true,
-        jar: ctx.j
+        jar: ctx.j,
+        headers: {
+          Origin: 'http://localhost'
+        }
       }
       request(opts, function (err, res) {
         expect(err).to.not.exist()
@@ -75,7 +60,10 @@ describe('CSRF Validation', function () {
         method: 'GET',
         url: process.env.FULL_API_DOMAIN + '/users/me',
         json: true,
-        jar: ctx.j
+        jar: ctx.j,
+        headers: {
+          Origin: 'http://localhost'
+        }
       }
       request(opts, function (err, res) {
         expect(err).to.not.exist()
@@ -92,7 +80,8 @@ describe('CSRF Validation', function () {
           url: process.env.FULL_API_DOMAIN + '/auth',
           json: true,
           headers: {
-            'X-CSRF-TOKEN': csrfToken
+            'X-CSRF-TOKEN': csrfToken,
+            Origin: 'http://localhost'
           },
           jar: ctx.j
         }
