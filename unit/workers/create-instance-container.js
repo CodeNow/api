@@ -12,6 +12,7 @@ var moment = require('moment')
 var Promise = require('bluebird')
 var rabbitmq = require('models/rabbitmq')
 var sinon = require('sinon')
+var error = require('error')
 
 var expect = Code.expect
 var lab = exports.lab = Lab.script()
@@ -97,6 +98,7 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
             completed: moment().subtract(3, 'minutes').format()
           }
         }
+        sinon.stub(error, 'log')
         sinon.stub(Docker, 'isImageNotFoundForCreateErr').returns(true)
         sinon.stub(ContextVersion, 'findById').returns(Promise.resolve(ctx.contextVersion))
         sinon.stub(rabbitmq, 'publishInstanceRebuild')
@@ -104,6 +106,7 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
         done()
       })
       afterEach(function (done) {
+        error.log.restore()
         Docker.isImageNotFoundForCreateErr.restore()
         ContextVersion.findById.restore()
         rabbitmq.publishInstanceRebuild.restore()
@@ -115,12 +118,17 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledOnce(Docker.isImageNotFoundForCreateErr)
+            // Can't do a direct calledWith here because bluebird wraps errors thrown
+            sinon.assert.calledWith(Docker.isImageNotFoundForCreateErr, sinon.match.has('message', ctx.err.message))
             sinon.assert.calledOnce(ContextVersion.findById)
             sinon.assert.calledWith(ContextVersion.findById, ctx.job.contextVersionId)
             sinon.assert.calledOnce(rabbitmq.publishInstanceRebuild)
             sinon.assert.calledWith(rabbitmq.publishInstanceRebuild, {
               instanceId: ctx.job.instanceId
             })
+            sinon.assert.calledOnce(error.log)
+            // Can't do a direct calledWith here because bluebird wraps errors thrown
+            sinon.assert.calledWith(error.log, sinon.match.has('message', ctx.err.message))
             done()
           })
       })
