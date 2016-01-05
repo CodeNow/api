@@ -98,7 +98,7 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
           }
         }
         sinon.stub(error, 'log')
-        sinon.stub(ContextVersion, 'findById').returns(Promise.resolve(ctx.contextVersion))
+        sinon.stub(ContextVersion, 'findById').yieldsAsync(null, ctx.contextVersion)
         sinon.stub(rabbitmq, 'publishInstanceRebuild')
         InstanceService.createContainer.yieldsAsync(ctx.err)
         done()
