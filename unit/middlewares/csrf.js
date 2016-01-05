@@ -13,7 +13,6 @@ var lab = exports.lab = Lab.script()
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
-var expect = Code.expect
 var it = lab.it
 
 var csurfMiddleware = rewire('middlewares/csrf')
@@ -55,13 +54,14 @@ describe('middlewares/csrf unit test: ' + moduleName, function () {
         sinon.assert.calledWith(mockCsurf, req, res, next)
         done()
       })
-
     })
+
     describe('without origin', function () {
       beforeEach(function (done) {
         keypather.set(req, 'headers', {})
         done()
       })
+
       it('should bypass the entire middleware', function (done) {
         csurfMiddleware.csrfValidator(req, res, next)
         sinon.assert.calledOnce(next)
@@ -80,15 +80,18 @@ describe('middlewares/csrf unit test: ' + moduleName, function () {
       process.env.FULL_API_DOMAIN = 'http://example.com'
       done()
     })
+
     afterEach(function (done) {
       process.env.FULL_API_DOMAIN = oldDomain
       done()
     })
+
     describe('with origin', function () {
       beforeEach(function (done) {
         keypather.set(req, 'headers.origin', 'http://google.com')
         done()
       })
+
       it('should add a cookie with the right parameters', function (done) {
         csurfMiddleware.csrfCookieInjector(req, res, next)
         sinon.assert.calledOnce(res.cookie)
@@ -106,6 +109,7 @@ describe('middlewares/csrf unit test: ' + moduleName, function () {
         keypather.set(req, 'headers', {})
         done()
       })
+
       it('should bypass the entire middleware', function (done) {
         csurfMiddleware.csrfCookieInjector(req, res, next)
         sinon.assert.notCalled(res.cookie)
