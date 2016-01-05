@@ -3,7 +3,6 @@ var path = require('path')
 
 var Lab = require('lab')
 var Boom = require('dat-middleware').Boom
-var Docker = require('models/apis/docker')
 var Code = require('code')
 var ContextVersion = require('models/mongo/context-version')
 var createInstanceContainer = require('workers/create-instance-container')
@@ -92,14 +91,13 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
 
     describe('Image not found create err', function () {
       beforeEach(function (done) {
-        ctx.err = new Error('image not found')
+        ctx.err = new Error('image 1234 not found')
         ctx.contextVersion = {
           build: {
             completed: moment().subtract(3, 'minutes').format()
           }
         }
         sinon.stub(error, 'log')
-        sinon.stub(Docker, 'isImageNotFoundForCreateErr').returns(true)
         sinon.stub(ContextVersion, 'findById').returns(Promise.resolve(ctx.contextVersion))
         sinon.stub(rabbitmq, 'publishInstanceRebuild')
         InstanceService.createContainer.yieldsAsync(ctx.err)
@@ -107,7 +105,6 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
       })
       afterEach(function (done) {
         error.log.restore()
-        Docker.isImageNotFoundForCreateErr.restore()
         ContextVersion.findById.restore()
         rabbitmq.publishInstanceRebuild.restore()
         done()
@@ -117,9 +114,6 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
         createInstanceContainer(ctx.job)
           .asCallback(function (err) {
             expect(err).to.not.exist()
-            sinon.assert.calledOnce(Docker.isImageNotFoundForCreateErr)
-            // Can't do a direct calledWith here because bluebird wraps errors thrown
-            sinon.assert.calledWith(Docker.isImageNotFoundForCreateErr, sinon.match.has('message', ctx.err.message))
             sinon.assert.calledOnce(ContextVersion.findById)
             sinon.assert.calledWith(ContextVersion.findById, ctx.job.contextVersionId)
             sinon.assert.calledOnce(rabbitmq.publishInstanceRebuild)
