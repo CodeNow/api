@@ -2,7 +2,6 @@
 
 require('loadenv')()
 
-var Code = require('code')
 var Lab = require('lab')
 var keypather = require('keypather')()
 var rewire = require('rewire')
