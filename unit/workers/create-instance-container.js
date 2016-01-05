@@ -125,6 +125,24 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
             done()
           })
       })
+
+      describe('when the build completed less than 30 seconds ago', function () {
+        beforeEach(function (done) {
+          ctx.contextVersion.build.completed = moment().subtract(29, 'seconds')
+          done()
+        })
+        it('should not trigger a re-build', function (done) {
+          createInstanceContainer(ctx.job)
+            .asCallback(function (err) {
+              expect(err.cause).to.equal(ctx.err)
+              sinon.assert.calledOnce(ContextVersion.findById)
+              sinon.assert.calledWith(ContextVersion.findById, ctx.job.contextVersionId)
+              sinon.assert.notCalled(rabbitmq.publishInstanceRebuild)
+              sinon.assert.notCalled(error.log)
+              done()
+            })
+        })
+      })
     })
   })
 })
