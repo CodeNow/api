@@ -24,7 +24,8 @@ var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('Worker: dock.removed unit test: ' + moduleName, function () {
-  var testHost = 'goku'
+  var testTarget = 'goku'
+  var testHost = 'http://' + testTarget + ':4242'
   var testData = {
     host: testHost
   }
@@ -37,6 +38,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       sinon.stub(Worker, '_redeploy')
       sinon.stub(Worker, '_rebuild')
       sinon.stub(Worker, '_updateFrontendInstances')
+      sinon.stub(rabbitMQ, 'asgInstanceTerminate').returns()
       done()
     })
 
@@ -48,6 +50,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       Instance.findInstancesRunningOrStartingByDockerHost.restore()
       ContextVersion.markDockRemovedByDockerHost.restore()
       Instance.setStoppingAsStoppedByDockerHost.restore()
+      rabbitMQ.asgInstanceTerminate.restore()
       done()
     })
 
@@ -57,6 +60,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           expect(err).to.be.instanceOf(TaskFatalError)
           expect(err.message).to.contain('host')
           expect(err.message).to.contain('required')
+          sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
           done()
         })
       })
@@ -65,6 +69,16 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           expect(err).to.be.instanceOf(TaskFatalError)
           expect(err.message).to.contain('host')
           expect(err.message).to.contain('a string')
+          sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
+          done()
+        })
+      })
+      it('should throw a task fatal error if foul dockerhost', function (done) {
+        Worker({host: 'foul'}).asCallback(function (err) {
+          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('host')
+          expect(err.message).to.contain('must be a valid uri')
+          sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
           done()
         })
       })
@@ -72,6 +86,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
         Worker().asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
           expect(err.message).to.contain('Value does not exist')
+          sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
           done()
         })
       })
@@ -79,6 +94,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
         Worker(true).asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
           expect(err.message).to.contain('must be an object')
+          sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
           done()
         })
       })
@@ -99,6 +115,10 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.notCalled(Instance.setStoppingAsStoppedByDockerHost)
           sinon.assert.notCalled(Worker._redeploy)
           sinon.assert.notCalled(Worker._rebuild)
+          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
+          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+            ipAddress: testTarget
+          })
           done()
         })
       })
@@ -125,6 +145,10 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._redeploy)
           sinon.assert.calledOnce(Worker._rebuild)
+          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
+          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+            ipAddress: testTarget
+          })
           done()
         })
       })
@@ -154,6 +178,10 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.calledOnce(Worker._redeploy)
           sinon.assert.calledOnce(Worker._updateFrontendInstances)
           sinon.assert.calledOnce(Worker._rebuild)
+          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
+          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+            ipAddress: testTarget
+          })
           done()
         })
       })
@@ -181,6 +209,10 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.calledOnce(Worker._redeploy)
           sinon.assert.calledTwice(Worker._updateFrontendInstances)
           sinon.assert.calledOnce(Worker._rebuild)
+          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
+          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+            ipAddress: testTarget
+          })
           done()
         })
       })
@@ -208,6 +240,10 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.calledOnce(Worker._redeploy)
           sinon.assert.calledOnce(Worker._updateFrontendInstances)
           sinon.assert.calledOnce(Worker._rebuild)
+          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
+          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+            ipAddress: testTarget
+          })
           done()
         })
       })
@@ -236,6 +272,10 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.calledOnce(Worker._redeploy)
           sinon.assert.calledOnce(Worker._rebuild)
           sinon.assert.calledTwice(Worker._updateFrontendInstances)
+          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
+          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+            ipAddress: testTarget
+          })
           done()
         })
       })
@@ -260,6 +300,10 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           sinon.assert.calledOnce(Worker._redeploy)
           sinon.assert.calledTwice(Worker._updateFrontendInstances)
           sinon.assert.calledOnce(Worker._rebuild)
+          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
+          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+            ipAddress: testTarget
+          })
           done()
         })
       })

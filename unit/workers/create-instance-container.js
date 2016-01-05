@@ -4,9 +4,13 @@ var path = require('path')
 var Lab = require('lab')
 var Boom = require('dat-middleware').Boom
 var Code = require('code')
+var ContextVersion = require('models/mongo/context-version')
 var createInstanceContainer = require('workers/create-instance-container')
 var InstanceService = require('models/services/instance-service')
+var moment = require('moment')
+var rabbitmq = require('models/rabbitmq')
 var sinon = require('sinon')
+var error = require('error')
 
 var expect = Code.expect
 var lab = exports.lab = Lab.script()
@@ -81,6 +85,63 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
             expect(err.data.originalError.cause).to.equal(ctx.err)
             done()
           })
+      })
+    })
+
+    describe('Image not found create err', function () {
+      beforeEach(function (done) {
+        ctx.err = new Error('image 1234 not found')
+        ctx.contextVersion = {
+          build: {
+            completed: moment().subtract(3, 'minutes').format()
+          }
+        }
+        sinon.stub(error, 'log')
+        sinon.stub(ContextVersion, 'findById').yieldsAsync(null, ctx.contextVersion)
+        sinon.stub(rabbitmq, 'publishInstanceRebuild')
+        InstanceService.createContainer.yieldsAsync(ctx.err)
+        done()
+      })
+      afterEach(function (done) {
+        error.log.restore()
+        ContextVersion.findById.restore()
+        rabbitmq.publishInstanceRebuild.restore()
+        done()
+      })
+
+      it('should trigger a re-build of the instance', function (done) {
+        createInstanceContainer(ctx.job)
+          .asCallback(function (err) {
+            expect(err).to.not.exist()
+            sinon.assert.calledOnce(ContextVersion.findById)
+            sinon.assert.calledWith(ContextVersion.findById, ctx.job.contextVersionId)
+            sinon.assert.calledOnce(rabbitmq.publishInstanceRebuild)
+            sinon.assert.calledWith(rabbitmq.publishInstanceRebuild, {
+              instanceId: ctx.job.instanceId
+            })
+            sinon.assert.calledOnce(error.log)
+            // Can't do a direct calledWith here because bluebird wraps errors thrown
+            sinon.assert.calledWith(error.log, sinon.match.has('message', ctx.err.message))
+            done()
+          })
+      })
+
+      describe('when the build completed less than 30 seconds ago', function () {
+        beforeEach(function (done) {
+          ctx.contextVersion.build.completed = moment().subtract(29, 'seconds')
+          done()
+        })
+        it('should not trigger a re-build', function (done) {
+          createInstanceContainer(ctx.job)
+            .asCallback(function (err) {
+              expect(err.cause).to.equal(ctx.err)
+              sinon.assert.calledOnce(ContextVersion.findById)
+              sinon.assert.calledWith(ContextVersion.findById, ctx.job.contextVersionId)
+              sinon.assert.notCalled(rabbitmq.publishInstanceRebuild)
+              sinon.assert.notCalled(error.log)
+              done()
+            })
+        })
       })
     })
   })

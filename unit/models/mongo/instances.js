@@ -784,7 +784,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           done()
         })
       })
-      it('should return array with instance that has masterPod=true', function (done) {
+      it('should return array with instances that has masterPod=true', function (done) {
         var repo = 'podviaznikov/hello-2'
         var opts = {
           locked: true,
