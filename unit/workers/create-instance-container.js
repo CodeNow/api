@@ -88,6 +88,38 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
       })
     })
 
+    describe('when the build completed 3 seconds ago and we cannot find resources', function () {
+      beforeEach(function (done) {
+        ctx.err = new Error('Unable to find dock with required resources')
+        ctx.contextVersion = {
+          build: {
+            completed: moment().subtract(3, 'minutes').format()
+          }
+        }
+        sinon.stub(error, 'log')
+        sinon.stub(ContextVersion, 'findById').yieldsAsync(null, ctx.contextVersion)
+        sinon.stub(rabbitmq, 'publishInstanceRebuild')
+        InstanceService.createContainer.yieldsAsync(ctx.err)
+        done()
+      })
+      afterEach(function (done) {
+        error.log.restore()
+        ContextVersion.findById.restore()
+        rabbitmq.publishInstanceRebuild.restore()
+        done()
+      })
+      it('should not trigger a re-build', function (done) {
+        createInstanceContainer(ctx.job)
+          .asCallback(function (err) {
+            expect(err.cause).to.equal(ctx.err)
+            sinon.assert.notCalled(ContextVersion.findById)
+            sinon.assert.notCalled(rabbitmq.publishInstanceRebuild)
+            sinon.assert.notCalled(error.log)
+            done()
+          })
+      })
+    })
+
     describe('Image not found create err', function () {
       beforeEach(function (done) {
         ctx.err = new Error('image 1234 not found')
