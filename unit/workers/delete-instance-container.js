@@ -36,26 +36,6 @@ describe('Worker: delete-instance-container: ' + moduleName, function () {
         done()
       })
     })
-    it('should fail if dockerHost not specified', function (done) {
-      var worker = new DeleteInstanceContainer({
-        instanceName: 'api',
-        instanceMasterPod: true,
-        instanceMasterBranch: 'master',
-        ownerGithubId: 429706,
-        container: {
-          dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
-        }
-      })
-      sinon.spy(worker, '_handleError')
-      worker.handle(function (jobErr) {
-        expect(jobErr).to.not.exist()
-        expect(worker._handleError.callCount).to.equal(1)
-        var err = worker._handleError.args[0][0]
-        expect(err.output.statusCode).to.equal(404)
-        expect(err.output.payload.message).to.equal('Container was not specified')
-        done()
-      })
-    })
     it('should fail if dockerContainer was not specified', function (done) {
       var worker = new DeleteInstanceContainer({
         instanceName: 'api',

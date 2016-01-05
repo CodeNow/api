@@ -510,6 +510,7 @@ describe('InstanceService: ' + moduleName, function () {
     beforeEach(function (done) {
       sinon.stub(InstanceService, '_findInstanceAndContextVersion')
       sinon.stub(InstanceService, '_createDockerContainer')
+      sinon.stub(Instance, 'findOneByShortHash')
       // correct opts
       ctx.opts = {
         instanceId: '123456789012345678901234',
@@ -519,7 +520,9 @@ describe('InstanceService: ' + moduleName, function () {
       ctx.mockContextVersion = {
         handleRecovery: sinon.stub().yieldsAsync()
       }
-      ctx.mockInstance = {}
+      ctx.mockInstance = {
+        parent: null
+      }
       ctx.mockContainer = {}
       ctx.mockMongoData = {
         instance: ctx.mockInstance,
@@ -530,6 +533,7 @@ describe('InstanceService: ' + moduleName, function () {
     afterEach(function (done) {
       InstanceService._findInstanceAndContextVersion.restore()
       InstanceService._createDockerContainer.restore()
+      Instance.findOneByShortHash.restore()
       joi.validateOrBoom.restore()
       done()
     })
@@ -649,11 +653,13 @@ describe('InstanceService: ' + moduleName, function () {
       }
       sinon.stub(ContextVersion, 'findById')
       sinon.stub(Instance, 'findById')
+      sinon.stub(Instance, 'findOneByShortHash').yieldsAsync(null, {})
       done()
     })
     afterEach(function (done) {
       ContextVersion.findById.restore()
       Instance.findById.restore()
+      Instance.findOneByShortHash.restore()
       done()
     })
 
@@ -673,6 +679,57 @@ describe('InstanceService: ' + moduleName, function () {
             contextVersion: ctx.mockContextVersion,
             instance: ctx.mockInstance
           })
+          sinon.assert.notCalled(Instance.findOneByShortHash)
+          done()
+        })
+      })
+    })
+    describe('forked instance', function () {
+      beforeEach(function (done) {
+        ContextVersion.findById.yieldsAsync(null, ctx.mockContextVersion)
+        ctx.forkedInstance = clone(ctx.mockInstance)
+        ctx.forkedInstance.parent = '1parentSha'
+        Instance.findById.yieldsAsync(null, ctx.forkedInstance)
+        done()
+      })
+
+      it('should find instance and contextVersion', function (done) {
+        InstanceService._findInstanceAndContextVersion(ctx.opts, function (err, data) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(ContextVersion.findById, ctx.opts.contextVersionId, sinon.match.func)
+          sinon.assert.calledWith(Instance.findById, ctx.opts.instanceId, sinon.match.func)
+          expect(data).to.deep.equal({
+            contextVersion: ctx.mockContextVersion,
+            instance: ctx.forkedInstance
+          })
+          sinon.assert.calledOnce(Instance.findOneByShortHash)
+          sinon.assert.calledWith(Instance.findOneByShortHash, ctx.forkedInstance.parent)
+          done()
+        })
+      })
+      it('should return error if parent call failed', function (done) {
+        var fetchErr = new Error('Mongo error')
+        Instance.findOneByShortHash.yieldsAsync(fetchErr)
+        InstanceService._findInstanceAndContextVersion(ctx.opts, function (err, data) {
+          expect(err.message).to.equal(fetchErr.message)
+          sinon.assert.calledWith(ContextVersion.findById, ctx.opts.contextVersionId, sinon.match.func)
+          sinon.assert.calledWith(Instance.findById, ctx.opts.instanceId, sinon.match.func)
+          expect(data).to.not.exist()
+          sinon.assert.calledOnce(Instance.findOneByShortHash)
+          sinon.assert.calledWith(Instance.findOneByShortHash, ctx.forkedInstance.parent)
+          done()
+        })
+      })
+      it('should return error if parent was not found', function (done) {
+        Instance.findOneByShortHash.yieldsAsync(null, null)
+        InstanceService._findInstanceAndContextVersion(ctx.opts, function (err, data) {
+          expect(err.message).to.equal('Parent instance not found')
+          expect(err.output.statusCode).to.equal(404)
+          sinon.assert.calledWith(ContextVersion.findById, ctx.opts.contextVersionId, sinon.match.func)
+          sinon.assert.calledWith(Instance.findById, ctx.opts.instanceId, sinon.match.func)
+          expect(data).to.not.exist()
+          sinon.assert.calledOnce(Instance.findOneByShortHash)
+          sinon.assert.calledWith(Instance.findOneByShortHash, ctx.forkedInstance.parent)
           done()
         })
       })
@@ -692,6 +749,7 @@ describe('InstanceService: ' + moduleName, function () {
             expect(err.isBoom).to.be.true()
             expect(err.output.statusCode).to.equal(404)
             expect(err.message).to.match(/Instance/i)
+            sinon.assert.notCalled(Instance.findOneByShortHash)
             done()
           })
         })
@@ -711,6 +769,7 @@ describe('InstanceService: ' + moduleName, function () {
             expect(err.isBoom).to.be.true()
             expect(err.output.statusCode).to.equal(404)
             expect(err.message).to.match(/ContextVersion/i)
+            sinon.assert.notCalled(Instance.findOneByShortHash)
             done()
           })
         })
@@ -729,6 +788,7 @@ describe('InstanceService: ' + moduleName, function () {
             expect(err.isBoom).to.be.true()
             expect(err.output.statusCode).to.equal(409)
             expect(err.message).to.match(/Instance.*contextVersion/i)
+            sinon.assert.notCalled(Instance.findOneByShortHash)
             done()
           })
         })
