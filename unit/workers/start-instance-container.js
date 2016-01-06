@@ -227,7 +227,7 @@ describe('StartInstanceContainerWorker: ' + moduleName, function () {
         ctx.worker._startContainer(function (err) {
           expect(err.message).to.equal('docker start container error')
           expect(Docker.prototype.startUserContainer.callCount)
-            .to.equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS)
+            .to.equal(1)
           expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1)
           done()
         })

@@ -163,9 +163,8 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
           })
           expect(ContextVersion.findOne.args[0][1], 'findOne').to.be.a.function()
 
-          // Because of retry logic, this is WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS
           expect(Docker.prototype.startImageBuilderContainer.callCount, 'startImage').to
-            .equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS)
+            .equal(1)
           expect(Docker.prototype.startImageBuilderContainer.args[0][0], 'startImage').to.deep
             .equal(ctx.data.inspectData.Id)
           expect(ContextVersion.updateBuildErrorByBuildId.callCount, 'updateBuildError')
@@ -231,7 +230,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
           ctx.worker._startContainer(function (err) {
             expect(err.message).to.equal('docker error')
             expect(Docker.prototype.startImageBuilderContainer.callCount)
-              .to.equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS)
+              .to.equal(1)
             done()
           })
         })
