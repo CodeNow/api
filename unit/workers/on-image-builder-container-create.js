@@ -15,7 +15,7 @@ var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var messenger = require('socket/messenger')
 
-var OnImageBuilderContainerCreateWorker = require('workers/on-image-builder-container-create')
+var OnCreateImageBuilderContainer = require('workers/on-image-builder-container-create')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -71,7 +71,8 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
         done()
       })
       it('should finish by updating the contextVersion', function (done) {
-        ctx.worker().then(function () {
+        ctx.worker.handle(function (err) {
+          expect(err).to.be.undefined()
           // 2 because of the updateFrontend also making a call
           expect(ContextVersion.findOne.callCount, 'findOne').to.equal(2)
           expect(ContextVersion.findOne.args[0][0], 'findOne').to.deep.equal({
@@ -120,7 +121,6 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
           ).to.equal('build_running')
           done()
         })
-        .catch(done)
       })
     })
     describe('failure', function () {
@@ -163,8 +163,9 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
           })
           expect(ContextVersion.findOne.args[0][1], 'findOne').to.be.a.function()
 
+          // Because of retry logic, this is WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS
           expect(Docker.prototype.startImageBuilderContainer.callCount, 'startImage').to
-            .equal(1)
+            .equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS)
           expect(Docker.prototype.startImageBuilderContainer.args[0][0], 'startImage').to.deep
             .equal(ctx.data.inspectData.Id)
           expect(ContextVersion.updateBuildErrorByBuildId.callCount, 'updateBuildError')
@@ -230,7 +231,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
           ctx.worker._startContainer(function (err) {
             expect(err.message).to.equal('docker error')
             expect(Docker.prototype.startImageBuilderContainer.callCount)
-              .to.equal(1)
+              .to.equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS)
             done()
           })
         })
