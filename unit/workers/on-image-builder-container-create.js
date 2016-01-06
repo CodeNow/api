@@ -15,7 +15,7 @@ var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var messenger = require('socket/messenger')
 
-var OnCreateImageBuilderContainer = require('workers/on-image-builder-container-create')
+var OnImageBuilderContainerCreateWorker = require('workers/on-image-builder-container-create')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -71,8 +71,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
         done()
       })
       it('should finish by updating the contextVersion', function (done) {
-        ctx.worker.handle(function (err) {
-          expect(err).to.be.undefined()
+        ctx.worker().then(function () {
           // 2 because of the updateFrontend also making a call
           expect(ContextVersion.findOne.callCount, 'findOne').to.equal(2)
           expect(ContextVersion.findOne.args[0][0], 'findOne').to.deep.equal({
@@ -121,6 +120,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
           ).to.equal('build_running')
           done()
         })
+        .catch(done)
       })
     })
     describe('failure', function () {
