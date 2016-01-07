@@ -59,6 +59,7 @@ function createNewVersion (opts) {
     config: validation.VALID_OBJECT_ID,
     created: Date.now(),
     context: validation.VALID_OBJECT_ID,
+    dockRemoved: opts.dockRemoved,
     files: [{
       Key: 'test',
       ETag: 'test',
@@ -991,6 +992,99 @@ describe('InstanceService: ' + moduleName, function () {
             ownerUsername: ctx.opts.ownerUsername
           }
         )
+        done()
+      })
+    })
+  })
+
+  describe('startInstance', function () {
+    beforeEach(function (done) {
+      sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').returns(Promise.resolve())
+      sinon.stub(Instance.prototype, 'setContainerStateToStartingAsync').returns(Promise.resolve())
+      sinon.stub(rabbitMQ, 'startInstanceContainer').returns()
+      sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
+      done()
+    })
+    afterEach(function (done) {
+      Instance.prototype.isNotStartingOrStoppingAsync.restore()
+      Instance.prototype.setContainerStateToStartingAsync.restore()
+      rabbitMQ.startInstanceContainer.restore()
+      rabbitMQ.redeployInstanceContainer.restore()
+      done()
+    })
+    it('should fail if instance has not container', function (done) {
+      InstanceService.startInstance({}, 21331).asCallback(function (err) {
+        expect(err.message).to.equal('Instance does not have a container')
+        sinon.assert.notCalled(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.notCalled(Instance.prototype.setContainerStateToStartingAsync)
+        sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
+        sinon.assert.notCalled(rabbitMQ.redeployInstanceContainer)
+        done()
+      })
+    })
+    it('should fail isNotStartingOrStoppingAsync failed', function (done) {
+      var testErr = new Error('Mongo error')
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      Instance.prototype.isNotStartingOrStoppingAsync.returns(rejectionPromise)
+      var instance = createNewInstance('testy', {})
+      InstanceService.startInstance(instance, 21331).asCallback(function (err) {
+        expect(err.message).to.equal(testErr.message)
+        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.notCalled(Instance.prototype.setContainerStateToStartingAsync)
+        sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
+        sinon.assert.notCalled(rabbitMQ.redeployInstanceContainer)
+        done()
+      })
+    })
+    it('should fail setContainerStateToStartingAsync failed', function (done) {
+      var testErr = new Error('Mongo error')
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      Instance.prototype.setContainerStateToStartingAsync.returns(rejectionPromise)
+      var instance = createNewInstance('testy', {})
+      InstanceService.startInstance(instance, 21331).asCallback(function (err) {
+        expect(err.message).to.equal(testErr.message)
+        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.calledOnce(Instance.prototype.setContainerStateToStartingAsync)
+        sinon.assert.calledOnce(rabbitMQ.startInstanceContainer)
+        sinon.assert.notCalled(rabbitMQ.redeployInstanceContainer)
+        done()
+      })
+    })
+    it('should pass', function (done) {
+      var instance = createNewInstance('testy', {})
+      var sessionUserGithubId = 21331
+      InstanceService.startInstance(instance, sessionUserGithubId).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.calledOnce(Instance.prototype.setContainerStateToStartingAsync)
+        sinon.assert.calledOnce(rabbitMQ.startInstanceContainer)
+        sinon.assert.calledWith(rabbitMQ.startInstanceContainer, {
+          dockerContainer: instance.container.dockerContainer,
+          dockerHost: instance.container.dockerHost,
+          instanceId: instance._id.toString(),
+          ownerUsername: instance.owner.username,
+          sessionUserGithubId: sessionUserGithubId,
+          tid: null
+        })
+        sinon.assert.notCalled(rabbitMQ.redeployInstanceContainer)
+        done()
+      })
+    })
+    it('should call redeploy', function (done) {
+      var sessionUserGithubId = 21331
+      var instance = createNewInstance('testy', { dockRemoved: true })
+      InstanceService.startInstance(instance, sessionUserGithubId).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.notCalled(Instance.prototype.setContainerStateToStartingAsync)
+        sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
+        sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
+        sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
+          instanceId: instance._id,
+          sessionUserGithubId: sessionUserGithubId
+        })
         done()
       })
     })
