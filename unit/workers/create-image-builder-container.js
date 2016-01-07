@@ -241,6 +241,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           })
           expect(ContextVersion.findOne.args[0][1], 'findOne').to.be.a.function()
 
+          // Because of retry logic, this is WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS
           expect(Docker.prototype.createImageBuilder.callCount, 'createImageBuilder').to
             .equal(process.env.WORKER_CREATE_CONTAINER_NUMBER_RETRY_ATTEMPTS)
           expect(ContextVersion.updateBuildErrorByBuildId.callCount, 'updateBuildError')
