@@ -88,30 +88,36 @@ describe('InstanceDelete: ' + moduleName, function () {
       it('should throw a task fatal error if the job is missing entirely', function (done) {
         Worker().asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('Value does not exist')
+          expect(err.data.validationError).to.exist()
+          expect(err.data.validationError.message)
+            .to.contain('Value does not exist')
           done()
         })
       })
       it('should throw a task fatal error if the job is missing a instanceId', function (done) {
         Worker({}).asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('instanceId')
-          expect(err.message).to.contain('required')
+          expect(err.data.validationError).to.exist()
+          expect(err.data.validationError.message)
+            .to.match(/instanceId.*required/i)
           done()
         })
       })
       it('should throw a task fatal error if the job is not an object', function (done) {
         Worker(true).asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('must be an object')
+          expect(err.data.validationError).to.exist()
+          expect(err.data.validationError.message)
+            .to.contain('must be an object')
           done()
         })
       })
       it('should throw a task fatal error if the instanceId is not a string', function (done) {
         Worker({instanceId: {}}).asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('instanceId')
-          expect(err.message).to.contain('a string')
+          expect(err.data.validationError).to.exist()
+          expect(err.data.validationError.message)
+            .to.match(/instanceId.*string/i)
           done()
         })
       })
