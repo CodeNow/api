@@ -1078,7 +1078,7 @@ describe('InstanceService: ' + moduleName, function () {
       InstanceService.startInstance(instance, sessionUserGithubId).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
-        sinon.assert.calledOnce(Instance.prototype.setContainerStateToStartingAsync)
+        sinon.assert.notCalled(Instance.prototype.setContainerStateToStartingAsync)
         sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
         sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
         sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
