@@ -25,8 +25,8 @@ describe('GET /dependencies/actions/health', function () {
   after(api.stop.bind(ctx))
 
   before(function (done) {
-    var Graph = require('models/graph/neo4j')
-    var client = new Graph()
+    var Neo4j = require('runna4j')
+    var client = new Neo4j()
     var err
     client.cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
       .on('error', function (e) { err = e })
