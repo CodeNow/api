@@ -103,6 +103,7 @@ describe('middlewares/csrf unit test: ' + moduleName, function () {
         done()
       })
     })
+
     describe('without origin', function () {
       beforeEach(function (done) {
         keypather.set(req, 'headers', {})
