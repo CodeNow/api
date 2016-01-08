@@ -39,7 +39,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     sinon.stub(dockerListenerRabbit, 'publish', function (queue, data) {
       console.log('XXXX', queue, data)
       if (queue !== 'on-image-builder-container-die') {
-        oldPublish(queue, data)
+        oldPublish.bind(dockerListenerRabbit)(queue, data)
       }
     })
     rabbitMQ.connect(done)
