@@ -21,7 +21,7 @@ var Instance = require('models/mongo/instance.js')
 var User = require('models/mongo/user.js')
 var messenger = require('socket/messenger')
 var toObjectId = require('utils/to-object-id')
-
+var dockerListenerRabbit = require('docker-listener/lib/hermes-client.js')
 var mockFactory = require('../fixtures/factory')
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js')
@@ -35,6 +35,9 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
   })
   before(dock.start.bind(ctx))
   before(function (done) {
+    sinon.stub(dockerListenerRabbit, 'publish', function () {
+      console.log('XXXXXd')
+    })
     rabbitMQ.connect(done)
     rabbitMQ.loadWorkers()
   })
