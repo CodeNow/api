@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/start-image-builder-container
+ * @module unit/workers/on-image-builder-container-create
  */
 'use strict'
 
@@ -14,7 +14,7 @@ var TaskFatalError = require('ponos').TaskFatalError
 
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
-
+var messenger = require('socket/messenger')
 var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create')
 
 var afterEach = lab.afterEach
@@ -201,18 +201,21 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
             })
             sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync')
             sinon.stub(ContextVersion, 'updateBy')
+            sinon.stub(messenger, 'emitContextVersionUpdate')
             done()
           })
 
           afterEach(function (done) {
             Docker.prototype.startImageBuilderContainerAsync.restore()
             ContextVersion.updateBy.restore()
+            messenger.emitContextVersionUpdate.restore()
             done()
           })
 
-          it('should startImageBuilderContainer and update mongo', function (done) {
+          it('should start container, update mongo & emit update', function (done) {
             Docker.prototype.startImageBuilderContainerAsync.returns()
             ContextVersion.updateBy.yieldsAsync()
+            messenger.emitContextVersionUpdate.returns()
 
             OnImageBuilderContainerCreate(testJob)
               .then(function () {
@@ -228,6 +231,10 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
                 sinon.assert.calledOnce(ContextVersion.updateBy)
                 sinon.assert.calledWith(ContextVersion.updateBy,
                   'build._id', 'testId', sinon.match(update), { multi: true })
+
+                sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
+                sinon.assert.calledWith(messenger.emitContextVersionUpdate,
+                  testJob.contextVersion, 'build_running')
                 done()
               })
               .catch(done)
