@@ -3,7 +3,6 @@
 require('loadenv')()
 
 var Lab = require('lab')
-var keypather = require('keypather')()
 var sinon = require('sinon')
 
 var lab = exports.lab = Lab.script()
@@ -109,7 +108,5 @@ describe('middlewares/security unit test: ' + moduleName, function () {
         done()
       })
     })
-
-
   })
 })
