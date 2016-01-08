@@ -87,20 +87,73 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           })
         })
       })
+      describe('Instance updated with another env', function () {
+        beforeEach(function (done) {
+          var body2 = {
+            name: 'hello',
+            build: ctx.build.id(),
+            masterPod: true
+          }
+          ctx.instance3 = ctx.user.createInstance(body2, done)
+        })
+        it('should wipe away the deps when the envs are cleared', function (done) {
+          var depBody = {
+            env: []
+          }
+          ctx.instanceWithDep.update(depBody, function (err) {
+            if (err) {
+              return done(err)
+            }
+            var deps = ctx.instanceWithDep.fetchDependencies(function (err, data) {
+              if (err) {
+                return done(err)
+              }
+              expect(data).to.be.an.array()
+              expect(data).to.have.a.length(0)
+              done()
+            })
+          })
+        })
+        it('should get another dependency', function (done) {
+          var depBody = {
+            env: [
+              'other=' + ctx.elasticHostname,
+              'another=' + ctx.instance3.getElasticHostname()
+            ]
+          }
+          ctx.instanceWithDep.update(depBody, function (err) {
+            if (err) {
+              return done(err)
+            }
+            var deps = ctx.instanceWithDep.fetchDependencies(function (err, data) {
+              if (err) {
+                return done(err)
+              }
+              expectInstanceDep(data, [ctx.instance, ctx.instance3])
+              done()
+            })
+          })
+        })
+      })
     })
   })
 })
 
-function expectInstanceDep (data, expectedInstance) {
+function expectInstanceDep (data, expectedInstances) {
+  if (!Array.isArray(expectedInstances)) {
+    expectedInstances = [expectedInstances]
+  }
   expect(data).to.be.an.array()
-  expect(data).to.have.a.length(1)
-  expect(data[0]).to.deep.contain({
-    id: expectedInstance.attrs._id.toString(),
-    shortHash: expectedInstance.attrs.shortHash.toString(),
-    lowerName: expectedInstance.attrs.lowerName,
-    name: expectedInstance.attrs.name,
-    // hostname:  expectedInstance.getElasticHostname().toLowerCase(),
-    owner: { github: expectedInstance.attrs.owner.github },
-    contextVersion: { context: expectedInstance.attrs.contextVersion.context.toString() }
+  expect(data).to.have.a.length(expectedInstances.length)
+  expectedInstances.forEach(function (expectedInstance, i) {
+    expect(data[i]).to.deep.contain({
+      id: expectedInstance.attrs._id.toString(),
+      shortHash: expectedInstance.attrs.shortHash.toString(),
+      lowerName: expectedInstance.attrs.lowerName,
+      name: expectedInstance.attrs.name,
+      // hostname:  expectedInstance.getElasticHostname().toLowerCase(),
+      owner: { github: expectedInstance.attrs.owner.github },
+      contextVersion: { context: expectedInstance.attrs.contextVersion.context.toString() }
+    })
   })
 }
