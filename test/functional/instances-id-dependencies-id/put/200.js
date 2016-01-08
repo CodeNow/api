@@ -104,7 +104,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
             if (err) {
               return done(err)
             }
-            var deps = ctx.instanceWithDep.fetchDependencies(function (err, data) {
+            ctx.instanceWithDep.fetchDependencies(function (err, data) {
               if (err) {
                 return done(err)
               }
@@ -125,7 +125,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
             if (err) {
               return done(err)
             }
-            var deps = ctx.instanceWithDep.fetchDependencies(function (err, data) {
+            ctx.instanceWithDep.fetchDependencies(function (err, data) {
               if (err) {
                 return done(err)
               }
