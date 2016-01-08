@@ -200,29 +200,6 @@ describe('Github - /actions/github', function () {
     })
   })
 
-  describe('wrong protocol: use https', function () {
-    beforeEach(function (done) {
-      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS
-      process.env.ASSERT_HTTPS = 'true'
-      process.env.ENABLE_GITHUB_HOOKS = 'true'
-      done()
-    })
-    afterEach(function (done) {
-      process.env.ASSERT_HTTPS = 'false'
-      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting
-      done()
-    })
-
-    it('should return message that http is not supported', function (done) {
-      var options = hooks().issue_comment
-      request.post(options, function (err, res, body) {
-        if (err) { return done(err) }
-        expect(res.statusCode).to.equal(301)
-        done()
-      })
-    })
-  })
-
   describe('push event', function () {
     var ctx = {}
     beforeEach(function (done) {
