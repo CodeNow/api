@@ -24,7 +24,6 @@ var toObjectId = require('utils/to-object-id')
 
 var mockFactory = require('../fixtures/factory')
 
-var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create.js')
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js')
 
 describe('OnImageBuilderContainerDie Integration Tests', function () {
@@ -36,14 +35,10 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
   })
   before(dock.start.bind(ctx))
   before(function (done) {
-    sinon.stub(OnImageBuilderContainerCreate, 'worker', function (data, done) {
-      done()
-    })
     rabbitMQ.connect(done)
     rabbitMQ.loadWorkers()
   })
   after(function (done) {
-    OnImageBuilderContainerCreate.worker.restore()
     rabbitMQ.close(done)
   })
   after(dock.stop.bind(ctx))
