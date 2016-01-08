@@ -217,8 +217,7 @@ describe('Github - /actions/github', function () {
       var options = hooks().issue_comment
       request.post(options, function (err, res, body) {
         if (err) { return done(err) }
-        expect(res.statusCode).to.equal(403)
-        expect(body).to.equal('We do not support http, use https')
+        expect(res.statusCode).to.equal(301)
         done()
       })
     })
