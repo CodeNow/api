@@ -37,7 +37,8 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
   before(function (done) {
     var oldPublish = dockerListenerRabbit.publish
     sinon.stub(dockerListenerRabbit, 'publish', function (queue, data) {
-      if (queue !== 'on-image-builder-container-create') {
+      console.log('XXXX', queue, data)
+      if (queue !== 'on-image-builder-container-die') {
         oldPublish(queue, data)
       }
     })
