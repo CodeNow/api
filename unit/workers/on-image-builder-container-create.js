@@ -9,6 +9,7 @@ var lab = exports.lab = Lab.script()
 var clone = require('101/clone')
 var Code = require('code')
 var path = require('path')
+var Promise = require('bluebird')
 var sinon = require('sinon')
 var TaskFatalError = require('ponos').TaskFatalError
 
@@ -174,16 +175,17 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
   }) // end validateContextVersion
 
   describe('startImageBuilderContainer', function () {
+    var testCv = {
+      build: {
+        containerStarted: false,
+        started: true,
+        finished: false,
+        _id: 'testId'
+      }
+    }
     beforeEach(function (done) {
       sinon.stub(ContextVersion, 'updateByAsync')
-      sinon.stub(ContextVersion, 'findByIdAsync').returns({
-        build: {
-          containerStarted: false,
-          started: true,
-          finished: false,
-          _id: 'testId'
-        }
-      })
+      sinon.stub(ContextVersion, 'findByIdAsync').returns(testCv)
       sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync')
       sinon.stub(messenger, 'emitContextVersionUpdate')
       done()
@@ -198,7 +200,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
     })
 
     it('should start container, update mongo & emit update', function (done) {
-      Docker.prototype.startImageBuilderContainerAsync.returns()
+      Docker.prototype.startImageBuilderContainerAsync.returns(Promise.resolve())
       ContextVersion.updateByAsync.returns()
       messenger.emitContextVersionUpdate.returns()
 
@@ -218,7 +220,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
         sinon.assert.calledWith(ContextVersion.updateByAsync, 'build._id', 'testId', sinon.match(update), { multi: true })
 
         sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
-        sinon.assert.calledWith(messenger.emitContextVersionUpdate, testJob.contextVersion, 'build_running')
+        sinon.assert.calledWith(messenger.emitContextVersionUpdate, testCv, 'build_running')
         done()
       })
     })
@@ -236,7 +238,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       })
       sinon.stub(ContextVersion, 'updateByAsync')
       sinon.stub(ContextVersion, 'updateBuildErrorByBuildIdAsync')
-      sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync').returns()
+      sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync').returns(Promise.resolve())
       sinon.stub(messenger, 'emitContextVersionUpdate')
       done()
     })
