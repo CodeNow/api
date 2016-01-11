@@ -938,26 +938,11 @@ describe('InstanceService: ' + moduleName, function () {
           ctx.opts.instance = new Instance()
           Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer)
           sinon.stub(Docker, 'isImageNotFoundForCreateErr').returns(true)
-          sinon.stub(InstanceService, '_handleImageNotFoundErr').yieldsAsync()
           done()
         })
         afterEach(function (done) {
           Docker.isImageNotFoundForCreateErr.restore()
-          InstanceService._handleImageNotFoundErr.restore()
           done()
-        })
-
-        it('should call _handleImageNotFoundErr', function (done) {
-          InstanceService._createDockerContainer(ctx.opts, function (err) {
-            expect(err).to.not.exist(ctx.err)
-            sinon.assert.calledWith(
-              InstanceService._handleImageNotFoundErr,
-              ctx.opts,
-              ctx.err,
-              sinon.match.func
-            )
-            done()
-          })
         })
       })
     })
