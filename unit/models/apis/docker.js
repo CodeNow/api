@@ -17,7 +17,6 @@ var indexBy = require('101/index-by')
 var joi = require('utils/joi')
 var keypather = require('keypather')()
 var Lab = require('lab')
-var Modem = require('docker-modem')
 var monitor = require('monitor-dog')
 var multiline = require('multiline')
 var path = require('path')
@@ -835,82 +834,6 @@ describe('docker: ' + moduleName, function () {
       })
     })
   })
-
-  describe('pullImage', function () {
-    var testTag = 'lothlorien'
-    var testImageName = 'registy.runnable.com/1234/galadriel'
-    var testImage = testImageName + ':' + testTag
-    beforeEach(function (done) {
-      sinon.stub(Dockerode.prototype, 'pull')
-      sinon.stub(Modem.prototype, 'followProgress')
-      done()
-    })
-    afterEach(function (done) {
-      Dockerode.prototype.pull.restore()
-      Modem.prototype.followProgress.restore()
-      done()
-    })
-
-    it('should pull image', function (done) {
-      Dockerode.prototype.pull.yieldsAsync()
-      Modem.prototype.followProgress.yieldsAsync(null, [
-        {}, {}, {}, {}, {}, {}, {}, {},
-        { status: 'Status: Downloaded newer image for ' + testTag }
-      ])
-      model.pullImage(testImage, function (err) {
-        expect(err).to.not.exist()
-        expect(Dockerode.prototype.pull
-          .withArgs(testImage)
-          .calledOnce).to.be.true()
-        done()
-      })
-    })
-
-    it('should successfully pull image (that already exists)', function (done) {
-      Dockerode.prototype.pull.yieldsAsync()
-      Modem.prototype.followProgress.yieldsAsync(null, [
-        {}, {}, {}, {}, {}, {}, {}, {},
-        { status: 'Status: Image is up to date for ' + testTag }
-      ])
-      model.pullImage(testImage, function (err) {
-        expect(err).to.not.exist()
-        expect(Dockerode.prototype.pull
-          .withArgs(testImage)
-          .calledOnce).to.be.true()
-        done()
-      })
-    })
-
-    it('should cb error if pull err', function (done) {
-      var testErr = new Error('Docker pull error')
-      Dockerode.prototype.pull.yieldsAsync(testErr)
-      model.pullImage(testImage, function (err) {
-        expect(err.message).to.be.equal('Pull image failed: ' + testErr.message)
-        done()
-      })
-    })
-
-    it('should cb error if follow err', function (done) {
-      var testErr = new Error('something bad happenned')
-      Dockerode.prototype.pull.yieldsAsync()
-      Modem.prototype.followProgress.yieldsAsync(testErr)
-      model.pullImage(testImage, function (err) {
-        expect(err.message).to.contain(testErr.message)
-        done()
-      })
-    })
-
-    it('should cast "image not found" error', function (done) {
-      var testErr = 'image: "foo" not found'
-      Dockerode.prototype.pull.yieldsAsync()
-      Modem.prototype.followProgress.yieldsAsync(testErr)
-      model.pullImage(testImage, function (err) {
-        expect(err.message).to.contain(testErr)
-        expect(err.output.statusCode).to.equal(404)
-        done()
-      })
-    })
-  }) // end pullImage
 
   describe('isImageNotFoundForCreateErr', function () {
     it('should return true if it is', function (done) {

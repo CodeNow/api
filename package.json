@@ -116,7 +116,6 @@
     "console-trace": "git://github.com/numbcoder/console-trace.git",
     "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v1.0.0",
     "docker-mock": "^5.1.0",
-    "docker-modem": "^0.2.6",
     "doctoc": "^0.15.0",
     "faker": "^1.0.0",
     "form-data": "^0.1.4",
