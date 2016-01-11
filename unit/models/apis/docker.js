@@ -397,8 +397,9 @@ describe('docker: ' + moduleName, function () {
             name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
-            Binds: [],
-            Volumes: {},
+            HostConfig: {
+              Binds: []
+            },
             Labels: ctx.mockLabels
           }
 
@@ -449,8 +450,9 @@ describe('docker: ' + moduleName, function () {
             name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
-            Binds: [],
-            Volumes: {},
+            HostConfig: {
+              Binds: []
+            },
             Labels: ctx.mockLabels
           }
 
