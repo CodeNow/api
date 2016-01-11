@@ -37,6 +37,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
   describe('job validation', function () {
     it('should throw if missing host', function (done) {
       delete testJob.host
+
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
         expect(err.message).to.match(/host.*required/)
@@ -45,7 +46,8 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
     })
 
     it('should throw if missing Id', function (done) {
-      delete testJob.inqspectData.Id
+      delete testJob.inspectData.Id
+
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
         expect(err.message).to.match(/Id.*required/)
