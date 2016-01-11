@@ -963,40 +963,6 @@ describe('InstanceService: ' + moduleName, function () {
     })
   })
 
-  describe('#_handleImageNotFoundErr', function () {
-    beforeEach(function (done) {
-      sinon.stub(rabbitMQ, 'pullInstanceImage')
-      ctx.opts = {
-        instance: {
-          _id: '23456789012345678901234',
-          build: '23456789012345678901111'
-        },
-        sessionUserGithubId: '10',
-        ownerUsername: 'ownerUsername'
-      }
-      done()
-    })
-    afterEach(function (done) {
-      rabbitMQ.pullInstanceImage.restore()
-      done()
-    })
-
-    it('should create a pull-instance-image job', function (done) {
-      InstanceService._handleImageNotFoundErr(ctx.opts, ctx.err, function (err) {
-        expect(err).to.equal(ctx.err)
-        sinon.assert.calledWith(
-          rabbitMQ.pullInstanceImage, {
-            instanceId: ctx.opts.instance._id,
-            buildId: ctx.opts.instance.build,
-            sessionUserGithubId: ctx.opts.sessionUserGithubId,
-            ownerUsername: ctx.opts.ownerUsername
-          }
-        )
-        done()
-      })
-    })
-  })
-
   describe('startInstance', function () {
     beforeEach(function (done) {
       sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').returns(Promise.resolve())
