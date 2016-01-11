@@ -490,18 +490,16 @@ describe('docker: ' + moduleName, function () {
           }
           model.createImageBuilder(opts, function (err) {
             if (err) { return done(err) }
-            var volumes = {}
-            volumes['/cache'] = {}
-            volumes['/layer-cache'] = {}
             expect(Docker.prototype.createContainer.firstCall.args[0]).to.deep.equal({
               name: opts.contextVersion.build._id.toString(),
               Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
               Env: ctx.mockEnv,
-              Binds: [
-                process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
-                process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
-              ],
-              Volumes: volumes,
+              HostConfig: {
+                Binds: [
+                  process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
+                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
+                ]
+              },
               Labels: ctx.mockLabels
             })
             done()
