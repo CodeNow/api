@@ -319,7 +319,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           Instance.emitInstanceUpdates,
           ctx.mockUser,
           {
-            'contextVersion.build._id': toObjectId(ctx.worker.data.inspectData.Name.slice(1))
+            'contextVersion.build.dockerContainer': ctx.worker.data.id
           },
           'patch',
           sinon.match.func
