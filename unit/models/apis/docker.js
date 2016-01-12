@@ -25,6 +25,7 @@ var pluck = require('101/pluck')
 var sinon = require('sinon')
 var through2 = require('through2')
 var url = require('url')
+var put = require('101/put')
 
 var Docker = require('models/apis/docker')
 
@@ -396,8 +397,9 @@ describe('docker: ' + moduleName, function () {
             name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
-            Binds: [],
-            Volumes: {},
+            HostConfig: {
+              Binds: []
+            },
             Labels: ctx.mockLabels
           }
 
@@ -448,8 +450,9 @@ describe('docker: ' + moduleName, function () {
             name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
-            Binds: [],
-            Volumes: {},
+            HostConfig: {
+              Binds: []
+            },
             Labels: ctx.mockLabels
           }
 
@@ -487,18 +490,16 @@ describe('docker: ' + moduleName, function () {
           }
           model.createImageBuilder(opts, function (err) {
             if (err) { return done(err) }
-            var volumes = {}
-            volumes['/cache'] = {}
-            volumes['/layer-cache'] = {}
             expect(Docker.prototype.createContainer.firstCall.args[0]).to.deep.equal({
               name: opts.contextVersion.build._id.toString(),
               Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
               Env: ctx.mockEnv,
-              Binds: [
-                process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
-                process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
-              ],
-              Volumes: volumes,
+              HostConfig: {
+                Binds: [
+                  process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
+                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
+                ]
+              },
               Labels: ctx.mockLabels
             })
             done()
@@ -1006,7 +1007,9 @@ describe('docker: ' + moduleName, function () {
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash
             ]),
             Image: ctx.mockContextVersion.build.dockerTag,
-            Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            HostConfig: {
+              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            }
           }
           sinon.assert.calledWith(
             Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
@@ -1095,6 +1098,61 @@ describe('docker: ' + moduleName, function () {
       })
     })
   })
+
+  describe('startUserContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(model, 'startContainer')
+      done()
+    })
+
+    afterEach(function (done) {
+      model.startContainer.restore()
+      done()
+    })
+
+    it('should startContainer', function (done) {
+      var testId = '123'
+      var testOwner = 'asdf'
+      var testOpts = { Labels: 'test' }
+      model.startContainer.yieldsAsync()
+
+      model.startUserContainer(testId, testOwner, testOpts, function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(model.startContainer)
+        sinon.assert.calledWith(model.startContainer,
+          testId,
+          put(testOpts, {
+            HostConfig: {
+              PublishAllPorts: true,
+              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            }
+          }))
+        done()
+      })
+    })
+
+    it('should cb startContainer error', function (done) {
+      var testId = '123'
+      var testOwner = 'asdf'
+      var testOpts = { Labels: 'test' }
+      var testErr = 'viking'
+      model.startContainer.yieldsAsync(testErr)
+
+      model.startUserContainer(testId, testOwner, testOpts, function (err) {
+        expect(err).to.equal(testErr)
+        sinon.assert.calledOnce(model.startContainer)
+        sinon.assert.calledWith(model.startContainer,
+          testId,
+          put(testOpts, {
+            HostConfig: {
+              PublishAllPorts: true,
+              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            }
+          }))
+        done()
+      })
+    })
+  }) // end startUserContainer
 
   describe('_createUserContainerLabels', function () {
     beforeEach(function (done) {

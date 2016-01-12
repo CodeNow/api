@@ -51,8 +51,7 @@ describe('OnInstanceContainerCreateWorker: ' + moduleName, function () {
             sessionUserGithubId: 444,
             contextVersionId: 123
           }
-        },
-        Volumes: {}
+        }
       }
     }
     sinon.stub(async, 'series', noop)
@@ -92,9 +91,7 @@ describe('OnInstanceContainerCreateWorker: ' + moduleName, function () {
             container: {
               dockerContainer: 111,
               dockerHost: '10.0.0.1',
-              inspect: sinon.match({
-                Volumes: {}
-              }),
+              inspect: sinon.match.object,
               ports: [123]
             }
           },
