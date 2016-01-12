@@ -176,7 +176,7 @@ describe('lib/logger.js unit test', function () {
     })
 
     it('should toJSON first-level-subdocuments and remove extra keys', function (done) {
-      function toJSON() {
+      function toJSON () {
         return {
           data: {
             owner: {
