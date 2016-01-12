@@ -42,3 +42,4 @@ var manager = new ClusterManager({
 
 // Start the cluster!
 manager.start()
+change files, auto upload
