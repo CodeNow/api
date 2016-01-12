@@ -246,10 +246,13 @@
       "1.4.0",
       "1.4.1",
       "1.4.2",
-      "1.4rc1",
-      "1.4rc2"
+      "1.4.3",
+      "1.5",
+      "1.5.0",
+      "1.5.1",
+      "1.5.2"
     ],
-    "defaultVersion": "1.4rc2",
+    "defaultVersion": "1.5.2",
     "ports": "3000, 80",
     "startCommand": ["./main"],
     "preEnvMarker": "os.Getenv('",
