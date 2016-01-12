@@ -15,16 +15,17 @@ var keypather = require('keypather')()
 
 var Graph = require('models/apis/graph')
 var Hashids = require('hashids')
+var Neo4j = require('runna4j')
+var ObjectId = require('mongoose').Types.ObjectId
 var async = require('async')
 var createCount = require('callback-count')
 var error = require('error')
 var find = require('101/find')
 var hasProps = require('101/has-properties')
 var mongoose = require('mongoose')
-var ObjectId = require('mongoose').Types.ObjectId
+var noop = require('101/noop')
 var pick = require('101/pick')
 var pluck = require('101/pluck')
-var noop = require('101/noop')
 var toObjectId = require('utils/to-object-id')
 
 var Instance = require('models/mongo/instance')
@@ -1267,7 +1268,6 @@ describe('Instance Model Tests ' + moduleName, function () {
   })
 
   describe('removeDependency', function () {
-    var Neo4j = require('models/graph/neo4j')
     var instance = createNewInstance('boooush')
     var dependant = createNewInstance('mighty')
 
