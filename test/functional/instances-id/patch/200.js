@@ -26,6 +26,7 @@ var it = lab.it
 var sinon = require('sinon')
 var rabbitMQ = require('models/rabbitmq')
 var InstanceService = require('models/services/instance-service')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
   user = user.json()
@@ -109,6 +110,22 @@ describe('200 PATCH /instances/:id', function () {
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
 
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 1001,
+        username: 'Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   describe('For User', function () {
     describe('with in-progress build', function () {
       beforeEach(function (done) {
@@ -145,17 +162,16 @@ describe('200 PATCH /instances/:id', function () {
 
       it('should update an instance with a build', function (done) {
         var count = createCount(2, done)
-        sinon.spy(InstanceService.prototype, 'deleteForkedInstancesByRepoAndBranch')
+        sinon.spy(InstanceService, 'deleteForkedInstancesByRepoAndBranch')
         // Original patch from the update route, then the one at the end of the on-build-die
         primus.expectAction('start', {}, function () {
-          expect(InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1)
+          expect(InstanceService.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1)
           var acv = ctx.cv.appCodeVersions.models[0].attrs
-          var args = InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.getCall(0).args
+          var args = InstanceService.deleteForkedInstancesByRepoAndBranch.getCall(0).args
           expect(args[0].toString()).to.equal(ctx.instance.id().toString())
-          expect(args[1]).to.equal(ctx.user.id())
-          expect(args[2]).to.equal(acv.lowerRepo)
-          expect(args[3]).to.equal(acv.lowerBranch)
-          InstanceService.prototype.deleteForkedInstancesByRepoAndBranch.restore()
+          expect(args[1]).to.equal(acv.lowerRepo)
+          expect(args[2]).to.equal(acv.lowerBranch)
+          InstanceService.deleteForkedInstancesByRepoAndBranch.restore()
           count.next()
         })
         ctx.instance.update({

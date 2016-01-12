@@ -30,6 +30,8 @@ var multi = require('./../../fixtures/multi-factory')
 var primus = require('./../../fixtures/primus')
 var randStr = require('randomstring').generate
 
+var mockGetUserById = require('./../../fixtures/mocks/github/getByUserId')
+
 describe('201 POST /builds/:id/actions/build', function () {
   var ctx = {}
 
@@ -52,6 +54,22 @@ describe('201 POST /builds/:id/actions/build', function () {
   beforeEach(function (done) {
     primus.joinOrgRoom(ctx.user.json().accounts.github.id, done)
   })
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 11111,
+        username: 'Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   describe('for User', function () {
     beforeEach(function (done) {
@@ -290,32 +308,25 @@ function itShouldBuildTheBuild (ctx) {
           ctx.build.fetch(expects.success(200, ctx.expectBuilt, function (err) {
             if (err) { return done(err) }
 
-            var docker = new Docker(cv.dockerHost)
+            var docker = new Docker()
             docker.docker.getContainer(cv.containerId).inspect(function (err, data) {
               if (err) { return done(err) }
 
-              var expectedBindsAndVolumesLength = 0
+              var expectedBindsLength = 0
               var expectedBindsValues = []
-              var expectedVolumesKeys = []
               if (process.env.DOCKER_IMAGE_BUILDER_CACHE) {
-                expectedBindsAndVolumesLength++
+                expectedBindsLength++
                 expectedBindsValues.push(new RegExp(process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw'))
-                expectedVolumesKeys.push('/cache')
               }
 
               if (process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE) {
-                expectedBindsAndVolumesLength++
+                expectedBindsLength++
                 expectedBindsValues.push(new RegExp(process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'))
-                expectedVolumesKeys.push('/layer-cache')
               }
 
-              expect(data.Binds).to.have.length(expectedBindsAndVolumesLength)
+              expect(data.HostConfig.Binds).to.have.length(expectedBindsLength)
               expectedBindsValues.forEach(function (r, i) {
-                expect(data.Binds[i]).to.match(r)
-              })
-              expect(Object.keys(data.Volumes)).to.have.length(expectedBindsAndVolumesLength)
-              expectedVolumesKeys.forEach(function (k) {
-                expect(data.Volumes[k]).to.deep.equal({})
+                expect(data.HostConfig.Binds[i]).to.match(r)
               })
               done(err)
             })

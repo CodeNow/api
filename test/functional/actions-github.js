@@ -29,6 +29,7 @@ var exists = require('101/exists')
 var expects = require('./fixtures/expects')
 var generateKey = require('./fixtures/key-factory')
 var hooks = require('./fixtures/github-hooks')
+var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
 var request = require('request')
@@ -49,6 +50,22 @@ describe('Github - /actions/github', function () {
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   beforeEach(generateKey)
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 429706,
+        username: 'podviaznikov'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
 
   beforeEach(function (done) {
     // Prevent worker creation and github event publishing by rabbit

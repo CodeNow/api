@@ -12,7 +12,6 @@ var createCount = require('callback-count')
 var rabbitMQ = require('models/rabbitmq')
 var sinon = require('sinon')
 var Docker = require('models/apis/docker')
-var Mavis = require('models/apis/mavis')
 var dock = require('../../functional/fixtures/dock')
 var dockerMockEvents = require('../../functional/fixtures/docker-mock-events')
 var mongooseControl = require('models/mongo/mongoose-control.js')
@@ -22,10 +21,9 @@ var Instance = require('models/mongo/instance.js')
 var User = require('models/mongo/user.js')
 var messenger = require('socket/messenger')
 var toObjectId = require('utils/to-object-id')
-
+var dockerListenerRabbit = require('docker-listener/lib/hermes-client.js')
 var mockFactory = require('../fixtures/factory')
 
-var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create.js')
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js')
 
 describe('OnImageBuilderContainerDie Integration Tests', function () {
@@ -37,14 +35,17 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
   })
   before(dock.start.bind(ctx))
   before(function (done) {
-    sinon.stub(OnImageBuilderContainerCreate, 'worker', function (data, done) {
-      done()
+    var oldPublish = dockerListenerRabbit.publish
+    sinon.stub(dockerListenerRabbit, 'publish', function (queue, data) {
+      if (queue !== 'on-image-builder-container-create') {
+        oldPublish.bind(dockerListenerRabbit)(queue, data)
+      }
     })
     rabbitMQ.connect(done)
     rabbitMQ.loadWorkers()
   })
   after(function (done) {
-    OnImageBuilderContainerCreate.worker.restore()
+    dockerListenerRabbit.publish.restore()
     rabbitMQ.close(done)
   })
   after(dock.stop.bind(ctx))
@@ -93,41 +94,37 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         })
         function createImageBuilder (err) {
           if (err) { return done(err) }
-          var mavis = new Mavis()
-          mavis.findDockForBuild(ctx.cv, ctx.cv, function (err, dockerHost) {
+          var docker = new Docker()
+          ctx.cv.dockerHost = process.env.SWARM_HOST
+          var opts = {
+            manualBuild: true,
+            sessionUser: ctx.user,
+            ownerUsername: ctx.user.accounts.github.username,
+            contextVersion: ctx.cv,
+            network: {
+              hostIp: '1.1.1.1'
+            },
+            tid: 1
+          }
+          ctx.cv.populate('infraCodeVersion', function () {
             if (err) { return done(err) }
-            var docker = new Docker(dockerHost)
-            ctx.cv.dockerHost = dockerHost
-            var opts = {
-              manualBuild: true,
-              sessionUser: ctx.user,
-              ownerUsername: ctx.user.accounts.github.username,
-              contextVersion: ctx.cv,
-              network: {
-                hostIp: '1.1.1.1'
-              },
-              tid: 1
-            }
-            ctx.cv.populate('infraCodeVersion', function () {
+            ctx.cv.infraCodeVersion = {
+              context: ctx.cv.context
+            } // mock
+            docker.createImageBuilder(opts, function (err, container) {
               if (err) { return done(err) }
-              ctx.cv.infraCodeVersion = {
-                context: ctx.cv.context
-              } // mock
-              docker.createImageBuilder(opts, function (err, container) {
+              ctx.usedDockerContainer = container
+              ContextVersion.updateBy('_id', ctx.cv._id, {
+                $set: {
+                  'build.dockerContainer': container.id,
+                  'build.dockerTag': Docker.getDockerTag(opts.contextVersion)
+                }
+              }, {}, function (err) {
                 if (err) { return done(err) }
-                ctx.usedDockerContainer = container
-                ContextVersion.updateBy('_id', ctx.cv._id, {
-                  $set: {
-                    'build.dockerContainer': container.id,
-                    'build.dockerTag': Docker.getDockerTag(opts.contextVersion)
-                  }
-                }, {}, function (err) {
+                ContextVersion.findById(ctx.cv._id, function (err, cv) {
                   if (err) { return done(err) }
-                  ContextVersion.findById(ctx.cv._id, function (err, cv) {
-                    if (err) { return done(err) }
-                    ctx.cv = cv
-                    done()
-                  })
+                  ctx.cv = cv
+                  done()
                 })
               })
             })

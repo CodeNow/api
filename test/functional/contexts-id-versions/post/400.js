@@ -14,6 +14,7 @@ var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 
 var typesTests = require('../../fixtures/types-test-util')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 describe('400 POST /contexts/:contextid/versions', function () {
   var ctx = {}
@@ -26,7 +27,22 @@ describe('400 POST /contexts/:contextid/versions', function () {
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
   after(require('../../fixtures/mocks/api-client').clean)
-
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      var array = [{
+        id: 11111,
+        username: 'Runnable'
+      }]
+      if (ctx.user) {
+        array.push({
+          id: ctx.user.attrs.accounts.github.id,
+          username: ctx.user.attrs.accounts.github.username
+        })
+      }
+      return array
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   describe('invalid types', function () {
     beforeEach(function (done) {
       multi.createBuild(function (err, build, context, user) {

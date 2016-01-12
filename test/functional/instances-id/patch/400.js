@@ -14,6 +14,7 @@ var multi = require('../../fixtures/multi-factory')
 var typesTests = require('../../fixtures/types-test-util')
 var primus = require('../../fixtures/primus')
 var noop = require('101/noop')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 describe('PATCH 400 - /instances/:id', function () {
   var ctx = {}
@@ -26,7 +27,12 @@ describe('PATCH 400 - /instances/:id', function () {
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
   after(require('../../fixtures/mocks/api-client').clean)
-
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return []
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   describe('invalid types', function () {
     beforeEach(function (done) {
       multi.createAndTailInstance(primus, function (err, instance) {

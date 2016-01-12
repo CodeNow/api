@@ -11,10 +11,10 @@ var async = require('async')
 var noop = require('101/noop')
 var sinon = require('sinon')
 
-var Instance = require('models/mongo/instance')
 var rabbitMQ = require('models/rabbitmq')
 
 var OnInstanceContainerCreateWorker = require('workers/on-instance-container-create')
+var InstanceService = require('models/services/instance-service')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -42,7 +42,7 @@ describe('OnInstanceContainerCreateWorker: ' + moduleName, function () {
       host: '10.0.0.1',
       inspectData: {
         NetworkSettings: {
-          Ports: []
+          Ports: [123]
         },
         Config: {
           Labels: {
@@ -67,24 +67,36 @@ describe('OnInstanceContainerCreateWorker: ' + moduleName, function () {
 
   describe('_updateInstance', function () {
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findOneAndUpdate', function (query, opts, cb) {
+      sinon.stub(InstanceService, 'updateContainerInspect', function (query, opts, cb) {
         cb(null, ctx.mockInstance)
       })
       done()
     })
 
     afterEach(function (done) {
-      Instance.findOneAndUpdate.restore()
+      InstanceService.updateContainerInspect.restore()
       done()
     })
 
     it('should find and update instance with container', function (done) {
       ctx.worker._updateInstance(function () {
-        expect(Instance.findOneAndUpdate.callCount).to.equal(1)
-        expect(Instance.findOneAndUpdate.args[0][0]).to.only.contain({
-          _id: ctx.mockInstance._id,
-          'contextVersion.id': ctx.data.inspectData.Config.Labels.contextVersionId
-        })
+        expect(InstanceService.updateContainerInspect.callCount).to.equal(1)
+        sinon.assert.calledWith(
+          InstanceService.updateContainerInspect,
+          {
+            _id: ctx.mockInstance._id,
+            'contextVersion.id': ctx.data.inspectData.Config.Labels.contextVersionId
+          },
+          {
+            container: {
+              dockerContainer: 111,
+              dockerHost: '10.0.0.1',
+              inspect: sinon.match.object,
+              ports: [123]
+            }
+          },
+          sinon.match.func
+        )
         done()
       })
     })
