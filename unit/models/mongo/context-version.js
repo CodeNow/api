@@ -1133,21 +1133,22 @@ describe('Context Version: ' + moduleName, function () {
 
   describe('handleRecovery', function () {
     var updatedCv
+    var contextVersion
     beforeEach(function (done) {
       updatedCv = {
         dockRemoved: false,
         dockRemovedNeedsUserConfirmation: true
       }
-      ctx.cv = new ContextVersion({
+      contextVersion = new ContextVersion({
         createdBy: { github: 1000 },
         owner: { github: 2874589 },
         context: ctx.c._id
       })
-      sinon.stub(ctx.cv, 'modifySelf').yieldsAsync(null, updatedCv)
+      sinon.stub(contextVersion, 'modifySelf').yieldsAsync(null, updatedCv)
       done()
     })
     it('should return success', function (done) {
-      ctx.cv.handleRecovery(function (err) {
+      contextVersion.handleRecovery(function (err) {
         expect(err).to.not.exist()
         done()
       })
@@ -1156,11 +1157,11 @@ describe('Context Version: ' + moduleName, function () {
       var error
       beforeEach(function (done) {
         error = new Error('DB Error!')
-        ctx.cv.modifySelf.yieldsAsync(error)
+        contextVersion.modifySelf.yieldsAsync(error)
         done()
       })
       it('should cb error', function (done) {
-        ctx.cv.handleRecovery(function (err) {
+        contextVersion.handleRecovery(function (err) {
           expect(err).to.equal(error)
           done()
         })
