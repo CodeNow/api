@@ -6,6 +6,7 @@
 var Lab = require('lab')
 var Code = require('code')
 var domain = require('domain')
+var sinon = require('sinon')
 
 var lab = exports.lab = Lab.script()
 
@@ -175,34 +176,37 @@ describe('lib/logger.js unit test', function () {
     })
 
     it('should toJSON first-level-subdocuments and remove extra keys', function (done) {
+      function toJSON() {
+        return {
+          data: {
+            owner: {
+              github: 234234234,
+              username: 'nathan219',
+              gravatar: 'testingtesting123'
+            },
+            createdBy: {
+              github: 234234234,
+              username: 'nathan219',
+              gravatar: 'testingtesting123'
+            }
+          }
+        }
+      }
+      var helloFn = sinon.stub()
       var inputData = {
         data: {
           owner: {
             github: 234234234,
             username: 'nathan219',
-            gravatar: 'testingtesting123'
+            gravatar: 'testingtesting123',
+            hello: helloFn
           },
           createdBy: {
             github: 234234234,
             username: 'nathan219',
             gravatar: 'testingtesting123'
           },
-          toJSON: function () {
-            return {
-              data: {
-                owner: {
-                  github: 234234234,
-                  username: 'nathan219',
-                  gravatar: 'testingtesting123'
-                },
-                createdBy: {
-                  github: 234234234,
-                  username: 'nathan219',
-                  gravatar: 'testingtesting123'
-                }
-              }
-            }
-          }
+          toJSON: toJSON
         }
       }
       var out = logger._removeExtraKeys(inputData)
@@ -220,6 +224,23 @@ describe('lib/logger.js unit test', function () {
               gravatar: 'testingtesting123'
             }
           }
+        }
+      })
+      // Make sure the original object wasn't modified
+      expect(inputData).to.deep.equal({
+        data: {
+          owner: {
+            github: 234234234,
+            username: 'nathan219',
+            gravatar: 'testingtesting123',
+            hello: helloFn
+          },
+          createdBy: {
+            github: 234234234,
+            username: 'nathan219',
+            gravatar: 'testingtesting123'
+          },
+          toJSON: toJSON
         }
       })
       done()
