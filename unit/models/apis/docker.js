@@ -12,17 +12,20 @@ var Container = require('dockerode/lib/container')
 var createCount = require('callback-count')
 var dockerFrame = require('docker-frame')
 var Dockerode = require('dockerode')
+var error = require('error')
 var indexBy = require('101/index-by')
 var joi = require('utils/joi')
 var keypather = require('keypather')()
 var Lab = require('lab')
 var Modem = require('docker-modem')
+var monitor = require('monitor-dog')
 var multiline = require('multiline')
-var pluck = require('101/pluck')
 var path = require('path')
+var pluck = require('101/pluck')
 var sinon = require('sinon')
 var through2 = require('through2')
 var url = require('url')
+var put = require('101/put')
 
 var Docker = require('models/apis/docker')
 
@@ -192,6 +195,8 @@ describe('docker: ' + moduleName, function () {
       sinon.stub(Docker, '_isConstraintFailure')
       sinon.stub(Docker, '_isOutOfResources')
       sinon.stub(Docker.prototype, 'createContainer')
+      sinon.stub(monitor, 'event')
+      sinon.stub(error, 'log')
       done()
     })
 
@@ -199,6 +204,8 @@ describe('docker: ' + moduleName, function () {
       Docker._isConstraintFailure.restore()
       Docker._isOutOfResources.restore()
       Docker.prototype.createContainer.restore()
+      monitor.event.restore()
+      error.log.restore()
       done()
     })
 
@@ -223,19 +230,29 @@ describe('docker: ' + moduleName, function () {
       })
     })
 
-    it('should create container without memory limit', function (done) {
+    it('should alert datadog and rollbar if our of resources', function (done) {
       var testOpts = {
-        Memory: 999999
+        Memory: 999999,
+        Labels: {}
       }
+      testOpts.Labels['com.docker.swarm.constraints'] = 'test'
       Docker._isConstraintFailure.returns(false)
       Docker._isOutOfResources.returns(true)
-      Docker.prototype.createContainer.yieldsAsync()
+      monitor.event.returns()
+      error.log.returns()
 
       model._handleCreateContainerError({}, testOpts, function (err) {
-        expect(err).to.not.exist()
-        expect(Docker.prototype.createContainer.withArgs({}).called)
-          .to.be.true()
-
+        expect(err).to.exist()
+        sinon.assert.notCalled(Docker.prototype.createContainer)
+        sinon.assert.calledOnce(monitor.event)
+        sinon.assert.calledOnce(error.log)
+        sinon.assert.calledWith(
+          error.log, {
+            data: {
+              level: 'critical'
+            }
+          }
+        )
         done()
       })
     })
@@ -380,8 +397,9 @@ describe('docker: ' + moduleName, function () {
             name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
-            Binds: [],
-            Volumes: {},
+            HostConfig: {
+              Binds: []
+            },
             Labels: ctx.mockLabels
           }
 
@@ -432,8 +450,9 @@ describe('docker: ' + moduleName, function () {
             name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
-            Binds: [],
-            Volumes: {},
+            HostConfig: {
+              Binds: []
+            },
             Labels: ctx.mockLabels
           }
 
@@ -471,18 +490,16 @@ describe('docker: ' + moduleName, function () {
           }
           model.createImageBuilder(opts, function (err) {
             if (err) { return done(err) }
-            var volumes = {}
-            volumes['/cache'] = {}
-            volumes['/layer-cache'] = {}
             expect(Docker.prototype.createContainer.firstCall.args[0]).to.deep.equal({
               name: opts.contextVersion.build._id.toString(),
               Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
               Env: ctx.mockEnv,
-              Binds: [
-                process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
-                process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
-              ],
-              Volumes: volumes,
+              HostConfig: {
+                Binds: [
+                  process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
+                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
+                ]
+              },
               Labels: ctx.mockLabels
             })
             done()
@@ -651,6 +668,7 @@ describe('docker: ' + moduleName, function () {
           'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(';'),
           // network envs
           'RUNNABLE_WAIT_FOR_WEAVE=' + process.env.RUNNABLE_WAIT_FOR_WEAVE,
+          'NODE_ENV=' + process.env.NODE_ENV,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
           'RUNNABLE_PUSH_IMAGE=true'
         ]
@@ -989,7 +1007,9 @@ describe('docker: ' + moduleName, function () {
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash
             ]),
             Image: ctx.mockContextVersion.build.dockerTag,
-            Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            HostConfig: {
+              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            }
           }
           sinon.assert.calledWith(
             Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
@@ -1078,6 +1098,61 @@ describe('docker: ' + moduleName, function () {
       })
     })
   })
+
+  describe('startUserContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(model, 'startContainer')
+      done()
+    })
+
+    afterEach(function (done) {
+      model.startContainer.restore()
+      done()
+    })
+
+    it('should startContainer', function (done) {
+      var testId = '123'
+      var testOwner = 'asdf'
+      var testOpts = { Labels: 'test' }
+      model.startContainer.yieldsAsync()
+
+      model.startUserContainer(testId, testOwner, testOpts, function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(model.startContainer)
+        sinon.assert.calledWith(model.startContainer,
+          testId,
+          put(testOpts, {
+            HostConfig: {
+              PublishAllPorts: true,
+              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            }
+          }))
+        done()
+      })
+    })
+
+    it('should cb startContainer error', function (done) {
+      var testId = '123'
+      var testOwner = 'asdf'
+      var testOpts = { Labels: 'test' }
+      var testErr = 'viking'
+      model.startContainer.yieldsAsync(testErr)
+
+      model.startUserContainer(testId, testOwner, testOpts, function (err) {
+        expect(err).to.equal(testErr)
+        sinon.assert.calledOnce(model.startContainer)
+        sinon.assert.calledWith(model.startContainer,
+          testId,
+          put(testOpts, {
+            HostConfig: {
+              PublishAllPorts: true,
+              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            }
+          }))
+        done()
+      })
+    })
+  }) // end startUserContainer
 
   describe('_createUserContainerLabels', function () {
     beforeEach(function (done) {

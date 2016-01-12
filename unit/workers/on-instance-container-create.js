@@ -51,8 +51,7 @@ describe('OnInstanceContainerCreateWorker: ' + moduleName, function () {
             sessionUserGithubId: 444,
             contextVersionId: 123
           }
-        },
-        Volumes: {}
+        }
       }
     }
     sinon.stub(async, 'series', noop)
@@ -68,22 +67,22 @@ describe('OnInstanceContainerCreateWorker: ' + moduleName, function () {
 
   describe('_updateInstance', function () {
     beforeEach(function (done) {
-      sinon.stub(InstanceService.prototype, 'updateContainerInspect', function (query, opts, cb) {
+      sinon.stub(InstanceService, 'updateContainerInspect', function (query, opts, cb) {
         cb(null, ctx.mockInstance)
       })
       done()
     })
 
     afterEach(function (done) {
-      InstanceService.prototype.updateContainerInspect.restore()
+      InstanceService.updateContainerInspect.restore()
       done()
     })
 
     it('should find and update instance with container', function (done) {
       ctx.worker._updateInstance(function () {
-        expect(InstanceService.prototype.updateContainerInspect.callCount).to.equal(1)
+        expect(InstanceService.updateContainerInspect.callCount).to.equal(1)
         sinon.assert.calledWith(
-          InstanceService.prototype.updateContainerInspect,
+          InstanceService.updateContainerInspect,
           {
             _id: ctx.mockInstance._id,
             'contextVersion.id': ctx.data.inspectData.Config.Labels.contextVersionId
@@ -92,9 +91,7 @@ describe('OnInstanceContainerCreateWorker: ' + moduleName, function () {
             container: {
               dockerContainer: 111,
               dockerHost: '10.0.0.1',
-              inspect: sinon.match({
-                Volumes: {}
-              }),
+              inspect: sinon.match.object,
               ports: [123]
             }
           },

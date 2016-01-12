@@ -15,8 +15,13 @@ var expect = Code.expect
 var request = require('request')
 var randStr = require('randomstring').generate
 var githubUserOrgsMock = require('./fixtures/mocks/github/user-orgs.js')
-var nock = require('nock')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
+var nock = require('nock')
+var sinon = require('sinon')
+
+var Boom = require('dat-middleware').Boom
+var Promise = require('bluebird')
+var SendGrid = require('models/apis/sendgrid')
 
 var api = require('./fixtures/api-control')
 var ctx = {
@@ -63,9 +68,13 @@ describe('TeammateInvitation', function () {
       githubUserOrgsMock(ctx.user, ctx.orgGithubId, 'super-org')
       done()
     })
+    sinon.stub(SendGrid.prototype, 'inviteAdmin').returns(Promise.resolve(true))
+    sinon.stub(SendGrid.prototype, 'inviteUser').returns(Promise.resolve(true))
   })
   afterEach(function (done) {
     nock.cleanAll()
+    SendGrid.prototype.inviteAdmin.restore()
+    SendGrid.prototype.inviteUser.restore()
     done()
   })
   after(api.stop.bind(ctx))
@@ -89,6 +98,8 @@ describe('TeammateInvitation', function () {
         if (err) {
           expect(err).to.be.an.object()
           expect(err.message).to.match(/access denied/ig)
+          sinon.assert.notCalled(SendGrid.prototype.inviteUser)
+          sinon.assert.notCalled(SendGrid.prototype.inviteAdmin)
           return done()
         }
       })
@@ -109,6 +120,12 @@ describe('TeammateInvitation', function () {
           return done(err)
         }
         expect(statusCode).to.equal(201)
+        sinon.assert.calledOnce(SendGrid.prototype.inviteUser)
+        sinon.assert.notCalled(SendGrid.prototype.inviteAdmin)
+        var inviteUserArgs = SendGrid.prototype.inviteUser.args[0]
+        expect(inviteUserArgs[0], 'recipient').deep.to.equal(opts.recipient)
+        expect(inviteUserArgs[1]._id.toString(), 'sessionUser').to.equal(ctx.user.id())
+        expect(inviteUserArgs[2], 'organizationId').to.equal(ctx.orgGithubId)
         expect(res).to.be.an.object()
         expect(res.recipient).to.be.an.object()
         expect(res.organization).to.be.an.object()
@@ -118,6 +135,67 @@ describe('TeammateInvitation', function () {
         expect(res.owner).to.be.an.object()
         expect(res.owner.github).to.be.a.number()
         expect(res.owner.github).to.equal(ctx.user.attrs.accounts.github.id)
+        done()
+      })
+    })
+    it('should create a new invitation, and send an admin email', function (done) {
+      var opts = {
+        organization: {
+          github: ctx.orgGithubId
+        },
+        recipient: {
+          email: ctx.user.attrs.email,
+          github: ctx.githubUserId
+        },
+        emailMessage: 'asdasdasd',
+        admin: true
+      }
+      ctx.user.createTeammateInvitation(opts, function (err, res, statusCode) {
+        if (err) {
+          return done(err)
+        }
+        expect(statusCode).to.equal(201)
+        sinon.assert.calledOnce(SendGrid.prototype.inviteAdmin)
+        sinon.assert.notCalled(SendGrid.prototype.inviteUser)
+        var inviteAdminArgs = SendGrid.prototype.inviteAdmin.args[0]
+        expect(inviteAdminArgs[0], 'recipient').to.deep.equal(opts.recipient)
+        expect(inviteAdminArgs[1]._id.toString(), 'sessionUser').to.equal(ctx.user.id())
+        expect(inviteAdminArgs[2], 'emailMessage').to.equal('asdasdasd')
+        expect(res).to.be.an.object()
+        expect(res.recipient).to.be.an.object()
+        expect(res.organization).to.be.an.object()
+        expect(res.recipient.github).to.equal(ctx.githubUserId)
+        expect(res.recipient.email).to.equal(ctx.user.attrs.email)
+        expect(res.organization.github).to.equal(ctx.orgGithubId)
+        expect(res.owner).to.be.an.object()
+        expect(res.owner.github).to.be.a.number()
+        expect(res.owner.github).to.equal(ctx.user.attrs.accounts.github.id)
+        done()
+      })
+    })
+    it('should attempt to create an admin email, but get an error', function (done) {
+      var opts = {
+        organization: {
+          github: ctx.orgGithubId
+        },
+        recipient: {
+          email: ctx.user.attrs.email,
+          github: ctx.githubUserId
+        },
+        emailMessage: 'asdasdasd',
+        admin: true
+      }
+      var error = Boom.badGateway('this is an error')
+      SendGrid.prototype.inviteAdmin.restore()
+
+      var rejectionPromise = Promise.reject(error)
+      rejectionPromise.suppressUnhandledRejections()
+      sinon.stub(SendGrid.prototype, 'inviteAdmin').returns(rejectionPromise)
+
+      ctx.user.createTeammateInvitation(opts, function (err) {
+        expect(err, 'err').to.be.an.object()
+        expect(err.output.statusCode, 'statusCode').to.equal(502)
+        expect(err.message, 'err message').to.equal('this is an error')
         done()
       })
     })

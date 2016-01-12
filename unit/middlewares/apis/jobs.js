@@ -19,7 +19,7 @@ var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('lib/middlewares/apis/jobs.js unit test: ' + moduleName, function () {
-  describe('publishClusterProvision', function () {
+  describe('publishASGCreate', function () {
     var testReq = {
       body: {
         name: 'nemo'
@@ -27,13 +27,13 @@ describe('lib/middlewares/apis/jobs.js unit test: ' + moduleName, function () {
     }
     beforeEach(function (done) {
       sinon.stub(Github.prototype, 'getUserByUsername')
-      sinon.stub(rabbitMQ, 'publishClusterProvision')
+      sinon.stub(rabbitMQ, 'publishASGCreate')
       done()
     })
 
     afterEach(function (done) {
       Github.prototype.getUserByUsername.restore()
-      rabbitMQ.publishClusterProvision.restore()
+      rabbitMQ.publishASGCreate.restore()
       done()
     })
 
@@ -41,14 +41,14 @@ describe('lib/middlewares/apis/jobs.js unit test: ' + moduleName, function () {
       it('should return error', function (done) {
         var testErr = new Error('ice storm')
         Github.prototype.getUserByUsername.yieldsAsync(testErr)
-        jobs.publishClusterProvision(testReq, {}, function (err) {
+        jobs.publishASGCreate(testReq, {}, function (err) {
           expect(err).to.deep.equal(testErr)
           done()
         })
       })
       it('should return badRequest', function (done) {
         Github.prototype.getUserByUsername.yieldsAsync(null, null)
-        jobs.publishClusterProvision(testReq, {}, function (err) {
+        jobs.publishASGCreate(testReq, {}, function (err) {
           expect(err.output.statusCode).to.equal(400)
           done()
         })
@@ -64,17 +64,16 @@ describe('lib/middlewares/apis/jobs.js unit test: ' + moduleName, function () {
         done()
       })
       it('should publish job', function (done) {
-        jobs.publishClusterProvision(testReq, {}, function (err) {
+        jobs.publishASGCreate(testReq, {}, function (err) {
           expect(err).to.not.exist()
-          expect(rabbitMQ.publishClusterProvision
-            .withArgs({
-              githubId: testId
-            }).called).to.be.true()
+          sinon.assert.calledWith(rabbitMQ.publishASGCreate, sinon.match({
+            githubId: testId.toString()
+          }))
           done()
         })
       })
     }) // end getUserByUsername successful
-  }) // end publishClusterProvision successful
+  }) // end publishASGCreate successful
 
   describe('publishClustersDeprovision', function () {
     beforeEach(function (done) {
