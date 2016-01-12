@@ -45,7 +45,7 @@ function getNextId () {
 }
 function getNextHash () {
   var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH)
-  return hashids.encrypt(getNextId())
+  return hashids.encrypt(getNextId()).toLowerCase()
 }
 function newObjectId () {
   return new mongoose.Types.ObjectId()
@@ -1216,12 +1216,11 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('setDependenciesFromEnvironment', function () {
     var ownerName = 'someowner'
-    var instance = createNewInstance('wooosh')
+    var instance
 
     beforeEach(function (done) {
+      instance = createNewInstance('wooosh')
       sinon.spy(instance, 'invalidateContainerDNS')
-      sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
-      sinon.stub(Instance, 'find').yieldsAsync(null, [])
       done()
     })
 
@@ -1232,11 +1231,189 @@ describe('Instance Model Tests ' + moduleName, function () {
       done()
     })
 
-    it('should invalidate dns cache entries', function (done) {
-      instance.setDependenciesFromEnvironment(ownerName, function (err) {
-        if (err) { done(err) }
-        expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
+    describe('Test things are called', function () {
+      beforeEach(function (done) {
+        sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
+        sinon.stub(Instance, 'find').yieldsAsync(null, [])
         done()
+      })
+
+      it('should invalidate dns cache entries', function (done) {
+        instance.setDependenciesFromEnvironment(ownerName, function (err) {
+          if (err) {
+            done(err)
+          }
+          expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
+          done()
+        })
+      })
+    })
+
+    describe('Testing changes in envs', function () {
+      var masterInstances
+      beforeEach(function (done) {
+        masterInstances = [
+          createNewInstance('hello', {masterPod: true}),
+          createNewInstance('adelle', {masterPod: true})
+        ]
+        sinon.stub(Instance, 'find').yieldsAsync(null, masterInstances)
+        sinon.stub(instance, 'addDependency').yieldsAsync()
+        sinon.stub(instance, 'removeDependency').yieldsAsync()
+        done()
+      })
+      afterEach(function (done) {
+        instance.addDependency.restore()
+        instance.removeDependency.restore()
+        done()
+      })
+      it('should add a new dep for each env, when starting with none', function (done) {
+        sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
+        instance.env = [
+          'as=hello-staging-' + ownerName + '.runnableapp.com',
+          'df=adelle-staging-' + ownerName + '.runnableapp.com'
+        ]
+        instance.setDependenciesFromEnvironment(ownerName, function (err) {
+          if (err) {
+            done(err)
+          }
+          sinon.assert.calledOnce(instance.invalidateContainerDNS)
+          sinon.assert.calledTwice(instance.addDependency)
+          sinon.assert.calledWith(instance.addDependency.getCall(0),
+            sinon.match.has('shortHash', masterInstances[0].shortHash),
+            'hello-staging-' + ownerName + '.runnableapp.com',
+            sinon.match.func
+          )
+          sinon.assert.calledWith(instance.addDependency.getCall(1),
+            sinon.match.has('shortHash', masterInstances[1].shortHash),
+            'adelle-staging-' + ownerName + '.runnableapp.com',
+            sinon.match.func
+          )
+          sinon.assert.notCalled(instance.removeDependency)
+          done()
+        })
+      })
+      it('should add 1 new dep, and keep the existing one', function (done) {
+        sinon.stub(instance, 'getDependencies').yieldsAsync(null, [masterInstances[1]])
+        instance.env = [
+          'as=hello-staging-' + ownerName + '.runnableapp.com',
+          'df=adelle-staging-' + ownerName + '.runnableapp.com'
+        ]
+        instance.setDependenciesFromEnvironment(ownerName, function (err) {
+          if (err) {
+            done(err)
+          }
+          sinon.assert.calledOnce(instance.invalidateContainerDNS)
+          sinon.assert.calledOnce(instance.addDependency)
+          sinon.assert.calledWith(instance.addDependency.getCall(0),
+            sinon.match.has('shortHash', masterInstances[0].shortHash),
+            'hello-staging-' + ownerName + '.runnableapp.com',
+            sinon.match.func
+          )
+          sinon.assert.notCalled(instance.removeDependency)
+          done()
+        })
+      })
+      it('should remove one of the existing, but leave the other', function (done) {
+        sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances)
+        instance.env = [
+          'df=adelle-staging-' + ownerName + '.runnableapp.com' // Keep masterInstance[1]
+        ]
+        instance.setDependenciesFromEnvironment(ownerName, function (err) {
+          if (err) {
+            done(err)
+          }
+          sinon.assert.calledOnce(instance.invalidateContainerDNS)
+          sinon.assert.calledOnce(instance.removeDependency)
+          sinon.assert.calledWith(instance.removeDependency.getCall(0),
+            sinon.match.has('shortHash', masterInstances[0].shortHash),
+            sinon.match.func
+          )
+          sinon.assert.notCalled(instance.addDependency)
+          done()
+        })
+      })
+      it('should remove both of the existing', function (done) {
+        sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances)
+        instance.setDependenciesFromEnvironment(ownerName, function (err) {
+          if (err) {
+            done(err)
+          }
+          sinon.assert.calledOnce(instance.invalidateContainerDNS)
+          sinon.assert.calledTwice(instance.removeDependency)
+          sinon.assert.calledWith(instance.removeDependency.getCall(0),
+            sinon.match.has('shortHash', masterInstances[0].shortHash),
+            sinon.match.func
+          )
+          sinon.assert.calledWith(instance.removeDependency.getCall(1),
+            sinon.match.has('shortHash', masterInstances[1].shortHash),
+            sinon.match.func
+          )
+          sinon.assert.notCalled(instance.addDependency)
+          done()
+        })
+      })
+      it('should remove the existing one, and add the new one', function (done) {
+        sinon.stub(instance, 'getDependencies').yieldsAsync(null, [masterInstances[1]])
+        instance.env = [
+          'df=hello-staging-' + ownerName + '.runnableapp.com' // Add masterInstance[0]
+        ]
+        instance.setDependenciesFromEnvironment(ownerName, function (err) {
+          if (err) {
+            done(err)
+          }
+          sinon.assert.calledOnce(instance.invalidateContainerDNS)
+          sinon.assert.calledOnce(instance.removeDependency)
+          sinon.assert.calledWith(instance.removeDependency.getCall(0),
+            sinon.match.has('shortHash', masterInstances[1].shortHash),
+            sinon.match.func
+          )
+          sinon.assert.calledOnce(instance.addDependency)
+          sinon.assert.calledWith(instance.addDependency.getCall(0),
+            sinon.match.has('shortHash', masterInstances[0].shortHash),
+            'hello-staging-' + ownerName + '.runnableapp.com',
+            sinon.match.func
+          )
+          done()
+        })
+      })
+      it('should remove the existing one, and add the new one', function (done) {
+        masterInstances.push(createNewInstance('cheese', {masterPod: true}))   // 2
+        masterInstances.push(createNewInstance('chicken', {masterPod: true}))  // 3
+        masterInstances.push(createNewInstance('beef', {masterPod: true}))     // 4
+        masterInstances.push(createNewInstance('potatoes', {masterPod: true})) // 5
+        sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
+        instance.env = [
+          'df=hello-staging-' + ownerName + '.runnableapp.com', // keep masterInstance[0]
+          'asd=chicken-staging-' + ownerName + '.runnableapp.com', // add masterInstance[3]
+          'asfgas=potatoes-staging-' + ownerName + '.runnableapp.com' // add masterInstance[5]
+        ]
+        instance.setDependenciesFromEnvironment(ownerName, function (err) {
+          if (err) {
+            done(err)
+          }
+          sinon.assert.calledOnce(instance.invalidateContainerDNS)
+          sinon.assert.calledTwice(instance.removeDependency)
+          sinon.assert.calledWith(instance.removeDependency.getCall(0),
+            sinon.match.has('shortHash', masterInstances[1].shortHash),
+            sinon.match.func
+          )
+          sinon.assert.calledWith(instance.removeDependency.getCall(1),
+            sinon.match.has('shortHash', masterInstances[2].shortHash),
+            sinon.match.func
+          )
+          sinon.assert.calledTwice(instance.addDependency)
+          sinon.assert.calledWith(instance.addDependency.getCall(0),
+            sinon.match.has('shortHash', masterInstances[3].shortHash),
+            'chicken-staging-' + ownerName + '.runnableapp.com',
+            sinon.match.func
+          )
+          sinon.assert.calledWith(instance.addDependency.getCall(1),
+            sinon.match.has('shortHash', masterInstances[5].shortHash),
+            'potatoes-staging-' + ownerName + '.runnableapp.com',
+            sinon.match.func
+          )
+          done()
+        })
       })
     })
   })
