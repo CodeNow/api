@@ -1,8 +1,8 @@
-'use strict';
+'use strict'
 
-var validation = require('../fixtures/validation')(null);
+var validation = require('../fixtures/validation')(null)
 
-var ContextVersion = require('models/mongo/context-version');
+var ContextVersion = require('models/mongo/context-version')
 
 module.exports = function (opts) {
   return new ContextVersion({
@@ -27,5 +27,5 @@ module.exports = function (opts) {
       branch: opts.branch || 'master',
       commit: 'deadbeef'
     }]
-  });
-};
+  })
+}

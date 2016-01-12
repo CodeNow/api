@@ -1,14 +1,14 @@
-'use strict';
+'use strict'
 
-var validation = require('../fixtures/validation')(null);
+var validation = require('../fixtures/validation')(null)
 
-var contextVersionFactory = require('./context-version');
-var Hashids = require('hashids');
+var contextVersionFactory = require('./context-version')
+var Hashids = require('hashids')
 
-var Instance = require('models/mongo/instance');
+var Instance = require('models/mongo/instance')
 
 module.exports = function (name, opts) {
-  opts = opts || {};
+  opts = opts || {}
   return new Instance({
     name: name || 'name',
     shortHash: getNextHash(),
@@ -39,15 +39,15 @@ module.exports = function (name, opts) {
       networkIp: '1.1.1.1',
       hostIp: '1.1.1.100'
     }
-  });
-};
+  })
+}
 
-var id = 0;
+var id = 0
 function getNextId () {
-  return ++id;
+  return ++id
 }
 
 function getNextHash () {
-  var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH);
-  return hashids.encrypt(getNextId())[0];
+  var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH)
+  return hashids.encrypt(getNextId())[0]
 }
