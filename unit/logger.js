@@ -173,5 +173,56 @@ describe('lib/logger.js unit test', function () {
       expect(out).to.deep.equal(testObj)
       done()
     })
+
+    it('should toJSON first-level-subdocuments and remove extra keys', function (done) {
+      var inputData = {
+        data: {
+          owner: {
+            github: 234234234,
+            username: 'nathan219',
+            gravatar: 'testingtesting123'
+          },
+          createdBy: {
+            github: 234234234,
+            username: 'nathan219',
+            gravatar: 'testingtesting123'
+          },
+          toJSON: function () {
+            return {
+              data: {
+                owner: {
+                  github: 234234234,
+                  username: 'nathan219',
+                  gravatar: 'testingtesting123'
+                },
+                createdBy: {
+                  github: 234234234,
+                  username: 'nathan219',
+                  gravatar: 'testingtesting123'
+                }
+              }
+            }
+          }
+        }
+      }
+      var out = logger._removeExtraKeys(inputData)
+      expect(out).to.deep.equal({
+        data: {
+          data: {
+            owner: {
+              github: 234234234,
+              username: 'nathan219',
+              gravatar: 'testingtesting123'
+            },
+            createdBy: {
+              github: 234234234,
+              username: 'nathan219',
+              gravatar: 'testingtesting123'
+            }
+          }
+        }
+      })
+      done()
+    })
   }) // end _removeExtraKeys
 })
