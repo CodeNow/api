@@ -80,7 +80,6 @@ var started = false
 
 function startDock (done) {
   if (started) { return done() }
-  // FIXME: hack because docker-mock does not add image to its store for image-builder creates
   started = true
   var count = createCount(3, done)
   dockerModuleMock.setup(count.next)

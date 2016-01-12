@@ -39,7 +39,7 @@
     "defaults": "^1.0.0",
     "docker-frame": "^1.0.0",
     "docker-stream-cleanser": "^0.2.0",
-    "dockerode": "2.2.7",
+    "dockerode": "2.2.8",
     "dogerode": "0.0.3",
     "dogstatsyware": "0.0.1",
     "dotenv": "^0.4.0",
