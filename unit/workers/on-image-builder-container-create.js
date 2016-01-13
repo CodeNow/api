@@ -252,13 +252,34 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       done()
     })
 
-    it('should updateBuildErrorByBuildIdAsync for error', function (done) {
+    it('should updateBuildErrorByBuildIdAsync and rethrow error', function (done) {
       var testErr = new Error('hulahoop')
       ContextVersion.updateByAsync.throws(testErr)
-      ContextVersion.updateBuildErrorByBuildIdAsync.returns()
+      ContextVersion.updateBuildErrorByBuildIdAsync.returns(Promise.resolve())
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        if (err) { return done(err) }
+        expect(err).to.equal(testErr)
+        sinon.assert.calledOnce(Docker.prototype.startImageBuilderContainerAsync)
+        sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, testJob.inspectData.Id)
+
+        var update = {
+          $set: {
+            'dockerHost': testJob.host
+          }
+        }
+        sinon.assert.calledOnce(ContextVersion.updateByAsync)
+        sinon.assert.calledWith(ContextVersion.updateByAsync, 'build._id', 'testId', sinon.match(update), { multi: true })
+        done()
+      })
+    })
+
+    it('should updateBuildErrorByBuildIdAsync and rethrow original error', function (done) {
+      var testErr = new Error('hulahoop')
+      ContextVersion.updateByAsync.throws(testErr)
+      ContextVersion.updateBuildErrorByBuildIdAsync.returns(Promise.reject(new Error('phalanger')))
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.equal(testErr)
         sinon.assert.calledOnce(Docker.prototype.startImageBuilderContainerAsync)
         sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, testJob.inspectData.Id)
 
