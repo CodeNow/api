@@ -519,18 +519,6 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
         done()
       })
 
-      it('should update the build with the error', function (done) {
-        var originalError = new Error('something wicked')
-        ctx.worker._updateCvOnError(originalError, function () {
-          expect(ContextVersion.updateBuildErrorByBuildId.calledOnce)
-            .to.be.true()
-          expect(ContextVersion.updateBuildErrorByBuildId.calledWith(
-            buildId, originalError
-          )).to.be.true()
-          done()
-        })
-      })
-
       it('should callback with the original error', function (done) {
         var originalError = new Error('this way comes')
         ctx.worker._updateCvOnError(originalError, function (err) {
