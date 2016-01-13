@@ -87,54 +87,6 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           })
         })
       })
-      describe('Instance updated with another env', function () {
-        beforeEach(function (done) {
-          var body2 = {
-            name: 'hello',
-            build: ctx.build.id(),
-            masterPod: true
-          }
-          ctx.instance3 = ctx.user.createInstance(body2, done)
-        })
-        it('should wipe away the deps when the envs are cleared', function (done) {
-          var depBody = {
-            env: []
-          }
-          ctx.instanceWithDep.update(depBody, function (err) {
-            if (err) {
-              return done(err)
-            }
-            ctx.instanceWithDep.fetchDependencies(function (err, data) {
-              if (err) {
-                return done(err)
-              }
-              expect(data).to.be.an.array()
-              expect(data).to.have.a.length(0)
-              done()
-            })
-          })
-        })
-        it('should get another dependency', function (done) {
-          var depBody = {
-            env: [
-              'other=' + ctx.elasticHostname,
-              'another=' + ctx.instance3.getElasticHostname()
-            ]
-          }
-          ctx.instanceWithDep.update(depBody, function (err) {
-            if (err) {
-              return done(err)
-            }
-            ctx.instanceWithDep.fetchDependencies(function (err, data) {
-              if (err) {
-                return done(err)
-              }
-              expectInstanceDep(data, [ctx.instance, ctx.instance3])
-              done()
-            })
-          })
-        })
-      })
     })
   })
 })
