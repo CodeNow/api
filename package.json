@@ -101,7 +101,8 @@
     "underscore.string": "^3.0.2",
     "uuid": "~1.4.1",
     "ws": "^1.0.1",
-    "xtend": "3.0.0"
+    "xtend": "3.0.0",
+    "array-subtract": "^1.1.1"
   },
   "devDependencies": {
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.6",
