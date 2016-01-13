@@ -4,7 +4,6 @@ var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
-var before = lab.before
 var beforeEach = lab.beforeEach
 // var after = lab.after
 var afterEach = lab.afterEach
@@ -21,7 +20,6 @@ var util = require('util')
 
 var BuildStream = require('socket/build-stream').BuildStream
 var ContextVersion = require('models/mongo/context-version')
-var me = require('middlewares/me')
 
 var Promise = require('bluebird')
 var SocketServer = require('socket/socket-server')
@@ -40,8 +38,8 @@ ClientStream.prototype.end = function () { this.emit('end') }
 var ctx = {}
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
-var error;
-var rejectionPromise;
+var error
+var rejectionPromise
 
 describe('build stream: ' + moduleName, function () {
   beforeEach(function (done) {
@@ -56,8 +54,8 @@ describe('build stream: ' + moduleName, function () {
   })
 
   beforeEach(function (done) {
-    error = new Error('not owner');
-    rejectionPromise = Promise.reject(error);
+    error = new Error('not owner')
+    rejectionPromise = Promise.reject(error)
     rejectionPromise.suppressUnhandledRejections()
     done()
   })
