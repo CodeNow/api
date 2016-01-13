@@ -5,9 +5,9 @@ var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
 var before = lab.before
-// var beforeEach = lab.beforeEach
+var beforeEach = lab.beforeEach
 // var after = lab.after
-// var afterEach = lab.afterEach
+var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 
@@ -20,6 +20,11 @@ var EventEmitter = require('events').EventEmitter
 var util = require('util')
 
 var BuildStream = require('socket/build-stream').BuildStream
+var ContextVersion = require('models/mongo/context-version')
+var me = require('middlewares/me')
+
+var Promise = require('bluebird')
+var SocketServer = require('socket/socket-server')
 
 function ClientStream () {
   EventEmitter.call(this)
@@ -35,9 +40,11 @@ ClientStream.prototype.end = function () { this.emit('end') }
 var ctx = {}
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
+var error;
+var rejectionPromise;
 
 describe('build stream: ' + moduleName, function () {
-  before(function (done) {
+  beforeEach(function (done) {
     var socket = {}
     var id = 4
     var data = {
@@ -48,6 +55,12 @@ describe('build stream: ' + moduleName, function () {
     done()
   })
 
+  beforeEach(function (done) {
+    error = new Error('not owner');
+    rejectionPromise = Promise.reject(error);
+    rejectionPromise.suppressUnhandledRejections()
+    done()
+  })
   it('should pipe docker logs to a client stream', function (done) {
     var count = createCount(1, function (err) {
       Docker.prototype.getLogs.restore()
@@ -87,5 +100,65 @@ describe('build stream: ' + moduleName, function () {
       count.next()
     })
   })
-// after(function (done) {})
+
+  describe('handleStream', function () {
+    beforeEach(function (done) {
+      var socket = {}
+      var id = 4
+      var data = {
+        id: 4,
+        streamId: 17
+      }
+      ctx.buildStream = new BuildStream(socket, id, data)
+
+      ctx.cv = {
+        createdBy: {
+          github: 123
+        },
+        owner: {
+          github: 123
+        },
+        build: {
+          log: 'hey',
+          completed: Date.now()
+        },
+        writeLogsToPrimusStream: sinon.spy()
+      }
+      sinon.stub(ctx.buildStream, '_writeErr')
+      sinon.stub(ContextVersion, 'findOne').yields(null, ctx.cv)
+      sinon.stub(ctx.buildStream, '_validateVersion').returns(false)
+      sinon.stub(ctx.buildStream, '_pipeBuildLogsToClient').returns()
+      done()
+    })
+    afterEach(function (done) {
+      ContextVersion.findOne.restore()
+      ctx.buildStream._validateVersion.restore()
+      SocketServer.checkOwnership.restore()
+      ctx.buildStream._writeErr.restore()
+      done()
+    })
+    it('should do nothing if the ownership check fails', function (done) {
+      sinon.stub(SocketServer, 'checkOwnership').returns(rejectionPromise)
+      ctx.buildStream.socket.substream = sinon.spy(function () {
+        done(new Error('This shouldn\'t have happened'))
+      })
+      ctx.buildStream.handleStream()
+        .catch(function (err) {
+          expect(err).to.equal(error)
+          sinon.assert.calledOnce(ctx.buildStream._writeErr)
+          sinon.assert.calledWith(ctx.buildStream._writeErr, sinon.match.string)
+          done()
+        })
+    })
+    it('should allow logs when check ownership passes', function (done) {
+      ctx.buildStream.socket.substream = sinon.spy()
+      sinon.stub(SocketServer, 'checkOwnership').returns(Promise.resolve(true))
+      ctx.buildStream.handleStream()
+        .then(function () {
+          sinon.assert.calledOnce(ctx.buildStream.socket.substream)
+          sinon.assert.calledOnce(ctx.cv.writeLogsToPrimusStream)
+        })
+      done()
+    })
+  })
 })
