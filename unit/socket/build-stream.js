@@ -101,7 +101,14 @@ describe('build stream: ' + moduleName, function () {
 
   describe('handleStream', function () {
     beforeEach(function (done) {
-      var socket = {}
+      ctx.sessionUser = {
+        github: 123
+      }
+      var socket = {
+        request: {
+          sessionUser: ctx.sessionUser
+        }
+      }
       var id = 4
       var data = {
         id: 4,
@@ -155,6 +162,8 @@ describe('build stream: ' + moduleName, function () {
         .then(function () {
           sinon.assert.calledOnce(ctx.buildStream.socket.substream)
           sinon.assert.calledOnce(ctx.cv.writeLogsToPrimusStream)
+          sinon.assert.calledOnce(commonStream.checkOwnership)
+          sinon.assert.calledWith(commonStream.checkOwnership, ctx.sessionUser, ctx.cv)
         })
       done()
     })
