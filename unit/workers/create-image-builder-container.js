@@ -195,7 +195,8 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           done()
         })
       })
-    })
+    }) // end 'success'
+
     describe('failure', function () {
       beforeEach(function (done) {
         // initialize instance w/ props, don't actually run protected methods
@@ -252,8 +253,8 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           done()
         })
       })
-    })
-  })
+    }) // end 'failure'
+  }) // end 'Full run'
 
   describe('independent tests', function () {
     beforeEach(function (done) {
@@ -266,6 +267,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
       })
       ctx.worker.handle(function () {})
     })
+
     describe('_findContext', function () {
       describe('basic', function () {
         beforeEach(function (done) {
@@ -331,7 +333,8 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           })
         })
       })
-    })
+    }) // end '_findContext'
+
     describe('_populateInfraCodeVersion', function () {
       describe('basic', function () {
         beforeEach(function (done) {
@@ -371,7 +374,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           })
         })
       })
-    })
+    }) // end '_populateInfraCodeVersion'
 
     describe('_createImageBuilder', function () {
       beforeEach(function (done) {
@@ -430,7 +433,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           })
         })
       })
-    })
+    }) // end '_createImageBuilder'
 
     describe('_updateContextVersionWithContainer', function () {
       describe('basic', function () {
@@ -461,7 +464,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           })
         })
       })
-    })
+    }) // end '_updateContextVersionWithContainer'
 
     describe('_onError', function () {
       beforeEach(function (done) {
@@ -499,6 +502,42 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           })
         })
       })
-    })
-  })
-})
+    }) // end '_onError'
+
+    describe('_updateCvOnError', function () {
+      var buildId = 'some-build-id'
+
+      beforeEach(function (done) {
+        ctx.worker = new StartImageBuildContainerWorker(ctx.data)
+        ctx.worker.contextVersion = { build: { _id: buildId } }
+        sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync()
+        done()
+      })
+
+      afterEach(function (done) {
+        ContextVersion.updateBuildErrorByBuildId.restore()
+        done()
+      })
+
+      it('should update the build with the error', function (done) {
+        var originalError = new Error('something wicked')
+        ctx.worker._updateCvOnError(originalError, function () {
+          expect(ContextVersion.updateBuildErrorByBuildId.calledOnce)
+            .to.be.true()
+          expect(ContextVersion.updateBuildErrorByBuildId.calledWith(
+            buildId, originalError
+          )).to.be.true()
+          done()
+        })
+      })
+
+      it('should callback with the original error', function (done) {
+        var originalError = new Error('this way comes')
+        ctx.worker._updateCvOnError(originalError, function (err) {
+          expect(err).to.equal(originalError)
+          done()
+        })
+      })
+    }) // end '_updateCvOnError'
+  }) // end 'independent tests'
+}) // end 'CreateImageBuilderContainerWorker'
