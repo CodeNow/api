@@ -22,7 +22,7 @@ var BuildStream = require('socket/build-stream').BuildStream
 var ContextVersion = require('models/mongo/context-version')
 
 var Promise = require('bluebird')
-var SocketServer = require('socket/socket-server')
+var commonStream = require('socket/common-stream')
 
 function ClientStream () {
   EventEmitter.call(this)
@@ -131,12 +131,12 @@ describe('build stream: ' + moduleName, function () {
     afterEach(function (done) {
       ContextVersion.findOne.restore()
       ctx.buildStream._validateVersion.restore()
-      SocketServer.checkOwnership.restore()
+      commonStream.checkOwnership.restore()
       ctx.buildStream._writeErr.restore()
       done()
     })
     it('should do nothing if the ownership check fails', function (done) {
-      sinon.stub(SocketServer, 'checkOwnership').returns(rejectionPromise)
+      sinon.stub(commonStream, 'checkOwnership').returns(rejectionPromise)
       ctx.buildStream.socket.substream = sinon.spy(function () {
         done(new Error('This shouldn\'t have happened'))
       })
@@ -150,7 +150,7 @@ describe('build stream: ' + moduleName, function () {
     })
     it('should allow logs when check ownership passes', function (done) {
       ctx.buildStream.socket.substream = sinon.spy()
-      sinon.stub(SocketServer, 'checkOwnership').returns(Promise.resolve(true))
+      sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
       ctx.buildStream.handleStream()
         .then(function () {
           sinon.assert.calledOnce(ctx.buildStream.socket.substream)

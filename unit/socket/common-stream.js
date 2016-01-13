@@ -14,9 +14,9 @@ var path = require('path')
 var sinon = require('sinon')
 var moduleName = path.relative(process.cwd(), __filename)
 var me = require('middlewares/me')
-var SocketServer = require('socket/socket-server')
+var commonStream = require('socket/common-stream')
 
-describe('socket server: ' + moduleName, function () {
+describe('common stream: ' + moduleName, function () {
   var ctx
   var error
   describe('checkOwnership', function () {
@@ -58,7 +58,7 @@ describe('socket server: ' + moduleName, function () {
       var isModeratorSpy = sinon.stub().yields(error)
       sinon.stub(me, 'isOwnerOf').returns(isOwnerOfSpy)
       sinon.stub(me, 'isModerator').returns(isModeratorSpy)
-      SocketServer.checkOwnership(ctx.sessionUser, ctx.cv)
+      commonStream.checkOwnership(ctx.sessionUser, ctx.cv)
         .catch(function (err) {
           expect(err, 'error').to.not.be.null
           expect(err.length, 'error length').to.equal(2)
@@ -89,7 +89,7 @@ describe('socket server: ' + moduleName, function () {
       var isModeratorSpy = sinon.stub().yields(error)
       sinon.stub(me, 'isOwnerOf').returns(isOwnerOfSpy)
       sinon.stub(me, 'isModerator').returns(isModeratorSpy)
-      SocketServer.checkOwnership(ctx.sessionUser, ctx.cv)
+      commonStream.checkOwnership(ctx.sessionUser, ctx.cv)
         .then(function () {
           sinon.assert.calledOnce(me.isModerator)
           sinon.assert.calledOnce(isModeratorSpy)
@@ -117,7 +117,7 @@ describe('socket server: ' + moduleName, function () {
       var isModeratorSpy = sinon.stub().yields(error)
       sinon.stub(me, 'isOwnerOf').returns(isOwnerOfSpy)
       sinon.stub(me, 'isModerator').returns(isModeratorSpy)
-      SocketServer.checkOwnership(ctx.sessionUser, ctx.cv)
+      commonStream.checkOwnership(ctx.sessionUser, ctx.cv)
         .then(function () {
           sinon.assert.calledOnce(me.isModerator)
           sinon.assert.calledOnce(isModeratorSpy)
@@ -145,7 +145,7 @@ describe('socket server: ' + moduleName, function () {
       var isModeratorSpy = sinon.stub().yields(null, true)
       sinon.stub(me, 'isOwnerOf').returns(isOwnerOfSpy)
       sinon.stub(me, 'isModerator').returns(isModeratorSpy)
-      SocketServer.checkOwnership(ctx.sessionUser, ctx.cv)
+      commonStream.checkOwnership(ctx.sessionUser, ctx.cv)
         .then(function () {
           sinon.assert.calledOnce(me.isModerator)
           sinon.assert.calledOnce(isModeratorSpy)
@@ -173,7 +173,7 @@ describe('socket server: ' + moduleName, function () {
       var isModeratorSpy = sinon.stub().yields(null, true)
       sinon.stub(me, 'isOwnerOf').returns(isOwnerOfSpy)
       sinon.stub(me, 'isModerator').returns(isModeratorSpy)
-      SocketServer.checkOwnership(ctx.sessionUser, ctx.cvAttrs)
+      commonStream.checkOwnership(ctx.sessionUser, ctx.cvAttrs)
         .then(function () {
           sinon.assert.calledOnce(me.isModerator)
           sinon.assert.calledOnce(isModeratorSpy)
