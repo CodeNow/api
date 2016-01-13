@@ -312,28 +312,21 @@ function itShouldBuildTheBuild (ctx) {
             docker.docker.getContainer(cv.build.dockerContainer).inspect(function (err, data) {
               if (err) { return done(err) }
 
-              var expectedBindsAndVolumesLength = 0
+              var expectedBindsLength = 0
               var expectedBindsValues = []
-              var expectedVolumesKeys = []
               if (process.env.DOCKER_IMAGE_BUILDER_CACHE) {
-                expectedBindsAndVolumesLength++
+                expectedBindsLength++
                 expectedBindsValues.push(new RegExp(process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw'))
-                expectedVolumesKeys.push('/cache')
               }
 
               if (process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE) {
-                expectedBindsAndVolumesLength++
+                expectedBindsLength++
                 expectedBindsValues.push(new RegExp(process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'))
-                expectedVolumesKeys.push('/layer-cache')
               }
 
-              expect(data.Binds).to.have.length(expectedBindsAndVolumesLength)
+              expect(data.HostConfig.Binds).to.have.length(expectedBindsLength)
               expectedBindsValues.forEach(function (r, i) {
-                expect(data.Binds[i]).to.match(r)
-              })
-              expect(Object.keys(data.Volumes)).to.have.length(expectedBindsAndVolumesLength)
-              expectedVolumesKeys.forEach(function (k) {
-                expect(data.Volumes[k]).to.deep.equal({})
+                expect(data.HostConfig.Binds[i]).to.match(r)
               })
               done(err)
             })

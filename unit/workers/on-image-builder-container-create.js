@@ -1,21 +1,22 @@
 /**
- * @module unit/workers/start-image-builder-container
+ * @module unit/workers/on-image-builder-container-create
  */
 'use strict'
 
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
+var clone = require('101/clone')
 var Code = require('code')
-var async = require('async')
-var keypather = require('keypather')()
+var path = require('path')
+var Promise = require('bluebird')
 var sinon = require('sinon')
+var TaskFatalError = require('ponos').TaskFatalError
 
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var messenger = require('socket/messenger')
-
-var OnCreateImageBuilderContainer = require('workers/on-image-builder-container-create')
+var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -23,324 +24,253 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
-  var ctx
+  var testJobData = require('../fixtures/docker-listener/build-image-container')
+  var testJob
 
   beforeEach(function (done) {
-    ctx = {}
-
-    ctx.mockContextVersion = {
-      '_id': '55d3ef733e1b620e00eb6292',
-      name: 'name1',
-      owner: {
-        github: '2335750'
-      },
-      createdBy: {
-        github: '146592'
-      },
-      build: {
-        _id: '23412312h3nk1lj2h3l1k2'
-      }
-    }
-    ctx.data = require('../fixtures/docker-listener/build-image-container')
-    ctx.labels = keypather.get(ctx.data, 'inspectData.Config.Labels')
+    testJob = clone(testJobData)
     done()
   })
 
-  describe('Full run', function () {
-    describe('success', function () {
-      beforeEach(function (done) {
-        // initialize instance w/ props, don't actually run protected methods
-        ctx.worker = new OnCreateImageBuilderContainer(ctx.data)
-        sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion)
-        sinon.stub(messenger, 'emitContextVersionUpdate')
-        sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync()
-        sinon.stub(ContextVersion, 'updateBy').yieldsAsync(null, 1)
-        sinon.stub(Docker.prototype, 'startImageBuilderContainer').yieldsAsync(null)
+  describe('job validation', function () {
+    it('should throw if missing host', function (done) {
+      delete testJob.host
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.message).to.match(/host.*required/)
         done()
-      })
-      afterEach(function (done) {
-        ContextVersion.findOne.restore()
-        ContextVersion.updateBuildErrorByBuildId.restore()
-        ContextVersion.updateBy.restore()
-        Docker.prototype.startImageBuilderContainer.restore()
-        messenger.emitContextVersionUpdate.restore()
-        done()
-      })
-      it('should finish by updating the contextVersion', function (done) {
-        ctx.worker.handle(function (err) {
-          expect(err).to.be.undefined()
-          // 2 because of the updateFrontend also making a call
-          expect(ContextVersion.findOne.callCount, 'findOne').to.equal(2)
-          expect(ContextVersion.findOne.args[0][0], 'findOne').to.deep.equal({
-            '_id': ctx.mockContextVersion._id,
-            'build.containerStarted': {
-              $exists: false
-            },
-            'build.started': {
-              $exists: true
-            },
-            'build.finished': {
-              $exists: false
-            }
-          })
-
-          expect(ContextVersion.findOne.args[1][0], 'findOne').to.deep.equal({
-            '_id': ctx.mockContextVersion._id
-          })
-          expect(ContextVersion.findOne.args[0][1], 'findOne').to.be.a.function()
-
-          expect(ContextVersion.updateBy.callCount).to.equal(1)
-          expect(ContextVersion.updateBy.args[0][0]).to.equal('build._id')
-          expect(ContextVersion.updateBy.args[0][1])
-            .to.deep.equal(ctx.mockContextVersion.build._id)
-          expect(ContextVersion.updateBy.args[0][2]).to.be.object()
-          expect(ContextVersion.updateBy.args[0][2].$set).to.be.object()
-          expect(ContextVersion.updateBy.args[0][2].$set['build.containerStarted']).to.be.date()
-          expect(ContextVersion.updateBy.args[0][3]).to.be.object()
-          expect(ContextVersion.updateBy.args[0][3]).to.deep.equal({ multi: true })
-          expect(ContextVersion.updateBy.args[0][4]).to.be.a.function()
-
-          expect(Docker.prototype.startImageBuilderContainer.callCount, 'startImage').to.equal(1)
-          expect(Docker.prototype.startImageBuilderContainer.args[0][0], 'startImage')
-            .to.deep.equal(ctx.data.inspectData.Id)
-          expect(
-            messenger.emitContextVersionUpdate.callCount,
-            'emitContextVersionUpdate'
-          ).to.equal(1)
-          expect(
-            messenger.emitContextVersionUpdate.args[0][0],
-            'emitContextVersionUpdate arg0'
-          ).to.equal(ctx.mockContextVersion)
-          expect(
-            messenger.emitContextVersionUpdate.args[0][1],
-            'emitContextVersionUpdate arg0'
-          ).to.equal('build_running')
-          done()
-        })
       })
     })
-    describe('failure', function () {
-      beforeEach(function (done) {
-        // initialize instance w/ props, don't actually run protected methods
-        ctx.worker = new OnCreateImageBuilderContainer(ctx.data)
 
-        sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion)
+    it('should throw if missing Id', function (done) {
+      delete testJob.inspectData.Id
 
-        sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync()
-        sinon.stub(ContextVersion, 'updateBy').yieldsAsync(null, 1)
-        sinon.stub(
-          Docker.prototype,
-          'startImageBuilderContainer'
-        ).yieldsAsync(new Error('asdasdasd'))
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.message).to.match(/Id.*required/)
         done()
-      })
-      afterEach(function (done) {
-        ContextVersion.findOne.restore()
-        Docker.prototype.startImageBuilderContainer.restore()
-        ContextVersion.updateBuildErrorByBuildId.restore()
-        ContextVersion.updateBy.restore()
-        done()
-      })
-      it('should error', function (done) {
-        ctx.worker.handle(function (err) {
-          expect(err).to.be.undefined()
-          expect(ContextVersion.findOne.callCount, 'findOne').to.equal(1)
-          expect(ContextVersion.findOne.args[0][0], 'findOne').to.deep.equal({
-            '_id': ctx.mockContextVersion._id,
-            'build.containerStarted': {
-              $exists: false
-            },
-            'build.started': {
-              $exists: true
-            },
-            'build.finished': {
-              $exists: false
-            }
-          })
-          expect(ContextVersion.findOne.args[0][1], 'findOne').to.be.a.function()
-
-          // Because of retry logic, this is WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS
-          expect(Docker.prototype.startImageBuilderContainer.callCount, 'startImage').to
-            .equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS)
-          expect(Docker.prototype.startImageBuilderContainer.args[0][0], 'startImage').to.deep
-            .equal(ctx.data.inspectData.Id)
-          expect(ContextVersion.updateBuildErrorByBuildId.callCount, 'updateBuildError')
-            .to.equal(1)
-          expect(ContextVersion.updateBuildErrorByBuildId.args[0][0], 'updateBuildError')
-            .to.equal(ctx.mockContextVersion.build._id)
-
-          done()
-        })
       })
     })
-  })
 
-  describe('independent tests', function () {
+    it('should throw if missing contextVersion.id', function (done) {
+      delete testJob.inspectData.Config.Labels['contextVersion.id']
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.message).to.match(/contextVersion.id.*required/)
+        done()
+      })
+    })
+  }) // end job validation
+
+  describe('findContextVersion', function () {
     beforeEach(function (done) {
-      // initialize instance w/ props, don't actually run protected methods
-      ctx.worker = new OnCreateImageBuilderContainer(ctx.data)
-
-      sinon.stub(async, 'series', function () {
-        async.series.restore()
-        done()
-      })
-      ctx.worker.handle(function () {})
+      sinon.stub(ContextVersion, 'findByIdAsync')
+      done()
     })
 
-    describe('_startContainer', function () {
-      beforeEach(function (done) {
-        // normally set by _baseWorkerFindContextVersion
-        ctx.worker.contextVersion = ctx.mockContextVersion
+    afterEach(function (done) {
+      ContextVersion.findByIdAsync.restore()
+      done()
+    })
+
+    it('should throw error if cb error', function (done) {
+      var testErr = new Error('bane')
+      ContextVersion.findByIdAsync.throws(testErr)
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.equal(testErr)
+        sinon.assert.calledOnce(ContextVersion.findByIdAsync)
+        sinon.assert.calledWith(ContextVersion.findByIdAsync, testJob.inspectData.Config.Labels['contextVersion.id'])
         done()
       })
+    })
+  }) // end findContextVersion
 
-      describe('success', function () {
-        beforeEach(function (done) {
-          sinon.stub(Docker.prototype, 'startImageBuilderContainer').yieldsAsync(null)
-          done()
-        })
-        afterEach(function (done) {
-          Docker.prototype.startImageBuilderContainer.restore()
-          done()
-        })
-        it('should callback successfully if container start', function (done) {
-          ctx.worker._startContainer(function (err) {
-            expect(err).to.be.null()
-            expect(Docker.prototype.startImageBuilderContainer.callCount).to.equal(1)
-            expect(Docker.prototype.startImageBuilderContainer.args[0][0])
-              .to.deep.equal(ctx.data.inspectData.Id)
-            done()
-          })
-        })
-      })
-      describe('failure n times', function () {
-        beforeEach(function (done) {
-          sinon.stub(Docker.prototype, 'startImageBuilderContainer')
-            .yieldsAsync(new Error('docker error'))
-          done()
-        })
-        afterEach(function (done) {
-          Docker.prototype.startImageBuilderContainer.restore()
-          done()
-        })
-        it('should attempt to start container n times', function (done) {
-          ctx.worker._startContainer(function (err) {
-            expect(err.message).to.equal('docker error')
-            expect(Docker.prototype.startImageBuilderContainer.callCount)
-              .to.equal(process.env.WORKER_START_CONTAINER_NUMBER_RETRY_ATTEMPTS)
-            done()
-          })
-        })
-      })
-      describe('Already Started Failure', function () {
-        beforeEach(function (done) {
-          var error = new Error('docker error')
-          error.statusCode = 304
-          sinon.stub(Docker.prototype, 'startImageBuilderContainer').yieldsAsync(error)
-          done()
-        })
-        afterEach(function (done) {
-          Docker.prototype.startImageBuilderContainer.restore()
-          done()
-        })
-        it('should attempt to start container 1 time, then contiue', function (done) {
-          ctx.worker._startContainer(function (err) {
-            expect(err).to.be.null()
-            expect(Docker.prototype.startImageBuilderContainer.callCount).to.equal(1)
-            done()
-          })
-        })
+  describe('validateContextVersion', function () {
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'findByIdAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.findByIdAsync.restore()
+      done()
+    })
+
+    it('should throw TaskFatalError if cv not found', function (done) {
+      ContextVersion.findByIdAsync.returns()
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.message).to.contain('not found')
+        done()
       })
     })
 
-    describe('_updateContextVersion', function () {
-      describe('basic', function () {
-        beforeEach(function (done) {
-          // normally set by _baseWorkerFindContextVersion
-          ctx.worker.contextVersion = ctx.mockContextVersion
-          done()
-        })
-        beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'updateBy').yieldsAsync(null, 1)
-          done()
-        })
-        afterEach(function (done) {
-          ContextVersion.updateBy.restore()
-          done()
-        })
-        it('should query mongo for contextVersion', function (done) {
-          ctx.worker._updateContextVersion(function (err) {
-            expect(err).to.be.undefined()
-            expect(ContextVersion.updateBy.callCount).to.equal(1)
-            expect(ContextVersion.updateBy.args[0][0]).to.equal('build._id')
-            expect(ContextVersion.updateBy.args[0][1])
-              .to.deep.equal(ctx.mockContextVersion.build._id)
-            expect(ContextVersion.updateBy.args[0][2]).to.be.object()
-            expect(ContextVersion.updateBy.args[0][2].$set).to.be.object()
-            expect(ContextVersion.updateBy.args[0][2].$set['build.containerStarted']).to.be.date()
-            expect(ContextVersion.updateBy.args[0][2].$set['dockerHost']).to.be.string()
-            expect(ContextVersion.updateBy.args[0][2].$set['dockerHost']).to.equal(ctx.data.host)
-            expect(ContextVersion.updateBy.args[0][3]).to.be.object()
-            expect(ContextVersion.updateBy.args[0][3]).to.deep.equal({ multi: true })
-            expect(ContextVersion.updateBy.args[0][4]).to.be.a.function()
-            done()
-          })
-        })
+    it('should throw TaskFatalError if contextVersion.build.containerStarted', function (done) {
+      ContextVersion.findByIdAsync.returns({
+        build: {
+          containerStarted: true
+        }
+      })
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.message).to.contain('already started')
+        done()
       })
     })
 
-    describe('_onError', function () {
-      beforeEach(function (done) {
-        ctx.worker.contextVersion = ctx.mockContextVersion
+    it('should throw TaskFatalError if !contextVersion.build.started', function (done) {
+      ContextVersion.findByIdAsync.returns({
+        build: {
+          containerStarted: false,
+          started: false
+        }
+      })
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.message).to.contain('marked as started')
         done()
-      })
-
-      afterEach(function (done) {
-        ContextVersion.updateBuildErrorByBuildId.restore()
-        done()
-      })
-
-      describe('basics', function () {
-        beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync(null)
-          done()
-        })
-
-        it('should trigger the delete host and updateBuildError', function (done) {
-          ctx.worker._onError(new Error('hello'), function () {
-            expect(ContextVersion.updateBuildErrorByBuildId.callCount).to.equal(1)
-            expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
-              ctx.mockContextVersion.build._id
-            )
-            done()
-          })
-        })
-      })
-
-      describe('failures', function () {
-        beforeEach(function (done) {
-          sinon.stub(
-            ContextVersion,
-            'updateBuildErrorByBuildId'
-          ).yieldsAsync(new Error("Bryan's message"))
-          done()
-        })
-
-        it('should log an error if updateBuildErrorByBuildId errors', function (done) {
-          ctx.worker._onError(new Error('hello'), function (err) {
-            expect(err).to.not.exist()
-            expect(ContextVersion.updateBuildErrorByBuildId.callCount).to.equal(1)
-            expect(ContextVersion.updateBuildErrorByBuildId.args[0][0]).to.equal(
-              ctx.mockContextVersion.build._id
-            )
-            done()
-          })
-        })
       })
     })
-  })
+
+    it('should throw TaskFatalError if contextVersion.build.finished', function (done) {
+      ContextVersion.findByIdAsync.returns({
+        build: {
+          containerStarted: false,
+          started: true,
+          finished: true
+        }
+      })
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.message).to.contain('already finished')
+        done()
+      })
+    })
+
+    it('should throw TaskFatalError if build._id not found', function (done) {
+      ContextVersion.findByIdAsync.returns({
+        build: {
+          containerStarted: false,
+          started: true,
+          finished: false
+        }
+      })
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.message).to.contain('build._id not found')
+        done()
+      })
+    })
+  }) // end validateContextVersion
+
+  describe('startImageBuilderContainer', function () {
+    var testCv = {
+      build: {
+        containerStarted: false,
+        started: true,
+        finished: false,
+        _id: 'testId'
+      }
+    }
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'updateByAsync')
+      sinon.stub(ContextVersion, 'findByIdAsync').returns(testCv)
+      sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync')
+      sinon.stub(messenger, 'emitContextVersionUpdate')
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.findByIdAsync.restore()
+      ContextVersion.updateByAsync.restore()
+      Docker.prototype.startImageBuilderContainerAsync.restore()
+      messenger.emitContextVersionUpdate.restore()
+      done()
+    })
+
+    it('should start container, update mongo & emit update', function (done) {
+      Docker.prototype.startImageBuilderContainerAsync.returns(Promise.resolve())
+      ContextVersion.updateByAsync.returns()
+      messenger.emitContextVersionUpdate.returns()
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        if (err) { return done(err) }
+
+        sinon.assert.calledOnce(Docker.prototype.startImageBuilderContainerAsync)
+        sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, testJob.inspectData.Id)
+
+        var update = {
+          $set: {
+            'dockerHost': testJob.host
+          }
+        }
+
+        sinon.assert.calledOnce(ContextVersion.updateByAsync)
+        sinon.assert.calledWith(ContextVersion.updateByAsync, 'build._id', 'testId', sinon.match(update), { multi: true })
+
+        sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
+        sinon.assert.calledWith(messenger.emitContextVersionUpdate, testCv, 'build_running')
+        done()
+      })
+    })
+  }) // end startImageBuilderContainer
+
+  describe('onError', function () {
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'findByIdAsync').returns({
+        build: {
+          containerStarted: false,
+          started: true,
+          finished: false,
+          _id: 'testId'
+        }
+      })
+      sinon.stub(ContextVersion, 'updateByAsync')
+      sinon.stub(ContextVersion, 'updateBuildErrorByBuildIdAsync')
+      sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync').returns(Promise.resolve())
+      sinon.stub(messenger, 'emitContextVersionUpdate')
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.updateBuildErrorByBuildIdAsync.restore()
+      ContextVersion.findByIdAsync.restore()
+      ContextVersion.updateByAsync.restore()
+      Docker.prototype.startImageBuilderContainerAsync.restore()
+      messenger.emitContextVersionUpdate.restore()
+      done()
+    })
+
+    it('should updateBuildErrorByBuildIdAsync for error', function (done) {
+      var testErr = new Error('hulahoop')
+      ContextVersion.updateByAsync.throws(testErr)
+      ContextVersion.updateBuildErrorByBuildIdAsync.returns()
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(Docker.prototype.startImageBuilderContainerAsync)
+        sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, testJob.inspectData.Id)
+
+        var update = {
+          $set: {
+            'dockerHost': testJob.host
+          }
+        }
+        sinon.assert.calledOnce(ContextVersion.updateByAsync)
+        sinon.assert.calledWith(ContextVersion.updateByAsync, 'build._id', 'testId', sinon.match(update), { multi: true })
+        done()
+      })
+    })
+  }) // end onError
 })
