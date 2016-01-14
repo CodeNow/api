@@ -91,7 +91,7 @@
     "runnable-hostname": "git+ssh://git@github.com:CodeNow/runnable-hostname#v1.0.4",
     "sendgrid": "^1.9.2",
     "shimmer": "^1.0.0",
-    "slack-client": "^1.4.0",
+    "slack-client": "~1.4.0",
     "strim": "^0.2.2",
     "substream": "0.2.0",
     "substream-pump": "^1.0.1",
@@ -100,7 +100,7 @@
     "through2": "^2.0.0",
     "underscore.string": "^3.0.2",
     "uuid": "~1.4.1",
-    "ws": "^0.4.31",
+    "ws": "~0.4.31",
     "xtend": "3.0.0"
   },
   "devDependencies": {
