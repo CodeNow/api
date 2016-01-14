@@ -111,7 +111,7 @@
     "uuid": "~1.4.1",
     "ws": "^0.4.31",
     "xtend": "3.0.0",
-    "array-subtract": "^1.1.1"
+    "array-subtract": "^2.0.0"
   },
   "devDependencies": {
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.6",
