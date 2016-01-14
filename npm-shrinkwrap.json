@@ -3545,22 +3545,64 @@
       }
     },
     "nock": {
-      "version": "0.51.0",
-      "resolved": "https://registry.npmjs.org/nock/-/nock-0.51.0.tgz",
+      "version": "5.2.1",
+      "resolved": "https://registry.npmjs.org/nock/-/nock-5.2.1.tgz",
       "dependencies": {
-        "debug": {
-          "version": "1.0.4",
-          "resolved": "https://registry.npmjs.org/debug/-/debug-1.0.4.tgz",
+        "chai": {
+          "version": "3.4.1",
+          "resolved": "https://registry.npmjs.org/chai/-/chai-3.4.1.tgz",
           "dependencies": {
-            "ms": {
-              "version": "0.6.2",
-              "resolved": "https://registry.npmjs.org/ms/-/ms-0.6.2.tgz"
+            "assertion-error": {
+              "version": "1.0.1",
+              "resolved": "https://registry.npmjs.org/assertion-error/-/assertion-error-1.0.1.tgz"
+            },
+            "deep-eql": {
+              "version": "0.1.3",
+              "resolved": "https://registry.npmjs.org/deep-eql/-/deep-eql-0.1.3.tgz",
+              "dependencies": {
+                "type-detect": {
+                  "version": "0.1.1",
+                  "resolved": "https://registry.npmjs.org/type-detect/-/type-detect-0.1.1.tgz"
+                }
+              }
+            },
+            "type-detect": {
+              "version": "1.0.0",
+              "resolved": "https://registry.npmjs.org/type-detect/-/type-detect-1.0.0.tgz"
             }
           }
         },
+        "debug": {
+          "version": "2.2.0",
+          "resolved": "https://registry.npmjs.org/debug/-/debug-2.2.0.tgz",
+          "dependencies": {
+            "ms": {
+              "version": "0.7.1",
+              "resolved": "https://registry.npmjs.org/ms/-/ms-0.7.1.tgz"
+            }
+          }
+        },
+        "deep-equal": {
+          "version": "1.0.1",
+          "resolved": "https://registry.npmjs.org/deep-equal/-/deep-equal-1.0.1.tgz"
+        },
+        "json-stringify-safe": {
+          "version": "5.0.1",
+          "resolved": "https://registry.npmjs.org/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz"
+        },
         "lodash": {
-          "version": "2.4.1",
-          "resolved": "https://registry.npmjs.org/lodash/-/lodash-2.4.1.tgz"
+          "version": "3.10.1",
+          "resolved": "https://registry.npmjs.org/lodash/-/lodash-3.10.1.tgz"
+        },
+        "mkdirp": {
+          "version": "0.5.1",
+          "resolved": "https://registry.npmjs.org/mkdirp/-/mkdirp-0.5.1.tgz",
+          "dependencies": {
+            "minimist": {
+              "version": "0.0.8",
+              "resolved": "https://registry.npmjs.org/minimist/-/minimist-0.0.8.tgz"
+            }
+          }
         },
         "propagate": {
           "version": "0.3.1",

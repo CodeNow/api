@@ -115,7 +115,7 @@
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
     "lab": "5.8.0",
     "multiline": "^1.0.2",
-    "nock": "^0.51.0",
+    "nock": "^5.2.1",
     "nodemon": "^1.2.1",
     "randomstring": "^1.0.5",
     "rewire": "^2.5.1",
