@@ -5,8 +5,8 @@
   "node-version": "v0.10.40",
   "dependencies": {
     "101": {
-      "version": "1.0.0",
-      "resolved": "https://registry.npmjs.org/101/-/101-1.0.0.tgz",
+      "version": "1.2.0",
+      "resolved": "https://registry.npmjs.org/101/-/101-1.2.0.tgz",
       "dependencies": {
         "clone": {
           "version": "0.1.19",
