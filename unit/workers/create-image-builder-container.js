@@ -14,6 +14,7 @@ var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
 var messenger = require('socket/messenger')
 
+var error = require('error')
 var StartImageBuildContainerWorker = require('workers/create-image-builder-container')
 
 var afterEach = lab.afterEach
@@ -271,6 +272,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
       sinon.stub(StartImageBuildContainerWorker.prototype, '_updateCvOnError')
         .yieldsAsync()
       sinon.stub(Docker.prototype, 'createImageBuilder').throws(domainError)
+      sinon.stub(error, 'workerErrorHandler')
       done()
     })
 
@@ -282,7 +284,18 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
       ContextVersion.updateBuildErrorByBuildId.restore()
       StartImageBuildContainerWorker.prototype._updateCvOnError.restore()
       Docker.prototype.createImageBuilder.restore()
+      error.workerErrorHandler.restore()
       done()
+    })
+
+    it('should call the error handler', function (done) {
+      StartImageBuildContainerWorker.worker(ctx.data, function () {
+        expect(error.workerErrorHandler.calledOnce).to.be.true()
+        expect(error.workerErrorHandler.calledWith(
+          domainError
+        )).to.be.true()
+        done()
+      })
     })
 
     describe('with context version', function () {
@@ -295,6 +308,24 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
         })
       })
     }) // end 'with context version'
+
+    describe('without context version', function () {
+      beforeEach(function (done) {
+        Docker.prototype.createImageBuilder.restore()
+        Context.findOne.restore()
+        sinon.stub(Docker.prototype, 'createImageBuilder').yieldsAsync()
+        sinon.stub(Context, 'findOne').throws(domainError)
+        done()
+      })
+
+      it('should not update the build status', function (done) {
+        var stub = StartImageBuildContainerWorker.prototype._updateCvOnError
+        StartImageBuildContainerWorker.worker(ctx.data, function () {
+          expect(stub.callCount).to.equal(0)
+          done()
+        })
+      })
+    })
   }) // end 'on domain error'
 
   describe('independent tests', function () {
