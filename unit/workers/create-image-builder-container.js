@@ -196,6 +196,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
         })
       })
     })
+
     describe('failure', function () {
       beforeEach(function (done) {
         // initialize instance w/ props, don't actually run protected methods
@@ -254,6 +255,47 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
       })
     })
   })
+
+  describe('on domain error', function () {
+    var domainError = new Error('Wow, this failed, fancy that')
+
+    beforeEach(function (done) {
+      sinon.stub(Context, 'findOne').yieldsAsync(null, ctx.mockContext)
+      sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion)
+      sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync()
+      sinon.stub(
+        StartImageBuildContainerWorker.prototype,
+        '_baseWorkerFindUser'
+      ).yieldsAsync(null, ctx.mockUser)
+      sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync()
+      sinon.stub(StartImageBuildContainerWorker.prototype, '_updateCvOnError')
+        .yieldsAsync()
+      sinon.stub(Docker.prototype, 'createImageBuilder').throws(domainError)
+      done()
+    })
+
+    afterEach(function (done) {
+      Context.findOne.restore()
+      ContextVersion.findOne.restore()
+      ContextVersion.updateContainerByBuildId.restore()
+      StartImageBuildContainerWorker.prototype._baseWorkerFindUser.restore()
+      ContextVersion.updateBuildErrorByBuildId.restore()
+      StartImageBuildContainerWorker.prototype._updateCvOnError.restore()
+      Docker.prototype.createImageBuilder.restore()
+      done()
+    })
+
+    describe('with context version', function () {
+      it('should update the build status', function (done) {
+        var stub = StartImageBuildContainerWorker.prototype._updateCvOnError
+        StartImageBuildContainerWorker.worker(ctx.data, function () {
+          expect(stub.calledOnce).to.be.true()
+          expect(stub.calledWith(domainError)).to.be.true()
+          done()
+        })
+      })
+    }) // end 'with context version'
+  }) // end 'on domain error'
 
   describe('independent tests', function () {
     beforeEach(function (done) {
