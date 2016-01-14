@@ -38,8 +38,8 @@ describe('BDD - Instance Dependencies', function () {
   // Uncomment if you want to clear the (graph) database every time
   beforeEach(function (done) {
     if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
-      var Graph = require('models/graph/neo4j')
-      var client = new Graph()
+      var Neo4j = require('runna4j')
+      var client = new Neo4j()
       var err
       client.cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
         .on('error', function (e) { err = e })
