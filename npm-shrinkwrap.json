@@ -8060,24 +8060,16 @@
       "resolved": "https://registry.npmjs.org/uuid/-/uuid-1.4.2.tgz"
     },
     "ws": {
-      "version": "0.4.32",
-      "resolved": "https://registry.npmjs.org/ws/-/ws-0.4.32.tgz",
+      "version": "1.0.1",
+      "resolved": "https://registry.npmjs.org/ws/-/ws-1.0.1.tgz",
       "dependencies": {
-        "commander": {
-          "version": "2.1.0",
-          "resolved": "https://registry.npmjs.org/commander/-/commander-2.1.0.tgz"
-        },
-        "nan": {
-          "version": "1.0.0",
-          "resolved": "https://registry.npmjs.org/nan/-/nan-1.0.0.tgz"
-        },
         "options": {
           "version": "0.0.6",
           "resolved": "https://registry.npmjs.org/options/-/options-0.0.6.tgz"
         },
-        "tinycolor": {
-          "version": "0.0.1",
-          "resolved": "https://registry.npmjs.org/tinycolor/-/tinycolor-0.0.1.tgz"
+        "ultron": {
+          "version": "1.0.2",
+          "resolved": "https://registry.npmjs.org/ultron/-/ultron-1.0.2.tgz"
         }
       }
     },
