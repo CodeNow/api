@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "6.12.2",
+  "version": "6.13.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -15,6 +15,7 @@
   "dependencies": {
     "101": "^1.2.0",
     "JSONStream": "0.10.x",
+    "array-subtract": "^2.0.0",
     "async": "^0.9.0",
     "aws-sdk": "^2.1.47",
     "batch": "^0.5.1",
@@ -101,8 +102,7 @@
     "underscore.string": "^3.0.2",
     "uuid": "~1.4.1",
     "ws": "^1.0.1",
-    "xtend": "3.0.0",
-    "array-subtract": "^2.0.0"
+    "xtend": "3.0.0"
   },
   "devDependencies": {
     "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.6",
