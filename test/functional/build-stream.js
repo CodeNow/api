@@ -12,6 +12,7 @@ var Code = require('code')
 var expect = Code.expect
 
 var api = require('./fixtures/api-control')
+var commonStream = require('socket/common-stream')
 var dock = require('./fixtures/dock')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
@@ -19,6 +20,7 @@ var primus = require('./fixtures/primus')
 var dockerMockEvents = require('./fixtures/docker-mock-events')
 var createCount = require('callback-count')
 var Primus = require('primus')
+var Promise = require('bluebird')
 var PrimusClient = Primus.createSocket({
   transformer: process.env.PRIMUS_TRANSFORMER,
   plugin: {
@@ -26,6 +28,7 @@ var PrimusClient = Primus.createSocket({
   },
   parser: 'JSON'
 })
+var sinon = require('sinon')
 
 var ctx = {}
 
@@ -46,7 +49,15 @@ describe('Build Stream', function () {
       return []
     })
   )
+  beforeEach(function (done) {
+    sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
+    done()
+  })
   afterEach(mockGetUserById.stubAfter)
+  afterEach(function (done) {
+    commonStream.checkOwnership.restore()
+    done()
+  })
 
   describe('POST', function () {
     beforeEach(function (done) {
@@ -114,11 +125,13 @@ describe('Build Stream', function () {
         }
       })
 
+      var count = createCount(2, done)
+
       client.on('data', function (msg) {
         if (msg.error) {
           client.end()
-          expect(msg.error).to.contain('could not find build in database')
-          done()
+          expect(msg.error).to.match(/could not find build in database||You don\'t have access to this stream/)
+          count.next()
         }
       })
     })

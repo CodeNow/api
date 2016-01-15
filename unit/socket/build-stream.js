@@ -127,19 +127,18 @@ describe('build stream: ' + moduleName, function () {
         },
         build: {
           log: 'hey',
-          completed: Date.now()
+          completed: Date.now(),
+          dockerContainer: 324342342342
         },
         writeLogsToPrimusStream: sinon.spy()
       }
       sinon.stub(ctx.buildStream, '_writeErr')
       sinon.stub(ContextVersion, 'findOne').yields(null, ctx.cv)
-      sinon.stub(ctx.buildStream, '_validateVersion').returns(false)
       sinon.stub(ctx.buildStream, '_pipeBuildLogsToClient').returns()
       done()
     })
     afterEach(function (done) {
       ContextVersion.findOne.restore()
-      ctx.buildStream._validateVersion.restore()
       commonStream.checkOwnership.restore()
       ctx.buildStream._writeErr.restore()
       done()
@@ -166,6 +165,58 @@ describe('build stream: ' + moduleName, function () {
           sinon.assert.calledOnce(ctx.cv.writeLogsToPrimusStream)
           sinon.assert.calledOnce(commonStream.checkOwnership)
           sinon.assert.calledWith(commonStream.checkOwnership, ctx.sessionUser, ctx.cv)
+          done()
+        })
+    })
+  })
+  describe('handleStream verification', function () {
+    beforeEach(function (done) {
+      ctx.sessionUser = {
+        github: 123
+      }
+      var socket = {
+        request: {
+          sessionUser: ctx.sessionUser
+        }
+      }
+      var id = 4
+      var data = {
+        id: 4,
+        streamId: 17
+      }
+      ctx.buildStream = new BuildStream(socket, id, data)
+
+      ctx.cv = {
+        createdBy: {
+          github: 123
+        },
+        owner: {
+          github: 123
+        },
+        build: {
+          log: 'hey',
+          completed: Date.now()
+        },
+        writeLogsToPrimusStream: sinon.spy()
+      }
+      sinon.stub(ctx.buildStream, '_writeErr')
+      sinon.stub(ContextVersion, 'findOne').yields(null, ctx.cv)
+      sinon.stub(ctx.buildStream, '_pipeBuildLogsToClient').returns()
+      done()
+    })
+    afterEach(function (done) {
+      ContextVersion.findOne.restore()
+      commonStream.checkOwnership.restore()
+      ctx.buildStream._writeErr.restore()
+      done()
+    })
+    it('should do nothing if the verification fails', function (done) {
+      sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
+      ctx.buildStream.handleStream()
+        .catch(function (err) {
+          expect(err.message).to.equal('invalid context version')
+          sinon.assert.calledTwice(ctx.buildStream._writeErr)
+          sinon.assert.calledWith(ctx.buildStream._writeErr, sinon.match.string)
           done()
         })
     })
