@@ -18,7 +18,6 @@ var User = require('models/mongo/user')
 var Docker = require('models/apis/docker')
 var messenger = require('socket/messenger.js')
 var keypather = require('keypather')()
-var toObjectId = require('utils/to-object-id')
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die')
 
@@ -319,7 +318,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           Instance.emitInstanceUpdates,
           ctx.mockUser,
           {
-            'contextVersion.build._id': toObjectId(ctx.worker.data.inspectData.Name.slice(1))
+            'contextVersion.build.dockerContainer': ctx.worker.data.id
           },
           'patch',
           sinon.match.func
