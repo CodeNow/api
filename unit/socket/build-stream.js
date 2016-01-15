@@ -155,6 +155,7 @@ describe('build stream: ' + moduleName, function () {
           sinon.assert.calledWith(ctx.buildStream._writeErr, sinon.match.string)
           done()
         })
+        .catch(done)
     })
     it('should allow logs when check ownership passes', function (done) {
       ctx.buildStream.socket.substream = sinon.spy()
@@ -167,6 +168,7 @@ describe('build stream: ' + moduleName, function () {
           sinon.assert.calledWith(commonStream.checkOwnership, ctx.sessionUser, ctx.cv)
           done()
         })
+        .catch(done)
     })
   })
   describe('handleStream verification', function () {
@@ -214,11 +216,12 @@ describe('build stream: ' + moduleName, function () {
       sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
       ctx.buildStream.handleStream()
         .catch(function (err) {
-          expect(err.message).to.equal('invalid context version')
-          sinon.assert.calledTwice(ctx.buildStream._writeErr)
+          expect(err.message).to.equal('Invalid context version')
+          sinon.assert.calledOnce(ctx.buildStream._writeErr)
           sinon.assert.calledWith(ctx.buildStream._writeErr, sinon.match.string)
           done()
         })
+        .catch(done)
     })
   })
 })
