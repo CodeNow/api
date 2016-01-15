@@ -677,7 +677,6 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.calledWith(ContextVersion.findById, ctx.opts.contextVersionId, sinon.match.func)
           var instanceQuery = {
             '_id': ctx.opts.instanceId,
-            'contextVersion.id': ctx.opts.contextVersionId,
             'container': {
               $exists: false
             }
@@ -707,7 +706,6 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.calledWith(ContextVersion.findById, ctx.opts.contextVersionId, sinon.match.func)
           var instanceQuery = {
             '_id': ctx.opts.instanceId,
-            'contextVersion.id': ctx.opts.contextVersionId,
             'container': {
               $exists: false
             }
@@ -730,7 +728,6 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.calledWith(ContextVersion.findById, ctx.opts.contextVersionId, sinon.match.func)
           var instanceQuery = {
             '_id': ctx.opts.instanceId,
-            'contextVersion.id': ctx.opts.contextVersionId,
             'container': {
               $exists: false
             }
@@ -750,7 +747,6 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.calledWith(ContextVersion.findById, ctx.opts.contextVersionId, sinon.match.func)
           var instanceQuery = {
             '_id': ctx.opts.instanceId,
-            'contextVersion.id': ctx.opts.contextVersionId,
             'container': {
               $exists: false
             }
