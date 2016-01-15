@@ -50,7 +50,7 @@ module.exports = {
       triggeredAction: {
         manual: false
       },
-      dockerContainer: '012345678901234567890123'
+      dockerContainer: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713'
     })
     var data = this.cvTemplate(
       ownerGithubId,
@@ -68,7 +68,7 @@ module.exports = {
       _id: '012345678901234567890123',
       hash: uuid(),
       started: new Date(),
-      dockerContainer: uuid()
+      dockerContainer: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713'
     })
     var data = this.cvTemplate(
       ownerGithubId,
@@ -99,8 +99,7 @@ module.exports = {
         network: {
           hostIp: '127.0.0.1'
         },
-        containerId: 'abcdef',
-        dockerContainer: 'abcdef'
+        dockerContainer: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713'
       }, buildExtend),
       advanced: true,
       appCodeVersions: [],

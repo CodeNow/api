@@ -67,7 +67,9 @@ describe('build stream: ' + moduleName, function () {
     var writeStream = new ClientStream()
     var version = {
       dockerHost: 'http://example.com:4242',
-      containerId: 55
+      build: {
+        dockerContainer: 55
+      }
     }
 
     ctx.buildStream._pipeBuildLogsToClient(version, writeStream)

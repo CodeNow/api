@@ -309,7 +309,7 @@ function itShouldBuildTheBuild (ctx) {
             if (err) { return done(err) }
 
             var docker = new Docker()
-            docker.docker.getContainer(cv.containerId).inspect(function (err, data) {
+            docker.docker.getContainer(cv.build.dockerContainer).inspect(function (err, data) {
               if (err) { return done(err) }
 
               var expectedBindsLength = 0
