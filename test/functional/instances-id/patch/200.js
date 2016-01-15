@@ -209,5 +209,6 @@ describe('200 PATCH /instances/:id', function () {
           dockerMockEvents.emitBuildComplete(ctx.cv)
         })
       })
+    })
   })
 })
