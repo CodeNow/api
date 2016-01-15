@@ -653,13 +653,13 @@ describe('InstanceService: ' + moduleName, function () {
         }
       }
       sinon.stub(ContextVersion, 'findById')
-      sinon.stub(Instance, 'findById')
+      sinon.stub(Instance, 'findOne')
       sinon.stub(Instance, 'findOneByShortHash').yieldsAsync(null, {})
       done()
     })
     afterEach(function (done) {
       ContextVersion.findById.restore()
-      Instance.findById.restore()
+      Instance.findOne.restore()
       Instance.findOneByShortHash.restore()
       done()
     })
@@ -667,7 +667,7 @@ describe('InstanceService: ' + moduleName, function () {
     describe('success', function () {
       beforeEach(function (done) {
         ContextVersion.findById.yieldsAsync(null, ctx.mockContextVersion)
-        Instance.findById.yieldsAsync(null, ctx.mockInstance)
+        Instance.findOne.yieldsAsync(null, ctx.mockInstance)
         done()
       })
 
@@ -675,7 +675,14 @@ describe('InstanceService: ' + moduleName, function () {
         InstanceService._findInstanceAndContextVersion(ctx.opts, function (err, data) {
           if (err) { return done(err) }
           sinon.assert.calledWith(ContextVersion.findById, ctx.opts.contextVersionId, sinon.match.func)
-          sinon.assert.calledWith(Instance.findById, ctx.opts.instanceId, sinon.match.func)
+          var instanceQuery = {
+            '_id': ctx.opts.instanceId,
+            'contextVersion.id': ctx.opts.contextVersionId,
+            'container': {
+              $exists: false
+            }
+          }
+          sinon.assert.calledWith(Instance.findOne, instanceQuery, sinon.match.func)
           expect(data).to.deep.equal({
             contextVersion: ctx.mockContextVersion,
             instance: ctx.mockInstance
@@ -690,7 +697,7 @@ describe('InstanceService: ' + moduleName, function () {
         ContextVersion.findById.yieldsAsync(null, ctx.mockContextVersion)
         ctx.forkedInstance = clone(ctx.mockInstance)
         ctx.forkedInstance.parent = '1parentSha'
-        Instance.findById.yieldsAsync(null, ctx.forkedInstance)
+        Instance.findOne.yieldsAsync(null, ctx.forkedInstance)
         done()
       })
 
@@ -698,7 +705,14 @@ describe('InstanceService: ' + moduleName, function () {
         InstanceService._findInstanceAndContextVersion(ctx.opts, function (err, data) {
           if (err) { return done(err) }
           sinon.assert.calledWith(ContextVersion.findById, ctx.opts.contextVersionId, sinon.match.func)
-          sinon.assert.calledWith(Instance.findById, ctx.opts.instanceId, sinon.match.func)
+          var instanceQuery = {
+            '_id': ctx.opts.instanceId,
+            'contextVersion.id': ctx.opts.contextVersionId,
+            'container': {
+              $exists: false
+            }
+          }
+          sinon.assert.calledWith(Instance.findOne, instanceQuery, sinon.match.func)
           expect(data).to.deep.equal({
             contextVersion: ctx.mockContextVersion,
             instance: ctx.forkedInstance
@@ -714,7 +728,14 @@ describe('InstanceService: ' + moduleName, function () {
         InstanceService._findInstanceAndContextVersion(ctx.opts, function (err, data) {
           expect(err.message).to.equal(fetchErr.message)
           sinon.assert.calledWith(ContextVersion.findById, ctx.opts.contextVersionId, sinon.match.func)
-          sinon.assert.calledWith(Instance.findById, ctx.opts.instanceId, sinon.match.func)
+          var instanceQuery = {
+            '_id': ctx.opts.instanceId,
+            'contextVersion.id': ctx.opts.contextVersionId,
+            'container': {
+              $exists: false
+            }
+          }
+          sinon.assert.calledWith(Instance.findOne, instanceQuery, sinon.match.func)
           expect(data).to.not.exist()
           sinon.assert.calledOnce(Instance.findOneByShortHash)
           sinon.assert.calledWith(Instance.findOneByShortHash, ctx.forkedInstance.parent)
@@ -727,7 +748,14 @@ describe('InstanceService: ' + moduleName, function () {
           expect(err.message).to.equal('Parent instance not found')
           expect(err.output.statusCode).to.equal(404)
           sinon.assert.calledWith(ContextVersion.findById, ctx.opts.contextVersionId, sinon.match.func)
-          sinon.assert.calledWith(Instance.findById, ctx.opts.instanceId, sinon.match.func)
+          var instanceQuery = {
+            '_id': ctx.opts.instanceId,
+            'contextVersion.id': ctx.opts.contextVersionId,
+            'container': {
+              $exists: false
+            }
+          }
+          sinon.assert.calledWith(Instance.findOne, instanceQuery, sinon.match.func)
           expect(data).to.not.exist()
           sinon.assert.calledOnce(Instance.findOneByShortHash)
           sinon.assert.calledWith(Instance.findOneByShortHash, ctx.forkedInstance.parent)
@@ -740,7 +768,7 @@ describe('InstanceService: ' + moduleName, function () {
         beforeEach(function (done) {
           ctx.err = new Error('boom')
           ContextVersion.findById.yieldsAsync(null, ctx.mockInstance)
-          Instance.findById.yieldsAsync()
+          Instance.findOne.yieldsAsync()
           done()
         })
 
@@ -760,7 +788,7 @@ describe('InstanceService: ' + moduleName, function () {
         beforeEach(function (done) {
           ctx.err = new Error('boom')
           ContextVersion.findById.yieldsAsync()
-          Instance.findById.yieldsAsync(null, ctx.mockInstance)
+          Instance.findOne.yieldsAsync(null, ctx.mockInstance)
           done()
         })
 
@@ -780,7 +808,7 @@ describe('InstanceService: ' + moduleName, function () {
         beforeEach(function (done) {
           ctx.mockInstance.contextVersion._id = '000011112222333344445555'
           ContextVersion.findById.yieldsAsync(null, ctx.mockContextVersion)
-          Instance.findById.yieldsAsync(null, ctx.mockInstance)
+          Instance.findOne.yieldsAsync(null, ctx.mockInstance)
           done()
         })
         it('should callback 409 error', function (done) {
@@ -799,7 +827,7 @@ describe('InstanceService: ' + moduleName, function () {
         beforeEach(function (done) {
           ctx.err = new Error('boom')
           ContextVersion.findById.yieldsAsync(ctx.err)
-          Instance.findById.yieldsAsync(null, ctx.mockInstance)
+          Instance.findOne.yieldsAsync(null, ctx.mockInstance)
           done()
         })
 
@@ -808,11 +836,11 @@ describe('InstanceService: ' + moduleName, function () {
         })
       })
 
-      describe('Instance.findById error', function () {
+      describe('Instance.findOne error', function () {
         beforeEach(function (done) {
           ctx.err = new Error('boom')
           ContextVersion.findById.yieldsAsync(ctx.err)
-          Instance.findById.yieldsAsync(null, ctx.mockInstance)
+          Instance.findOne.yieldsAsync(null, ctx.mockInstance)
           done()
         })
 
