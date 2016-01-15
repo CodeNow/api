@@ -33,10 +33,9 @@ var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
 var request = require('request')
-var sinon = require('sinon')
 var rabbitMQ = require('models/rabbitmq')
 var userWhitelist = require('models/mongo/user-whitelist')
-var error = require('error')
+var sinon = require('sinon')
 
 describe('Github - /actions/github', function () {
   var ctx = {}
@@ -86,14 +85,6 @@ describe('Github - /actions/github', function () {
   })
   afterEach(function (done) {
     OnInstanceContainerDie.prototype.handle.restore()
-    done()
-  })
-  beforeEach(function (done) {
-    sinon.stub(error, 'log')
-    done()
-  })
-  afterEach(function (done) {
-    error.log.restore()
     done()
   })
 
@@ -296,7 +287,7 @@ describe('Github - /actions/github', function () {
         })
       })
 
-    it('should return a 302 if the repo owner is not whitelisted', function (done) {
+    it('should return a 403 if the repo owner is not whitelisted', function (done) {
       // No org whitelisted
       userWhitelist.findOne.yieldsAsync(null, null)
 
@@ -309,9 +300,8 @@ describe('Github - /actions/github', function () {
       var options = hooks(data).push
       request.post(options, function (err, res, body) {
         if (err) { return done(err) }
-        expect(res.statusCode).to.equal(302)
-        expect(body).to.match(/moved.*redirecting/i)
-        sinon.assert.calledOnce(error.log)
+        expect(res.statusCode).to.equal(403)
+        expect(body).to.match(/repo.*owner.*registered/i)
         done()
       })
     })
