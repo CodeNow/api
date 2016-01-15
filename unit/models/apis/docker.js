@@ -393,7 +393,6 @@ describe('docker: ' + moduleName, function () {
           })
 
           var expected = {
-            name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
             HostConfig: {
@@ -446,7 +445,6 @@ describe('docker: ' + moduleName, function () {
           })
 
           var expected = {
-            name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
             HostConfig: {
@@ -490,7 +488,6 @@ describe('docker: ' + moduleName, function () {
           model.createImageBuilder(opts, function (err) {
             if (err) { return done(err) }
             expect(Docker.prototype.createContainer.firstCall.args[0]).to.deep.equal({
-              name: opts.contextVersion.build._id.toString(),
               Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
               Env: ctx.mockEnv,
               HostConfig: {
