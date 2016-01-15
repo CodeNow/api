@@ -1615,6 +1615,7 @@ module.exports = function (data) {
           size: 0,
           owner: {
             name: owner,
+            login: owner,
             email: 'bryan.a.kendall@gmail.com'
           },
           'private': false,

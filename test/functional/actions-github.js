@@ -35,6 +35,8 @@ var primus = require('./fixtures/primus')
 var request = require('request')
 var sinon = require('sinon')
 var rabbitMQ = require('models/rabbitmq')
+var userWhitelist = require('models/mongo/user-whitelist')
+var error = require('error')
 
 describe('Github - /actions/github', function () {
   var ctx = {}
@@ -84,6 +86,14 @@ describe('Github - /actions/github', function () {
   })
   afterEach(function (done) {
     OnInstanceContainerDie.prototype.handle.restore()
+    done()
+  })
+  beforeEach(function (done) {
+    sinon.stub(error, 'log')
+    done()
+  })
+  afterEach(function (done) {
+    error.log.restore()
     done()
   })
 
@@ -171,6 +181,14 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting
       done()
     })
+    beforeEach(function (done) {
+      sinon.stub(userWhitelist, 'findOne').yieldsAsync(null, {})
+      done()
+    })
+    afterEach(function (done) {
+      userWhitelist.findOne.restore()
+      done()
+    })
 
     it('should return message that we cannot handle tags events', function (done) {
       var options = hooks().push
@@ -237,6 +255,14 @@ describe('Github - /actions/github', function () {
       ctx.mixPanelStub.restore()
       done()
     })
+    beforeEach(function (done) {
+      sinon.stub(userWhitelist, 'findOne').yieldsAsync(null, {})
+      done()
+    })
+    afterEach(function (done) {
+      userWhitelist.findOne.restore()
+      done()
+    })
 
     it('should publish the github event job via RabbitMQ', function (done) {
       var options = hooks().push
@@ -269,6 +295,26 @@ describe('Github - /actions/github', function () {
           done()
         })
       })
+
+    it('should return a 302 if the repo owner is not whitelisted', function (done) {
+      // No org whitelisted
+      userWhitelist.findOne.yieldsAsync(null, null)
+
+      var data = {
+        branch: 'some-branch',
+        repo: 'some-repo',
+        ownerId: 3217371238,
+        owner: 'anton'
+      }
+      var options = hooks(data).push
+      request.post(options, function (err, res, body) {
+        if (err) { return done(err) }
+        expect(res.statusCode).to.equal(302)
+        expect(body).to.match(/moved.*redirecting/i)
+        sinon.assert.calledOnce(error.log)
+        done()
+      })
+    })
 
     describe('autofork', function () {
       var slackStub
