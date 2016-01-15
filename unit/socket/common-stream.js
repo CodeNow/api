@@ -60,7 +60,6 @@ describe('common stream: ' + moduleName, function () {
       sinon.stub(me, 'isModerator').returns(isModeratorSpy)
       commonStream.checkOwnership(ctx.sessionUser, ctx.cv)
         .catch(function (err) {
-          expect(err, 'error').to.not.be.null
           expect(err.length, 'error length').to.equal(2)
 
           sinon.assert.calledOnce(me.isModerator)
