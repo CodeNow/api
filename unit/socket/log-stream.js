@@ -12,7 +12,6 @@ var expect = Code.expect
 
 var sinon = require('sinon')
 var Docker = require('models/apis/docker')
-var stream = require('stream')
 var EventEmitter = require('events').EventEmitter
 var util = require('util')
 
@@ -93,7 +92,7 @@ describe('log stream: ' + moduleName, function () {
         beforeEach(function (done) {
           sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
           done()
-        });
+        })
         it('should do nothing if the instance fetch returns nothing', function (done) {
           sinon.stub(Instance, 'findOne').yields()
           logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
@@ -125,7 +124,7 @@ describe('log stream: ' + moduleName, function () {
         beforeEach(function (done) {
           sinon.stub(Instance, 'findOne').yields(null, ctx.instance)
           done()
-        });
+        })
         it('should do nothing if the args are invalid', function (done) {
           sinon.stub(commonStream, 'checkOwnership').returns(rejectionPromise)
           logStream.logStreamHandler(ctx.socket, ctx.id, {})

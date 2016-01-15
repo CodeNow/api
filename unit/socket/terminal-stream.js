@@ -11,7 +11,6 @@ var Code = require('code')
 var expect = Code.expect
 
 var sinon = require('sinon')
-var stream = require('stream')
 var EventEmitter = require('events').EventEmitter
 var util = require('util')
 
@@ -109,16 +108,16 @@ describe('terminal stream: ' + moduleName, function () {
         beforeEach(function (done) {
           sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
           done()
-        });
+        })
         describe('DebugContainer', function () {
           beforeEach(function (done) {
             ctx.data.isDebugContainer = true
             done()
-          });
+          })
           afterEach(function (done) {
             DebugContainer.findOne.restore()
             done()
-          });
+          })
 
           it('should do nothing if the DebugContainer fetch returns nothing', function (done) {
             sinon.stub(DebugContainer, 'findOne').yields()
