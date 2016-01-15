@@ -209,36 +209,5 @@ describe('200 PATCH /instances/:id', function () {
           dockerMockEvents.emitBuildComplete(ctx.cv)
         })
       })
-
-      it('should update an instance with a container and context version', function (done) {
-        var count = createCount(2, done)
-        var container = {
-          dockerContainer: ctx.container.Id,
-          inspect: { Id: ctx.container.Id }
-        }
-        // Original patch from the update route, then the one at the end of the on-build-die
-        primus.expectAction('start', {}, count.next)
-        // required when updating container in PATCH route
-        var contextVersion = ctx.cv.id()
-        var opts = {
-          json: {
-            container: container
-          },
-          qs: {
-            'contextVersion._id': contextVersion
-          }
-        }
-
-        ctx.instance.update(opts, function (err, body, statusCode) {
-          if (err) { return done(err) }
-          expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv, ctx.container)
-          // wait until build is ready to finish the test
-          primus.onceVersionComplete(ctx.cv.id(), function () {
-            count.next()
-          })
-          dockerMockEvents.emitBuildComplete(ctx.cv)
-        })
-      })
-    })
   })
 })
