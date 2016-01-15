@@ -17,7 +17,6 @@ var indexBy = require('101/index-by')
 var joi = require('utils/joi')
 var keypather = require('keypather')()
 var Lab = require('lab')
-var Modem = require('docker-modem')
 var monitor = require('monitor-dog')
 var multiline = require('multiline')
 var path = require('path')
@@ -25,6 +24,7 @@ var pluck = require('101/pluck')
 var sinon = require('sinon')
 var through2 = require('through2')
 var url = require('url')
+var put = require('101/put')
 
 var Docker = require('models/apis/docker')
 
@@ -393,11 +393,11 @@ describe('docker: ' + moduleName, function () {
           })
 
           var expected = {
-            name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
-            Binds: [],
-            Volumes: {},
+            HostConfig: {
+              Binds: []
+            },
             Labels: ctx.mockLabels
           }
 
@@ -445,11 +445,11 @@ describe('docker: ' + moduleName, function () {
           })
 
           var expected = {
-            name: opts.contextVersion.build._id.toString(),
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
-            Binds: [],
-            Volumes: {},
+            HostConfig: {
+              Binds: []
+            },
             Labels: ctx.mockLabels
           }
 
@@ -487,18 +487,15 @@ describe('docker: ' + moduleName, function () {
           }
           model.createImageBuilder(opts, function (err) {
             if (err) { return done(err) }
-            var volumes = {}
-            volumes['/cache'] = {}
-            volumes['/layer-cache'] = {}
             expect(Docker.prototype.createContainer.firstCall.args[0]).to.deep.equal({
-              name: opts.contextVersion.build._id.toString(),
               Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
               Env: ctx.mockEnv,
-              Binds: [
-                process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
-                process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
-              ],
-              Volumes: volumes,
+              HostConfig: {
+                Binds: [
+                  process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
+                  process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
+                ]
+              },
               Labels: ctx.mockLabels
             })
             done()
@@ -836,82 +833,6 @@ describe('docker: ' + moduleName, function () {
     })
   })
 
-  describe('pullImage', function () {
-    var testTag = 'lothlorien'
-    var testImageName = 'registy.runnable.com/1234/galadriel'
-    var testImage = testImageName + ':' + testTag
-    beforeEach(function (done) {
-      sinon.stub(Dockerode.prototype, 'pull')
-      sinon.stub(Modem.prototype, 'followProgress')
-      done()
-    })
-    afterEach(function (done) {
-      Dockerode.prototype.pull.restore()
-      Modem.prototype.followProgress.restore()
-      done()
-    })
-
-    it('should pull image', function (done) {
-      Dockerode.prototype.pull.yieldsAsync()
-      Modem.prototype.followProgress.yieldsAsync(null, [
-        {}, {}, {}, {}, {}, {}, {}, {},
-        { status: 'Status: Downloaded newer image for ' + testTag }
-      ])
-      model.pullImage(testImage, function (err) {
-        expect(err).to.not.exist()
-        expect(Dockerode.prototype.pull
-          .withArgs(testImage)
-          .calledOnce).to.be.true()
-        done()
-      })
-    })
-
-    it('should successfully pull image (that already exists)', function (done) {
-      Dockerode.prototype.pull.yieldsAsync()
-      Modem.prototype.followProgress.yieldsAsync(null, [
-        {}, {}, {}, {}, {}, {}, {}, {},
-        { status: 'Status: Image is up to date for ' + testTag }
-      ])
-      model.pullImage(testImage, function (err) {
-        expect(err).to.not.exist()
-        expect(Dockerode.prototype.pull
-          .withArgs(testImage)
-          .calledOnce).to.be.true()
-        done()
-      })
-    })
-
-    it('should cb error if pull err', function (done) {
-      var testErr = new Error('Docker pull error')
-      Dockerode.prototype.pull.yieldsAsync(testErr)
-      model.pullImage(testImage, function (err) {
-        expect(err.message).to.be.equal('Pull image failed: ' + testErr.message)
-        done()
-      })
-    })
-
-    it('should cb error if follow err', function (done) {
-      var testErr = new Error('something bad happenned')
-      Dockerode.prototype.pull.yieldsAsync()
-      Modem.prototype.followProgress.yieldsAsync(testErr)
-      model.pullImage(testImage, function (err) {
-        expect(err.message).to.contain(testErr.message)
-        done()
-      })
-    })
-
-    it('should cast "image not found" error', function (done) {
-      var testErr = 'image: "foo" not found'
-      Dockerode.prototype.pull.yieldsAsync()
-      Modem.prototype.followProgress.yieldsAsync(testErr)
-      model.pullImage(testImage, function (err) {
-        expect(err.message).to.contain(testErr)
-        expect(err.output.statusCode).to.equal(404)
-        done()
-      })
-    })
-  }) // end pullImage
-
   describe('isImageNotFoundForCreateErr', function () {
     it('should return true if it is', function (done) {
       var err = new Error('no such container')
@@ -1006,7 +927,9 @@ describe('docker: ' + moduleName, function () {
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash
             ]),
             Image: ctx.mockContextVersion.build.dockerTag,
-            Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            HostConfig: {
+              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            }
           }
           sinon.assert.calledWith(
             Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
@@ -1095,6 +1018,61 @@ describe('docker: ' + moduleName, function () {
       })
     })
   })
+
+  describe('startUserContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(model, 'startContainer')
+      done()
+    })
+
+    afterEach(function (done) {
+      model.startContainer.restore()
+      done()
+    })
+
+    it('should startContainer', function (done) {
+      var testId = '123'
+      var testOwner = 'asdf'
+      var testOpts = { Labels: 'test' }
+      model.startContainer.yieldsAsync()
+
+      model.startUserContainer(testId, testOwner, testOpts, function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(model.startContainer)
+        sinon.assert.calledWith(model.startContainer,
+          testId,
+          put(testOpts, {
+            HostConfig: {
+              PublishAllPorts: true,
+              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            }
+          }))
+        done()
+      })
+    })
+
+    it('should cb startContainer error', function (done) {
+      var testId = '123'
+      var testOwner = 'asdf'
+      var testOpts = { Labels: 'test' }
+      var testErr = 'viking'
+      model.startContainer.yieldsAsync(testErr)
+
+      model.startUserContainer(testId, testOwner, testOpts, function (err) {
+        expect(err).to.equal(testErr)
+        sinon.assert.calledOnce(model.startContainer)
+        sinon.assert.calledWith(model.startContainer,
+          testId,
+          put(testOpts, {
+            HostConfig: {
+              PublishAllPorts: true,
+              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+            }
+          }))
+        done()
+      })
+    })
+  }) // end startUserContainer
 
   describe('_createUserContainerLabels', function () {
     beforeEach(function (done) {

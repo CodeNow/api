@@ -21,10 +21,9 @@ var Instance = require('models/mongo/instance.js')
 var User = require('models/mongo/user.js')
 var messenger = require('socket/messenger')
 var toObjectId = require('utils/to-object-id')
-
+var dockerListenerRabbit = require('docker-listener/lib/hermes-client.js')
 var mockFactory = require('../fixtures/factory')
 
-var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create.js')
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js')
 
 describe('OnImageBuilderContainerDie Integration Tests', function () {
@@ -36,14 +35,17 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
   })
   before(dock.start.bind(ctx))
   before(function (done) {
-    sinon.stub(OnImageBuilderContainerCreate, 'worker', function (data, done) {
-      done()
+    var oldPublish = dockerListenerRabbit.publish
+    sinon.stub(dockerListenerRabbit, 'publish', function (queue, data) {
+      if (queue !== 'on-image-builder-container-create') {
+        oldPublish.bind(dockerListenerRabbit)(queue, data)
+      }
     })
     rabbitMQ.connect(done)
     rabbitMQ.loadWorkers()
   })
   after(function (done) {
-    OnImageBuilderContainerCreate.worker.restore()
+    dockerListenerRabbit.publish.restore()
     rabbitMQ.close(done)
   })
   after(dock.stop.bind(ctx))
@@ -122,7 +124,14 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 ContextVersion.findById(ctx.cv._id, function (err, cv) {
                   if (err) { return done(err) }
                   ctx.cv = cv
-                  done()
+                  Instance.findOneAndUpdate({
+                    _id: ctx.instance._id
+                  }, {
+                    $set: { contextVersion: ctx.cv.toJSON() }
+                  }, function (err, instance) {
+                    ctx.instance = instance
+                    done(err)
+                  })
                 })
               })
             })
@@ -187,7 +196,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 sinon.match({
                   _id: ctx.user._id
                 }), {
-                  'contextVersion.build._id': toObjectId(ctx.cv.build._id)
+                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
                 },
                 'patch'
               )
@@ -286,7 +295,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 sinon.match({
                   _id: ctx.user._id
                 }), {
-                  'contextVersion.build._id': toObjectId(ctx.cv.build._id)
+                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
                 },
                 'patch'
               )
@@ -384,7 +393,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 sinon.match({
                   _id: ctx.user._id
                 }), {
-                  'contextVersion.build._id': toObjectId(ctx.cv.build._id)
+                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
                 },
                 'patch'
               )
@@ -513,7 +522,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                   sinon.match({
                     _id: ctx.user._id
                   }), {
-                    'contextVersion.build._id': toObjectId(ctx.cv.build._id)
+                    'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
                   },
                   'patch'
                 )
