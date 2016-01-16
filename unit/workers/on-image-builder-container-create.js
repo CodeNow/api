@@ -15,7 +15,6 @@ var TaskFatalError = require('ponos').TaskFatalError
 
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
-var messenger = require('socket/messenger')
 var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create')
 
 var afterEach = lab.afterEach
@@ -27,7 +26,18 @@ var it = lab.it
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
-  var testJobData = require('../fixtures/docker-listener/build-image-container')
+  var testCvId = 'dat_cv_id'
+  var testJobData = {
+    host: 'http://10.0.0.1:4242',
+    inspectData: {
+      Id: 'someContainerId',
+      Config: {
+        Labels: {
+          'contextVersion.id': testCvId
+        }
+      }
+    }
+  }
   var testJob
 
   beforeEach(function (done) {
@@ -85,7 +95,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         expect(err).to.equal(testErr)
         sinon.assert.calledOnce(ContextVersion.findByIdAsync)
-        sinon.assert.calledWith(ContextVersion.findByIdAsync, testJob.inspectData.Config.Labels['contextVersion.id'])
+        sinon.assert.calledWith(ContextVersion.findByIdAsync, testCvId)
         done()
       })
     })
@@ -184,25 +194,22 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       }
     }
     beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'updateByAsync')
+      sinon.stub(ContextVersion, 'updateByIdAsync')
       sinon.stub(ContextVersion, 'findByIdAsync').returns(testCv)
       sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync')
-      sinon.stub(messenger, 'emitContextVersionUpdate')
       done()
     })
 
     afterEach(function (done) {
       ContextVersion.findByIdAsync.restore()
-      ContextVersion.updateByAsync.restore()
+      ContextVersion.updateByIdAsync.restore()
       Docker.prototype.startImageBuilderContainerAsync.restore()
-      messenger.emitContextVersionUpdate.restore()
       done()
     })
 
-    it('should start container, update mongo & emit update', function (done) {
+    it('should start container', function (done) {
       Docker.prototype.startImageBuilderContainerAsync.returns(Promise.resolve())
-      ContextVersion.updateByAsync.returns()
-      messenger.emitContextVersionUpdate.returns()
+      ContextVersion.updateByIdAsync.returns()
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         if (err) { return done(err) }
@@ -216,82 +223,10 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
           }
         }
 
-        sinon.assert.calledOnce(ContextVersion.updateByAsync)
-        sinon.assert.calledWith(ContextVersion.updateByAsync, 'build._id', 'testId', sinon.match(update), { multi: true })
-
-        sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
-        sinon.assert.calledWith(messenger.emitContextVersionUpdate, testCv, 'build_running')
+        sinon.assert.calledOnce(ContextVersion.updateByIdAsync)
+        sinon.assert.calledWith(ContextVersion.updateByIdAsync, testCvId, sinon.match(update))
         done()
       })
     })
   }) // end startImageBuilderContainer
-
-  describe('onError', function () {
-    beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'findByIdAsync').returns({
-        build: {
-          containerStarted: false,
-          started: true,
-          finished: false,
-          _id: 'testId'
-        }
-      })
-      sinon.stub(ContextVersion, 'updateByAsync')
-      sinon.stub(ContextVersion, 'updateBuildErrorByBuildIdAsync')
-      sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync').returns(Promise.resolve())
-      sinon.stub(messenger, 'emitContextVersionUpdate')
-      done()
-    })
-
-    afterEach(function (done) {
-      ContextVersion.updateBuildErrorByBuildIdAsync.restore()
-      ContextVersion.findByIdAsync.restore()
-      ContextVersion.updateByAsync.restore()
-      Docker.prototype.startImageBuilderContainerAsync.restore()
-      messenger.emitContextVersionUpdate.restore()
-      done()
-    })
-
-    it('should updateBuildErrorByBuildIdAsync and rethrow error', function (done) {
-      var testErr = new Error('hulahoop')
-      ContextVersion.updateByAsync.throws(testErr)
-      ContextVersion.updateBuildErrorByBuildIdAsync.returns(Promise.resolve())
-
-      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.equal(testErr)
-        sinon.assert.calledOnce(Docker.prototype.startImageBuilderContainerAsync)
-        sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, testJob.inspectData.Id)
-
-        var update = {
-          $set: {
-            'dockerHost': testJob.host
-          }
-        }
-        sinon.assert.calledOnce(ContextVersion.updateByAsync)
-        sinon.assert.calledWith(ContextVersion.updateByAsync, 'build._id', 'testId', sinon.match(update), { multi: true })
-        done()
-      })
-    })
-
-    it('should updateBuildErrorByBuildIdAsync and rethrow original error', function (done) {
-      var testErr = new Error('hulahoop')
-      ContextVersion.updateByAsync.throws(testErr)
-      ContextVersion.updateBuildErrorByBuildIdAsync.returns(Promise.reject(new Error('phalanger')))
-
-      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.equal(testErr)
-        sinon.assert.calledOnce(Docker.prototype.startImageBuilderContainerAsync)
-        sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, testJob.inspectData.Id)
-
-        var update = {
-          $set: {
-            'dockerHost': testJob.host
-          }
-        }
-        sinon.assert.calledOnce(ContextVersion.updateByAsync)
-        sinon.assert.calledWith(ContextVersion.updateByAsync, 'build._id', 'testId', sinon.match(update), { multi: true })
-        done()
-      })
-    })
-  }) // end onError
 })
