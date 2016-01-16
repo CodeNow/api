@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/container.image-builder.created
+ * @module unit/workers/container.image-builder.started
  */
 'use strict'
 
@@ -8,14 +8,11 @@ var lab = exports.lab = Lab.script()
 
 var clone = require('101/clone')
 var Code = require('code')
-var path = require('path')
-var Promise = require('bluebird')
 var sinon = require('sinon')
 var TaskFatalError = require('ponos').TaskFatalError
 
-var ContainerImageBuilderCreated = require('workers/container.image-builder.created')
+var ContainerImageBuilderCreated = require('workers/container.image-builder.started')
 var ContextVersion = require('models/mongo/context-version')
-var Docker = require('models/apis/docker')
 var messenger = require('socket/messenger')
 
 var afterEach = lab.afterEach
@@ -24,9 +21,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('container.image-builder.created unit test', function () {
+describe('container.image-builder.started unit test', function () {
   var testCvId = 'dat_cv_id'
   var testJobData = {
     host: 'http://10.0.0.1:4242',
@@ -110,7 +105,7 @@ describe('container.image-builder.created unit test', function () {
     })
 
     it('should emit event on success', function (done) {
-      var testCv = { some: 'value' };
+      var testCv = { some: 'value' }
       ContextVersion.findOneAndUpdate.yieldsAsync(null, testCv)
       messenger.emitContextVersionUpdate.returns()
 
@@ -123,4 +118,4 @@ describe('container.image-builder.created unit test', function () {
       })
     })
   }) // end valid job
-}) // end container.image-builder.created unit test
+}) // end container.image-builder.started unit test
