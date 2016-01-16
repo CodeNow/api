@@ -1231,7 +1231,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       done()
     })
 
-    describe('Test things are called', function () {
+    describe('Test invalidating cache entries', function () {
       beforeEach(function (done) {
         sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
         sinon.stub(Instance, 'find').yieldsAsync(null, [])
