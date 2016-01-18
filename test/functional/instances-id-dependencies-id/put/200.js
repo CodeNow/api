@@ -91,16 +91,21 @@ describe('Dependencies - /instances/:id/dependencies', function () {
   })
 })
 
-function expectInstanceDep (data, expectedInstance) {
+function expectInstanceDep (data, expectedInstances) {
+  if (!Array.isArray(expectedInstances)) {
+    expectedInstances = [expectedInstances]
+  }
   expect(data).to.be.an.array()
-  expect(data).to.have.a.length(1)
-  expect(data[0]).to.deep.contain({
-    id: expectedInstance.attrs._id.toString(),
-    shortHash: expectedInstance.attrs.shortHash.toString(),
-    lowerName: expectedInstance.attrs.lowerName,
-    name: expectedInstance.attrs.name,
-    // hostname:  expectedInstance.getElasticHostname().toLowerCase(),
-    owner: { github: expectedInstance.attrs.owner.github },
-    contextVersion: { context: expectedInstance.attrs.contextVersion.context.toString() }
+  expect(data).to.have.a.length(expectedInstances.length)
+  expectedInstances.forEach(function (expectedInstance, i) {
+    expect(data[i]).to.deep.contain({
+      id: expectedInstance.attrs._id.toString(),
+      shortHash: expectedInstance.attrs.shortHash.toString(),
+      lowerName: expectedInstance.attrs.lowerName,
+      name: expectedInstance.attrs.name,
+      // hostname:  expectedInstance.getElasticHostname().toLowerCase(),
+      owner: { github: expectedInstance.attrs.owner.github },
+      contextVersion: { context: expectedInstance.attrs.contextVersion.context.toString() }
+    })
   })
 }
