@@ -752,4 +752,36 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       done()
     })
   })
+
+  describe('publishContainerImageBuilderStarted', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        inspectData: { id: 1234 }
+      }
+      ctx.rabbitMQ.publishContainerImageBuilderStarted(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish,
+        'container.image-builder.started',
+        data)
+      done()
+    })
+
+    it('should throw an error when parameters are missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.publishContainerImageBuilderStarted.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  }) // end publishContainerImageBuilderStarted
 })
