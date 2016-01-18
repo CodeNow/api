@@ -639,7 +639,7 @@ describe('docker: ' + moduleName, function () {
       it('should return an array of ENV for image builder container', function (done) {
         var opts = ctx.opts
         var buildOpts = {
-          Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES,
+          Memory: process.env.BUILD_MEMORY_LIMIT_BYTES,
           forcerm: true,
           nocache: true
         }
@@ -688,7 +688,7 @@ describe('docker: ' + moduleName, function () {
       it('should return conditional container env', function (done) {
         var envs = model._createImageBuilderEnv(ctx.opts)
         var buildOpts = {
-          Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES,
+          Memory: process.env.BUILD_MEMORY_LIMIT_BYTES,
           forcerm: true
         }
         expect(envs).to.contain([
