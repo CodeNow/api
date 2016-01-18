@@ -131,6 +131,7 @@ describe('terminal stream: ' + moduleName, function () {
                 })
                 done()
               })
+              .catch(done)
           })
         })
 
@@ -151,6 +152,7 @@ describe('terminal stream: ' + moduleName, function () {
                 })
                 done()
               })
+              .catch(done)
           })
           it('should do nothing if the model fetch returns an error', function (done) {
             sinon.stub(Instance, 'findOne').yields(error)
@@ -164,6 +166,7 @@ describe('terminal stream: ' + moduleName, function () {
                 })
                 done()
               })
+              .catch(done)
           })
         })
       })
@@ -181,7 +184,8 @@ describe('terminal stream: ' + moduleName, function () {
           sinon.stub(commonStream, 'checkOwnership').returns(rejectionPromise)
           terminalStream.proxyStreamHandler(ctx.socket, ctx.id, {})
             .catch(function (err) {
-              expect(err.message).to.equal('invalid args')
+              expect(err.message).to.equal('dockHost, type, containerId, ' +
+                'terminalStreamId, clientStreamId, are required')
               sinon.assert.calledOnce(ctx.socket.write)
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.id,
@@ -191,6 +195,7 @@ describe('terminal stream: ' + moduleName, function () {
               })
               done()
             })
+            .catch(done)
         })
         it('should do nothing if the ownership check fails', function (done) {
           sinon.stub(commonStream, 'checkOwnership').returns(rejectionPromise)
@@ -204,6 +209,7 @@ describe('terminal stream: ' + moduleName, function () {
               })
               done()
             })
+            .catch(done)
         })
       })
     })
@@ -236,6 +242,7 @@ describe('terminal stream: ' + moduleName, function () {
 
             done()
           })
+          .catch(done)
       })
     })
   })

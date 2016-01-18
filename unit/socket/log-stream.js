@@ -105,6 +105,7 @@ describe('log stream: ' + moduleName, function () {
               })
               done()
             })
+            .catch(done)
         })
         it('should do nothing if the instance fetch returns an error', function (done) {
           sinon.stub(Instance, 'findOne').yields(error)
@@ -118,6 +119,7 @@ describe('log stream: ' + moduleName, function () {
               })
               done()
             })
+            .catch(done)
         })
       })
       describe('Other failures', function () {
@@ -129,7 +131,7 @@ describe('log stream: ' + moduleName, function () {
           sinon.stub(commonStream, 'checkOwnership').returns(rejectionPromise)
           logStream.logStreamHandler(ctx.socket, ctx.id, {})
             .catch(function (err) {
-              expect(err.message).to.equal('invalid args')
+              expect(err.message).to.equal('dockHost and containerId are required')
               sinon.assert.calledOnce(ctx.socket.write)
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.id,
@@ -138,6 +140,7 @@ describe('log stream: ' + moduleName, function () {
               })
               done()
             })
+            .catch(done)
         })
         it('should do nothing if the ownership check fails', function (done) {
           sinon.stub(commonStream, 'checkOwnership').returns(rejectionPromise)
@@ -151,6 +154,7 @@ describe('log stream: ' + moduleName, function () {
               })
               done()
             })
+            .catch(done)
         })
       })
     })
@@ -192,6 +196,7 @@ describe('log stream: ' + moduleName, function () {
             })
             done()
           })
+          .catch(done)
       })
     })
   })
