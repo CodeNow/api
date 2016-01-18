@@ -85,7 +85,10 @@ describe('OnInstanceContainerCreateWorker: ' + moduleName, function () {
           InstanceService.updateContainerInspect,
           {
             _id: ctx.mockInstance._id,
-            'contextVersion.id': ctx.data.inspectData.Config.Labels.contextVersionId
+            'contextVersion.id': ctx.data.inspectData.Config.Labels.contextVersionId,
+            'container': {
+              $exists: false
+            }
           },
           {
             container: {

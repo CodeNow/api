@@ -14,6 +14,7 @@ var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
 var messenger = require('socket/messenger')
 
+var error = require('error')
 var StartImageBuildContainerWorker = require('workers/create-image-builder-container')
 
 var afterEach = lab.afterEach
@@ -196,6 +197,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
         })
       })
     })
+
     describe('failure', function () {
       beforeEach(function (done) {
         // initialize instance w/ props, don't actually run protected methods
@@ -254,6 +256,77 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
       })
     })
   })
+
+  describe('on domain error', function () {
+    var domainError = new Error('Wow, this failed, fancy that')
+
+    beforeEach(function (done) {
+      sinon.stub(Context, 'findOne').yieldsAsync(null, ctx.mockContext)
+      sinon.stub(ContextVersion, 'findOne').yieldsAsync(null, ctx.mockContextVersion)
+      sinon.stub(ContextVersion, 'updateContainerByBuildId').yieldsAsync()
+      sinon.stub(
+        StartImageBuildContainerWorker.prototype,
+        '_baseWorkerFindUser'
+      ).yieldsAsync(null, ctx.mockUser)
+      sinon.stub(ContextVersion, 'updateBuildErrorByBuildId').yieldsAsync()
+      sinon.stub(StartImageBuildContainerWorker.prototype, '_updateCvOnError')
+        .yieldsAsync()
+      sinon.stub(Docker.prototype, 'createImageBuilder').throws(domainError)
+      sinon.stub(error, 'workerErrorHandler')
+      done()
+    })
+
+    afterEach(function (done) {
+      Context.findOne.restore()
+      ContextVersion.findOne.restore()
+      ContextVersion.updateContainerByBuildId.restore()
+      StartImageBuildContainerWorker.prototype._baseWorkerFindUser.restore()
+      ContextVersion.updateBuildErrorByBuildId.restore()
+      StartImageBuildContainerWorker.prototype._updateCvOnError.restore()
+      Docker.prototype.createImageBuilder.restore()
+      error.workerErrorHandler.restore()
+      done()
+    })
+
+    it('should call the error handler', function (done) {
+      StartImageBuildContainerWorker.worker(ctx.data, function () {
+        expect(error.workerErrorHandler.calledOnce).to.be.true()
+        expect(error.workerErrorHandler.calledWith(
+          domainError
+        )).to.be.true()
+        done()
+      })
+    })
+
+    describe('with context version', function () {
+      it('should update the build status', function (done) {
+        var stub = StartImageBuildContainerWorker.prototype._updateCvOnError
+        StartImageBuildContainerWorker.worker(ctx.data, function () {
+          expect(stub.calledOnce).to.be.true()
+          expect(stub.calledWith(domainError)).to.be.true()
+          done()
+        })
+      })
+    }) // end 'with context version'
+
+    describe('without context version', function () {
+      beforeEach(function (done) {
+        Docker.prototype.createImageBuilder.restore()
+        Context.findOne.restore()
+        sinon.stub(Docker.prototype, 'createImageBuilder').yieldsAsync()
+        sinon.stub(Context, 'findOne').throws(domainError)
+        done()
+      })
+
+      it('should not update the build status', function (done) {
+        var stub = StartImageBuildContainerWorker.prototype._updateCvOnError
+        StartImageBuildContainerWorker.worker(ctx.data, function () {
+          expect(stub.callCount).to.equal(0)
+          done()
+        })
+      })
+    })
+  }) // end 'on domain error'
 
   describe('independent tests', function () {
     beforeEach(function (done) {

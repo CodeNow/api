@@ -148,7 +148,7 @@ function buildTheVersionTests (ctx) {
             if (err) { return done(err) }
             expect(body._id).not.to.equal(ctx.cv.attrs._id)
             expect(body.id).to.not.equal(ctx.cv.attrs.id)
-            expect(body.containerId).to.not.equal(ctx.cv.attrs.containerId)
+            expect(body.containerId).to.not.equal(ctx.cv.attrs.build.dockerContainer)
             waitForCvBuildToComplete(ctx.copiedCv, done)
           })
         })
@@ -248,7 +248,7 @@ function buildTheVersionTests (ctx) {
             ctx.cv2.build(function (err) {
               if (err) { return done(err) }
               expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build)
-              expect(ctx.cv.attrs.containerId).to.not.equal(ctx.cv2.attrs.containerId)
+              expect(ctx.cv.attrs.build.dockerContainer).to.not.equal(ctx.cv2.attrs.build.dockerContainer)
               expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
               done()
             })
@@ -276,7 +276,7 @@ function buildTheVersionTests (ctx) {
                     waitForCvBuildToComplete(ctx.cv2, function (err) {
                       if (err) { return done(err) }
                       expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build)
-                      expect(ctx.cv.attrs.containerId).to.equal(ctx.cv2.attrs.containerId)
+                      expect(ctx.cv.attrs.build.dockerContainer).to.equal(ctx.cv2.attrs.build.dockerContainer)
                       expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
                       done()
                     })
@@ -295,7 +295,7 @@ function buildTheVersionTests (ctx) {
                     waitForCvBuildToComplete(ctx.cv2, function (err) {
                       if (err) { return done(err) }
                       expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build)
-                      expect(ctx.cv.attrs.containerId).to.not.equal(ctx.cv2.attrs.containerId)
+                      expect(ctx.cv.attrs.build.dockerContainer).to.not.equal(ctx.cv2.attrs.build.dockerContainer)
                       expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
                       done()
                     })
@@ -317,7 +317,7 @@ function buildTheVersionTests (ctx) {
                     waitForCvBuildToComplete(ctx.cv2, function (err) {
                       if (err) { return done(err) }
                       expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build)
-                      expect(ctx.cv.attrs.containerId).to.not.equal(ctx.cv2.attrs.containerId)
+                      expect(ctx.cv.attrs.build.dockerContainer).to.not.equal(ctx.cv2.attrs.build.dockerContainer)
                       expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
                       done()
                     })
@@ -354,8 +354,8 @@ function buildTheVersionTests (ctx) {
                       if (err) { return done(err) }
                       expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build)
                       expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv3.attrs.build)
-                      expect(ctx.cv.attrs.containerId).to.equal(ctx.cv2.attrs.containerId)
-                      expect(ctx.cv.attrs.containerId).to.equal(ctx.cv3.attrs.containerId)
+                      expect(ctx.cv.attrs.build.dockerContainer).to.equal(ctx.cv2.attrs.build.dockerContainer)
+                      expect(ctx.cv.attrs.build.dockerContainer).to.equal(ctx.cv3.attrs.build.dockerContainer)
                       expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
                       expect(ctx.cv.attrs._id).to.not.equal(ctx.cv3.attrs._id)
                       expect(ctx.cv2.attrs._id).to.not.equal(ctx.cv3.attrs._id)
@@ -380,7 +380,7 @@ function buildTheVersionTests (ctx) {
                   waitForCvBuildToComplete(ctx.cv2, function (err) {
                     if (err) { return done(err) }
                     expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build)
-                    expect(ctx.cv.attrs.containerId).to.equal(ctx.cv2.attrs.containerId)
+                    expect(ctx.cv.attrs.build.dockerContainer).to.equal(ctx.cv2.attrs.build.dockerContainer)
                     expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
                     done()
                   })

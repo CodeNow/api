@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "6.13.0",
+  "version": "6.14.1",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -15,6 +15,7 @@
   "dependencies": {
     "101": "^1.2.0",
     "JSONStream": "0.10.x",
+    "array-subtract": "^2.0.0",
     "async": "^0.9.0",
     "aws-sdk": "^2.1.47",
     "batch": "^0.5.1",

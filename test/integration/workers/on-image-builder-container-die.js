@@ -124,7 +124,14 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 ContextVersion.findById(ctx.cv._id, function (err, cv) {
                   if (err) { return done(err) }
                   ctx.cv = cv
-                  done()
+                  Instance.findOneAndUpdate({
+                    _id: ctx.instance._id
+                  }, {
+                    $set: { contextVersion: ctx.cv.toJSON() }
+                  }, function (err, instance) {
+                    ctx.instance = instance
+                    done(err)
+                  })
                 })
               })
             })
@@ -189,7 +196,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 sinon.match({
                   _id: ctx.user._id
                 }), {
-                  'contextVersion.build._id': toObjectId(ctx.cv.build._id)
+                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
                 },
                 'patch'
               )
@@ -288,7 +295,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 sinon.match({
                   _id: ctx.user._id
                 }), {
-                  'contextVersion.build._id': toObjectId(ctx.cv.build._id)
+                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
                 },
                 'patch'
               )
@@ -386,7 +393,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 sinon.match({
                   _id: ctx.user._id
                 }), {
-                  'contextVersion.build._id': toObjectId(ctx.cv.build._id)
+                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
                 },
                 'patch'
               )
@@ -515,7 +522,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                   sinon.match({
                     _id: ctx.user._id
                   }), {
-                    'contextVersion.build._id': toObjectId(ctx.cv.build._id)
+                    'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
                   },
                   'patch'
                 )
