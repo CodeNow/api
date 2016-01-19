@@ -9,7 +9,6 @@ var lab = exports.lab = Lab.script()
 var clone = require('101/clone')
 var Code = require('code')
 var path = require('path')
-var Promise = require('bluebird')
 var sinon = require('sinon')
 var TaskFatalError = require('ponos').TaskFatalError
 
@@ -26,14 +25,15 @@ var it = lab.it
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
-  var testCvId = 'dat_cv_id'
+  var testCvBuildId = 'dat_cv_id'
+  var testContainerId = 'someContainerId'
   var testJobData = {
     host: 'http://10.0.0.1:4242',
     inspectData: {
-      Id: 'someContainerId',
+      Id: testContainerId,
       Config: {
         Labels: {
-          'contextVersion.id': testCvId
+          'contextVersion.build._id': testCvBuildId
         }
       }
     }
@@ -66,167 +66,74 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       })
     })
 
-    it('should throw if missing contextVersion.id', function (done) {
-      delete testJob.inspectData.Config.Labels['contextVersion.id']
+    it('should throw if missing contextVersion.build._id', function (done) {
+      delete testJob.inspectData.Config.Labels['contextVersion.build._id']
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.message).to.match(/contextVersion.id.*required/)
+        expect(err.message).to.match(/contextVersion.build._id.*required/)
         done()
       })
     })
   }) // end job validation
 
-  describe('findContextVersion', function () {
+  describe('valid job', function () {
     beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'findByIdAsync')
-      done()
-    })
-
-    afterEach(function (done) {
-      ContextVersion.findByIdAsync.restore()
-      done()
-    })
-
-    it('should throw error if cb error', function (done) {
-      var testErr = new Error('bane')
-      ContextVersion.findByIdAsync.throws(testErr)
-
-      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.equal(testErr)
-        sinon.assert.calledOnce(ContextVersion.findByIdAsync)
-        sinon.assert.calledWith(ContextVersion.findByIdAsync, testCvId)
-        done()
-      })
-    })
-  }) // end findContextVersion
-
-  describe('validateContextVersion', function () {
-    beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'findByIdAsync')
-      done()
-    })
-
-    afterEach(function (done) {
-      ContextVersion.findByIdAsync.restore()
-      done()
-    })
-
-    it('should throw TaskFatalError if cv not found', function (done) {
-      ContextVersion.findByIdAsync.returns()
-
-      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.message).to.contain('not found')
-        done()
-      })
-    })
-
-    it('should throw TaskFatalError if contextVersion.build.containerStarted', function (done) {
-      ContextVersion.findByIdAsync.returns({
-        build: {
-          containerStarted: true
-        }
-      })
-
-      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.message).to.contain('already started')
-        done()
-      })
-    })
-
-    it('should throw TaskFatalError if !contextVersion.build.started', function (done) {
-      ContextVersion.findByIdAsync.returns({
-        build: {
-          containerStarted: false,
-          started: false
-        }
-      })
-
-      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.message).to.contain('marked as started')
-        done()
-      })
-    })
-
-    it('should throw TaskFatalError if contextVersion.build.finished', function (done) {
-      ContextVersion.findByIdAsync.returns({
-        build: {
-          containerStarted: false,
-          started: true,
-          finished: true
-        }
-      })
-
-      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.message).to.contain('already finished')
-        done()
-      })
-    })
-
-    it('should throw TaskFatalError if build._id not found', function (done) {
-      ContextVersion.findByIdAsync.returns({
-        build: {
-          containerStarted: false,
-          started: true,
-          finished: false
-        }
-      })
-
-      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.message).to.contain('build._id not found')
-        done()
-      })
-    })
-  }) // end validateContextVersion
-
-  describe('startImageBuilderContainer', function () {
-    var testCv = {
-      build: {
-        containerStarted: false,
-        started: true,
-        finished: false,
-        _id: 'testId'
-      }
-    }
-    beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'updateByIdAsync')
-      sinon.stub(ContextVersion, 'findByIdAsync').returns(testCv)
+      sinon.stub(ContextVersion, 'updateAsync')
       sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync')
       done()
     })
 
     afterEach(function (done) {
-      ContextVersion.findByIdAsync.restore()
-      ContextVersion.updateByIdAsync.restore()
+      ContextVersion.updateAsync.restore()
       Docker.prototype.startImageBuilderContainerAsync.restore()
       done()
     })
 
+    it('should call update correctly', function (done) {
+      ContextVersion.updateAsync.returns(1)
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(ContextVersion.updateAsync)
+        sinon.assert.calledWith(ContextVersion.updateAsync, {
+          'build._id': testCvBuildId,
+          'build.finished': false,
+          'build.started': true,
+          state: { $ne: 'build started' }
+        }, {
+          $set: {
+            state: 'build starting',
+            dockerHost: testJob.host
+          }
+        }, { multi: true })
+
+        done()
+      })
+    })
+
+    it('should error if no cv updated', function (done) {
+      ContextVersion.updateAsync.returns(0)
+
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.message).to.contain('no valid ContextVersion found to start')
+
+        done()
+      })
+    })
+
     it('should start container', function (done) {
-      Docker.prototype.startImageBuilderContainerAsync.returns(Promise.resolve())
-      ContextVersion.updateByIdAsync.returns()
+      ContextVersion.updateAsync.returns(1)
+      Docker.prototype.startImageBuilderContainerAsync.returns()
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         if (err) { return done(err) }
 
         sinon.assert.calledOnce(Docker.prototype.startImageBuilderContainerAsync)
-        sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, testJob.inspectData.Id)
-
-        var update = {
-          $set: {
-            'dockerHost': testJob.host
-          }
-        }
-
-        sinon.assert.calledOnce(ContextVersion.updateByIdAsync)
-        sinon.assert.calledWith(ContextVersion.updateByIdAsync, testCvId, sinon.match(update))
+        sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, testContainerId)
         done()
       })
     })
-  }) // end startImageBuilderContainer
-})
+  }) // end valid job
+}) // end OnImageBuilderContainerCreate

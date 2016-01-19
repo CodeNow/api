@@ -22,14 +22,14 @@ var expect = Code.expect
 var it = lab.it
 
 describe('container.image-builder.started unit test', function () {
-  var testCvId = 'dat_cv_id'
+  var testCvBuildId = 'dat_cv_id'
   var testJobData = {
     host: 'http://10.0.0.1:4242',
     inspectData: {
       Id: 'someContainerId',
       Config: {
         Labels: {
-          'contextVersion.id': testCvId
+          'contextVersion.build._id': testCvBuildId
         }
       }
     }
@@ -42,12 +42,12 @@ describe('container.image-builder.started unit test', function () {
   })
 
   describe('job validation', function () {
-    it('should throw if missing contextVersion.id', function (done) {
-      delete testJob.inspectData.Config.Labels['contextVersion.id']
+    it('should throw if missing contextVersion.build._id', function (done) {
+      delete testJob.inspectData.Config.Labels['contextVersion.build._id']
 
       ContainerImageBuilderCreated(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.message).to.match(/contextVersion.id.*required/)
+        expect(err.message).to.match(/contextVersion.build._id.*required/)
         done()
       })
     })
@@ -55,65 +55,89 @@ describe('container.image-builder.started unit test', function () {
 
   describe('valid job', function () {
     beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'findOneAndUpdate')
+      sinon.stub(ContextVersion, 'updateAsync')
+      sinon.stub(ContextVersion, 'findAsync')
       sinon.stub(messenger, 'emitContextVersionUpdate')
       done()
     })
 
     afterEach(function (done) {
-      ContextVersion.findOneAndUpdate.restore()
+      ContextVersion.updateAsync.restore()
+      ContextVersion.findAsync.restore()
       messenger.emitContextVersionUpdate.restore()
       done()
     })
 
-    it('should call correct query', function (done) {
-      ContextVersion.findOneAndUpdate.yieldsAsync(null, {some: 'value'})
+    it('should call update correctly', function (done) {
+      ContextVersion.updateAsync.returns(1)
+      ContextVersion.findAsync.returns([])
 
       ContainerImageBuilderCreated(testJob).asCallback(function (err) {
         if (err) { return done(err) }
-        sinon.assert.calledOnce(ContextVersion.findOneAndUpdate)
-        sinon.assert.calledWith(ContextVersion.findOneAndUpdate, {
-          _id: testCvId,
+        sinon.assert.calledOnce(ContextVersion.updateAsync)
+        sinon.assert.calledWith(ContextVersion.updateAsync, {
+          'build._id': testCvBuildId,
           state: 'build starting'
         }, sinon.match({
           $set: {
             'state': 'build started'
           }
-        }))
+        }, { multi: true }))
+
         done()
       })
     })
 
     it('should error if no cv updated', function (done) {
-      ContextVersion.findOneAndUpdate.yieldsAsync()
+      ContextVersion.updateAsync.returns(0)
+      ContextVersion.findAsync.returns([])
 
       ContainerImageBuilderCreated(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
         expect(err.message).to.contain('ContextVersion was not updated')
 
-        sinon.assert.calledOnce(ContextVersion.findOneAndUpdate)
-        sinon.assert.calledWith(ContextVersion.findOneAndUpdate, {
-          _id: testCvId,
-          state: 'build starting'
-        }, sinon.match({
-          $set: {
-            'state': 'build started'
-          }
-        }))
         done()
       })
     })
 
-    it('should emit event on success', function (done) {
-      var testCv = { some: 'value' }
-      ContextVersion.findOneAndUpdate.yieldsAsync(null, testCv)
+    it('should emit event on all returned', function (done) {
+      var testCv1 = { some: 'value' }
+      var testCv2 = { some: 'otherValue' }
+      ContextVersion.updateAsync.returns(1)
       messenger.emitContextVersionUpdate.returns()
+      ContextVersion.findAsync.returns([testCv1, testCv2])
 
       ContainerImageBuilderCreated(testJob).asCallback(function (err) {
         if (err) { return done(err) }
 
-        sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
-        sinon.assert.calledWith(messenger.emitContextVersionUpdate, testCv, 'build_running')
+        sinon.assert.calledOnce(ContextVersion.findAsync)
+        sinon.assert.calledWith(ContextVersion.findAsync, {
+          'build._id': testCvBuildId,
+          'state': 'build started'
+        })
+
+        sinon.assert.calledTwice(messenger.emitContextVersionUpdate)
+        sinon.assert.calledWith(messenger.emitContextVersionUpdate, testCv1, 'build_running')
+        sinon.assert.calledWith(messenger.emitContextVersionUpdate, testCv2, 'build_running')
+        done()
+      })
+    })
+
+    it('should emit nothing', function (done) {
+      ContextVersion.updateAsync.returns(1)
+      messenger.emitContextVersionUpdate.returns()
+      ContextVersion.findAsync.returns([])
+
+      ContainerImageBuilderCreated(testJob).asCallback(function (err) {
+        if (err) { return done(err) }
+
+        sinon.assert.calledOnce(ContextVersion.findAsync)
+        sinon.assert.calledWith(ContextVersion.findAsync, {
+          'build._id': testCvBuildId,
+          'state': 'build started'
+        })
+
+        sinon.assert.notCalled(messenger.emitContextVersionUpdate)
         done()
       })
     })
