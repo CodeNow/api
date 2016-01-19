@@ -132,7 +132,8 @@ describe('build stream: ' + moduleName, function () {
         },
         writeLogsToPrimusStream: sinon.spy()
       }
-      sinon.stub(ctx.buildStream, '_writeErr')
+      ctx.commonStreamValidateStub = sinon.stub().throws(error)
+      sinon.stub(commonStream, 'onValidateFailure').returns(ctx.commonStreamValidateStub)
       sinon.stub(ContextVersion, 'findOne').yields(null, ctx.cv)
       sinon.stub(ctx.buildStream, '_pipeBuildLogsToClient').returns()
       done()
@@ -140,7 +141,7 @@ describe('build stream: ' + moduleName, function () {
     afterEach(function (done) {
       ContextVersion.findOne.restore()
       commonStream.checkOwnership.restore()
-      ctx.buildStream._writeErr.restore()
+      commonStream.onValidateFailure.restore()
       done()
     })
     it('should do nothing if the ownership check fails', function (done) {
@@ -151,8 +152,14 @@ describe('build stream: ' + moduleName, function () {
       ctx.buildStream.handleStream()
         .catch(function (err) {
           expect(err).to.equal(error)
-          sinon.assert.calledOnce(ctx.buildStream._writeErr)
-          sinon.assert.calledWith(ctx.buildStream._writeErr, sinon.match.string)
+          sinon.assert.calledOnce(ctx.commonStreamValidateStub)
+          sinon.assert.calledWith(
+            commonStream.onValidateFailure,
+            sinon.match.string,
+            sinon.match.object,
+            sinon.match.object
+          )
+          sinon.assert.calledWith(ctx.commonStreamValidateStub, error)
           done()
         })
         .catch(done)
@@ -201,7 +208,10 @@ describe('build stream: ' + moduleName, function () {
         },
         writeLogsToPrimusStream: sinon.spy()
       }
-      sinon.stub(ctx.buildStream, '_writeErr')
+      ctx.commonStreamValidateStub = sinon.spy(function (err) {
+        throw err
+      })
+      sinon.stub(commonStream, 'onValidateFailure').returns(ctx.commonStreamValidateStub)
       sinon.stub(ContextVersion, 'findOne').yields(null, ctx.cv)
       sinon.stub(ctx.buildStream, '_pipeBuildLogsToClient').returns()
       done()
@@ -209,7 +219,7 @@ describe('build stream: ' + moduleName, function () {
     afterEach(function (done) {
       ContextVersion.findOne.restore()
       commonStream.checkOwnership.restore()
-      ctx.buildStream._writeErr.restore()
+      commonStream.onValidateFailure.restore()
       done()
     })
     it('should do nothing if the verification fails', function (done) {
@@ -217,8 +227,14 @@ describe('build stream: ' + moduleName, function () {
       ctx.buildStream.handleStream()
         .catch(function (err) {
           expect(err.message).to.equal('Invalid context version')
-          sinon.assert.calledOnce(ctx.buildStream._writeErr)
-          sinon.assert.calledWith(ctx.buildStream._writeErr, sinon.match.string)
+          sinon.assert.calledOnce(ctx.commonStreamValidateStub)
+          sinon.assert.calledWith(
+            commonStream.onValidateFailure,
+            sinon.match.string,
+            sinon.match.object,
+            sinon.match.object
+          )
+          sinon.assert.calledWith(ctx.commonStreamValidateStub, err)
           done()
         })
         .catch(done)
