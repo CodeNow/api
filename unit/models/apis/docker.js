@@ -208,7 +208,7 @@ describe('docker: ' + moduleName, function () {
       done()
     })
 
-    it('should create container with default org if constraint failure', function (done) {
+    it('should report an error if there is no dock for an org', function (done) {
       var testOpts = {
         Labels: {
           'com.docker.swarm.constraints': 'fluff'
@@ -218,13 +218,16 @@ describe('docker: ' + moduleName, function () {
       Docker.prototype.createContainer.yieldsAsync()
 
       model._handleCreateContainerError({}, testOpts, function (err) {
-        expect(err).to.not.exist()
-        expect(Docker.prototype.createContainer.withArgs({
-          Labels: {
-            'com.docker.swarm.constraints': '["org==default"]'
-          }
-        }).called).to.be.true()
-
+        expect(err).to.exist()
+        expect(err.data.level).to.equal('critical')
+        sinon.assert.calledOnce(monitor.event)
+        sinon.assert.calledWith(monitor.event, {
+          title: sinon.match(/dock.*org/),
+          text: sinon.match(/dock.*org/),
+          alert_type: 'error'
+        })
+        sinon.assert.calledOnce(error.log)
+        sinon.assert.calledWith(error.log, err)
         done()
       })
     })
