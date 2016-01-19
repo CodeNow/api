@@ -53,6 +53,7 @@ describe('terminal stream: ' + moduleName, function () {
         github: 123
       }
       ctx.socket = {
+        id: 4,
         request: {
           sessionUser: ctx.sessionUser
         },
@@ -127,7 +128,8 @@ describe('terminal stream: ' + moduleName, function () {
                 sinon.assert.calledOnce(ctx.socket.write)
                 sinon.assert.calledWith(ctx.socket.write, {
                   id: ctx.socket.id,
-                  error: 'You don\'t have access to this stream'
+                  error: 'You don\'t have access to this stream',
+                  message: 'Missing model'
                 })
                 done()
               })
@@ -148,7 +150,8 @@ describe('terminal stream: ' + moduleName, function () {
                 sinon.assert.calledOnce(ctx.socket.write)
                 sinon.assert.calledWith(ctx.socket.write, {
                   id: ctx.socket.id,
-                  error: 'You don\'t have access to this stream'
+                  error: 'You don\'t have access to this stream',
+                  message: 'Missing model'
                 })
                 done()
               })
@@ -162,7 +165,8 @@ describe('terminal stream: ' + moduleName, function () {
                 sinon.assert.calledOnce(ctx.socket.write)
                 sinon.assert.calledWith(ctx.socket.write, {
                   id: ctx.socket.id,
-                  error: 'You don\'t have access to this stream'
+                  error: 'You don\'t have access to this stream',
+                  message: error.message
                 })
                 done()
               })
@@ -181,17 +185,17 @@ describe('terminal stream: ' + moduleName, function () {
           done()
         })
         it('should do nothing if the args are invalid', function (done) {
+          var errorMessage = 'dockHost and type and containerId and ' +
+            'terminalStreamId and eventStreamId are required'
           sinon.stub(commonStream, 'checkOwnership').returns(rejectionPromise)
           terminalStream.proxyStreamHandler(ctx.socket, ctx.id, {})
             .catch(function (err) {
-              expect(err.message).to.equal('dockHost, type, containerId, ' +
-                'terminalStreamId, clientStreamId, are required')
+              expect(err.message).to.equal(errorMessage)
               sinon.assert.calledOnce(ctx.socket.write)
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.id,
-                error: 'dockHost, type, containerId, ' +
-                'terminalStreamId, clientStreamId, are required',
-                data: {}
+                error: 'You don\'t have access to this stream',
+                message: errorMessage
               })
               done()
             })
@@ -205,7 +209,8 @@ describe('terminal stream: ' + moduleName, function () {
               sinon.assert.calledOnce(ctx.socket.write)
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.socket.id,
-                error: 'You don\'t have access to this stream'
+                error: 'You don\'t have access to this stream',
+                message: 'not owner'
               })
               done()
             })

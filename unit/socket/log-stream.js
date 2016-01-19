@@ -52,6 +52,7 @@ describe('log stream: ' + moduleName, function () {
         github: 123
       }
       ctx.socket = {
+        id: 4,
         request: {
           sessionUser: ctx.sessionUser
         },
@@ -101,7 +102,8 @@ describe('log stream: ' + moduleName, function () {
               sinon.assert.calledOnce(ctx.socket.write)
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.socket.id,
-                error: 'You don\'t have access to this stream'
+                error: 'You don\'t have access to this stream',
+                message: 'Missing instance'
               })
               done()
             })
@@ -115,7 +117,8 @@ describe('log stream: ' + moduleName, function () {
               sinon.assert.calledOnce(ctx.socket.write)
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.socket.id,
-                error: 'You don\'t have access to this stream'
+                error: 'You don\'t have access to this stream',
+                message: error.message
               })
               done()
             })
@@ -135,8 +138,8 @@ describe('log stream: ' + moduleName, function () {
               sinon.assert.calledOnce(ctx.socket.write)
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.id,
-                error: 'dockHost and containerId are required',
-                data: {}
+                error: 'You don\'t have access to this stream',
+                message: 'dockHost and containerId are required'
               })
               done()
             })
@@ -150,7 +153,8 @@ describe('log stream: ' + moduleName, function () {
               sinon.assert.calledOnce(ctx.socket.write)
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.socket.id,
-                error: 'You don\'t have access to this stream'
+                error: 'You don\'t have access to this stream',
+                message: 'not owner'
               })
               done()
             })
