@@ -98,8 +98,12 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
         sinon.assert.calledOnce(ContextVersion.updateAsync)
         sinon.assert.calledWith(ContextVersion.updateAsync, {
           'build._id': testCvBuildId,
-          'build.finished': false,
-          'build.started': true,
+          'build.finished': {
+            $exists: false
+          },
+          'build.started': {
+            $exists: true
+          },
           state: { $ne: 'build started' }
         }, {
           $set: {

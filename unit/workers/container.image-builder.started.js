@@ -24,9 +24,7 @@ var it = lab.it
 describe('container.image-builder.started unit test', function () {
   var testCvBuildId = 'dat_cv_id'
   var testJobData = {
-    host: 'http://10.0.0.1:4242',
     inspectData: {
-      Id: 'someContainerId',
       Config: {
         Labels: {
           'contextVersion.build._id': testCvBuildId

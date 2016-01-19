@@ -27,7 +27,7 @@ describe('container.life-cycle.started unit test', function () {
     inspectData: {
       Config: {
         Labels: {
-          'contextVersion.id': testCvId,
+          'contextVersion.build._id': testCvId,
           'type': testType
         }
       }
@@ -41,12 +41,12 @@ describe('container.life-cycle.started unit test', function () {
   })
 
   describe('job validation', function () {
-    it('should throw if missing contextVersion.id', function (done) {
-      delete testJob.inspectData.Config.Labels['contextVersion.id']
+    it('should throw if missing contextVersion.build._id', function (done) {
+      delete testJob.inspectData.Config.Labels['contextVersion.build._id']
 
       ContainerLifeCycleStarted(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.message).to.match(/contextVersion.id.*required/)
+        expect(err.message).to.match(/contextVersion.build._id.*required/)
         done()
       })
     })
