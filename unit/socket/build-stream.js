@@ -157,6 +157,7 @@ describe('build stream: ' + moduleName, function () {
             commonStream.onValidateFailure,
             sinon.match.string,
             sinon.match.object,
+            sinon.match.any,
             sinon.match.object
           )
           sinon.assert.calledWith(ctx.commonStreamValidateStub, error)
@@ -232,6 +233,7 @@ describe('build stream: ' + moduleName, function () {
             commonStream.onValidateFailure,
             sinon.match.string,
             sinon.match.object,
+            sinon.match.any,
             sinon.match.object
           )
           sinon.assert.calledWith(ctx.commonStreamValidateStub, err)

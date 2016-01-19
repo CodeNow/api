@@ -125,13 +125,11 @@ describe('Build Stream', function () {
         }
       })
 
-      var count = createCount(2, done)
-
       client.on('data', function (msg) {
         if (msg.error) {
           client.end()
-          expect(msg.error).to.match(/could not find build in database||You don\'t have access to this stream/)
-          count.next()
+          expect(msg.error).to.match(/You don\'t have access to this stream/)
+          done()
         }
       })
     })
