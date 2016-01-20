@@ -130,7 +130,7 @@
   },
   "engineStrict": true,
   "engine": {
-    "node": "0.10.28",
+    "node": "0.10.38",
     "npm": "2.1.18"
   },
   "scripts": {
