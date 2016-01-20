@@ -8,6 +8,7 @@ var lab = exports.lab = Lab.script()
 
 var clone = require('101/clone')
 var Code = require('code')
+var noop = require('101/noop')
 var sinon = require('sinon')
 var TaskFatalError = require('ponos').TaskFatalError
 
@@ -99,8 +100,8 @@ describe('container.image-builder.started unit test', function () {
     })
 
     it('should emit event on all returned', function (done) {
-      var testCv1 = { some: 'value' }
-      var testCv2 = { some: 'otherValue' }
+      var testCv1 = { some: 'value', toJSON: noop }
+      var testCv2 = { some: 'otherValue', toJSON: noop }
       ContextVersion.updateAsync.returns(1)
       messenger.emitContextVersionUpdate.returns()
       ContextVersion.findAsync.returns([testCv1, testCv2])
