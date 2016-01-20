@@ -99,7 +99,7 @@ describe('GitHub Actions: ' + moduleName, function () {
           'lib/routes/actions/github.js'
         ]
       }
-      var sender =  {
+      var sender = {
         login: 'podviaznikov',
         id: 429706,
         avatar_url: 'https://avatars.githubusercontent.com/u/429706?v=3',
@@ -133,7 +133,7 @@ describe('GitHub Actions: ' + moduleName, function () {
               email: 'live@codenow.com'
             },
             private: true
-          },
+          }
         }
       }
 
@@ -157,7 +157,7 @@ describe('GitHub Actions: ' + moduleName, function () {
 
   describe('checkRepoOwnerOrgIsWhitelisted', function () {
     beforeEach(function (done) {
-      sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, { _id: 'some-id'})
+      sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, { _id: 'some-id' })
       done()
     })
     afterEach(function (done) {
@@ -191,6 +191,30 @@ describe('GitHub Actions: ' + moduleName, function () {
         sinon.assert.calledOnce(UserWhitelist.findOne)
         sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
         done()
+      })
+    })
+    it('should respond with 403 if no whitelist found', function (done) {
+      var req = {
+        githubPushInfo: {
+          repoOwnerOrgName: 'CodeNow'
+        }
+      }
+      UserWhitelist.findOne.yieldsAsync(null, null)
+      var res = {
+        status: function (code) {
+          return {
+            send: function (message) {
+              expect(code).to.equal(403)
+              expect(message).to.equal('Repo owner is not registered in Runnable')
+              sinon.assert.calledOnce(UserWhitelist.findOne)
+              sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
+              done()
+            }
+          }
+        }
+      }
+      githubActions.checkRepoOwnerOrgIsWhitelisted(req, res, function () {
+        throw new Error('Should never happen')
       })
     })
   })
