@@ -24,7 +24,6 @@ var pluck = require('101/pluck')
 var sinon = require('sinon')
 var through2 = require('through2')
 var url = require('url')
-var put = require('101/put')
 
 var Docker = require('models/apis/docker')
 
@@ -208,7 +207,7 @@ describe('docker: ' + moduleName, function () {
       done()
     })
 
-    it('should create container with default org if constraint failure', function (done) {
+    it('should report an error if there is no dock for an org', function (done) {
       var testOpts = {
         Labels: {
           'com.docker.swarm.constraints': 'fluff'
@@ -218,13 +217,16 @@ describe('docker: ' + moduleName, function () {
       Docker.prototype.createContainer.yieldsAsync()
 
       model._handleCreateContainerError({}, testOpts, function (err) {
-        expect(err).to.not.exist()
-        expect(Docker.prototype.createContainer.withArgs({
-          Labels: {
-            'com.docker.swarm.constraints': '["org==default"]'
-          }
-        }).called).to.be.true()
-
+        expect(err).to.exist()
+        expect(err.data.level).to.equal('critical')
+        sinon.assert.calledOnce(monitor.event)
+        sinon.assert.calledWith(monitor.event, {
+          title: sinon.match(/dock.*org/),
+          text: sinon.match(/dock.*org/),
+          alert_type: 'error'
+        })
+        sinon.assert.calledOnce(error.log)
+        sinon.assert.calledWith(error.log, err)
         done()
       })
     })
@@ -640,7 +642,7 @@ describe('docker: ' + moduleName, function () {
       it('should return an array of ENV for image builder container', function (done) {
         var opts = ctx.opts
         var buildOpts = {
-          Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES,
+          Memory: process.env.BUILD_MEMORY_LIMIT_BYTES,
           forcerm: true,
           nocache: true
         }
@@ -689,7 +691,7 @@ describe('docker: ' + moduleName, function () {
       it('should return conditional container env', function (done) {
         var envs = model._createImageBuilderEnv(ctx.opts)
         var buildOpts = {
-          Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES,
+          Memory: process.env.BUILD_MEMORY_LIMIT_BYTES,
           forcerm: true
         }
         expect(envs).to.contain([
@@ -888,7 +890,23 @@ describe('docker: ' + moduleName, function () {
         _id: '123456789012345678901234',
         build: {
           dockerTag: 'dockerTag'
-        }
+        },
+        appCodeVersions: [
+          {
+            repo: 'github.com/user/repo1',
+            commit: 'commit',
+            privateKey: 'private1'
+          },
+          {
+            repo: 'github.com/user/repo2',
+            branch: 'branch',
+            privateKey: 'private2'
+          },
+          {
+            repo: 'github.com/user/repo2',
+            privateKey: 'private2'
+          }
+        ]
       }
       ctx.opts = {
         instance: ctx.mockInstance,
@@ -915,7 +933,7 @@ describe('docker: ' + moduleName, function () {
         done()
       })
 
-      it('should create a container', function (done) {
+      it('should create a container with repo memory limit', function (done) {
         model.createUserContainer(ctx.opts, function (err, container) {
           if (err) { return done(err) }
           sinon.assert.calledWith(
@@ -928,7 +946,33 @@ describe('docker: ' + moduleName, function () {
             ]),
             Image: ctx.mockContextVersion.build.dockerTag,
             HostConfig: {
-              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+              Memory: process.env.CONTAINER_REPO_MEMORY_LIMIT_BYTES
+            }
+          }
+          sinon.assert.calledWith(
+            Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
+          )
+
+          expect(container).to.equal(ctx.mockContainer)
+          done()
+        })
+      })
+
+      it('should create a container with non-repo memory limit', function (done) {
+        ctx.opts.contextVersion.appCodeVersions = []
+        model.createUserContainer(ctx.opts, function (err, container) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Docker.prototype._createUserContainerLabels, ctx.opts, sinon.match.func
+          )
+          var expectedCreateOpts = {
+            Labels: ctx.mockLabels,
+            Env: ctx.mockInstance.env.concat([
+              'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash
+            ]),
+            Image: ctx.mockContextVersion.build.dockerTag,
+            HostConfig: {
+              Memory: process.env.CONTAINER_NON_REPO_MEMORY_LIMIT_BYTES
             }
           }
           sinon.assert.calledWith(
@@ -1030,45 +1074,69 @@ describe('docker: ' + moduleName, function () {
       done()
     })
 
-    it('should startContainer', function (done) {
+    it('should startContainer with repo limit', function (done) {
       var testId = '123'
-      var testOwner = 'asdf'
-      var testOpts = { Labels: 'test' }
+      var testCv = {
+        appCodeVersions: [{
+          repo: 'github.com/user/repo2',
+          privateKey: 'private2'
+        }]
+      }
       model.startContainer.yieldsAsync()
 
-      model.startUserContainer(testId, testOwner, testOpts, function (err) {
+      model.startUserContainer(testId, testCv, function (err) {
         if (err) { return done(err) }
         sinon.assert.calledOnce(model.startContainer)
         sinon.assert.calledWith(model.startContainer,
-          testId,
-          put(testOpts, {
+          testId, {
             HostConfig: {
               PublishAllPorts: true,
-              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+              Memory: process.env.CONTAINER_REPO_MEMORY_LIMIT_BYTES
             }
-          }))
+          })
+        done()
+      })
+    })
+
+    it('should startContainer with non-repo limit', function (done) {
+      var testId = '123'
+      var testCv = {
+        appCodeVersions: []
+      }
+      model.startContainer.yieldsAsync()
+
+      model.startUserContainer(testId, testCv, function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(model.startContainer)
+        sinon.assert.calledWith(model.startContainer,
+          testId, {
+            HostConfig: {
+              PublishAllPorts: true,
+              Memory: process.env.CONTAINER_NON_REPO_MEMORY_LIMIT_BYTES
+            }
+          })
         done()
       })
     })
 
     it('should cb startContainer error', function (done) {
       var testId = '123'
-      var testOwner = 'asdf'
-      var testOpts = { Labels: 'test' }
       var testErr = 'viking'
+      var testCv = {
+        appCodeVersions: []
+      }
       model.startContainer.yieldsAsync(testErr)
 
-      model.startUserContainer(testId, testOwner, testOpts, function (err) {
+      model.startUserContainer(testId, testCv, function (err) {
         expect(err).to.equal(testErr)
         sinon.assert.calledOnce(model.startContainer)
         sinon.assert.calledWith(model.startContainer,
-          testId,
-          put(testOpts, {
+          testId, {
             HostConfig: {
               PublishAllPorts: true,
-              Memory: process.env.CONTAINER_MEMORY_LIMIT_BYTES
+              Memory: process.env.CONTAINER_NON_REPO_MEMORY_LIMIT_BYTES
             }
-          }))
+          })
         done()
       })
     })

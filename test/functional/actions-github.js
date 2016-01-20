@@ -33,8 +33,9 @@ var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
 var request = require('request')
-var sinon = require('sinon')
 var rabbitMQ = require('models/rabbitmq')
+var userWhitelist = require('models/mongo/user-whitelist')
+var sinon = require('sinon')
 
 describe('Github - /actions/github', function () {
   var ctx = {}
@@ -171,6 +172,14 @@ describe('Github - /actions/github', function () {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting
       done()
     })
+    beforeEach(function (done) {
+      sinon.stub(userWhitelist, 'findOne').yieldsAsync(null, {})
+      done()
+    })
+    afterEach(function (done) {
+      userWhitelist.findOne.restore()
+      done()
+    })
 
     it('should return message that we cannot handle tags events', function (done) {
       var options = hooks().push
@@ -200,30 +209,6 @@ describe('Github - /actions/github', function () {
     })
   })
 
-  describe('wrong protocol: use https', function () {
-    beforeEach(function (done) {
-      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS
-      process.env.ASSERT_HTTPS = 'true'
-      process.env.ENABLE_GITHUB_HOOKS = 'true'
-      done()
-    })
-    afterEach(function (done) {
-      process.env.ASSERT_HTTPS = 'false'
-      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting
-      done()
-    })
-
-    it('should return message that http is not supported', function (done) {
-      var options = hooks().issue_comment
-      request.post(options, function (err, res, body) {
-        if (err) { return done(err) }
-        expect(res.statusCode).to.equal(403)
-        expect(body).to.equal('We do not support http, use https')
-        done()
-      })
-    })
-  })
-
   describe('push event', function () {
     var ctx = {}
     beforeEach(function (done) {
@@ -235,6 +220,14 @@ describe('Github - /actions/github', function () {
     afterEach(function (done) {
       process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting
       ctx.mixPanelStub.restore()
+      done()
+    })
+    beforeEach(function (done) {
+      sinon.stub(userWhitelist, 'findOne').yieldsAsync(null, {})
+      done()
+    })
+    afterEach(function (done) {
+      userWhitelist.findOne.restore()
       done()
     })
 
@@ -269,6 +262,25 @@ describe('Github - /actions/github', function () {
           done()
         })
       })
+
+    it('should return a 403 if the repo owner is not whitelisted', function (done) {
+      // No org whitelisted
+      userWhitelist.findOne.yieldsAsync(null, null)
+
+      var data = {
+        branch: 'some-branch',
+        repo: 'some-repo',
+        ownerId: 3217371238,
+        owner: 'anton'
+      }
+      var options = hooks(data).push
+      request.post(options, function (err, res, body) {
+        if (err) { return done(err) }
+        expect(res.statusCode).to.equal(403)
+        expect(body).to.match(/repo.*owner.*registered/i)
+        done()
+      })
+    })
 
     describe('autofork', function () {
       var slackStub

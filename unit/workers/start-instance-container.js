@@ -86,6 +86,60 @@ describe('StartInstanceContainerWorker: ' + moduleName, function () {
     done()
   })
 
+  describe('handle', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.worker, '_baseWorkerFindInstance')
+      sinon.stub(ctx.worker, '_baseWorkerFindUser')
+      sinon.stub(ctx.worker, '_setInstanceStateStarting')
+      sinon.stub(ctx.worker, '_baseWorkerFindContextVersion')
+      sinon.stub(ctx.worker, '_startContainer')
+      sinon.stub(ctx.worker, '_finalSeriesHandler')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.worker._baseWorkerFindInstance.restore()
+      ctx.worker._baseWorkerFindUser.restore()
+      ctx.worker._setInstanceStateStarting.restore()
+      ctx.worker._baseWorkerFindContextVersion.restore()
+      ctx.worker._startContainer.restore()
+      ctx.worker._finalSeriesHandler.restore()
+      done()
+    })
+
+    it('should call correct flow', function (done) {
+      ctx.worker._baseWorkerFindInstance.yieldsAsync()
+      ctx.worker._baseWorkerFindUser.yieldsAsync()
+      ctx.worker._setInstanceStateStarting.yieldsAsync()
+      ctx.worker._baseWorkerFindContextVersion.yieldsAsync()
+      ctx.worker._startContainer.yieldsAsync()
+      ctx.worker._finalSeriesHandler.yieldsAsync()
+      ctx.worker.instance = {
+        contextVersion: 'version'
+      }
+      ctx.worker.data.sessionUserGithubId = 'testid'
+
+      ctx.worker.handle(function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(ctx.worker._baseWorkerFindInstance)
+        sinon.assert.calledWith(ctx.worker._baseWorkerFindInstance, {
+          '_id': ctx.worker.data.instanceId,
+          'container.dockerContainer': ctx.worker.data.dockerContainer
+        })
+        sinon.assert.calledOnce(ctx.worker._baseWorkerFindUser)
+        sinon.assert.calledWith(ctx.worker._baseWorkerFindUser, ctx.worker.data.sessionUserGithubId)
+        sinon.assert.calledOnce(ctx.worker._setInstanceStateStarting)
+        sinon.assert.calledOnce(ctx.worker._baseWorkerFindContextVersion)
+        sinon.assert.calledWith(ctx.worker._baseWorkerFindContextVersion, {
+          '_id': ctx.worker.instance.contextVersion
+        })
+        sinon.assert.calledOnce(ctx.worker._startContainer)
+        sinon.assert.calledOnce(ctx.worker._finalSeriesHandler)
+        done()
+      })
+    })
+  }) // end handle
+
   describe('_finalSeriesHandler', function () {
     describe('failure without instance', function () {
       beforeEach(function (done) {
@@ -187,6 +241,7 @@ describe('StartInstanceContainerWorker: ' + moduleName, function () {
     beforeEach(function (done) {
       // normally set by _findInstance & _findUser
       ctx.worker.instance = ctx.mockInstance
+      ctx.worker.contextVersion = { cv: 'test' }
       ctx.worker.user = ctx.mockUser
       done()
     })
@@ -205,8 +260,11 @@ describe('StartInstanceContainerWorker: ' + moduleName, function () {
       it('should callback successfully if container start', function (done) {
         ctx.worker._startContainer(function (err) {
           expect(err).to.be.null()
-          expect(Docker.prototype.startUserContainer.callCount).to.equal(1)
-          expect(ctx.removeStartingStoppingStatesSpy.callCount).to.equal(1)
+          sinon.assert.calledOnce(Docker.prototype.startUserContainer)
+          sinon.assert.calledWith(Docker.prototype.startUserContainer,
+            ctx.worker.data.dockerContainer,
+            ctx.worker.contextVersion)
+          sinon.assert.calledOnce(ctx.removeStartingStoppingStatesSpy)
           done()
         })
       })
