@@ -4,10 +4,15 @@ var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
+var beforeEach = lab.beforeEach
+var afterEach = lab.afterEach
+
 var Code = require('code')
 var expect = Code.expect
+var sinon = require('sinon')
 
 var githubActions = require('routes/actions/github')
+var UserWhitelist = require('models/mongo/user-whitelist')
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
@@ -145,6 +150,46 @@ describe('GitHub Actions: ' + moduleName, function () {
         expect(req.githubPushInfo.commitLog.length).to.equal(1)
         expect(req.githubPushInfo.commitLog[0]).to.equal(headCommit)
         expect(req.githubPushInfo.user).to.equal(sender)
+        done()
+      })
+    })
+  })
+
+  describe('checkRepoOwnerOrgIsWhitelisted', function () {
+    beforeEach(function (done) {
+      sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, { _id: 'some-id'})
+      done()
+    })
+    afterEach(function (done) {
+      UserWhitelist.findOne.restore()
+      done()
+    })
+
+    it('should next with error if db call failed', function (done) {
+      var mongoErr = new Error('Mongo error')
+      UserWhitelist.findOne.yieldsAsync(mongoErr)
+      var req = {
+        githubPushInfo: {
+          repoOwnerOrgName: 'CodeNow'
+        }
+      }
+      githubActions.checkRepoOwnerOrgIsWhitelisted(req, {}, function (err) {
+        expect(err).to.equal(mongoErr)
+        sinon.assert.calledOnce(UserWhitelist.findOne)
+        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
+        done()
+      })
+    })
+    it('should next without error if everything worked', function (done) {
+      var req = {
+        githubPushInfo: {
+          repoOwnerOrgName: 'CodeNow'
+        }
+      }
+      githubActions.checkRepoOwnerOrgIsWhitelisted(req, {}, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(UserWhitelist.findOne)
+        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
         done()
       })
     })
