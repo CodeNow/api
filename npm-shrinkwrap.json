@@ -2,7 +2,7 @@
   "name": "api",
   "version": "6.14.1",
   "npm-shrinkwrap-version": "5.4.1",
-  "node-version": "v0.10.40",
+  "node-version": "v0.10.38",
   "dependencies": {
     "101": {
       "version": "1.2.0",
@@ -26,7 +26,6 @@
     },
     "Filibuster": {
       "version": "0.1.6",
-      "from": "Filibuster@git://github.com/Runnable/Filibuster.git#b7d1da2bab9c694bb1892f20c29edfb21c79c44e",
       "resolved": "git://github.com/Runnable/Filibuster.git#b7d1da2bab9c694bb1892f20c29edfb21c79c44e",
       "dependencies": {
         "commander": {
@@ -1065,6 +1064,10 @@
         }
       }
     },
+    "deep-equal": {
+      "version": "1.0.1",
+      "resolved": "https://registry.npmjs.org/deep-equal/-/deep-equal-1.0.1.tgz"
+    },
     "defaults": {
       "version": "1.0.2",
       "resolved": "https://registry.npmjs.org/defaults/-/defaults-1.0.2.tgz",
@@ -1103,7 +1106,6 @@
     },
     "docker-listener": {
       "version": "1.0.0",
-      "from": "docker-listener@git+ssh://git@github.com/codenow/docker-listener.git#f5bc482eddff45f3511bc22a2ca61f5d7e6ae032",
       "resolved": "git+ssh://git@github.com/codenow/docker-listener.git#f5bc482eddff45f3511bc22a2ca61f5d7e6ae032",
       "dependencies": {
         "boom": {
@@ -1250,7 +1252,6 @@
         },
         "runnable-hermes": {
           "version": "6.4.0",
-          "from": "runnable-hermes@git://github.com/Runnable/hermes.git#9c838be6e6b8bd94c8f9c50403913e7a44c43844",
           "resolved": "git://github.com/Runnable/hermes.git#9c838be6e6b8bd94c8f9c50403913e7a44c43844",
           "dependencies": {
             "101": {
@@ -2053,7 +2054,6 @@
     },
     "github": {
       "version": "0.2.4",
-      "from": "github@git+ssh://git@github.com/podviaznikov/node-github.git#66dc2d069c59585cc166d87472fb22f7573f9ff5",
       "resolved": "git+ssh://git@github.com/podviaznikov/node-github.git#66dc2d069c59585cc166d87472fb22f7573f9ff5",
       "dependencies": {
         "mime": {
@@ -2196,7 +2196,6 @@
     },
     "krain": {
       "version": "0.0.9",
-      "from": "krain@git+ssh://git@github.com/CodeNow/krain.git#8bd1cfb942a600a86087c4b70297c2ef721fa390",
       "resolved": "git+ssh://git@github.com/CodeNow/krain.git#8bd1cfb942a600a86087c4b70297c2ef721fa390",
       "dependencies": {
         "body-parser": {
@@ -3351,7 +3350,6 @@
     },
     "navi-entry": {
       "version": "3.0.2",
-      "from": "navi-entry@git+ssh://git@github.com/CodeNow/navi-entry.git#1b7c920e271c96b3c66fb7ae677ac31b2a7d0274",
       "resolved": "git+ssh://git@github.com/CodeNow/navi-entry.git#1b7c920e271c96b3c66fb7ae677ac31b2a7d0274",
       "dependencies": {
         "101": {
@@ -3452,7 +3450,6 @@
         },
         "runnable-hostname": {
           "version": "1.0.3",
-          "from": "runnable-hostname@git+ssh://git@github.com/CodeNow/runnable-hostname.git#0a398da475d83b5960d6e3567f6cf2cf5bafe5bc",
           "resolved": "git+ssh://git@github.com/CodeNow/runnable-hostname.git#0a398da475d83b5960d6e3567f6cf2cf5bafe5bc",
           "dependencies": {
             "101": {
@@ -3485,7 +3482,6 @@
     },
     "newrelic": {
       "version": "1.24.0",
-      "from": "newrelic@git+ssh://git@github.com/runnable/node-newrelic.git#6e53a76abd3827667ad1ad9076e57b8399257d1c",
       "resolved": "git+ssh://git@github.com/runnable/node-newrelic.git#6e53a76abd3827667ad1ad9076e57b8399257d1c",
       "dependencies": {
         "https-proxy-agent": {
@@ -4068,7 +4064,6 @@
     },
     "optimus": {
       "version": "1.0.0",
-      "from": "optimus@git+ssh://git@github.com/CodeNow/optimus.git#1151ec009c2c24df4865678126618c2732182403",
       "resolved": "git+ssh://git@github.com/CodeNow/optimus.git#1151ec009c2c24df4865678126618c2732182403",
       "dependencies": {
         "101": {
@@ -4281,7 +4276,6 @@
             },
             "browser-request": {
               "version": "0.3.5",
-              "from": "browser-request@git://github.com/runnable/browser-request.git#80bcaba1413cd246f8221394a84f243fe58bbc70",
               "resolved": "git://github.com/runnable/browser-request.git#80bcaba1413cd246f8221394a84f243fe58bbc70",
               "dependencies": {
                 "qs": {
@@ -4994,7 +4988,6 @@
     },
     "runnable": {
       "version": "4.7.1",
-      "from": "runnable@git+ssh://git@github.com/CodeNow/runnable-api-client.git#a57b8b4a733b3f3f4116e763cf0a367f03d3bff8",
       "resolved": "git+ssh://git@github.com/CodeNow/runnable-api-client.git#a57b8b4a733b3f3f4116e763cf0a367f03d3bff8",
       "dependencies": {
         "boom": {
@@ -5021,7 +5014,6 @@
         },
         "runnable-hostname": {
           "version": "1.0.4",
-          "from": "runnable-hostname@git+ssh://git@github.com/CodeNow/runnable-hostname.git#6b22c29345f63730b99c6c5eb9860249a1113c73",
           "resolved": "git+ssh://git@github.com/CodeNow/runnable-hostname.git#6b22c29345f63730b99c6c5eb9860249a1113c73",
           "dependencies": {
             "101": {
@@ -5150,7 +5142,6 @@
             },
             "browser-request": {
               "version": "0.3.5",
-              "from": "browser-request@git://github.com/runnable/browser-request.git#80bcaba1413cd246f8221394a84f243fe58bbc70",
               "resolved": "git://github.com/runnable/browser-request.git#80bcaba1413cd246f8221394a84f243fe58bbc70",
               "dependencies": {
                 "qs": {
@@ -5251,7 +5242,6 @@
     },
     "runnable-hermes": {
       "version": "6.4.0",
-      "from": "runnable-hermes@git://github.com/Runnable/hermes.git#9c838be6e6b8bd94c8f9c50403913e7a44c43844",
       "resolved": "git://github.com/Runnable/hermes.git#9c838be6e6b8bd94c8f9c50403913e7a44c43844",
       "dependencies": {
         "101": {
@@ -5342,7 +5332,6 @@
     },
     "runnable-hostname": {
       "version": "1.0.4",
-      "from": "runnable-hostname@git+ssh://git@github.com/CodeNow/runnable-hostname.git#6b22c29345f63730b99c6c5eb9860249a1113c73",
       "resolved": "git+ssh://git@github.com/CodeNow/runnable-hostname.git#6b22c29345f63730b99c6c5eb9860249a1113c73",
       "dependencies": {
         "101": {
