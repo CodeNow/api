@@ -57,6 +57,42 @@ describe('Context Version: ' + moduleName, function () {
     done()
   })
 
+  describe('getMemoryLimit', function () {
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'getMainAppCodeVersion')
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.getMainAppCodeVersion.restore()
+      done()
+    })
+
+    it('should set repo memory limit', function (done) {
+      var testAcv = [{ test: 1 }]
+      ContextVersion.getMainAppCodeVersion.returns({ some: 'thing' })
+
+      var out = ContextVersion.getMemoryLimit(testAcv)
+
+      expect(out).to.equal(process.env.CONTAINER_REPO_MEMORY_LIMIT_BYTES)
+      sinon.assert.calledOnce(ContextVersion.getMainAppCodeVersion)
+      sinon.assert.calledWith(ContextVersion.getMainAppCodeVersion, testAcv)
+      done()
+    })
+
+    it('should set non-repo memory limit', function (done) {
+      var testAcv = [{ test: 1 }]
+      ContextVersion.getMainAppCodeVersion.returns(null)
+
+      var out = ContextVersion.getMemoryLimit(testAcv)
+
+      expect(out).to.equal(process.env.CONTAINER_NON_REPO_MEMORY_LIMIT_BYTES)
+      sinon.assert.calledOnce(ContextVersion.getMainAppCodeVersion)
+      sinon.assert.calledWith(ContextVersion.getMainAppCodeVersion, testAcv)
+      done()
+    })
+  }) // end getMemoryLimit
+
   describe('updateBuildErrorByBuildId', function () {
     beforeEach(function (done) {
       sinon.stub(ContextVersion, 'updateBy').yields()

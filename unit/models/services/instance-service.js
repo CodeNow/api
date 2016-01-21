@@ -254,11 +254,13 @@ describe('InstanceService: ' + moduleName, function () {
           done()
         })
       })
+
       afterEach(function (done) {
         // cache invalidation should be always called
         expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true()
         done()
       })
+
       it('should return modified instance from database', function (done) {
         InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.2',
           function (err, updated) {
@@ -274,6 +276,7 @@ describe('InstanceService: ' + moduleName, function () {
           })
       })
     })
+
     describe('without db calls', function () {
       var ctx = {}
 
@@ -337,6 +340,7 @@ describe('InstanceService: ' + moduleName, function () {
           done()
         })
       })
+
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
         InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
@@ -346,6 +350,7 @@ describe('InstanceService: ' + moduleName, function () {
           done()
         })
       })
+
       it('should return modified instance', function (done) {
         var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
@@ -403,11 +408,13 @@ describe('InstanceService: ' + moduleName, function () {
           done()
         })
       })
+
       afterEach(function (done) {
         // cache invalidation should be always called
         expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true()
         done()
       })
+
       it('should return modified instance from database', function (done) {
         InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect,
           function (err, updated) {
@@ -422,6 +429,7 @@ describe('InstanceService: ' + moduleName, function () {
           })
       })
     })
+
     describe('without db calls', function () {
       var ctx = {}
 
@@ -484,6 +492,7 @@ describe('InstanceService: ' + moduleName, function () {
           done()
         })
       })
+
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
         InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
@@ -493,6 +502,7 @@ describe('InstanceService: ' + moduleName, function () {
           done()
         })
       })
+
       it('should return modified instance', function (done) {
         var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
@@ -531,6 +541,7 @@ describe('InstanceService: ' + moduleName, function () {
       }
       done()
     })
+
     afterEach(function (done) {
       InstanceService._findInstanceAndContextVersion.restore()
       InstanceService._createDockerContainer.restore()
@@ -538,6 +549,7 @@ describe('InstanceService: ' + moduleName, function () {
       joi.validateOrBoom.restore()
       done()
     })
+
     describe('success', function () {
       beforeEach(function (done) {
         sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
@@ -587,10 +599,12 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.stub(joi, 'validateOrBoom').yieldsAsync(ctx.err)
           done()
         })
+
         it('should callback the error', function (done) {
           InstanceService.createContainer(ctx.opts, expectErr(ctx.err, done))
         })
       })
+
       describe('_findInstanceAndContextVersion error', function () {
         beforeEach(function (done) {
           sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
@@ -604,6 +618,7 @@ describe('InstanceService: ' + moduleName, function () {
           InstanceService.createContainer(ctx.opts, expectErr(ctx.err, done))
         })
       })
+
       describe('_createDockerContainer error', function () {
         beforeEach(function (done) {
           sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
@@ -613,10 +628,12 @@ describe('InstanceService: ' + moduleName, function () {
           InstanceService._createDockerContainer.yieldsAsync(ctx.err)
           done()
         })
+
         it('should callback the error', function (done) {
           InstanceService.createContainer(ctx.opts, expectErr(ctx.err, done))
         })
       })
+
       describe('contextVersion.handleRecovery error', function () {
         beforeEach(function (done) {
           sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
@@ -657,6 +674,7 @@ describe('InstanceService: ' + moduleName, function () {
       sinon.stub(Instance, 'findOneByShortHash').yieldsAsync(null, {})
       done()
     })
+
     afterEach(function (done) {
       ContextVersion.findById.restore()
       Instance.findOne.restore()
@@ -691,6 +709,7 @@ describe('InstanceService: ' + moduleName, function () {
         })
       })
     })
+
     describe('forked instance', function () {
       beforeEach(function (done) {
         ContextVersion.findById.yieldsAsync(null, ctx.mockContextVersion)
@@ -720,6 +739,7 @@ describe('InstanceService: ' + moduleName, function () {
           done()
         })
       })
+
       it('should return error if parent call failed', function (done) {
         var fetchErr = new Error('Mongo error')
         Instance.findOneByShortHash.yieldsAsync(fetchErr)
@@ -739,6 +759,7 @@ describe('InstanceService: ' + moduleName, function () {
           done()
         })
       })
+
       it('should return error if parent was not found', function (done) {
         Instance.findOneByShortHash.yieldsAsync(null, null)
         InstanceService._findInstanceAndContextVersion(ctx.opts, function (err, data) {
@@ -759,6 +780,7 @@ describe('InstanceService: ' + moduleName, function () {
         })
       })
     })
+
     describe('errors', function () {
       describe('Instance not found', function () {
         beforeEach(function (done) {
@@ -807,6 +829,7 @@ describe('InstanceService: ' + moduleName, function () {
           Instance.findOne.yieldsAsync(null, ctx.mockInstance)
           done()
         })
+
         it('should callback 409 error', function (done) {
           InstanceService._findInstanceAndContextVersion(ctx.opts, function (err) {
             expect(err).to.exist()
@@ -862,6 +885,7 @@ describe('InstanceService: ' + moduleName, function () {
       sinon.stub(Docker.prototype, 'createUserContainer')
       done()
     })
+
     afterEach(function (done) {
       Docker.prototype.createUserContainer.restore()
       done()
@@ -910,6 +934,7 @@ describe('InstanceService: ' + moduleName, function () {
           Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer)
           done()
         })
+
         afterEach(function (done) {
           Instance.prototype.modifyContainerCreateErr.restore()
           done()
@@ -956,6 +981,7 @@ describe('InstanceService: ' + moduleName, function () {
           })
         })
       })
+
       describe('"image not found" for create err', function () {
         beforeEach(function (done) {
           ctx.err = Boom.notFound('Image not found')
@@ -964,6 +990,7 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.stub(Docker, 'isImageNotFoundForCreateErr').returns(true)
           done()
         })
+
         afterEach(function (done) {
           Docker.isImageNotFoundForCreateErr.restore()
           done()
@@ -980,6 +1007,7 @@ describe('InstanceService: ' + moduleName, function () {
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       done()
     })
+
     afterEach(function (done) {
       Instance.prototype.isNotStartingOrStoppingAsync.restore()
       Instance.prototype.setContainerStateToStartingAsync.restore()
@@ -987,6 +1015,7 @@ describe('InstanceService: ' + moduleName, function () {
       rabbitMQ.redeployInstanceContainer.restore()
       done()
     })
+
     it('should fail if instance has not container', function (done) {
       InstanceService.startInstance({}, 21331).asCallback(function (err) {
         expect(err.message).to.equal('Instance does not have a container')
@@ -997,6 +1026,7 @@ describe('InstanceService: ' + moduleName, function () {
         done()
       })
     })
+
     it('should fail isNotStartingOrStoppingAsync failed', function (done) {
       var testErr = new Error('Mongo error')
       var rejectionPromise = Promise.reject(testErr)
@@ -1012,6 +1042,7 @@ describe('InstanceService: ' + moduleName, function () {
         done()
       })
     })
+
     it('should fail setContainerStateToStartingAsync failed', function (done) {
       var testErr = new Error('Mongo error')
       var rejectionPromise = Promise.reject(testErr)
@@ -1027,6 +1058,7 @@ describe('InstanceService: ' + moduleName, function () {
         done()
       })
     })
+
     it('should pass', function (done) {
       var instance = createNewInstance('testy', {})
       var sessionUserGithubId = 21331
@@ -1047,6 +1079,7 @@ describe('InstanceService: ' + moduleName, function () {
         done()
       })
     })
+
     it('should call redeploy', function (done) {
       var sessionUserGithubId = 21331
       var instance = createNewInstance('testy', { dockRemoved: true })
@@ -1224,17 +1257,20 @@ describe('InstanceService: ' + moduleName, function () {
         })
     })
   })
+
   describe('#deleteAllInstanceForks', function () {
     beforeEach(function (done) {
       sinon.stub(Instance, 'findInstancesByParent')
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       done()
     })
+
     afterEach(function (done) {
       Instance.findInstancesByParent.restore()
       rabbitMQ.deleteInstance.restore()
       done()
     })
+
     it('should return immediately if masterPod !== true', function (done) {
       InstanceService.deleteAllInstanceForks({
         _id: '507f1f77bcf86cd799439011',
@@ -1266,7 +1302,7 @@ describe('InstanceService: ' + moduleName, function () {
         done()
       })
     })
-    //
+
     it('should create new jobs', function (done) {
       Instance.findInstancesByParent.yieldsAsync(null, [{_id: '507f1f77bcf86cd799439012'}, {_id: '507f1f77bcf86cd799439013'}])
       InstanceService.deleteAllInstanceForks({
