@@ -55,7 +55,7 @@ then
     then
       e=$numTests
     fi
-    indexes="-i $s-$e"
+    indexes="-i 189-195"
     echo "indexes $indexes"
   fi
 fi
