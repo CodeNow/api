@@ -34,7 +34,7 @@ var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
 var request = require('request')
 var rabbitMQ = require('models/rabbitmq')
-var userWhitelist = require('models/mongo/user-whitelist')
+var UserWhitelist = require('models/mongo/user-whitelist')
 var sinon = require('sinon')
 
 describe('Github - /actions/github', function () {
@@ -173,11 +173,11 @@ describe('Github - /actions/github', function () {
       done()
     })
     beforeEach(function (done) {
-      sinon.stub(userWhitelist, 'findOne').yieldsAsync(null, {})
+      sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, {})
       done()
     })
     afterEach(function (done) {
-      userWhitelist.findOne.restore()
+      UserWhitelist.findOne.restore()
       done()
     })
 
@@ -188,6 +188,8 @@ describe('Github - /actions/github', function () {
         if (err) { return done(err) }
         expect(res.statusCode).to.equal(202)
         expect(body).to.equal("Cannot handle tags' related events")
+        sinon.assert.calledOnce(UserWhitelist.findOne)
+        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'podviaznikov' })
         done()
       })
     })
@@ -204,6 +206,8 @@ describe('Github - /actions/github', function () {
           .to.equal(options.headers['x-github-event'])
         expect(rabbitMQ.publishGithubEvent.firstCall.args[2])
           .to.deep.equal(options.json)
+        sinon.assert.calledOnce(UserWhitelist.findOne)
+        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'podviaznikov' })
         done()
       })
     })
@@ -223,11 +227,11 @@ describe('Github - /actions/github', function () {
       done()
     })
     beforeEach(function (done) {
-      sinon.stub(userWhitelist, 'findOne').yieldsAsync(null, {})
+      sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, {})
       done()
     })
     afterEach(function (done) {
-      userWhitelist.findOne.restore()
+      UserWhitelist.findOne.restore()
       done()
     })
 
@@ -242,6 +246,8 @@ describe('Github - /actions/github', function () {
           .to.equal(options.headers['x-github-event'])
         expect(rabbitMQ.publishGithubEvent.firstCall.args[2])
           .to.deep.equal(options.json)
+        sinon.assert.calledOnce(UserWhitelist.findOne)
+        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'podviaznikov' })
         done()
       })
     })
@@ -265,7 +271,7 @@ describe('Github - /actions/github', function () {
 
     it('should return a 403 if the repo owner is not whitelisted', function (done) {
       // No org whitelisted
-      userWhitelist.findOne.yieldsAsync(null, null)
+      UserWhitelist.findOne.yieldsAsync(null, null)
 
       var data = {
         branch: 'some-branch',
@@ -277,7 +283,9 @@ describe('Github - /actions/github', function () {
       request.post(options, function (err, res, body) {
         if (err) { return done(err) }
         expect(res.statusCode).to.equal(403)
-        expect(body).to.match(/repo.*owner.*registered/i)
+        expect(body).to.match(/Repo owner is not registered in Runnable/i)
+        sinon.assert.calledOnce(UserWhitelist.findOne)
+        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'anton' })
         done()
       })
     })
@@ -331,6 +339,8 @@ describe('Github - /actions/github', function () {
           if (err) { return done(err) }
           expect(res.statusCode).to.equal(202)
           expect(body).to.equal('Autoforking of instances on branch push is disabled for now')
+          sinon.assert.calledOnce(UserWhitelist.findOne)
+          sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: sinon.match.string })
           finishAllIncompleteVersions(done)
         })
       })
@@ -368,6 +378,8 @@ describe('Github - /actions/github', function () {
             expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true)
             var forkedInstance = slackStub.args[0][1]
             expect(forkedInstance.name).to.equal('feature-1-' + ctx.instance.attrs.name)
+            sinon.assert.calledOnce(UserWhitelist.findOne)
+            sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'anton' })
             done()
           })
           request.post(options, function (err, res, cvIds) {
@@ -388,6 +400,8 @@ describe('Github - /actions/github', function () {
               if (err) { return done(err) }
               expect(res.statusCode).to.equal(202)
               expect(body).to.equal('No appropriate work to be done finishing.')
+              sinon.assert.calledOnce(UserWhitelist.findOne)
+              sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'podviaznikov' })
               done()
             })
           })
@@ -439,6 +453,8 @@ describe('Github - /actions/github', function () {
               expect(cvIds).to.exist()
               expect(cvIds).to.be.an.array()
               expect(cvIds).to.have.length(1)
+              sinon.assert.calledOnce(UserWhitelist.findOne)
+              sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: sinon.match.string })
               finishAllIncompleteVersions()
             })
           })
@@ -505,6 +521,8 @@ describe('Github - /actions/github', function () {
             if (err) { return done(err) }
             expect(res.statusCode).to.equal(202)
             expect(body).to.equal('No instances should be deployed')
+            sinon.assert.calledOnce(UserWhitelist.findOne)
+            sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: sinon.match.string })
             done()
           })
         })
@@ -551,6 +569,8 @@ describe('Github - /actions/github', function () {
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err) }
               ctx.instance2.fetch(expects.success(200, expected, function () {
+                sinon.assert.calledOnce(UserWhitelist.findOne)
+                sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: sinon.match.string })
                 done()
               }))
             }))
@@ -582,6 +602,8 @@ describe('Github - /actions/github', function () {
         request.post(options, function (err) {
           if (err) { return done(err) }
           Mixpanel.prototype.track.restore()
+          sinon.assert.calledOnce(UserWhitelist.findOne)
+          sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: sinon.match.string })
           done()
         })
       })
