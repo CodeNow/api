@@ -245,12 +245,23 @@ function buildTheVersionTests (ctx) {
           })
 
           it('should NOT dedupe if runnable specific error occured', function (done) {
-            ctx.cv2.build(function (err) {
-              if (err) { return done(err) }
-              expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build)
-              expect(ctx.cv.attrs.build.dockerContainer).to.not.equal(ctx.cv2.attrs.build.dockerContainer)
-              expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
+            var domain = require('domain')
+            var workerDomain = domain.create()
+            workerDomain.on('error', function (err) {
+              console.log('XXXXXX err', err)
               done()
+            })
+            workerDomain.run(function () {
+              ctx.cv2.build(function (err) {
+                if (err) {
+                  console.log('XXXX error', err)
+                  return done(err)
+                }
+                expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build)
+                expect(ctx.cv.attrs.build.dockerContainer).to.not.equal(ctx.cv2.attrs.build.dockerContainer)
+                expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
+                done()
+              })
             })
           })
         })
