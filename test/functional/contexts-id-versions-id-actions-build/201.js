@@ -25,19 +25,6 @@ var expects = require('../fixtures/expects')
 var multi = require('../fixtures/multi-factory')
 var primus = require('../fixtures/primus')
 
-var domain = require('domain')
-var a = function (log, fn) {
-  var workerDomain = domain.create()
-  workerDomain.on('error', function (err) {
-    console.log('XXXXXX err', log, err)
-    throw err
-  })
-  workerDomain.run(function () {
-    console.log('running', log)
-    fn()
-  })
-}
-
 describe('201 POST /contexts/:id/versions/:id/actions/build', function () {
   var ctx = {}
 
@@ -89,41 +76,34 @@ describe('201 POST /contexts/:id/versions/:id/actions/build', function () {
   })
   describe('for Org by member', function () {
     beforeEach(function (done) {
-      a('8', function () {
-        ctx.bodyOwner = {
-          github: 11111 // org id, requires mocks. (api-client.js)
-        } // user belongs to this org.
+      ctx.bodyOwner = {
+        github: 11111 // org id, requires mocks. (api-client.js)
+      } // user belongs to this org.
+      done()
+    })
+    beforeEach(function (done) {
+      multi.createContextVersion(ctx.bodyOwner.github, function (err, contextVersion, context, build, user) {
+        if (err) { return done(err) }
+        ctx.cv = contextVersion
+        ctx.user = user
         done()
       })
     })
-    beforeEach(function (done) {
-      a('7', function () {
-        multi.createContextVersion(ctx.bodyOwner.github, function (err, contextVersion, context, build, user) {
-          if (err) { return done(err) }
-          ctx.cv = contextVersion
-          ctx.user = user
-          done()
-        })
-      })
-    })
-    a('7.1', function () {
-      buildTheVersionTests(ctx)
-    })
+
+    buildTheVersionTests(ctx)
   })
 })
 
 function buildTheVersionTests (ctx) {
   describe('context version', function () {
     beforeEach(function (done) {
-      a('6', function () {
-        ctx.expected = ctx.cv.toJSON()
-        delete ctx.expected.build
-        ctx.expected['build._id'] = exists
-        ctx.expected['build.started'] = exists
-        ctx.expected['build.triggeredBy.github'] = ctx.user.attrs.accounts.github.id
-        ctx.expected['build.triggeredAction.manual'] = true
-        done()
-      })
+      ctx.expected = ctx.cv.toJSON()
+      delete ctx.expected.build
+      ctx.expected['build._id'] = exists
+      ctx.expected['build.started'] = exists
+      ctx.expected['build.triggeredBy.github'] = ctx.user.attrs.accounts.github.id
+      ctx.expected['build.triggeredAction.manual'] = true
+      done()
     })
 
     describe('with no appCodeVersions', function () {
@@ -219,77 +199,58 @@ function buildTheVersionTests (ctx) {
     function dedupeFirstBuildCompletedTest () {
       describe('deduped builds', function () {
         beforeEach(function (done) {
-          a('5', function () {
-            multi.createContextVersion(ctx.cv.attrs.owner.github, function (err, contextVersion, context, build, user) {
-              if (err) { return done(err) }
-              ctx.cv2 = contextVersion
-              ctx.user2 = user
-              done()
-            })
+          multi.createContextVersion(ctx.cv.attrs.owner.github, function (err, contextVersion, context, build, user) {
+            if (err) { return done(err) }
+            ctx.cv2 = contextVersion
+            ctx.user2 = user
+            done()
           })
         })
 
         beforeEach(function (done) {
-          a('4', function () {
-            if (ctx.noAppCodeVersions) {
-              ctx.cv2.appCodeVersions.models[0].destroy(done)
-            } else {
-              done()
-            }
-          })
+          if (ctx.noAppCodeVersions) {
+            ctx.cv2.appCodeVersions.models[0].destroy(done)
+          } else {
+            done()
+          }
         })
 
         describe('first build completed w/ error', function () {
           beforeEach(function (done) {
-            a('3', function () {
-              require('../fixtures/mocks/github/user')(ctx.user)
-              ctx.cv.build(expects.success(201, ctx.expected, function (err) {
-                console.log('XXX 1', err)
-                if (err) {
-                  return done(err)
-                }
-                waitForCvBuildToComplete(ctx.cv, function () {
-                  console.log('XXX 2')
-                  ContextVersion.findById(new ObjectId(ctx.cv.id()), function (err, cv) {
-                    console.log('XXX 3', err)
+            require('../fixtures/mocks/github/user')(ctx.user)
+            ctx.cv.build(expects.success(201, ctx.expected, function (err) {
+              if (err) { return done(err) }
+              waitForCvBuildToComplete(ctx.cv, function () {
+                ContextVersion.findById(new ObjectId(ctx.cv.id()), function (err, cv) {
+                  if (err) { return done(err) }
+                  cv.build.completed = new Date()
+                  cv.build.error = {
+                    message: 'Could not create container',
+                    stack: '...'
+                  }
+                  cv.save(function (err) {
                     if (err) { return done(err) }
-                    cv.build.completed = new Date()
-                    cv.build.error = {
-                      message: 'Could not create container',
-                      stack: '...'
-                    }
-                    cv.save(function (err) {
-                      console.log('XXX 4', err)
-                      if (err) { return done(err) }
-                      done()
-                    })
+                    done()
                   })
                 })
-              }))
-            })
+              })
+            }))
           })
 
           beforeEach(function (done) {
-            a('2', function () {
-              ctx.cv2 = ctx.cv.copy({qs: {deep: true}}, function (err) {
-                if (err) { return done(err) }
-                done()
-              })
+            ctx.cv2 = ctx.cv.copy({qs: {deep: true}}, function (err) {
+              if (err) { return done(err) }
+              done()
             })
           })
 
           it('should NOT dedupe if runnable specific error occured', function (done) {
-            a('1', function () {
-              ctx.cv2.build(function (err) {
-                if (err) {
-                  console.log('XXXX error', err)
-                  return done(err)
-                }
-                expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build)
-                expect(ctx.cv.attrs.build.dockerContainer).to.not.equal(ctx.cv2.attrs.build.dockerContainer)
-                expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
-                done()
-              })
+            ctx.cv2.build(function (err) {
+              if (err) { return done(err) }
+              expect(ctx.cv.attrs.build).to.not.deep.equal(ctx.cv2.attrs.build)
+              expect(ctx.cv.attrs.build.dockerContainer).to.not.equal(ctx.cv2.attrs.build.dockerContainer)
+              expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
+              done()
             })
           })
         })
