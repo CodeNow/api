@@ -244,9 +244,14 @@ function buildTheVersionTests (ctx) {
             a('3', function () {
               require('../fixtures/mocks/github/user')(ctx.user)
               ctx.cv.build(expects.success(201, ctx.expected, function (err) {
-                if (err) { return done(err) }
+                console.log('XXX 1', err)
+                if (err) {
+                  return done(err)
+                }
                 waitForCvBuildToComplete(ctx.cv, function () {
+                  console.log('XXX 2')
                   ContextVersion.findById(new ObjectId(ctx.cv.id()), function (err, cv) {
+                    console.log('XXX 3', err)
                     if (err) { return done(err) }
                     cv.build.completed = new Date()
                     cv.build.error = {
@@ -254,6 +259,7 @@ function buildTheVersionTests (ctx) {
                       stack: '...'
                     }
                     cv.save(function (err) {
+                      console.log('XXX 4', err)
                       if (err) { return done(err) }
                       done()
                     })
