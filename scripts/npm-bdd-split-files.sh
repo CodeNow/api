@@ -60,5 +60,5 @@ then
   fi
 fi
 
-DEBUG=* LOG_LEVEL_STDOUT=trace npm run _bdd -- --threshold 75 ${extra_args[@]} $indexes ${all_files[@]}
+DEBUG=her*,ponos* LOG_LEVEL_STDOUT=trace npm run _bdd -- --threshold 75 ${extra_args[@]} $indexes ${all_files[@]}
 exit $?
