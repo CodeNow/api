@@ -16,7 +16,6 @@ var expect = Code.expect
 var it = lab.it
 
 var ContextVersion = require('models/mongo/context-version')
-var OnInstanceContainerDie = require('workers/on-instance-container-die')
 var Mixpanel = require('models/apis/mixpanel')
 var PullRequest = require('models/apis/pullrequest')
 var Slack = require('notifications/slack')
@@ -77,14 +76,6 @@ describe('Github - /actions/github', function () {
   afterEach(function (done) {
     rabbitMQ.deleteInstance.restore()
     rabbitMQ.publishGithubEvent.restore()
-    done()
-  })
-  beforeEach(function (done) {
-    sinon.stub(OnInstanceContainerDie.prototype, 'handle').yieldsAsync()
-    done()
-  })
-  afterEach(function (done) {
-    OnInstanceContainerDie.prototype.handle.restore()
     done()
   })
 
