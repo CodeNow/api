@@ -280,6 +280,8 @@ function buildTheVersionTests (ctx) {
                         expect(ctx.cv.attrs.build.dockerContainer).to.equal(ctx.cv2.attrs.build.dockerContainer)
                         expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
                       } catch (err) {
+                        console.log('XXXX ctx.cv.attrs.build', ctx.cv.attrs.build, ctx.cv.attrs)
+                        console.log('XXXX ctx.cv2.attrs.build', ctx.cv2.attrs.build, ctx.cv2.attrs)
                         return done(err)
                       }
                       done()
