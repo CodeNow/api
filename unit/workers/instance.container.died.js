@@ -152,12 +152,13 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         done()
       })
     })
-    it('should fail if modifyExistingContainerInspect returned 404', function (done) {
-      var notFound = Boom.notFound('Instance not found')
-      InstanceService.modifyExistingContainerInspect.yieldsAsync(notFound)
+    it('should fail if modifyExistingContainerInspect returned 409', function (done) {
+      var conflictErr = Boom.conflict('Instance not found')
+      InstanceService.modifyExistingContainerInspect.yieldsAsync(conflictErr)
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(TaskFatalError)
+        expect(err.level).to.equal('warning')
         expect(err.message).to.equal('instance.container.died: Instance not found')
         sinon.assert.calledWith(InstanceService.modifyExistingContainerInspect,
           ctx.mockInstance._id, ctx.data.id, ctx.data.inspectData)
