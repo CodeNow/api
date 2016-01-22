@@ -275,9 +275,13 @@ function buildTheVersionTests (ctx) {
                     if (err) { return done(err) }
                     waitForCvBuildToComplete(ctx.cv2, function (err) {
                       if (err) { return done(err) }
-                      expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build)
-                      expect(ctx.cv.attrs.build.dockerContainer).to.equal(ctx.cv2.attrs.build.dockerContainer)
-                      expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
+                      try {
+                        expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build)
+                        expect(ctx.cv.attrs.build.dockerContainer).to.equal(ctx.cv2.attrs.build.dockerContainer)
+                        expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
+                      } catch (err) {
+                        return done(err)
+                      }
                       done()
                     })
                   })
