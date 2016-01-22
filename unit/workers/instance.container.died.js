@@ -83,7 +83,7 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
     done()
   })
   beforeEach(function (done) {
-    sinon.stub(Instance, 'findOneAsync').returns(ctx.mockInstance)
+    sinon.stub(Instance, 'findOneAsync').returns(Promise.resolve(ctx.mockInstance))
     sinon.stub(InstanceService, 'modifyExistingContainerInspect').yieldsAsync(null, ctx.mockInstance)
     sinon.stub(InstanceService, 'emitInstanceUpdate').returns()
     done()
@@ -105,7 +105,7 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         })
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.calledWith(InstanceService.modifyExistingContainerInspect,
-          ctx.mockInstance, ctx.data.id, ctx.data.inspectData)
+          ctx.mockInstance._id, ctx.data.id, ctx.data.inspectData)
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
           ctx.mockInstance, ctx.sessionUserGithubId, 'update', true)
@@ -196,7 +196,7 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         })
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.calledWith(InstanceService.modifyExistingContainerInspect,
-          ctx.mockInstance, ctx.data.id, ctx.data.inspectData)
+          ctx.mockInstance._id, ctx.data.id, ctx.data.inspectData)
         sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
         done()
       })
@@ -216,7 +216,7 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         })
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.calledWith(InstanceService.modifyExistingContainerInspect,
-          ctx.mockInstance, ctx.data.id, ctx.data.inspectData)
+          ctx.mockInstance._id, ctx.data.id, ctx.data.inspectData)
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
           ctx.mockInstance, ctx.sessionUserGithubId, 'update', true)

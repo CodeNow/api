@@ -218,7 +218,7 @@ describe('InstanceService: ' + moduleName, function () {
       beforeEach(function (done) {
         var instance = createNewInstance('testy', {})
         ctx.containerId = instance.container.dockerContainer
-        sinon.spy(instance, 'invalidateContainerDNS')
+        sinon.spy(Instance.prototype, 'invalidateContainerDNS')
         expect(instance.network.hostIp).to.equal('1.1.1.100')
         instance.save(function (err, instance) {
           if (err) { return done(err) }
@@ -257,12 +257,13 @@ describe('InstanceService: ' + moduleName, function () {
 
       afterEach(function (done) {
         // cache invalidation should be always called
-        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true()
+        // expect(Instance.prototype.invalidateContainerDNS.calledOnce).to.be.true()
+        Instance.prototype.invalidateContainerDNS.restore()
         done()
       })
 
       it('should return modified instance from database', function (done) {
-        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.2',
+        InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.2',
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id.toString()).to.equal(ctx.instance._id.toString())
@@ -311,13 +312,13 @@ describe('InstanceService: ' + moduleName, function () {
           }
         }
         ctx.containerId = ctx.instance.container.dockerContainer
-        sinon.spy(ctx.instance, 'invalidateContainerDNS')
+        sinon.spy(Instance.prototype, 'invalidateContainerDNS')
         done()
       })
 
       afterEach(function (done) {
         // cache invalidation should be always called
-        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true()
+        // expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true()
         expect(Instance.findOneAndUpdate.calledOnce).to.be.true()
         var query = Instance.findOneAndUpdate.getCall(0).args[0]
         var setQuery = Instance.findOneAndUpdate.getCall(0).args[1]
@@ -327,7 +328,7 @@ describe('InstanceService: ' + moduleName, function () {
         expect(setQuery.$set['container.inspect']).to.exist()
         expect(setQuery.$set['container.ports']).to.exist()
         expect(Object.keys(setQuery.$set).length).to.equal(3)
-        ctx.instance.invalidateContainerDNS.restore()
+        Instance.prototype.invalidateContainerDNS.restore()
         Instance.findOneAndUpdate.restore()
         done()
       })
@@ -335,7 +336,7 @@ describe('InstanceService: ' + moduleName, function () {
       it('should return an error if findOneAndUpdate failed', function (done) {
         var mongoErr = new Error('Mongo error')
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr)
-        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
+        InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
           expect(err.message).to.equal('Mongo error')
           done()
         })
@@ -343,7 +344,7 @@ describe('InstanceService: ' + moduleName, function () {
 
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
-        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
+        InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
           expect(err.output.statusCode).to.equal(409)
           var errMsg = "Container was not updated, instance's container has changed"
           expect(err.output.payload.message).to.equal(errMsg)
@@ -354,7 +355,7 @@ describe('InstanceService: ' + moduleName, function () {
       it('should return modified instance', function (done) {
         var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
-        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, '127.0.0.1',
+        InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1',
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id).to.equal(ctx.instance._id)
@@ -372,7 +373,7 @@ describe('InstanceService: ' + moduleName, function () {
       beforeEach(function (done) {
         var instance = createNewInstance('testy', {})
         ctx.containerId = instance.container.dockerContainer
-        sinon.spy(instance, 'invalidateContainerDNS')
+        sinon.spy(Instance.prototype, 'invalidateContainerDNS')
         expect(instance.network.hostIp).to.equal('1.1.1.100')
         instance.save(function (err, instance) {
           if (err) { return done(err) }
@@ -410,13 +411,13 @@ describe('InstanceService: ' + moduleName, function () {
       })
 
       afterEach(function (done) {
-        // cache invalidation should be always called
-        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true()
+        sinon.assert.calledOnce(Instance.prototype.invalidateContainerDNS)
+        Instance.prototype.invalidateContainerDNS.restore()
         done()
       })
 
       it('should return modified instance from database', function (done) {
-        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect,
+        InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect,
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id.toString()).to.equal(ctx.instance._id.toString())
@@ -464,13 +465,11 @@ describe('InstanceService: ' + moduleName, function () {
           }
         }
         ctx.containerId = ctx.instance.container.dockerContainer
-        sinon.spy(ctx.instance, 'invalidateContainerDNS')
+        sinon.spy(Instance.prototype, 'invalidateContainerDNS')
         done()
       })
 
       afterEach(function (done) {
-        // cache invalidation should be always called
-        expect(ctx.instance.invalidateContainerDNS.calledOnce).to.be.true()
         expect(Instance.findOneAndUpdate.calledOnce).to.be.true()
         var query = Instance.findOneAndUpdate.getCall(0).args[0]
         var setQuery = Instance.findOneAndUpdate.getCall(0).args[1]
@@ -479,7 +478,7 @@ describe('InstanceService: ' + moduleName, function () {
         expect(setQuery.$set['container.inspect']).to.exist()
         expect(setQuery.$set['container.ports']).to.exist()
         expect(Object.keys(setQuery.$set).length).to.equal(2)
-        ctx.instance.invalidateContainerDNS.restore()
+        Instance.prototype.invalidateContainerDNS.restore()
         Instance.findOneAndUpdate.restore()
         done()
       })
@@ -487,18 +486,20 @@ describe('InstanceService: ' + moduleName, function () {
       it('should return an error if findOneAndUpdate failed', function (done) {
         var mongoErr = new Error('Mongo error')
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(mongoErr)
-        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
+        InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, function (err) {
           expect(err.message).to.equal('Mongo error')
+          sinon.assert.notCalled(Instance.prototype.invalidateContainerDNS)
           done()
         })
       })
 
       it('should return an error if findOneAndUpdate returned nothing', function (done) {
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, null)
-        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect, function (err) {
+        InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, function (err) {
           expect(err.output.statusCode).to.equal(409)
           var errMsg = "Container was not updated, instance's container has changed"
           expect(err.output.payload.message).to.equal(errMsg)
+          sinon.assert.notCalled(Instance.prototype.invalidateContainerDNS)
           done()
         })
       })
@@ -506,11 +507,12 @@ describe('InstanceService: ' + moduleName, function () {
       it('should return modified instance', function (done) {
         var instance = new Instance({_id: ctx.instance._id, name: 'updated-instance'})
         sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, instance)
-        InstanceService.modifyExistingContainerInspect(ctx.instance, ctx.containerId, ctx.inspect,
+        InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect,
           function (err, updated) {
             expect(err).to.not.exist()
             expect(updated._id).to.equal(ctx.instance._id)
             expect(updated.name).to.equal(instance.name)
+            sinon.assert.calledOnce(Instance.prototype.invalidateContainerDNS)
             done()
           })
       })
