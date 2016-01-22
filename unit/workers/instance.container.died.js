@@ -12,7 +12,6 @@ var sinon = require('sinon')
 
 var InstanceContainerDied = require('workers/instance.container.died')
 var InstanceService = require('models/services/instance-service')
-var Instance = require('models/mongo/instance')
 var Promise = require('bluebird')
 var TaskFatalError = require('ponos').TaskFatalError
 
