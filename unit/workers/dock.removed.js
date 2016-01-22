@@ -32,7 +32,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
 
   describe('worker', function () {
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findInstancesRunningOrStartingByDockerHost')
+      sinon.stub(Instance, 'findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync')
       sinon.stub(ContextVersion, 'markDockRemovedByDockerHost').yieldsAsync()
       sinon.stub(Instance, 'setStoppingAsStoppedByDockerHost').yieldsAsync()
       sinon.stub(Worker, '_redeploy')
@@ -47,7 +47,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       Worker._redeploy.restore()
       Worker._updateFrontendInstances.restore()
 
-      Instance.findInstancesRunningOrStartingByDockerHost.restore()
+      Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync.restore()
       ContextVersion.markDockRemovedByDockerHost.restore()
       Instance.setStoppingAsStoppedByDockerHost.restore()
       rabbitMQ.asgInstanceTerminate.restore()
@@ -411,20 +411,22 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       host: 'http://10.12.12.14:4242'
     }
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findInstancesRunningOrStartingByDockerHost')
+      sinon.stub(Instance, 'findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync')
       sinon.stub(Worker, '_redeployContainers').returns()
       done()
     })
 
     afterEach(function (done) {
-      Instance.findInstancesRunningOrStartingByDockerHost.restore()
+      Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync.restore()
       Worker._redeployContainers.restore()
       done()
     })
 
-    describe('#findInstancesRunningOrStartingByDockerHost fails', function () {
+    describe('#findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync fails', function () {
       beforeEach(function (done) {
-        Instance.findInstancesRunningOrStartingByDockerHost.yieldsAsync(testErr)
+        var promise = Promise.reject(testErr)
+        promise.suppressUnhandledRejections()
+        Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync.returns(promise)
         done()
       })
 
@@ -432,20 +434,20 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
         Worker._redeploy(testData)
           .asCallback(function (err) {
             expect(err.message).to.equal(testErr.message)
-            sinon.assert.calledOnce(Instance.findInstancesRunningOrStartingByDockerHost)
-            sinon.assert.calledWith(Instance.findInstancesRunningOrStartingByDockerHost, testData.host)
+            sinon.assert.calledOnce(Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync)
+            sinon.assert.calledWith(Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync, testData.host)
             done()
           })
       })
     })
 
-    describe('#findInstancesRunningOrStartingByDockerHost returns 2 instances', function () {
+    describe('#findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync returns 2 instances', function () {
       var instances = [
         { _id: '1' },
         { _id: '2' }
       ]
       beforeEach(function (done) {
-        Instance.findInstancesRunningOrStartingByDockerHost.yieldsAsync(null, instances)
+        Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync.returns(Promise.resolve(instances))
         done()
       })
 
@@ -453,8 +455,8 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
         Worker._redeploy(testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
-            sinon.assert.calledOnce(Instance.findInstancesRunningOrStartingByDockerHost)
-            sinon.assert.calledWith(Instance.findInstancesRunningOrStartingByDockerHost, testData.host)
+            sinon.assert.calledOnce(Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync)
+            sinon.assert.calledWith(Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHostAsync, testData.host)
             sinon.assert.calledOnce(Worker._redeployContainers)
             sinon.assert.calledWith(Worker._redeployContainers, instances)
             done()

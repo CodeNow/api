@@ -187,64 +187,51 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  describe('#findInstancesRunningOrStartingByDockerHost', function () {
-    var instance1
-    var instance2
-    var instance3
-    var instance4
+  describe('#findInstancesBuiltButNotStoppedOrCrashedByDockerHost', function () {
     var testHost = 'http://10.0.0.1:4242'
-    var testHost2 = 'http://10.0.0.2:4242'
-
+    var instances = [
+      {
+        _id: 1
+      },
+      {
+        _id: 2
+      }
+    ]
     beforeEach(function (done) {
-      instance1 = createNewInstance('one', {
-        dockerHost: testHost
-      })
-      instance1.container.inspect.State.Starting = false
-      instance1.container.inspect.State.Running = false
-      instance2 = createNewInstance('two', {
-        dockerHost: testHost
-      })
-      instance2.container.inspect.State.Starting = true
-      instance3 = createNewInstance('three', {
-        dockerHost: testHost
-      })
-      instance3.container.inspect.State.Running = true
-      instance4 = createNewInstance('four', {
-        dockerHost: testHost2
-      })
+      sinon.stub(Instance, 'find').yieldsAsync(null, instances)
       done()
     })
-    beforeEach(function (done) {
-      instance1.save(done)
-    })
-    beforeEach(function (done) {
-      instance2.save(done)
-    })
-    beforeEach(function (done) {
-      instance3.save(done)
-    })
-    beforeEach(function (done) {
-      instance4.save(done)
+    afterEach(function (done) {
+      Instance.find.restore()
+      done()
     })
     it('should get all instances from testHost', function (done) {
-      Instance.findInstancesRunningOrStartingByDockerHost(testHost, function (err, instances) {
+      Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHost(testHost, function (err, foundInstances) {
         expect(err).to.be.null()
-        expect(instances.length).to.equal(2)
-        instances.forEach(function (instance) {
-          expect(instance._id).to.not.equal(instance1._id)
-          expect(instance._id).to.not.equal(instance4._id)
+        expect(foundInstances).to.equal(instances)
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(Instance.find, {
+          'container.dockerHost': testHost,
+          'container.inspect.State': { $exists: true },
+          $nor: [
+            { 'container.inspect.State.Stopping': true },
+            { 'container.inspect.State.ExitCode': { $exists: true } }
+          ]
         })
         done()
       })
     })
-    it('should get an [] if no instances were found', function (done) {
-      Instance.findInstancesRunningOrStartingByDockerHost('http://10.0.0.3:4242', function (err, instances) {
-        expect(err).to.be.null()
-        expect(instances.length).to.equal(0)
+    it('should return an error if mongo fails', function (done) {
+      var error = new Error('Mongo Error')
+      Instance.find.yieldsAsync(error)
+      Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHost(testHost, function (err, foundInstances) {
+        sinon.assert.calledOnce(Instance.find)
+        expect(err).to.equal(error)
+        expect(foundInstances).to.not.exist()
         done()
       })
     })
-  }) // end findInstancesRunningOrStartingByDockerHost
+  }) // end findInstancesBuiltButNotStoppedOrCrashedByDockerHost
 
   describe('#setStoppingAsStoppedByDockerHost', function () {
     var dockerHost = 'http://10.0.0.1:4242'
