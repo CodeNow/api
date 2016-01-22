@@ -270,12 +270,7 @@ describe('Github - /actions/github', function () {
           branch: 'some-branch',
           repo: 'some-repo',
           ownerId: ctx.user.attrs.accounts.github.id,
-          owner: login,
-          head_commit: {
-            commiter: {
-              username: login
-            }
-          }
+          owner: login
         }
         var options = hooks(data).push
         request.post(options, function (err, res, body) {
