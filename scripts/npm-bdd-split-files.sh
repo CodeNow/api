@@ -55,10 +55,10 @@ then
     then
       e=$numTests
     fi
-    indexes="-i $s-$e"
+    indexes="-i 244"
     echo "indexes $indexes"
   fi
 fi
 
-npm run _bdd -- --threshold 75 ${extra_args[@]} $indexes ${all_files[@]}
+LOG_LEVEL_STDOUT=trace npm run _bdd -- --threshold 75 ${extra_args[@]} $indexes ${all_files[@]}
 exit $?
