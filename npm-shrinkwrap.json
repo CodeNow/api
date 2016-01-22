@@ -2,7 +2,7 @@
   "name": "api",
   "version": "6.14.5",
   "npm-shrinkwrap-version": "5.4.1",
-  "node-version": "v0.10.40",
+  "node-version": "v0.10.38",
   "dependencies": {
     "101": {
       "version": "1.2.0",
@@ -1064,6 +1064,10 @@
           }
         }
       }
+    },
+    "deep-equal": {
+      "version": "1.0.1",
+      "resolved": "https://registry.npmjs.org/deep-equal/-/deep-equal-1.0.1.tgz"
     },
     "defaults": {
       "version": "1.0.2",

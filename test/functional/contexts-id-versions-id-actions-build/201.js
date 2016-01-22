@@ -11,19 +11,21 @@ var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 
+var exists = require('101/exists')
 var ObjectId = require('mongoose').Types.ObjectId
-var mockGetUserById = require('../fixtures/mocks/github/getByUserId')
+var sinon = require('sinon')
 
-var Context = require('models/mongo/context')
-var ContextVersion = require('models/mongo/context-version')
 var api = require('../fixtures/api-control')
 var blacklight = require('blacklight')
+var Context = require('models/mongo/context')
+var ContextVersion = require('models/mongo/context-version')
 var dock = require('../fixtures/dock')
 var dockerMockEvents = require('../fixtures/docker-mock-events')
-var exists = require('101/exists')
 var expects = require('../fixtures/expects')
+var mockGetUserById = require('../fixtures/mocks/github/getByUserId')
 var multi = require('../fixtures/multi-factory')
 var primus = require('../fixtures/primus')
+var rabbitMQ = require('models/rabbitmq')
 
 describe('201 POST /contexts/:id/versions/:id/actions/build', function () {
   var ctx = {}
@@ -43,19 +45,30 @@ describe('201 POST /contexts/:id/versions/:id/actions/build', function () {
       }]
     })
   )
+  beforeEach(function (done) {
+    // stub rabbitMQ.createInstanceContainer because we are not checking for it in this test
+    sinon.stub(rabbitMQ, 'createInstanceContainer').returns()
+    done()
+  })
 
   before(api.start.bind(ctx))
   before(require('../fixtures/mocks/api-client').setup)
   before(dock.start.bind(ctx))
   beforeEach(primus.connect)
+
   afterEach(primus.disconnect)
-  after(api.stop.bind(ctx))
-  after(require('../fixtures/mocks/api-client').clean)
-  after(dock.stop.bind(ctx))
+  afterEach(function (done) {
+    rabbitMQ.createInstanceContainer.restore()
+    done()
+  })
   afterEach(require('../fixtures/clean-mongo').removeEverything)
   afterEach(require('../fixtures/clean-ctx')(ctx))
   afterEach(require('../fixtures/clean-nock'))
   afterEach(mockGetUserById.stubAfter)
+
+  after(api.stop.bind(ctx))
+  after(require('../fixtures/mocks/api-client').clean)
+  after(dock.stop.bind(ctx))
   describe('for User', function () {
     beforeEach(function (done) {
       multi.createContextVersion(function (err, contextVersion, context, build, user) {
@@ -275,9 +288,17 @@ function buildTheVersionTests (ctx) {
                     if (err) { return done(err) }
                     waitForCvBuildToComplete(ctx.cv2, function (err) {
                       if (err) { return done(err) }
-                      expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build)
-                      expect(ctx.cv.attrs.build.dockerContainer).to.equal(ctx.cv2.attrs.build.dockerContainer)
-                      expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
+                      try {
+                        expect(ctx.cv.attrs.build).to.deep.equal(ctx.cv2.attrs.build)
+                        expect(ctx.cv.attrs.build.dockerContainer).to.equal(ctx.cv2.attrs.build.dockerContainer)
+                        expect(ctx.cv.attrs._id).to.not.equal(ctx.cv2.attrs._id)
+                      } catch (err) {
+                        console.log('XXXX ctx.cv.attrs.build', ctx.cv.attrs.build)
+                        console.log('XXXX ctx.cv.attrs', ctx.cv.attrs)
+                        console.log('XXXX ctx.cv2.attrs.build', ctx.cv2.attrs.build)
+                        console.log('XXXX ctx.cv2.attrs', ctx.cv2.attrs)
+                        return done(err)
+                      }
                       done()
                     })
                   })
