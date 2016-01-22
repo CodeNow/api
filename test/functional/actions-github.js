@@ -50,6 +50,7 @@ describe('Github - /actions/github', function () {
   after(require('./fixtures/mocks/api-client').clean)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-mongo').removeEverything)
+  afterEach(require('./fixtures/clean-nock'))
   beforeEach(generateKey)
   beforeEach(
     mockGetUserById.stubBefore(function () {
@@ -227,6 +228,14 @@ describe('Github - /actions/github', function () {
       done()
     })
     beforeEach(function (done) {
+      multi.createUser(function (err, user) {
+        if (err) { return done(err) }
+        ctx.user = user
+        ctx.request = user.client.request
+        done()
+      })
+    })
+    beforeEach(function (done) {
       sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, {})
       done()
     })
@@ -254,11 +263,19 @@ describe('Github - /actions/github', function () {
 
     it('should return 202 if there is neither autoDeploy nor autoLaunch is needed',
       function (done) {
+        var login = ctx.user.attrs.accounts.github.login
+        var githubId = ctx.user.attrs.accounts.github.id
+        require('./fixtures/mocks/github/users-username')(githubId, login)
         var data = {
           branch: 'some-branch',
           repo: 'some-repo',
-          ownerId: 3217371238,
-          owner: 'anton'
+          ownerId: ctx.user.attrs.accounts.github.id,
+          owner: login,
+          head_commit: {
+            commiter: {
+              username: login
+            }
+          }
         }
         var options = hooks(data).push
         request.post(options, function (err, res, body) {
@@ -360,14 +377,17 @@ describe('Github - /actions/github', function () {
         })
 
         it('should fork instance from master', function (done) {
+          var login = ctx.user.attrs.accounts.github.login
+          var id = ctx.user.attrs.accounts.github.id
+          require('./fixtures/mocks/github/users-username')(id, login)
           require('./fixtures/mocks/docker/build-logs')()
           // emulate instance deploy event
           var acv = ctx.contextVersion.attrs.appCodeVersions[0]
           var data = {
             branch: 'feature-1',
             repo: acv.repo,
-            ownerId: 1987,
-            owner: 'anton'
+            ownerId: id,
+            owner: login
           }
           var options = hooks(data).push
           // wait for container create worker to finish
@@ -379,7 +399,7 @@ describe('Github - /actions/github', function () {
             var forkedInstance = slackStub.args[0][1]
             expect(forkedInstance.name).to.equal('feature-1-' + ctx.instance.attrs.name)
             sinon.assert.calledOnce(UserWhitelist.findOne)
-            sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'anton' })
+            sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: login.toLowerCase() })
             done()
           })
           request.post(options, function (err, res, cvIds) {
