@@ -334,7 +334,7 @@ describe('Github - /actions/github', function () {
         })
       })
 
-     it('should send a 404 and not autofork if the committer is not a Github user', 
+      it('should send a 404 and not autofork if the committer is not a Github user',
         function (done) {
           var ownerGithubId = ctx.user.attrs.accounts.github.id
           var ownerUsername = ctx.user.attrs.accounts.github.login
@@ -358,7 +358,7 @@ describe('Github - /actions/github', function () {
           })
         })
 
-      it('should send a 403 and not autofork if the committer is not a Runnable user', 
+      it('should send a 403 and not autofork if the committer is not a Runnable user',
         function (done) {
           var ownerGithubId = ctx.user.attrs.accounts.github.id
           var ownerUsername = ctx.user.attrs.accounts.github.login
