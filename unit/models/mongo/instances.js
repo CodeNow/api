@@ -1762,7 +1762,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       ctx.instance.updateCv(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Version.findById)
-        sinon.assert.calledWith(Version.findById, originalCvId, sinon.match.func)
+        sinon.assert.calledWith(Version.findById, originalCvId, {'build.log': 0}, sinon.match.func)
         sinon.assert.calledOnce(ctx.instance.update)
         sinon.assert.calledWith(ctx.instance.update, {
           $set: {
