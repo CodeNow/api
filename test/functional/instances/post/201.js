@@ -50,6 +50,7 @@ function expectInstanceCreated (body, statusCode, user, build, cv) {
   user = user.json()
   build = build.json()
   cv = cv.json()
+  delete cv.build.log
   var owner = {
     github: user.accounts.github.id,
     username: user.accounts.github.login,

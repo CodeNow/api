@@ -23,6 +23,7 @@ var krain = require('krain')
 var path = require('path')
 var rimraf = require('rimraf')
 var fs = require('fs')
+var uuid = require('uuid')
 
 function containerRoot (inspect) {
   // this is dumb that we have to save it in krain's node_module folder
@@ -87,9 +88,8 @@ describe('BDD - Debug Containers', function () {
     })
 
     it('should let us make a debug container', function (done) {
-      var log = ctx.instance.attrs.contextVersion.build.log
       // this layer ID is fake b/c we are just going to validate it's usage
-      var layer = log[0].content.substr(-8)
+      var layer = uuid()
       var opts = {
         instance: ctx.instance.attrs._id.toString(),
         layerId: layer,
@@ -124,9 +124,8 @@ describe('BDD - Debug Containers', function () {
 
   describe('container files', function () {
     beforeEach(function (done) {
-      var log = ctx.instance.attrs.contextVersion.build.log
       // this layer ID is fake b/c we are just going to validate it's usage
-      var layer = log[0].content.substr(-8)
+      var layer = uuid()
       var opts = {
         instance: ctx.instance.attrs._id.toString(),
         layerId: layer,
