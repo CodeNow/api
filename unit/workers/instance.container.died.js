@@ -168,7 +168,7 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
       })
     })
     it('should fail if findOneAsync returned null', function (done) {
-      Instance.findOneAsync.returns(null)
+      Instance.findOneAsync.returns(Promise.resolve(null))
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(TaskFatalError)
