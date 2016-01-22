@@ -8,7 +8,11 @@ var after = lab.after
 var afterEach = lab.afterEach
 
 var api = require('./fixtures/api-control')
+var commonStream = require('socket/common-stream')
+var Instance = require('models/mongo/instance')
 var Primus = require('primus')
+var Promise = require('bluebird')
+var sinon = require('sinon')
 var Socket = Primus.createSocket({
   transformer: process.env.PRIMUS_TRANSFORMER,
   plugin: {
@@ -36,12 +40,31 @@ describe('Socket Server', function () {
   afterEach(function (done) {
     ctx.server.close(done)
   })
-
   describe('proxy test', function () {
     var terminalStream, eventStream
     var primus
     var containerId = '1c8feb1cc0e9'
     var pass = false
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yields(null, {
+        createdBy: {
+          github: 123
+        },
+        owner: {
+          github: 123
+        },
+        container: {
+          dockerContainer: containerId
+        }
+      })
+      sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOne.restore()
+      commonStream.checkOwnership.restore()
+      done()
+    })
     beforeEach(function (done) {
       pass = false
       primus = new Socket('http://localhost:' + process.env.PORT)
@@ -109,6 +132,26 @@ describe('Socket Server', function () {
     afterEach(function (done) {
       primus.once('end', done)
       primus.end()
+    })
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yields(null, {
+        createdBy: {
+          github: 123
+        },
+        owner: {
+          github: 123
+        },
+        container: {
+          dockerContainer: 'containerId'
+        }
+      })
+      sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOne.restore()
+      commonStream.checkOwnership.restore()
+      done()
     })
     requiredParams.forEach(function (param, i) {
       it('should error if ' + param + ' not sent', function (done) {

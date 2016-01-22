@@ -8,6 +8,7 @@ require('loadenv')()
 var Code = require('code')
 var Lab = require('lab')
 var Primus = require('primus')
+var Promise = require('bluebird')
 var http = require('http')
 var sinon = require('sinon')
 var uuid = require('uuid')
@@ -185,6 +186,7 @@ describe('socket-server: ' + moduleName, function () {
           event: 'test_resp',
           data: data
         })
+        return Promise.resolve(true)
       })
       var client = new PrimusClient('http://localhost:' + process.env.PORT)
       client.on('open', function () {
@@ -219,6 +221,7 @@ describe('socket-server: ' + moduleName, function () {
             roomId: roomId
           }
         })
+        return Promise.resolve(true)
       })
       var client = new PrimusClient('http://localhost:' + process.env.PORT)
       client.on('open', function () {
