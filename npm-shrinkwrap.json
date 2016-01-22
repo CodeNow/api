@@ -1,8 +1,8 @@
 {
   "name": "api",
-  "version": "6.14.5",
+  "version": "6.15.0",
   "npm-shrinkwrap-version": "5.4.1",
-  "node-version": "v0.10.40",
+  "node-version": "v0.10.28",
   "dependencies": {
     "101": {
       "version": "1.2.0",
@@ -4425,13 +4425,9 @@
       "resolved": "https://registry.npmjs.org/passport-strategy/-/passport-strategy-1.0.0.tgz"
     },
     "ponos": {
-      "version": "1.1.1",
-      "resolved": "https://registry.npmjs.org/ponos/-/ponos-1.1.1.tgz",
+      "version": "1.3.1",
+      "resolved": "https://registry.npmjs.org/ponos/-/ponos-1.3.1.tgz",
       "dependencies": {
-        "bluebird": {
-          "version": "3.0.5",
-          "resolved": "https://registry.npmjs.org/bluebird/-/bluebird-3.0.5.tgz"
-        },
         "bunyan": {
           "version": "1.5.1",
           "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-1.5.1.tgz",
@@ -4441,8 +4437,8 @@
               "resolved": "https://registry.npmjs.org/dtrace-provider/-/dtrace-provider-0.6.0.tgz",
               "dependencies": {
                 "nan": {
-                  "version": "2.1.0",
-                  "resolved": "https://registry.npmjs.org/nan/-/nan-2.1.0.tgz"
+                  "version": "2.2.0",
+                  "resolved": "https://registry.npmjs.org/nan/-/nan-2.2.0.tgz"
                 }
               }
             },
@@ -4483,8 +4479,8 @@
           }
         },
         "error-cat": {
-          "version": "1.4.0",
-          "resolved": "https://registry.npmjs.org/error-cat/-/error-cat-1.4.0.tgz",
+          "version": "1.4.2",
+          "resolved": "https://registry.npmjs.org/error-cat/-/error-cat-1.4.2.tgz",
           "dependencies": {
             "101": {
               "version": "0.18.0",
@@ -4545,6 +4541,50 @@
                   "resolved": "https://registry.npmjs.org/hoek/-/hoek-2.16.3.tgz"
                 }
               }
+            }
+          }
+        },
+        "monitor-dog": {
+          "version": "1.5.0",
+          "resolved": "https://registry.npmjs.org/monitor-dog/-/monitor-dog-1.5.0.tgz",
+          "dependencies": {
+            "loadenv": {
+              "version": "1.1.0",
+              "resolved": "https://registry.npmjs.org/loadenv/-/loadenv-1.1.0.tgz",
+              "dependencies": {
+                "101": {
+                  "version": "0.14.1",
+                  "resolved": "https://registry.npmjs.org/101/-/101-0.14.1.tgz",
+                  "dependencies": {
+                    "clone": {
+                      "version": "0.1.19",
+                      "resolved": "https://registry.npmjs.org/clone/-/clone-0.1.19.tgz"
+                    },
+                    "deep-eql": {
+                      "version": "0.1.3",
+                      "resolved": "https://registry.npmjs.org/deep-eql/-/deep-eql-0.1.3.tgz",
+                      "dependencies": {
+                        "type-detect": {
+                          "version": "0.1.1",
+                          "resolved": "https://registry.npmjs.org/type-detect/-/type-detect-0.1.1.tgz"
+                        }
+                      }
+                    }
+                  }
+                },
+                "clone": {
+                  "version": "1.0.2",
+                  "resolved": "https://registry.npmjs.org/clone/-/clone-1.0.2.tgz"
+                },
+                "dotenv": {
+                  "version": "1.2.0",
+                  "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-1.2.0.tgz"
+                }
+              }
+            },
+            "node-dogstatsd": {
+              "version": "0.0.6",
+              "resolved": "https://registry.npmjs.org/node-dogstatsd/-/node-dogstatsd-0.0.6.tgz"
             }
           }
         }
