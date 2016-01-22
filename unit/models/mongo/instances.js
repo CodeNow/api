@@ -215,7 +215,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           'build.completed': { $exists: true },
           $or: [
             { 'container.inspect.State.Stopping': false },
-            { 'container.inspect.State.Status': { $neq: 'exited' }}
+            { 'container.inspect.State.Status': { $neq: 'exited' } }
           ]
         })
         done()
