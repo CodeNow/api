@@ -3,6 +3,7 @@
  */
 'use strict'
 var clone = require('101/clone')
+var Boom = require('dat-middleware').Boom
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
@@ -83,26 +84,19 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
     done()
   })
   beforeEach(function (done) {
-    sinon.stub(Instance, 'findOneAsync').returns(Promise.resolve(ctx.mockInstance))
     sinon.stub(InstanceService, 'modifyExistingContainerInspect').yieldsAsync(null, ctx.mockInstance)
     sinon.stub(InstanceService, 'emitInstanceUpdate').returns()
     done()
   })
   afterEach(function (done) {
-    Instance.findOneAsync.restore()
     InstanceService.modifyExistingContainerInspect.restore()
     InstanceService.emitInstanceUpdate.restore()
     done()
   })
   describe('success', function () {
-    it('should call 3 methods', function (done) {
+    it('should call 2 methods', function (done) {
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(Instance.findOneAsync)
-        sinon.assert.calledWith(Instance.findOneAsync, {
-          '_id': ctx.instanceId,
-          'container.dockerContainer': ctx.data.id
-        })
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.calledWith(InstanceService.modifyExistingContainerInspect,
           ctx.mockInstance._id, ctx.data.id, ctx.data.inspectData)
@@ -119,7 +113,6 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(TaskFatalError)
         expect(err.message).to.equal('instance.container.died: Invalid Job')
-        sinon.assert.notCalled(Instance.findOneAsync)
         sinon.assert.notCalled(InstanceService.modifyExistingContainerInspect)
         sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
         done()
@@ -130,7 +123,6 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(TaskFatalError)
         expect(err.message).to.equal('instance.container.died: Invalid Job')
-        sinon.assert.notCalled(Instance.findOneAsync)
         sinon.assert.notCalled(InstanceService.modifyExistingContainerInspect)
         sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
         done()
@@ -143,41 +135,6 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(TaskFatalError)
         expect(err.message).to.equal('instance.container.died: Invalid Job')
-        sinon.assert.notCalled(Instance.findOneAsync)
-        sinon.assert.notCalled(InstanceService.modifyExistingContainerInspect)
-        sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
-        done()
-      })
-    })
-    it('should fail if findOneAsync failed', function (done) {
-      var mongoError = new Error('Mongo error')
-      var rejectionPromise = Promise.reject(mongoError)
-      rejectionPromise.suppressUnhandledRejections()
-      Instance.findOneAsync.returns(rejectionPromise)
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.equal(mongoError.message)
-        sinon.assert.calledOnce(Instance.findOneAsync)
-        sinon.assert.calledWith(Instance.findOneAsync, {
-          '_id': ctx.instanceId,
-          'container.dockerContainer': ctx.data.id
-        })
-        sinon.assert.notCalled(InstanceService.modifyExistingContainerInspect)
-        sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
-        done()
-      })
-    })
-    it('should fail if findOneAsync returned null', function (done) {
-      Instance.findOneAsync.returns(Promise.resolve(null))
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.container.died: Instance not found')
-        sinon.assert.calledOnce(Instance.findOneAsync)
-        sinon.assert.calledWith(Instance.findOneAsync, {
-          '_id': ctx.instanceId,
-          'container.dockerContainer': ctx.data.id
-        })
         sinon.assert.notCalled(InstanceService.modifyExistingContainerInspect)
         sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
         done()
@@ -189,12 +146,20 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
-        sinon.assert.calledOnce(Instance.findOneAsync)
-        sinon.assert.calledWith(Instance.findOneAsync, {
-          '_id': ctx.instanceId,
-          'container.dockerContainer': ctx.data.id
-        })
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
+        sinon.assert.calledWith(InstanceService.modifyExistingContainerInspect,
+          ctx.mockInstance._id, ctx.data.id, ctx.data.inspectData)
+        sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
+        done()
+      })
+    })
+    it('should fail if modifyExistingContainerInspect returned 404', function (done) {
+      var notFound = Boom.notFound('Instance not found')
+      InstanceService.modifyExistingContainerInspect.yieldsAsync(notFound)
+      InstanceContainerDied(ctx.data).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err).to.be.instanceOf(TaskFatalError)
+        expect(err.message).to.equal('instance.container.died: Instance not found')
         sinon.assert.calledWith(InstanceService.modifyExistingContainerInspect,
           ctx.mockInstance._id, ctx.data.id, ctx.data.inspectData)
         sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
@@ -209,11 +174,6 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
-        sinon.assert.calledOnce(Instance.findOneAsync)
-        sinon.assert.calledWith(Instance.findOneAsync, {
-          '_id': ctx.instanceId,
-          'container.dockerContainer': ctx.data.id
-        })
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.calledWith(InstanceService.modifyExistingContainerInspect,
           ctx.mockInstance._id, ctx.data.id, ctx.data.inspectData)
