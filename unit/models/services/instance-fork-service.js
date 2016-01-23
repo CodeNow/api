@@ -438,7 +438,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       User.findByGithubId.withArgs('pushUserId').yieldsAsync(null, mockPushUser)
       User.findByGithubId.withArgs('instanceCreatedById').yieldsAsync(null, mockInstanceUser)
       sinon.stub(InstanceForkService, '_createNewContextVersion').returns(Promise.resolve(mockContextVersion))
-      sinon.stub(Runnable, 'create').returns(mockRunnableClient)
+      sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
       sinon.stub(InstanceForkService, '_notifyExternalServices')
       done()
     })
@@ -448,7 +448,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       InstanceForkService._validatePushInfo.restore()
       User.findByGithubId.restore()
       InstanceForkService._createNewContextVersion.restore()
-      Runnable.create.restore()
+      Runnable.createClient.restore()
       InstanceForkService._notifyExternalServices.restore()
       done()
     })
@@ -594,9 +594,9 @@ describe('InstanceForkService: ' + moduleName, function () {
       it('should use the instance user to create the runnable client', function (done) {
         InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.called(Runnable.create)
+          sinon.assert.called(Runnable.createClient)
           sinon.assert.calledWithExactly(
-            Runnable.create.firstCall, // firstCall === createAndBuildBuild
+            Runnable.createClient.firstCall, // firstCall === createAndBuildBuild
             {},
             mockInstanceUser
           )
@@ -624,9 +624,9 @@ describe('InstanceForkService: ' + moduleName, function () {
       it('should use the push user to create the runnable client', function (done) {
         InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.called(Runnable.create)
+          sinon.assert.called(Runnable.createClient)
           sinon.assert.calledWithExactly(
-            Runnable.create.secondCall, // secondCall === forkMasterInstance
+            Runnable.createClient.secondCall, // secondCall === forkMasterInstance
             {},
             mockPushUser
           )
@@ -638,9 +638,9 @@ describe('InstanceForkService: ' + moduleName, function () {
         User.findByGithubId.withArgs('pushUserId').yieldsAsync(null, null)
         InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.called(Runnable.create)
+          sinon.assert.called(Runnable.createClient)
           sinon.assert.calledWithExactly(
-            Runnable.create.secondCall, // secondCall === forkMasterInstance
+            Runnable.createClient.secondCall, // secondCall === forkMasterInstance
             {},
             mockInstanceUser
           )
