@@ -294,6 +294,7 @@ module.exports = {
         require('./mocks/github/user-orgs')(ownerId, 'Runnable')
         log.trace({}, 'contextVersion.fetch', contextVersion.id())
         contextVersion.fetch(function (err) {
+          delete contextVersion.build.log
           cb(err, build, user,
             [contextVersion, context, build, user],
             srcArray)
