@@ -108,7 +108,7 @@
     "xtend": "3.0.0"
   },
   "devDependencies": {
-    "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v1.0.0",
+    "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v8.0.0",
     "docker-mock": "^5.1.0",
     "doctoc": "^0.15.0",
     "faker": "^1.0.0",
