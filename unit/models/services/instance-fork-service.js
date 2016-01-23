@@ -4,11 +4,13 @@
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
+var Bunyan = require('bunyan')
 var Code = require('code')
 var Promise = require('bluebird')
 var clone = require('101/clone')
 var omit = require('101/omit')
 var sinon = require('sinon')
+require('sinon-as-promised')(Promise)
 
 var Context = require('models/mongo/context')
 var ContextService = require('models/services/context-service')
@@ -721,10 +723,11 @@ describe('InstanceForkService: ' + moduleName, function () {
 
     beforeEach(function (done) {
       instances = []
-      sinon.stub(InstanceForkService, '_forkOne').returns({})
+      sinon.stub(InstanceForkService, '_forkOne').resolves({})
       sinon.stub(Timers.prototype, 'startTimer').yieldsAsync(null)
       sinon.stub(Timers.prototype, 'stopTimer').yieldsAsync(null)
       sinon.stub(dogstatsd, 'increment')
+      sinon.stub(Bunyan.prototype, 'error')
       done()
     })
 
@@ -733,6 +736,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       Timers.prototype.startTimer.restore()
       Timers.prototype.stopTimer.restore()
       dogstatsd.increment.restore()
+      Bunyan.prototype.error.restore()
       done()
     })
 
@@ -795,8 +799,8 @@ describe('InstanceForkService: ' + moduleName, function () {
       var one = {}
       var two = {}
       instances.push(one, two)
-      InstanceForkService._forkOne.onFirstCall().returns(1)
-      InstanceForkService._forkOne.onSecondCall().returns(2)
+      InstanceForkService._forkOne.onFirstCall().resolves(1)
+      InstanceForkService._forkOne.onSecondCall().resolves(2)
       InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
         expect(err).to.not.exist()
         sinon.assert.calledTwice(InstanceForkService._forkOne)
@@ -811,6 +815,26 @@ describe('InstanceForkService: ' + moduleName, function () {
           pushInfo
         )
         expect(results).to.deep.equal([ 1, 2 ])
+        done()
+      })
+    })
+
+    it('should silence any errors from forking', function (done) {
+      var one = {}
+      var two = {}
+      instances.push(one, two)
+      var error = new Error('robot')
+      InstanceForkService._forkOne.onFirstCall().resolves(1)
+      InstanceForkService._forkOne.onSecondCall().rejects(error)
+      InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
+        expect(err).to.not.exist()
+        expect(results).to.deep.equal([ 1, null ])
+        sinon.assert.calledOnce(Bunyan.prototype.error)
+        sinon.assert.calledWithExactly(
+          Bunyan.prototype.error,
+          sinon.match.object,
+          sinon.match(/error.+forkOne/)
+        )
         done()
       })
     })
