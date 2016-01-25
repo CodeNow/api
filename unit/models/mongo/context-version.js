@@ -60,9 +60,9 @@ describe('Context Version: ' + moduleName, function () {
   describe('getUserContainerMemoryLimit', function () {
     var testCv
     beforeEach(function (done) {
-      testCv = {
+      testCv = new ContextVersion({
         appCodeVersions: [{ test: 1 }]
-      }
+      })
       sinon.stub(ContextVersion, 'getMainAppCodeVersion')
       done()
     })
@@ -74,7 +74,7 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should get overriden memory limit', function (done) {
       testCv.userContainerMemory = 512000002
-      var out = ContextVersion.getUserContainerMemoryLimit(testCv)
+      var out = testCv.getUserContainerMemoryLimit()
       expect(out).to.equal(testCv.userContainerMemory)
       sinon.assert.notCalled(ContextVersion.getMainAppCodeVersion)
       done()
@@ -83,7 +83,7 @@ describe('Context Version: ' + moduleName, function () {
     it('should get repo memory limit', function (done) {
       ContextVersion.getMainAppCodeVersion.returns({ some: 'thing' })
 
-      var out = ContextVersion.getUserContainerMemoryLimit(testCv)
+      var out = testCv.getUserContainerMemoryLimit()
 
       expect(out).to.equal(process.env.CONTAINER_REPO_MEMORY_LIMIT_BYTES)
       sinon.assert.calledOnce(ContextVersion.getMainAppCodeVersion)
@@ -94,7 +94,7 @@ describe('Context Version: ' + moduleName, function () {
     it('should get non-repo memory limit', function (done) {
       ContextVersion.getMainAppCodeVersion.returns(null)
 
-      var out = ContextVersion.getUserContainerMemoryLimit(testCv)
+      var out = testCv.getUserContainerMemoryLimit()
 
       expect(out).to.equal(process.env.CONTAINER_NON_REPO_MEMORY_LIMIT_BYTES)
       sinon.assert.calledOnce(ContextVersion.getMainAppCodeVersion)
