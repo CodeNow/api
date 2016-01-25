@@ -19,9 +19,8 @@ var InstanceForkService = require('models/services/instance-fork-service')
 var PullRequest = require('models/apis/pullrequest')
 var Runnable = require('models/apis/runnable')
 var Slack = require('notifications/index')
-var Timers = require('models/apis/timers')
 var User = require('models/mongo/user')
-var dogstatsd = require('models/datadog')
+var monitorDog = require('monitor-dog')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -432,7 +431,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       }
       mockInstanceUser = { accounts: { github: { accessToken: 'instanceUserGithubToken' } } }
       mockPushUser = { accounts: { github: { accessToken: 'pushUserGithubToken' } } }
-      sinon.stub(dogstatsd, 'increment')
+      sinon.stub(monitorDog, 'increment')
       sinon.spy(InstanceForkService, '_validatePushInfo')
       sinon.stub(User, 'findByGithubId').yieldsAsync(new Error('define behavior'))
       User.findByGithubId.withArgs('pushUserId').yieldsAsync(null, mockPushUser)
@@ -444,7 +443,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     afterEach(function (done) {
-      dogstatsd.increment.restore()
+      monitorDog.increment.restore()
       InstanceForkService._validatePushInfo.restore()
       User.findByGithubId.restore()
       InstanceForkService._createNewContextVersion.restore()
@@ -552,9 +551,9 @@ describe('InstanceForkService: ' + moduleName, function () {
     it('should increment datadog counter', function (done) {
       InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(dogstatsd.increment)
+        sinon.assert.calledOnce(monitorDog.increment)
         sinon.assert.calledWithExactly(
-          dogstatsd.increment,
+          monitorDog.increment,
           'api.instance-fork-service.fork-one'
         )
         done()
@@ -728,22 +727,24 @@ describe('InstanceForkService: ' + moduleName, function () {
   describe('#autoFork Instances', function () {
     var instances
     var pushInfo = {}
+    var mockTimer
 
     beforeEach(function (done) {
       instances = []
+      mockTimer = {
+        stop: sinon.stub()
+      }
       sinon.stub(InstanceForkService, '_forkOne').resolves({})
-      sinon.stub(Timers.prototype, 'startTimer').yieldsAsync(null)
-      sinon.stub(Timers.prototype, 'stopTimer').yieldsAsync(null)
-      sinon.stub(dogstatsd, 'increment')
+      sinon.stub(monitorDog, 'increment')
+      sinon.stub(monitorDog, 'timer').returns(mockTimer)
       sinon.stub(Bunyan.prototype, 'error')
       done()
     })
 
     afterEach(function (done) {
       InstanceForkService._forkOne.restore()
-      Timers.prototype.startTimer.restore()
-      Timers.prototype.stopTimer.restore()
-      dogstatsd.increment.restore()
+      monitorDog.increment.restore()
+      monitorDog.timer.restore()
       Bunyan.prototype.error.restore()
       done()
     })
@@ -779,9 +780,9 @@ describe('InstanceForkService: ' + moduleName, function () {
     it('should increment auto_fork counter', function (done) {
       InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(dogstatsd.increment)
+        sinon.assert.calledOnce(monitorDog.increment)
         sinon.assert.calledWithExactly(
-          dogstatsd.increment,
+          monitorDog.increment,
           'api.instance-fork-service.auto-fork'
         )
         done()
@@ -849,13 +850,13 @@ describe('InstanceForkService: ' + moduleName, function () {
       instances.push({}, {})
       InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
         expect(err).to.not.exist()
-        sinon.assert.called(Timers.prototype.startTimer)
-        sinon.assert.called(Timers.prototype.stopTimer)
+        sinon.assert.called(monitorDog.timer)
+        sinon.assert.called(mockTimer.stop)
         sinon.assert.callOrder(
-          Timers.prototype.startTimer,
+          monitorDog.timer,
           InstanceForkService._forkOne,
           InstanceForkService._forkOne,
-          Timers.prototype.stopTimer
+          mockTimer.stop
         )
         done()
       })
