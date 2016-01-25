@@ -57,8 +57,12 @@ describe('Context Version: ' + moduleName, function () {
     done()
   })
 
-  describe('getMemoryLimit', function () {
+  describe('getUserContainerMemoryLimit', function () {
+    var testCv
     beforeEach(function (done) {
+      testCv = {
+        appCodeVersions: [{ test: 1 }]
+      }
       sinon.stub(ContextVersion, 'getMainAppCodeVersion')
       done()
     })
@@ -68,30 +72,36 @@ describe('Context Version: ' + moduleName, function () {
       done()
     })
 
-    it('should set repo memory limit', function (done) {
-      var testAcv = [{ test: 1 }]
+    it('should get overriden memory limit', function (done) {
+      testCv.userContainerMemory = 512000002
+      var out = ContextVersion.getUserContainerMemoryLimit(testCv)
+      expect(out).to.equal(testCv.userContainerMemory)
+      sinon.assert.notCalled(ContextVersion.getMainAppCodeVersion)
+      done()
+    });
+
+    it('should get repo memory limit', function (done) {
       ContextVersion.getMainAppCodeVersion.returns({ some: 'thing' })
 
-      var out = ContextVersion.getMemoryLimit(testAcv)
+      var out = ContextVersion.getUserContainerMemoryLimit(testCv)
 
       expect(out).to.equal(process.env.CONTAINER_REPO_MEMORY_LIMIT_BYTES)
       sinon.assert.calledOnce(ContextVersion.getMainAppCodeVersion)
-      sinon.assert.calledWith(ContextVersion.getMainAppCodeVersion, testAcv)
+      sinon.assert.calledWith(ContextVersion.getMainAppCodeVersion, testCv.appCodeVersions)
       done()
     })
 
-    it('should set non-repo memory limit', function (done) {
-      var testAcv = [{ test: 1 }]
+    it('should get non-repo memory limit', function (done) {
       ContextVersion.getMainAppCodeVersion.returns(null)
 
-      var out = ContextVersion.getMemoryLimit(testAcv)
+      var out = ContextVersion.getUserContainerMemoryLimit(testCv)
 
       expect(out).to.equal(process.env.CONTAINER_NON_REPO_MEMORY_LIMIT_BYTES)
       sinon.assert.calledOnce(ContextVersion.getMainAppCodeVersion)
-      sinon.assert.calledWith(ContextVersion.getMainAppCodeVersion, testAcv)
+      sinon.assert.calledWith(ContextVersion.getMainAppCodeVersion, testCv.appCodeVersions)
       done()
     })
-  }) // end getMemoryLimit
+  }) // end getUserContainerMemoryLimit
 
   describe('updateBuildErrorByBuildId', function () {
     beforeEach(function (done) {
