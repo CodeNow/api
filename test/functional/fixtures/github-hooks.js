@@ -7,6 +7,7 @@ module.exports = function (data) {
   var repo = data.name || 'hellonode'
   var branch = data.branch || 'master'
   var ownerId = data.ownerId || 429706
+  var committer = data.committer || owner
   return {
     ping: {
       url: url.format({
@@ -1594,7 +1595,7 @@ module.exports = function (data) {
           committer: {
             name: 'Bryan Kendall',
             email: 'bryan@runnable.com',
-            username: owner
+            username: committer
           },
           added: [],
           removed: [],
