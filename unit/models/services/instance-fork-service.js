@@ -437,9 +437,9 @@ describe('InstanceForkService: ' + moduleName, function () {
       sinon.stub(User, 'findByGithubId').yieldsAsync(new Error('define behavior'))
       User.findByGithubId.withArgs('pushUserId').yieldsAsync(null, mockPushUser)
       User.findByGithubId.withArgs('instanceCreatedById').yieldsAsync(null, mockInstanceUser)
-      sinon.stub(InstanceForkService, '_createNewContextVersion').returns(Promise.resolve(mockContextVersion))
+      sinon.stub(InstanceForkService, '_createNewContextVersion').resolves(mockContextVersion)
       sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
-      sinon.stub(InstanceForkService, '_notifyExternalServices')
+      sinon.stub(InstanceForkService, '_notifyExternalServices').resolves()
       done()
     })
 
@@ -715,6 +715,14 @@ describe('InstanceForkService: ' + moduleName, function () {
         done()
       })
     })
+
+    it('should return the newly forked Instance', function (done) {
+      InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err, newInstance) {
+        expect(err).to.not.exist()
+        expect(newInstance).to.equal(mockInstance)
+        done()
+      })
+    })
   })
 
   describe('#autoFork Instances', function () {
@@ -820,9 +828,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     it('should silence any errors from forking', function (done) {
-      var one = {}
-      var two = {}
-      instances.push(one, two)
+      instances.push({}, {})
       var error = new Error('robot')
       InstanceForkService._forkOne.onFirstCall().resolves(1)
       InstanceForkService._forkOne.onSecondCall().rejects(error)
@@ -840,9 +846,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     it('should time the process for forking', function (done) {
-      var one = {}
-      var two = {}
-      instances.push(one, two)
+      instances.push({}, {})
       InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
         expect(err).to.not.exist()
         sinon.assert.called(Timers.prototype.startTimer)
