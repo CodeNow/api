@@ -78,7 +78,7 @@ describe('Context Version: ' + moduleName, function () {
       expect(out).to.equal(testCv.userContainerMemory)
       sinon.assert.notCalled(ContextVersion.getMainAppCodeVersion)
       done()
-    });
+    })
 
     it('should get repo memory limit', function (done) {
       ContextVersion.getMainAppCodeVersion.returns({ some: 'thing' })
