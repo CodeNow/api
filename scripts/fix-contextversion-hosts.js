@@ -1,30 +1,78 @@
 'use strict'
-console.log('Starting');
-var fs = require('fs')
+require('loadenv')()
+var ContextVersion = require('models/mongo/context-version.js')
+var mongoose = require('mongoose')
+mongoose.connect(process.env.MONGO)
+var async = require('async')
 var Dockerode = require('dockerode')
+var hosts = [
+  'http://10.0.1.210',
+  'http://10.0.1.41',
+  'http://10.0.1.10'
+]
+var counts = {
+  gone: 0,
+  ok: 0,
+  update: 0,
+  err: 0
+}
+function getCorrectDock (dockerTag, cb) {
+  async.detect(hosts, function (host, cb) {
+    new Dockerode({
+      host: host,
+      port: 4242
+    }).getImage(dockerTag).history(function (err) {
+      if (err && err.statusCode === 404) {
+        return cb(false)
+      } else if (err) {
+        console.log(' ERROR container history ', err)
+        counts.err++
+      }
+      return cb(true)
+    })
+  }, cb)
+}
 
-var docker = new Dockerode({
-  host: 'localhost',
-  port: 2375,
-  ca: fs.readFileSync('/Users/myztiq/runnable/devops-scripts/ansible/roles/docker_client/files/certs/swarm-manager/ca.pem'),
-  cert: fs.readFileSync('/Users/myztiq/runnable/devops-scripts/ansible/roles/docker_client/files/certs/swarm-manager/cert.pem'),
-  key: fs.readFileSync('/Users/myztiq/runnable/devops-scripts/ansible/roles/docker_client/files/certs/swarm-manager/key.pem')
-})
-console.log(docker);
-var container = docker.getContainer('5fd2529dcbac3e6b956a90e94287bb179e5b912bfd35e749e7b958f64bda9529')
-console.log(container);
-container.logs({
-  follow: false,
-  stdout: true,
-  stderr: true
-}, function (err, stream) {
-  stream
-  .on('data', function (data) {
-    console.log(data.toString());
-  }) // json parser events
-  .on('end', function () {
-    console.log('END');
-  })
+async.waterfall([
+  getAllContextVersion,
+  eachContextVersion
+], function (err) {
+  if (err) {
+    return console.log(' ERROR', err.stack)
+  }
+  mongoose.disconnect()
+  console.log('done everything went well')
+  console.log(counts)
 })
 
-console.log('Done');
+function getAllContextVersion (cb) {
+  console.log('getAllContextVersion')
+  ContextVersion.find({
+    'dockerHost': {
+      $exists: true
+    },
+    'build.dockerTag': {
+      $exists: true
+    }
+  }, cb)
+}
+
+function eachContextVersion (cvs, cb) {
+  console.log('eachContextVersion')
+  if (!cvs || cvs.length === 0) {
+    return cb()
+  }
+  async.eachLimit(cvs, 100, function (cv, callback) {
+    getCorrectDock(cv.build.dockerTag, function (host) {
+      if (!host) {
+        console.log(' ERROR', cv._id, 'container', cv.build.dockerTag, 'not exist on any dock')
+        counts.gone++
+      } else if (~host.indexOf(cv.dockerHost)) {
+        counts.update++
+      } else {
+        counts.ok++
+      }
+      callback()
+    })
+  }, cb)
+}
