@@ -1,5 +1,6 @@
 'use strict'
 
+var async = require('async')
 var Code = require('code')
 var Lab = require('lab')
 var ObjectId = require('mongoose').Types.ObjectId
@@ -23,73 +24,104 @@ describe('joi: ' + moduleName, function () {
     ctx = {}
     done()
   })
+
   describe('validateOrBoom', function () {
     beforeEach(function (done) {
-      sinon.stub(joi, 'validate')
+      sinon.spy(joi, 'validate')
       ctx.data = {
         foo: 1,
         bar: 1
       }
+      ctx.schema = joi.object().keys({
+        foo: joi.number().required(),
+        bar: joi.number().required()
+      })
       done()
     })
+
     afterEach(function (done) {
       joi.validate.restore()
       done()
     })
+
     describe('valid data', function () {
       beforeEach(function (done) {
         ctx.validData = {}
-        joi.validate.yieldsAsync(null, ctx.validData)
         done()
       })
 
-      it('should validate', function (done) {
-        var schema = {}
+      it('should validate with joi', function (done) {
         var opts = {}
-        joi.validateOrBoom(ctx.data, schema, opts, function (err, validData) {
+        joi.validateOrBoom(ctx.data, ctx.schema, opts, function (err, validData) {
           if (err) { return done(err) }
-          expect(validData).to.equal(ctx.validData)
+          sinon.assert.calledOnce(joi.validate)
+          sinon.assert.calledWithExactly(
+            joi.validate,
+            ctx.data,
+            ctx.schema,
+            opts,
+            sinon.match.func
+          )
+          expect(validData).to.deep.equal(ctx.data)
           done()
         })
       })
+
       it('should validate w/out cb', function (done) {
         // this test is for coverage
-        var schema = {}
         var opts = {}
-        joi.validateOrBoom(ctx.data, schema, opts)
-        done()
+        joi.validateOrBoom(ctx.data, ctx.schema, opts)
+        async.until(
+          function () { return joi.validate.called },
+          function (cb) { setTimeout(function () { cb() }, 10) },
+          function (err) {
+            if (err) { return done(err) }
+            sinon.assert.calledOnce(joi.validate)
+            done()
+          }
+        )
       })
     })
 
     describe('errors', function () {
       it('should callback badRequest err if data is null', function (done) {
-        var schema = {}
         var opts = {}
-        joi.validateOrBoom(null, schema, opts, function (err) {
+        joi.validateOrBoom(null, ctx.schema, opts, function (err) {
           expect(err.isBoom).to.be.true()
-          expect(err.message).to.match(/Value does not exist/i)
+          expect(err.message).to.match(/value.+object/)
           expect(err.output.statusCode).to.equal(400)
-          expect(err.data.err).to.equal(ctx.err)
           done()
         })
       })
 
-      it('should callback badRequest err if data is undefined', function (done) {
-        var schema = {}
-        var opts = {}
-        joi.validateOrBoom(undefined, schema, opts, function (err) {
+      // this is to prevent any weird pre-check before joi
+      it('should callback with modified label if provided', function (done) {
+        ctx.schema = ctx.schema.label('data')
+        joi.validateOrBoom(null, ctx.schema, {}, function (err) {
           expect(err.isBoom).to.be.true()
-          expect(err.message).to.match(/Value does not exist/i)
+          expect(err.message).to.match(/data.+object/)
           expect(err.output.statusCode).to.equal(400)
-          expect(err.data.err).to.equal(ctx.err)
+          done()
+        })
+      })
+
+      it('should callback badRequest err if required data is undefined', function (done) {
+        // this is a werid test because `undefined` is an object, evidently.
+        // make the schema required.
+        joi.validateOrBoom(undefined, ctx.schema.required(), {}, function (err) {
+          expect(err).to.exist()
+          expect(err.isBoom).to.be.true()
+          expect(err.message).to.match(/value.+required/)
+          expect(err.output.statusCode).to.equal(400)
           done()
         })
       })
 
       describe('unknown error', function () {
         beforeEach(function (done) {
+          joi.validate.restore()
           ctx.err = new Error('boom')
-          joi.validate.yieldsAsync(ctx.err)
+          sinon.stub(joi, 'validate').yieldsAsync(ctx.err)
           done()
         })
 
@@ -99,32 +131,6 @@ describe('joi: ' + moduleName, function () {
           joi.validateOrBoom(ctx.data, schema, opts, function (err) {
             expect(err.isBoom).to.be.true()
             expect(err.message).to.match(/invalid data/i)
-            expect(err.output.statusCode).to.equal(400)
-            expect(err.data.err).to.equal(ctx.err)
-            done()
-          })
-        })
-      })
-      describe('validation error', function () {
-        beforeEach(function (done) {
-          ctx.err = new Error('boom')
-          ctx.message = '"path" is required'
-          ctx.path = 'key.path'
-          ctx.err.details = [{
-            message: ctx.message,
-            path: ctx.path
-          }]
-          joi.validate.yieldsAsync(ctx.err)
-          done()
-        })
-
-        it('should callback badRequest err', function (done) {
-          var schema = {}
-          var opts = {}
-          joi.validateOrBoom(ctx.data, schema, opts, function (err) {
-            expect(err.isBoom).to.be.true()
-            expect(err.message).to.match(new RegExp())
-            expect(err.message).to.equal('"key.path" is required')
             expect(err.output.statusCode).to.equal(400)
             expect(err.data.err).to.equal(ctx.err)
             done()
