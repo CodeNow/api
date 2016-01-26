@@ -1823,7 +1823,6 @@ describe('Instance Model Tests ' + moduleName, function () {
     it('should update instance with isolation id', function (done) {
       instance.isolate(mockIsolationId).asCallback(function (err) {
         expect(err).to.not.exist()
-        console.log(instance.isolated, mockIsolationId)
         expect(instance.isolated.toString()).to.equal(mockIsolationId)
         done()
       })
