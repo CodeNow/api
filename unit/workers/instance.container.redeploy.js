@@ -138,7 +138,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           expect(err).to.be.instanceOf(TaskFatalError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
-            .to.contain('Value does not exist')
+            .to.match(/job.+required/)
           done()
         })
       })
