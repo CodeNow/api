@@ -12,8 +12,11 @@ var Code = require('code')
 var expect = Code.expect
 var Runnable = require('runnable')
 var Instance = require('models/mongo/instance')
+var User = require('models/mongo/user')
 
 var sinon = require('sinon')
+var Promise = require('bluebird')
+require('sinon-as-promised')(Promise)
 var Worker = require('workers/instance.rebuild')
 var TaskFatalError = require('ponos').TaskFatalError
 
@@ -25,17 +28,31 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
   var testData = {
     instanceId: testInstanceId
   }
+  var testUser = {
+    accounts: {
+      github: {
+        accessToken: 345
+      }
+    }
+  }
+  var testInstance = {
+    createdBy: {
+      github: 678
+    }
+  }
 
   describe('worker', function () {
     beforeEach(function (done) {
       sinon.stub(Runnable.prototype, 'githubLogin')
-      sinon.stub(Instance, 'findById')
+      sinon.stub(Instance, 'findById').yields(null, testInstance)
+      sinon.stub(User, 'findByGithubIdAsync').resolves(testUser)
       done()
     })
 
     afterEach(function (done) {
       Runnable.prototype.githubLogin.restore()
       Instance.findById.restore()
+      User.findByGithubIdAsync.restore()
       done()
     })
 
@@ -90,7 +107,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.equal(loginError.message)
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledWith(Runnable.prototype.githubLogin, testUser.accounts.github.accessToken)
             done()
           })
       })
@@ -99,7 +116,6 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
     describe('instance lookup fails', function () {
       var fetchError = new Error('Fetch error')
       beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yields(null)
         Instance.findById.yields(fetchError)
         done()
       })
@@ -107,8 +123,6 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
         Worker(testData)
           .asCallback(function (err) {
             expect(err.message).to.equal(fetchError.message)
-            sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
             sinon.assert.calledOnce(Instance.findById)
             sinon.assert.calledWith(Instance.findById, testData.instanceId)
             done()
@@ -118,16 +132,13 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
 
     describe('instance not found', function () {
       beforeEach(function (done) {
-        Runnable.prototype.githubLogin.yields(null)
         Instance.findById.yields(null, null)
         done()
       })
       it('should callback with error', function (done) {
         Worker(testData)
           .asCallback(function (err) {
-            expect(err.message).to.contain('Instance not found')
-            sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            expect(err.message).to.match(/instance not found/gi)
             sinon.assert.calledOnce(Instance.findById)
             sinon.assert.calledWith(Instance.findById, testData.instanceId)
             done()
@@ -140,7 +151,10 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       var testInstance = {
         _id: testData.instanceId,
         shortHash: 'va61',
-        build: 'build-id-1'
+        build: 'build-id-1',
+        createdBy: {
+          github: 123
+        }
       }
       var buildModel = {
         deepCopy: function (cb) {
@@ -164,7 +178,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.contain(deepCopyError.message)
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledWith(Runnable.prototype.githubLogin, testUser.accounts.github.accessToken)
             sinon.assert.calledOnce(Instance.findById)
             sinon.assert.calledWith(Instance.findById, testData.instanceId)
             sinon.assert.calledOnce(Runnable.prototype.newBuild)
@@ -180,7 +194,10 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       var testInstance = {
         _id: testData.instanceId,
         shortHash: 'va61',
-        build: 'build-id-1'
+        build: 'build-id-1',
+        createdBy: {
+          github: 456
+        }
       }
       var buildModel = {
         deepCopy: function (cb) {
@@ -209,7 +226,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.contain(buildError.message)
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledWith(Runnable.prototype.githubLogin, testUser.accounts.github.accessToken)
             sinon.assert.calledOnce(Instance.findById)
             sinon.assert.calledWith(Instance.findById, testData.instanceId)
             sinon.assert.calledTwice(Runnable.prototype.newBuild)
@@ -230,7 +247,10 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       var testInstance = {
         _id: testData.instanceId,
         shortHash: 'va61',
-        build: 'build-id-1'
+        build: 'build-id-1',
+        createdBy: {
+          github: 456
+        }
       }
       var instanceModel = {
         update: function (opts, cb) {
@@ -268,7 +288,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err.message).to.contain(updateError.message)
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledWith(Runnable.prototype.githubLogin, testUser.accounts.github.accessToken)
             sinon.assert.calledOnce(Instance.findById)
             sinon.assert.calledWith(Instance.findById, testData.instanceId)
             sinon.assert.calledTwice(Runnable.prototype.newBuild)
@@ -290,7 +310,10 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
       var testInstance = {
         _id: testData.instanceId,
         shortHash: 'va61',
-        build: 'build-id-1'
+        build: 'build-id-1',
+        createdBy: {
+          github: 456
+        }
       }
       var instanceModel = {
         update: function (opts, cb) {
@@ -327,7 +350,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledOnce(Runnable.prototype.githubLogin)
-            sinon.assert.calledWith(Runnable.prototype.githubLogin, process.env.HELLO_RUNNABLE_GITHUB_TOKEN)
+            sinon.assert.calledWith(Runnable.prototype.githubLogin, testUser.accounts.github.accessToken)
             sinon.assert.calledOnce(Instance.findById)
             sinon.assert.calledWith(Instance.findById, testData.instanceId)
             sinon.assert.calledTwice(Runnable.prototype.newBuild)
