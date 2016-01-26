@@ -245,7 +245,6 @@ describe('Isolation Model', function () {
         master: 'masterInstanceId',
         children: [ childRepo, childNonRepo ]
       }
-      mockMasterInstance.isolate = sinon.stub().resolves(mockMasterInstance)
       sinon.stub(Isolation, 'create').yieldsAsync(null, mockIsolation)
       sinon.stub(Isolation, '_validateCreateData').resolves()
       sinon.stub(Isolation, '_validateMasterNotIsolated').resolves(mockMasterInstance)
@@ -286,15 +285,6 @@ describe('Isolation Model', function () {
           done()
         })
       })
-
-      it('should return any isolation error', function (done) {
-        var error = new Error('pugsly')
-        mockMasterInstance.isolate.rejects(error)
-        Isolation.createIsolation(data).asCallback(function (err) {
-          expect(err).to.equal(error)
-          done()
-        })
-      })
     })
 
     it('should validate the data', function (done) {
@@ -332,18 +322,6 @@ describe('Isolation Model', function () {
             createdBy: { github: 'createdByGithubId' }
           },
           sinon.match.func
-        )
-        done()
-      })
-    })
-
-    it('should isolate the master instance w/ the new isolation', function (done) {
-      Isolation.createIsolation(data).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(mockMasterInstance.isolate)
-        sinon.assert.calledWithExactly(
-          mockMasterInstance.isolate,
-          mockIsolation
         )
         done()
       })
