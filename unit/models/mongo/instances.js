@@ -1775,4 +1775,94 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
   })
+
+  describe('.isolate', function () {
+    var mockIsolationId = 'deadbeefdeadbeefdeadbeef'
+    var mockInstance = {}
+    var instance
+
+    beforeEach(function (done) {
+      sinon.stub(Instance.prototype, 'save').yieldsAsync(null, mockInstance)
+      instance = createNewInstance('sample')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.prototype.save.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      it('should require isolationId', function (done) {
+        instance.isolate().asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/isolate requires isolationid/i)
+          done()
+        })
+      })
+
+      it('should require and object ID for isolationId', function (done) {
+        instance.isolate('hi').asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/isolate.+objectid.+isolationid/i)
+          done()
+        })
+      })
+
+      it('should reject with any save error', function (done) {
+        var error = new Error('pugsly')
+        Instance.prototype.save.yieldsAsync(error)
+        instance.isolate(mockIsolationId).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+    })
+
+    it('should update instance with isolation id', function (done) {
+      instance.isolate(mockIsolationId).asCallback(function (err) {
+        expect(err).to.not.exist()
+        console.log(instance.isolated, mockIsolationId)
+        expect(instance.isolated.toString()).to.equal(mockIsolationId)
+        done()
+      })
+    })
+
+    it('should save the instance to the database', function (done) {
+      instance.isolate(mockIsolationId).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.prototype.save)
+        sinon.assert.calledWithExactly(
+          Instance.prototype.save,
+          sinon.match.func
+        )
+        done()
+      })
+    })
+
+    it('should update the instance w/ master false by default', function (done) {
+      instance.isolate(mockIsolationId).asCallback(function (err) {
+        expect(err).to.not.exist()
+        expect(instance.isIsolationGroupMaster).to.equal(false)
+        done()
+      })
+    })
+
+    it('should update the instance w/ master true if supplied', function (done) {
+      instance.isolate(mockIsolationId, true).asCallback(function (err) {
+        expect(err).to.not.exist()
+        expect(instance.isIsolationGroupMaster).to.equal(true)
+        done()
+      })
+    })
+
+    it('should return the updated instance from the save', function (done) {
+      instance.isolate(mockIsolationId).asCallback(function (err, updatedInstance) {
+        expect(err).to.not.exist()
+        expect(updatedInstance).to.equal(mockInstance)
+        done()
+      })
+    })
+  })
 })
