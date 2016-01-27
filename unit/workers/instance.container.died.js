@@ -50,7 +50,8 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
     ctx.instanceId = '5633e9273e2b5b0c0077fd41'
     ctx.sessionUserGithubId = 111987
     ctx.data = {
-      id: 'container-id-1'
+      id: 'container-id-1',
+      status: 'die'
     }
     ctx.data.inspectData = {
       Config: {
