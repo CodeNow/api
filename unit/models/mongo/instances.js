@@ -1864,4 +1864,53 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
   })
+
+  describe('.deIsolate', function () {
+    var mockInstance = {}
+    var instance
+
+    beforeEach(function (done) {
+      sinon.stub(Instance.prototype, 'save').yieldsAsync(null, mockInstance)
+      instance = createNewInstance('sample')
+      instance.isolated = 'deadbeefdeadbeefdeadbeef'
+      instance.isIsolationGroupMaster = true
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.prototype.save.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      it('should reject with save errors', function (done) {
+        var error = new Error('pugsly')
+        Instance.prototype.save.yieldsAsync(error)
+        instance.deIsolate().asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+    })
+
+    it('should unset the isolation fields', function (done) {
+      instance.deIsolate().asCallback(function (err) {
+        expect(err).to.not.exist()
+        expect(instance.isolated).to.be.undefined()
+        expect(instance.isIsolationGroupMaster).to.be.undefined()
+        done()
+      })
+    })
+
+    it('should save the instance', function (done) {
+      instance.deIsolate().asCallback(function (err, updatedInstance) {
+        expect(err).to.not.exist()
+        expect(updatedInstance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.prototype.save)
+        sinon.assert.calledOn(Instance.prototype.save, instance)
+        done()
+      })
+    })
+  })
 })
