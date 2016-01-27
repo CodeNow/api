@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "6.15.4",
+  "version": "6.15.5",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -34,6 +34,7 @@
     "cors": "^2.4.1",
     "csurf": "^1.8.3",
     "dat-middleware": "^1.10.3",
+    "deep-equal": "^1.0.1",
     "defaults": "^1.0.0",
     "docker-frame": "^1.0.0",
     "docker-stream-cleanser": "^0.2.0",
@@ -130,8 +131,8 @@
   },
   "engineStrict": true,
   "engine": {
-    "node": "0.10.28",
-    "npm": "2.1.18"
+    "node": "0.10.38",
+    "npm": "2.8.3"
   },
   "scripts": {
     "_bdd": "NODE_PATH=./lib NODE_ENV=test lab --assert code --verbose --leaks --context-timeout 80000 --timeout 80000",
