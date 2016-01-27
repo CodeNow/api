@@ -896,7 +896,7 @@ describe('InstanceService: ' + moduleName, function () {
         expect(err.message).to.equal(testErr.message)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
         sinon.assert.calledOnce(Instance.prototype.setContainerStateToStartingAsync)
-        sinon.assert.calledOnce(rabbitMQ.startInstanceContainer)
+        sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
         sinon.assert.notCalled(rabbitMQ.redeployInstanceContainer)
         done()
       })
