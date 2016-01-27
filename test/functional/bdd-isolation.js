@@ -16,7 +16,6 @@ var dock = require('./fixtures/dock')
 var multi = require('./fixtures/multi-factory')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var primus = require('./fixtures/primus')
-var createCount = require('callback-count')
 
 describe('BDD - Isolation', function () {
   var ctx = {}
@@ -43,18 +42,7 @@ describe('BDD - Isolation', function () {
         if (err) { return done(err) }
         ctx.webInstance = instance
         ctx.user = user
-        ctx.build = build
-        // boy this is a bummer... let's cheat a little bit
-        require('./fixtures/mocks/github/user')(ctx.user)
-        require('./fixtures/mocks/github/user')(ctx.user)
-        require('./fixtures/mocks/github/user')(ctx.user)
-        var count = createCount(2, done)
-        primus.expectAction('start', {}, count.next)
-        ctx.instance = ctx.user.createInstance({
-          name: 'api-instance',
-          build: ctx.build.id(),
-          masterPod: true
-        }, count.next)
+        done()
       })
   })
 
@@ -91,6 +79,46 @@ describe('BDD - Isolation', function () {
         expect(data.isolated).to.equal(ctx.isolation._id.toString())
         expect(data.isIsolationGroupMaster).to.be.true()
         done()
+      })
+    })
+  })
+
+  describe('route issues when isolating', function () {
+    it('should 404 when instance not found', function (done) {
+      var opts = {
+        master: 'deadbeefdeadbeefdeadbeef',
+        children: []
+      }
+      ctx.user.createIsolation(opts, function (err, isolation) {
+        expect(err).to.exist()
+        expect(err.message).to.match(/instance not found/i)
+        expect(err.output.statusCode).to.equal(404)
+        done()
+      })
+    })
+
+    describe('with other instances', function () {
+      beforeEach(function (done) {
+        multi.createAndTailInstance(
+          primus,
+          { name: 'web-instance' },
+          function (err, instance, build, user) {
+            ctx.otherInstance = instance
+            done(err)
+          })
+      })
+
+      it('should send permissions issue', function (done) {
+        var opts = {
+          master: ctx.otherInstance.attrs._id.toString(),
+          children: []
+        }
+        ctx.user.createIsolation(opts, function (err, isolation) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/access denied/i)
+          expect(err.output.statusCode).to.equal(403)
+          done()
+        })
       })
     })
   })
