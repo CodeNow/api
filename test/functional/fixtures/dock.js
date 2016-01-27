@@ -18,8 +18,7 @@ var Hermes = require('runnable-hermes')
 var sauronMock = {
   start: function (cb) {
     var publishedEvents = [
-      'container.network.attached',
-      'container.network.attach-failed'
+      'container.network.attached'
     ]
 
     var subscribedEvents = [
