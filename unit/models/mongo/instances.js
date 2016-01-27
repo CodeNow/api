@@ -1782,13 +1782,13 @@ describe('Instance Model Tests ' + moduleName, function () {
     var instance
 
     beforeEach(function (done) {
-      sinon.stub(Instance.prototype, 'save').yieldsAsync(null, mockInstance)
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
       instance = createNewInstance('sample')
       done()
     })
 
     afterEach(function (done) {
-      Instance.prototype.save.restore()
+      Instance.findOneAndUpdate.restore()
       done()
     })
 
@@ -1809,9 +1809,9 @@ describe('Instance Model Tests ' + moduleName, function () {
         })
       })
 
-      it('should reject with any save error', function (done) {
+      it('should reject with any update error', function (done) {
         var error = new Error('pugsly')
-        Instance.prototype.save.yieldsAsync(error)
+        Instance.findOneAndUpdate.yieldsAsync(error)
         instance.isolate(mockIsolationId).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -1820,20 +1820,14 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
 
-    it('should update instance with isolation id', function (done) {
+    it('should update the instance to the database', function (done) {
       instance.isolate(mockIsolationId).asCallback(function (err) {
         expect(err).to.not.exist()
-        expect(instance.isolated.toString()).to.equal(mockIsolationId)
-        done()
-      })
-    })
-
-    it('should save the instance to the database', function (done) {
-      instance.isolate(mockIsolationId).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(Instance.prototype.save)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
         sinon.assert.calledWithExactly(
-          Instance.prototype.save,
+          Instance.findOneAndUpdate,
+          { _id: instance._id },
+          sinon.match.object,
           sinon.match.func
         )
         done()
@@ -1843,7 +1837,18 @@ describe('Instance Model Tests ' + moduleName, function () {
     it('should update the instance w/ master false by default', function (done) {
       instance.isolate(mockIsolationId).asCallback(function (err) {
         expect(err).to.not.exist()
-        expect(instance.isIsolationGroupMaster).to.equal(false)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdate,
+          { _id: instance._id },
+          {
+            $set: {
+              isolated: mockIsolationId,
+              isIsolationGroupMaster: false
+            }
+          },
+          sinon.match.func
+        )
         done()
       })
     })
@@ -1851,12 +1856,23 @@ describe('Instance Model Tests ' + moduleName, function () {
     it('should update the instance w/ master true if supplied', function (done) {
       instance.isolate(mockIsolationId, true).asCallback(function (err) {
         expect(err).to.not.exist()
-        expect(instance.isIsolationGroupMaster).to.equal(true)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdate,
+          { _id: instance._id },
+          {
+            $set: {
+              isolated: mockIsolationId,
+              isIsolationGroupMaster: true
+            }
+          },
+          sinon.match.func
+        )
         done()
       })
     })
 
-    it('should return the updated instance from the save', function (done) {
+    it('should return the updated instance from the update', function (done) {
       instance.isolate(mockIsolationId).asCallback(function (err, updatedInstance) {
         expect(err).to.not.exist()
         expect(updatedInstance).to.equal(mockInstance)
