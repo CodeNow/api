@@ -29,7 +29,7 @@ describe('Isolation Services Model', function () {
         sessionUser: mockSessionUser,
         master: 'masterInstanceId'
       }
-      mockInstance.isolate = sinon.stub().resolves()
+      mockInstance.isolate = sinon.stub().resolves(mockInstance)
       mockInstance.emitInstanceUpdateAsync = sinon.stub().resolves()
       sinon.stub(Isolation, '_validateMasterNotIsolated').resolves(mockInstance)
       sinon.stub(Isolation, '_validateCreateData').resolves()
@@ -145,7 +145,8 @@ describe('Isolation Services Model', function () {
         sinon.assert.calledOnce(mockInstance.isolate)
         sinon.assert.calledWithExactly(
           mockInstance.isolate,
-          mockNewIsolation._id
+          mockNewIsolation._id,
+          true // markes as isolation group master
         )
         done()
       })
