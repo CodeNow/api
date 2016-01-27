@@ -1801,7 +1801,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         })
       })
 
-      it('should require and object ID for isolationId', function (done) {
+      it('should require an object ID for isolationId', function (done) {
         instance.isolate('hi').asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/isolate.+objectid.+isolationid/i)
