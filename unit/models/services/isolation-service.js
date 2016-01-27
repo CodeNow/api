@@ -20,7 +20,7 @@ var IsolationService = require('models/services/isolation-service')
 describe('Isolation Services Model', function () {
   describe('#createIsolationAndEmitInstanceUpdates', function () {
     var mockInstance = {}
-    var mockNewIsolation = {}
+    var mockNewIsolation = { _id: 'newIsolationId' }
     var mockSessionUser = {}
     var data
 
@@ -145,7 +145,7 @@ describe('Isolation Services Model', function () {
         sinon.assert.calledOnce(mockInstance.isolate)
         sinon.assert.calledWithExactly(
           mockInstance.isolate,
-          mockNewIsolation
+          mockNewIsolation._id
         )
         done()
       })
