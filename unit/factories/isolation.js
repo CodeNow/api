@@ -13,7 +13,6 @@ module.exports = function createNewIsolation (instances) {
 
   return new Isolation({
     owner: { github: validation.VALID_GITHUB_ID },
-    createdBy: { github: validation.VALID_GITHUB_ID },
-    instances: instances
+    createdBy: { github: validation.VALID_GITHUB_ID }
   })
 }
