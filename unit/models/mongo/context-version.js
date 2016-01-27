@@ -316,8 +316,8 @@ describe('Context Version: ' + moduleName, function () {
       }
       cv.writeLogsToPrimusStream(stream, function (err) {
         if (err) { return done(err) }
-        expect(cache).to.have.length(3)
-        expect(cache).to.deep.equal([
+        expect(cache).to.have.length(1)
+        expect(cache[0]).to.deep.equal([
           {
             type: 'log',
             content: 'hello'
@@ -355,8 +355,8 @@ describe('Context Version: ' + moduleName, function () {
       }
       cv.writeLogsToPrimusStream(stream, function (err) {
         if (err) { return done(err) }
-        expect(cache).to.have.length(2)
-        expect(cache).to.deep.equal([
+        expect(cache).to.have.length(1)
+        expect(cache[0]).to.deep.equal([
           {
             type: 'log',
             content: 'hello'
