@@ -73,9 +73,9 @@ describe('Context Version: ' + moduleName, function () {
     })
 
     it('should get overriden memory limit', function (done) {
-      testCv.userContainerMemory = 512000002
+      testCv.userContainerMemoryInBytes = 512000002
       var out = testCv.getUserContainerMemoryLimit()
-      expect(out).to.equal(testCv.userContainerMemory)
+      expect(out).to.equal(testCv.userContainerMemoryInBytes)
       sinon.assert.notCalled(ContextVersion.getMainAppCodeVersion)
       done()
     })
