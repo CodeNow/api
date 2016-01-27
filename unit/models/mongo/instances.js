@@ -212,7 +212,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         sinon.assert.calledOnce(Instance.find)
         sinon.assert.calledWith(Instance.find, {
           'container.dockerHost': testHost,
-          'build.completed': { $exists: true },
+          'contextVersion.build.completed': { $exists: true },
           $or: [
             { 'container.inspect.State.Stopping': false },
             { 'container.inspect.State.Status': { $ne: 'exited' } }
