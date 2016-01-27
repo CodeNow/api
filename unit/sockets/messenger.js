@@ -318,37 +318,61 @@ describe('Messenger: ' + moduleName, function () {
       var id = 'some-id'
       var data = { type: 'some-type', action: 'join' }
       var socket = {}
-      socket.write = function (msg) {
-        expect(msg.id).to.equal(id)
-        expect(msg.error).to.equal('name, type and action are required')
-        expect(msg.data).to.equal(data)
+      socket.write = sinon.stub()
+      Messenger.subscribeStreamHandler(socket, id, data).asCallback(function (err) {
+        sinon.assert.calledOnce(socket.write)
+        sinon.assert.calledWithExactly(
+          socket.write,
+          {
+            id: id,
+            error: 'name, type and action are required',
+            data: data
+          }
+        )
+        expect(err).to.exist()
+        expect(err.message).to.match(/name.+type.+action.+required/)
         done()
-      }
-      Messenger.subscribeStreamHandler(socket, id, data)
+      })
     })
     it('should return error if action is empty', function (done) {
       var id = 'some-id'
       var data = { type: 'some-type', name: 'some-name' }
       var socket = {}
-      socket.write = function (msg) {
-        expect(msg.id).to.equal(id)
-        expect(msg.error).to.equal('name, type and action are required')
-        expect(msg.data).to.equal(data)
+      socket.write = sinon.stub()
+      Messenger.subscribeStreamHandler(socket, id, data).asCallback(function (err) {
+        sinon.assert.calledOnce(socket.write)
+        sinon.assert.calledWithExactly(
+          socket.write,
+          {
+            id: id,
+            error: 'name, type and action are required',
+            data: data
+          }
+        )
+        expect(err).to.exist()
+        expect(err.message).to.match(/name.+type.+action.+required/)
         done()
-      }
-      Messenger.subscribeStreamHandler(socket, id, data)
+      })
     })
     it('should return error if type is empty', function (done) {
       var id = 'some-id'
       var data = { action: 'join', name: 'some-name' }
       var socket = {}
-      socket.write = function (msg) {
-        expect(msg.id).to.equal(id)
-        expect(msg.error).to.equal('name, type and action are required')
-        expect(msg.data).to.equal(data)
+      socket.write = sinon.stub()
+      Messenger.subscribeStreamHandler(socket, id, data).asCallback(function (err) {
+        sinon.assert.calledOnce(socket.write)
+        sinon.assert.calledWithExactly(
+          socket.write,
+          {
+            id: id,
+            error: 'name, type and action are required',
+            data: data
+          }
+        )
+        expect(err).to.exist()
+        expect(err.message).to.match(/name.+type.+action.+required/)
         done()
-      }
-      Messenger.subscribeStreamHandler(socket, id, data)
+      })
     })
     it('should return access denied if user wasnot found', function (done) {
       var id = 'some-id'

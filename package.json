@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "6.15.3",
+  "version": "6.15.4",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -123,6 +123,7 @@
     "rimraf": "^2.2.8",
     "server-destroy": "^1.0.0",
     "sinon": "^1.14.1",
+    "sinon-as-promised": "^4.0.0",
     "snazzy": "^2.0.1",
     "standard": "^5.3.1",
     "through": "^2.3.8"
