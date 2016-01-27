@@ -1886,7 +1886,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     var instance
 
     beforeEach(function (done) {
-      sinon.stub(Instance.prototype, 'save').yieldsAsync(null, mockInstance)
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
       instance = createNewInstance('sample')
       instance.isolated = 'deadbeefdeadbeefdeadbeef'
       instance.isIsolationGroupMaster = true
@@ -1894,14 +1894,14 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
 
     afterEach(function (done) {
-      Instance.prototype.save.restore()
+      Instance.findOneAndUpdate.restore()
       done()
     })
 
     describe('errors', function () {
-      it('should reject with save errors', function (done) {
+      it('should reject with update errors', function (done) {
         var error = new Error('pugsly')
-        Instance.prototype.save.yieldsAsync(error)
+        Instance.findOneAndUpdate.yieldsAsync(error)
         instance.deIsolate().asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -1910,21 +1910,22 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
 
-    it('should unset the isolation fields', function (done) {
-      instance.deIsolate().asCallback(function (err) {
-        expect(err).to.not.exist()
-        expect(instance.isolated).to.be.undefined()
-        expect(instance.isIsolationGroupMaster).to.be.undefined()
-        done()
-      })
-    })
-
-    it('should save the instance', function (done) {
+    it('should update the instance', function (done) {
       instance.deIsolate().asCallback(function (err, updatedInstance) {
         expect(err).to.not.exist()
         expect(updatedInstance).to.equal(mockInstance)
-        sinon.assert.calledOnce(Instance.prototype.save)
-        sinon.assert.calledOn(Instance.prototype.save, instance)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdate,
+          { _id: instance._id },
+          {
+            $unset: {
+              isolated: true,
+              isIsolationGroupMaster: true
+            }
+          },
+          sinon.match.func
+        )
         done()
       })
     })
