@@ -11,6 +11,8 @@ var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 
+var createCount = require('callback-count')
+
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
 var multi = require('./fixtures/multi-factory')
@@ -46,7 +48,7 @@ describe('BDD - Isolation', function () {
       })
   })
 
-  it('should let us make a debug container', function (done) {
+  it('should let us make an isolation', function (done) {
     var opts = {
       master: ctx.webInstance.attrs._id.toString(),
       children: []
@@ -57,6 +59,40 @@ describe('BDD - Isolation', function () {
       expect(isolation.owner.github).to.equal(ctx.webInstance.attrs.owner.github)
       expect(isolation.createdBy.github).to.equal(ctx.webInstance.attrs.createdBy.github)
       done()
+    })
+  })
+
+  it('should message through primus the update', function (done) {
+    var socketIsolationId
+    var createdIsolationId
+    // final callback
+    var count = createCount(2, function (err) {
+      if (err) { return done(err) }
+      expect(createdIsolationId).to.equal(socketIsolationId)
+      done()
+    })
+    // should get a primus action
+    primus.expectAction('isolation', function (err, data) {
+      if (err) { return count.next(err) }
+      // try because having multiple throws can be bad
+      try {
+        expect(data.data.data.isIsolationGroupMaster).to.be.true()
+        expect(data.data.data.isolated).to.exist()
+      } catch (expectErr) {
+        err = expectErr
+      }
+      socketIsolationId = data.data.data.isolated
+      count.next(err)
+    })
+    var opts = {
+      master: ctx.webInstance.attrs._id.toString(),
+      children: []
+    }
+    // should create the isolation correctly
+    ctx.user.createIsolation(opts, function (err, newIsolation) {
+      if (err) { count.next(err) }
+      createdIsolationId = newIsolation._id
+      count.next()
     })
   })
 
