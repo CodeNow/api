@@ -66,19 +66,35 @@ describe('BDD - Isolation', function () {
         master: ctx.webInstance.attrs._id.toString(),
         children: []
       }
-      ctx.user.createIsolation(opts, function (err, isolation) {
-        ctx.isolation = isolation
-        done(err)
-      })
+      ctx.isolation = ctx.user.createIsolation(opts, done)
     })
 
     it('should be reflected in the instance', function (done) {
       ctx.webInstance.fetch(function (err, data) {
         if (err) { return done(err) }
         expect(data._id).to.equal(ctx.webInstance.attrs._id.toString())
-        expect(data.isolated).to.equal(ctx.isolation._id.toString())
+        expect(data.isolated).to.equal(ctx.isolation.attrs._id.toString())
         expect(data.isIsolationGroupMaster).to.be.true()
         done()
+      })
+    })
+
+    it('should be able to be deisolated', function (done) {
+      ctx.isolation.destroy(done)
+    })
+
+    describe('when it is destroyed', function () {
+      beforeEach(function (done) {
+        ctx.isolation.destroy(done)
+      })
+
+      it('should unset the fields on the instance', function (done) {
+        ctx.webInstance.fetch(function (err, data) {
+          if (err) { return done(err) }
+          expect(data.isolated).to.be.undefined()
+          expect(data.isIsolationGroupMaster).to.be.undefined()
+          done()
+        })
       })
     })
   })
