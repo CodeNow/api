@@ -8,11 +8,11 @@ var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 
 var expect = require('code').expect
+var pick = require('101/pick')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
 var Bunyan = require('bunyan')
-// var Instance = require('models/mongo/instance')
 var Isolation = require('models/mongo/isolation')
 
 var IsolationService = require('models/services/isolation-service')
@@ -27,7 +27,8 @@ describe('Isolation Services Model', function () {
     beforeEach(function (done) {
       data = {
         sessionUser: mockSessionUser,
-        master: 'masterInstanceId'
+        master: 'masterInstanceId',
+        children: []
       }
       mockInstance.isolate = sinon.stub().resolves(mockInstance)
       mockInstance.emitInstanceUpdateAsync = sinon.stub().resolves()
@@ -103,13 +104,13 @@ describe('Isolation Services Model', function () {
       })
     })
 
-    it('should validate the instance data', function (done) {
+    it('should validate the isolation data', function (done) {
       IsolationService.createIsolationAndEmitInstanceUpdates(data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Isolation._validateCreateData)
         sinon.assert.calledWithExactly(
           Isolation._validateCreateData,
-          data
+          pick(data, [ 'master', 'children' ])
         )
         done()
       })
@@ -133,7 +134,7 @@ describe('Isolation Services Model', function () {
         sinon.assert.calledOnce(Isolation.createIsolation)
         sinon.assert.calledWithExactly(
           Isolation.createIsolation,
-          data
+          pick(data, [ 'master', 'children' ])
         )
         done()
       })
