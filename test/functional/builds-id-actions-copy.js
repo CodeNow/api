@@ -10,6 +10,7 @@ var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
+var ObjectId = require('mongoose').Types.ObjectId
 
 var api = require('./fixtures/api-control')
 var multi = require('./fixtures/multi-factory')
@@ -20,6 +21,8 @@ var not = require('101/not')
 var exists = require('101/exists')
 var createCount = require('callback-count')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
+
+var ContextVersion = require('models/mongo/context-version')
 
 describe('Build Copy - /builds/:id/actions/copy', function () {
   var ctx = {}
@@ -83,6 +86,37 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
     })
     describe('deep copy', function () {
       describe('as owner', function () {
+        describe('with userContainerMemoryInBytes set on the context version', function () {
+          beforeEach(function (done) {
+            ContextVersion.findById(new ObjectId(ctx.contextVersion.id()), function (err, cv) {
+              cv.userContainerMemoryInBytes = 1337
+              cv.save(done)
+            })
+          })
+          it('should create a copy of the context version maintaining the memory', function (done) {
+            var expectedNewBuild = clone(ctx.build.json())
+            expectedNewBuild.contextVersions = function (contextVersions) {
+              expect(contextVersions.length).to.equal(1)
+              expect(contextVersions[0]).to.not.equal(ctx.contextVersion.id())
+              return true
+            }
+            expectedNewBuild.contexts = [ctx.context.id()]
+            expectedNewBuild._id = not(equals(ctx.build.attrs._id))
+            expectedNewBuild.id = not(equals(ctx.build.attrs.id))
+            expectedNewBuild.created = not(equals(ctx.build.attrs.created))
+            expectedNewBuild.started = not(exists)
+            expectedNewBuild.completed = not(exists)
+            expectedNewBuild.duration = not(exists)
+            ctx.buildCopy = ctx.build
+              .deepCopy(expects.success(201, expectedNewBuild, function (err) {
+                if (err) { return done(err) }
+                ContextVersion.findById(new ObjectId(ctx.buildCopy.attrs.contextVersions[0]), function (err, cv) {
+                  expect(cv.userContainerMemoryInBytes).to.equal(1337)
+                  expectUnbuiltVersions(ctx, done)(err)
+                })
+              }))
+          });
+        })
         it('should create a copy of the build', function (done) {
           var expectedNewBuild = clone(ctx.build.json())
           expectedNewBuild.contextVersions = function (contextVersions) {
