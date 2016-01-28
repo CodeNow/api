@@ -540,7 +540,8 @@ describe('InstanceService: ' + moduleName, function () {
             '_id': ctx.opts.instanceId,
             'container': {
               $exists: false
-            }
+            },
+            'contextVersion.id': ctx.opts.contextVersionId
           }
           sinon.assert.calledWith(Instance.findOne, instanceQuery, sinon.match.func)
           expect(data).to.deep.equal({
@@ -570,7 +571,8 @@ describe('InstanceService: ' + moduleName, function () {
             '_id': ctx.opts.instanceId,
             'container': {
               $exists: false
-            }
+            },
+            'contextVersion.id': ctx.opts.contextVersionId
           }
           sinon.assert.calledWith(Instance.findOne, instanceQuery, sinon.match.func)
           expect(data).to.deep.equal({
@@ -593,7 +595,8 @@ describe('InstanceService: ' + moduleName, function () {
             '_id': ctx.opts.instanceId,
             'container': {
               $exists: false
-            }
+            },
+            'contextVersion.id': ctx.opts.contextVersionId
           }
           sinon.assert.calledWith(Instance.findOne, instanceQuery, sinon.match.func)
           expect(data).to.not.exist()
@@ -613,7 +616,8 @@ describe('InstanceService: ' + moduleName, function () {
             '_id': ctx.opts.instanceId,
             'container': {
               $exists: false
-            }
+            },
+            'contextVersion.id': ctx.opts.contextVersionId
           }
           sinon.assert.calledWith(Instance.findOne, instanceQuery, sinon.match.func)
           expect(data).to.not.exist()
