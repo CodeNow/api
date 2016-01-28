@@ -124,7 +124,7 @@ describe('ContainerNetworkAttached: ' + moduleName, function () {
           expect(queryArg['container.dockerContainer']).to.equal(ctx.data.id)
           expect(InstanceService.modifyExistingContainerInspect.callCount).to.equal(1)
           var args = InstanceService.modifyExistingContainerInspect.getCall(0).args
-          expect(args[0]).to.equal(ctx.mockInstance)
+          expect(args[0]).to.equal(ctx.mockInstance._id)
           expect(args[1]).to.equal(ctx.data.id)
           expect(args[2]).to.equal(ctx.data.inspectData)
           expect(args[3]).to.equal(ctx.data.containerIp)
@@ -195,7 +195,7 @@ describe('ContainerNetworkAttached: ' + moduleName, function () {
           expect(err).to.be.null()
           expect(InstanceService.modifyExistingContainerInspect.callCount).to.equal(1)
           var args = InstanceService.modifyExistingContainerInspect.getCall(0).args
-          expect(args[0]).to.equal(ctx.mockInstance)
+          expect(args[0]).to.equal(ctx.mockInstance._id)
           expect(args[1]).to.equal(ctx.data.id)
           expect(args[2]).to.equal(ctx.data.inspectData)
           expect(args[3]).to.equal(ctx.data.containerIp)

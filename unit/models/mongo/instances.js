@@ -212,7 +212,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         sinon.assert.calledOnce(Instance.find)
         sinon.assert.calledWith(Instance.find, {
           'container.dockerHost': testHost,
-          'build.completed': { $exists: true },
+          'contextVersion.build.completed': { $exists: true },
           $or: [
             { 'container.inspect.State.Stopping': false },
             { 'container.inspect.State.Status': { $ne: 'exited' } }
@@ -1772,6 +1772,161 @@ describe('Instance Model Tests ' + moduleName, function () {
           sinon.assert.notCalled(ctx.instance.update)
           done()
         })
+      })
+    })
+  })
+
+  describe('.isolate', function () {
+    var mockIsolationId = 'deadbeefdeadbeefdeadbeef'
+    var mockInstance = {}
+    var instance
+
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
+      instance = createNewInstance('sample')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAndUpdate.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      it('should require isolationId', function (done) {
+        instance.isolate().asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/isolate requires isolationid/i)
+          done()
+        })
+      })
+
+      it('should require an object ID for isolationId', function (done) {
+        instance.isolate('hi').asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/isolate.+objectid.+isolationid/i)
+          done()
+        })
+      })
+
+      it('should reject with any update error', function (done) {
+        var error = new Error('pugsly')
+        Instance.findOneAndUpdate.yieldsAsync(error)
+        instance.isolate(mockIsolationId).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+    })
+
+    it('should update the instance to the database', function (done) {
+      instance.isolate(mockIsolationId).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdate,
+          { _id: instance._id },
+          sinon.match.object,
+          sinon.match.func
+        )
+        done()
+      })
+    })
+
+    it('should update the instance w/ master false by default', function (done) {
+      instance.isolate(mockIsolationId).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdate,
+          { _id: instance._id },
+          {
+            $set: {
+              isolated: mockIsolationId,
+              isIsolationGroupMaster: false
+            }
+          },
+          sinon.match.func
+        )
+        done()
+      })
+    })
+
+    it('should update the instance w/ master true if supplied', function (done) {
+      instance.isolate(mockIsolationId, true).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdate,
+          { _id: instance._id },
+          {
+            $set: {
+              isolated: mockIsolationId,
+              isIsolationGroupMaster: true
+            }
+          },
+          sinon.match.func
+        )
+        done()
+      })
+    })
+
+    it('should return the updated instance from the update', function (done) {
+      instance.isolate(mockIsolationId).asCallback(function (err, updatedInstance) {
+        expect(err).to.not.exist()
+        expect(updatedInstance).to.equal(mockInstance)
+        done()
+      })
+    })
+  })
+
+  describe('.deIsolate', function () {
+    var mockInstance = {}
+    var instance
+
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
+      instance = createNewInstance('sample')
+      instance.isolated = 'deadbeefdeadbeefdeadbeef'
+      instance.isIsolationGroupMaster = true
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAndUpdate.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      it('should reject with update errors', function (done) {
+        var error = new Error('pugsly')
+        Instance.findOneAndUpdate.yieldsAsync(error)
+        instance.deIsolate().asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+    })
+
+    it('should update the instance', function (done) {
+      instance.deIsolate().asCallback(function (err, updatedInstance) {
+        expect(err).to.not.exist()
+        expect(updatedInstance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdate,
+          { _id: instance._id },
+          {
+            $unset: {
+              isolated: true,
+              isIsolationGroupMaster: true
+            }
+          },
+          sinon.match.func
+        )
+        done()
       })
     })
   })
