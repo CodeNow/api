@@ -906,7 +906,8 @@ describe('docker: ' + moduleName, function () {
             repo: 'github.com/user/repo2',
             privateKey: 'private2'
           }
-        ]
+        ],
+        getUserContainerMemoryLimit: sinon.stub().returns(1234)
       }
       ctx.opts = {
         instance: ctx.mockInstance,
@@ -946,35 +947,11 @@ describe('docker: ' + moduleName, function () {
             ]),
             Image: ctx.mockContextVersion.build.dockerTag,
             HostConfig: {
-              Memory: process.env.CONTAINER_REPO_MEMORY_LIMIT_BYTES
+              Memory: 1234
             }
           }
-          sinon.assert.calledWith(
-            Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
-          )
 
-          expect(container).to.equal(ctx.mockContainer)
-          done()
-        })
-      })
-
-      it('should create a container with non-repo memory limit', function (done) {
-        ctx.opts.contextVersion.appCodeVersions = []
-        model.createUserContainer(ctx.opts, function (err, container) {
-          if (err) { return done(err) }
-          sinon.assert.calledWith(
-            Docker.prototype._createUserContainerLabels, ctx.opts, sinon.match.func
-          )
-          var expectedCreateOpts = {
-            Labels: ctx.mockLabels,
-            Env: ctx.mockInstance.env.concat([
-              'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash
-            ]),
-            Image: ctx.mockContextVersion.build.dockerTag,
-            HostConfig: {
-              Memory: process.env.CONTAINER_NON_REPO_MEMORY_LIMIT_BYTES
-            }
-          }
+          sinon.assert.calledOnce(ctx.mockContextVersion.getUserContainerMemoryLimit)
           sinon.assert.calledWith(
             Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
           )
@@ -1080,18 +1057,20 @@ describe('docker: ' + moduleName, function () {
         appCodeVersions: [{
           repo: 'github.com/user/repo2',
           privateKey: 'private2'
-        }]
+        }],
+        getUserContainerMemoryLimit: sinon.stub().returns(1234)
       }
       model.startContainer.yieldsAsync()
 
       model.startUserContainer(testId, testCv, function (err) {
         if (err) { return done(err) }
+        sinon.assert.calledOnce(testCv.getUserContainerMemoryLimit)
         sinon.assert.calledOnce(model.startContainer)
         sinon.assert.calledWith(model.startContainer,
           testId, {
             HostConfig: {
               PublishAllPorts: true,
-              Memory: process.env.CONTAINER_REPO_MEMORY_LIMIT_BYTES
+              Memory: 1234
             }
           })
         done()
@@ -1101,18 +1080,20 @@ describe('docker: ' + moduleName, function () {
     it('should startContainer with non-repo limit', function (done) {
       var testId = '123'
       var testCv = {
-        appCodeVersions: []
+        appCodeVersions: [],
+        getUserContainerMemoryLimit: sinon.stub().returns(1234)
       }
       model.startContainer.yieldsAsync()
 
       model.startUserContainer(testId, testCv, function (err) {
         if (err) { return done(err) }
+        sinon.assert.calledOnce(testCv.getUserContainerMemoryLimit)
         sinon.assert.calledOnce(model.startContainer)
         sinon.assert.calledWith(model.startContainer,
           testId, {
             HostConfig: {
               PublishAllPorts: true,
-              Memory: process.env.CONTAINER_NON_REPO_MEMORY_LIMIT_BYTES
+              Memory: 1234
             }
           })
         done()
@@ -1123,18 +1104,20 @@ describe('docker: ' + moduleName, function () {
       var testId = '123'
       var testErr = 'viking'
       var testCv = {
-        appCodeVersions: []
+        appCodeVersions: [],
+        getUserContainerMemoryLimit: sinon.stub().returns(1234)
       }
       model.startContainer.yieldsAsync(testErr)
 
       model.startUserContainer(testId, testCv, function (err) {
         expect(err).to.equal(testErr)
+        sinon.assert.calledOnce(testCv.getUserContainerMemoryLimit)
         sinon.assert.calledOnce(model.startContainer)
         sinon.assert.calledWith(model.startContainer,
           testId, {
             HostConfig: {
               PublishAllPorts: true,
-              Memory: process.env.CONTAINER_NON_REPO_MEMORY_LIMIT_BYTES
+              Memory: 1234
             }
           })
         done()
