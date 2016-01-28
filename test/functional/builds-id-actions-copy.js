@@ -89,6 +89,7 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
         describe('with userContainerMemoryInBytes set on the context version', function () {
           beforeEach(function (done) {
             ContextVersion.findById(new ObjectId(ctx.contextVersion.id()), function (err, cv) {
+              if (err) { return done(err) }
               cv.userContainerMemoryInBytes = 1337
               cv.save(done)
             })
@@ -115,7 +116,7 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
                   expectUnbuiltVersions(ctx, done)(err)
                 })
               }))
-          });
+          })
         })
         it('should create a copy of the build', function (done) {
           var expectedNewBuild = clone(ctx.build.json())
