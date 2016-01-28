@@ -136,7 +136,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           expect(Context.findOne.args[0][1], 'findOne').to.be.a.function()
 
           // This was called at the beginning, and at the end (before the emit)
-          expect(ContextVersion.findOne.callCount, 'findOne').to.equal(2)
+          expect(ContextVersion.findOne.callCount, 'findOne').to.equal(1)
           expect(ContextVersion.findOne.args[0][0], 'findOne').to.deep.equal({
             '_id': ctx.mockContextVersion._id,
             'build.dockerContainer': {
@@ -150,10 +150,6 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
             }
           })
           expect(ContextVersion.findOne.args[0][1], 'findOne').to.be.a.function()
-
-          expect(ContextVersion.findOne.args[1][0], 'findOne').to.deep.equal({
-            '_id': ctx.mockContextVersion._id
-          })
 
           expect(Docker.getDockerTag.callCount, 'getDockerTag').to.equal(1)
           expect(Docker.getDockerTag.args[0][0], 'getDockerTag arg0')
@@ -181,18 +177,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
           expect(opts.tag).to.equal(Docker.getDockerTag(ctx.mockContextVersion))
           expect(ContextVersion.updateContainerByBuildId.args[0][1], 'updateContainer')
             .to.be.a.function()
-          expect(
-            messenger.emitContextVersionUpdate.callCount,
-            'emitContextVersionUpdate'
-          ).to.equal(1)
-          expect(
-            messenger.emitContextVersionUpdate.args[0][0],
-            'emitContextVersionUpdate arg0'
-          ).to.equal(ctx.mockContextVersion)
-          expect(
-            messenger.emitContextVersionUpdate.args[0][1],
-            'emitContextVersionUpdate arg0'
-          ).to.equal('build_started')
+
           done()
         })
       })

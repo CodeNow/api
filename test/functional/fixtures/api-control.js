@@ -36,7 +36,6 @@ function ensureIndexes (cb) {
 // this create exchanges that is used by api
 var publishedEvents = [
   'container.network.attached',
-  'container.network.attach-failed',
   'dock.removed'
 ]
 

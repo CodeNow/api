@@ -16,7 +16,6 @@ var dock = require('./fixtures/dock')
 var multi = require('./fixtures/multi-factory')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var primus = require('./fixtures/primus')
-var createCount = require('callback-count')
 var Docker = require('models/apis/docker')
 var sinon = require('sinon')
 var krain = require('krain')
@@ -67,13 +66,16 @@ describe('BDD - Debug Containers', function () {
         require('./fixtures/mocks/github/user')(ctx.user)
         require('./fixtures/mocks/github/user')(ctx.user)
         require('./fixtures/mocks/github/user')(ctx.user)
-        var count = createCount(2, done)
-        primus.expectAction('start', {}, count.next)
         ctx.instance = ctx.user.createInstance({
           name: 'api-instance',
           build: ctx.build.id(),
           masterPod: true
-        }, count.next)
+        }, function (err) {
+          if (err) { return done(err) }
+          primus.expectAction('start', {}, function () {
+            ctx.instance.fetch(done)
+          })
+        })
       })
   })
 
