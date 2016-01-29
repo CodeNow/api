@@ -443,17 +443,16 @@ describe('Isolation Services Model', function () {
 
     beforeEach(function (done) {
       mockInstance.deIsolate = sinon.stub().resolves(mockInstance)
-      mockInstance.emitInstanceUpdateAsync = sinon.stub().resolves()
       sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
       sinon.stub(Isolation, 'findOneAndRemove').yieldsAsync(null, mockIsolation)
-      sinon.stub(Bunyan.prototype, 'warn')
+      sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
       done()
     })
 
     afterEach(function (done) {
       Instance.findOne.restore()
       Isolation.findOneAndRemove.restore()
-      Bunyan.prototype.warn.restore()
+      IsolationService._emitUpdateForInstances.restore()
       done()
     })
 
@@ -516,22 +515,6 @@ describe('Isolation Services Model', function () {
             done()
           })
       })
-
-      it('should catch and log errors on emitting updates', function (done) {
-        var error = new Error('pugsly')
-        mockInstance.emitInstanceUpdateAsync.rejects(error)
-        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
-          .asCallback(function (err) {
-            expect(err).to.not.exist()
-            sinon.assert.calledOnce(Bunyan.prototype.warn)
-            sinon.assert.calledWithExactly(
-              Bunyan.prototype.warn,
-              sinon.match.object,
-              'isolation service delete failed to emit instance updates'
-            )
-            done()
-          })
-      })
     })
 
     it('should find the instance that is isolated by the given id', function (done) {
@@ -576,11 +559,11 @@ describe('Isolation Services Model', function () {
       IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockInstance.emitInstanceUpdateAsync)
+          sinon.assert.calledOnce(IsolationService._emitUpdateForInstances)
           sinon.assert.calledWithExactly(
-            mockInstance.emitInstanceUpdateAsync,
-            mockSessionUser,
-            'isolation'
+            IsolationService._emitUpdateForInstances,
+            [ mockInstance ],
+            mockSessionUser
           )
           done()
         })
