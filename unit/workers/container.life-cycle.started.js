@@ -60,6 +60,29 @@ describe('container.life-cycle.started unit test', function () {
         done()
       })
     })
+
+    it('should set report false if not image builder', function (done) {
+      delete testJob.inspectData.Config.Labels.type
+      testJob.from = 'random'
+
+      ContainerLifeCycleStarted(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.data.err.message).to.match(/type.*required/)
+        expect(err.report).to.be.false()
+        done()
+      })
+    })
+
+    it('should not set report false if from invalid', function (done) {
+      delete testJob.inspectData.Config.Labels.type
+      testJob.from = 12345
+      ContainerLifeCycleStarted(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.data.err.message).to.match(/type.*required/)
+        expect(err.report).to.be.undefined()
+        done()
+      })
+    })
   }) // end job validation
 
   describe('createNextJob', function () {
