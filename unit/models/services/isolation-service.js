@@ -161,10 +161,10 @@ describe('Isolation Services Model', function () {
     var mockNewChildInstance = { _id: 'newChildInstanceId' }
     var mockNewIsolation = { _id: 'newIsolationId' }
     var mockSessionUser = {}
-    var data
+    var isolationConfig
 
     beforeEach(function (done) {
-      data = {
+      isolationConfig = {
         master: 'masterInstanceId',
         children: []
       }
@@ -187,180 +187,194 @@ describe('Isolation Services Model', function () {
     })
 
     describe('errors', function () {
-      it('should require data', function (done) {
+      it('should require isolationConfig', function (done) {
         IsolationService.createIsolationAndEmitInstanceUpdates().asCallback(function (err) {
           expect(err).to.exist()
-          expect(err.message).to.match(/data.+required/i)
+          expect(err.message).to.match(/isolationConfig.+required/i)
           done()
         })
       })
 
       it('should require sessionUser', function (done) {
-        IsolationService.createIsolationAndEmitInstanceUpdates(data).asCallback(function (err) {
+        IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/user.+required/i)
           done()
         })
       })
 
-      it('should reject with any data validation error', function (done) {
+      it('should reject with any isolationConfig validation error', function (done) {
         var error = new Error('pugsly')
         Isolation._validateCreateData.rejects(error)
-        IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.equal(error)
-          done()
-        })
+        IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
       })
 
       it('should reject with any master validation error', function (done) {
         var error = new Error('pugsly')
         Isolation._validateMasterNotIsolated.rejects(error)
-        IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.equal(error)
-          done()
-        })
+        IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
       })
 
       it('should reject with any isolation create error', function (done) {
         var error = new Error('pugsly')
         Isolation.createIsolation.rejects(error)
-        IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.equal(error)
-          done()
-        })
+        IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
       })
 
       it('should reject with any master instance update error', function (done) {
         var error = new Error('pugsly')
         mockInstance.isolate.rejects(error)
-        IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.equal(error)
-          done()
-        })
+        IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
       })
 
       it('should reject with any forkNonRepoChild error', function (done) {
         var error = new Error('pugsly')
         IsolationService.forkNonRepoChild.rejects(error)
-        data.children.push(mockNonRepoInstance)
-        IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.equal(error)
-          done()
-        })
+        isolationConfig.children.push(mockNonRepoInstance)
+        IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
       })
     })
 
-    it('should validate the isolation data', function (done) {
-      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(Isolation._validateCreateData)
-        sinon.assert.calledWithExactly(
-          Isolation._validateCreateData,
-          pick(data, [ 'master', 'children' ])
-        )
-        done()
-      })
+    it('should validate the isolation isolationConfig', function (done) {
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Isolation._validateCreateData)
+          sinon.assert.calledWithExactly(
+            Isolation._validateCreateData,
+            pick(isolationConfig, [ 'master', 'children' ])
+          )
+          done()
+        })
     })
 
     it('should validate the master instance', function (done) {
-      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(Isolation._validateMasterNotIsolated)
-        sinon.assert.calledWithExactly(
-          Isolation._validateMasterNotIsolated,
-          'masterInstanceId'
-        )
-        done()
-      })
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Isolation._validateMasterNotIsolated)
+          sinon.assert.calledWithExactly(
+            Isolation._validateMasterNotIsolated,
+            'masterInstanceId'
+          )
+          done()
+        })
     })
 
     it('should create a new isolation', function (done) {
-      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(Isolation.createIsolation)
-        sinon.assert.calledWithExactly(
-          Isolation.createIsolation,
-          pick(data, [ 'master', 'children' ])
-        )
-        done()
-      })
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Isolation.createIsolation)
+          sinon.assert.calledWithExactly(
+            Isolation.createIsolation,
+            pick(isolationConfig, [ 'master', 'children' ])
+          )
+          done()
+        })
     })
 
     it('should update the master instance', function (done) {
-      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(mockInstance.isolate)
-        sinon.assert.calledWithExactly(
-          mockInstance.isolate,
-          mockNewIsolation._id,
-          true // markes as isolation group master
-        )
-        done()
-      })
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockInstance.isolate)
+          sinon.assert.calledWithExactly(
+            mockInstance.isolate,
+            mockNewIsolation._id,
+            true // markes as isolation group master
+          )
+          done()
+        })
     })
 
     it('should not fork any child instance if none provide', function (done) {
-      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.notCalled(IsolationService.forkNonRepoChild)
-        done()
-      })
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(IsolationService.forkNonRepoChild)
+          done()
+        })
     })
 
     it('should fork any non-repo child instances provided', function (done) {
-      data.children.push(mockNonRepoInstance)
-      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(IsolationService.forkNonRepoChild)
-        sinon.assert.calledWithExactly(
-          IsolationService.forkNonRepoChild,
-          mockNonRepoInstance.instance,
-          mockInstance.shortHash,
-          mockNewIsolation._id,
-          mockSessionUser
-        )
-        done()
-      })
+      isolationConfig.children.push(mockNonRepoInstance)
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(IsolationService.forkNonRepoChild)
+          sinon.assert.calledWithExactly(
+            IsolationService.forkNonRepoChild,
+            mockNonRepoInstance.instance,
+            mockInstance.shortHash,
+            mockNewIsolation._id,
+            mockSessionUser
+          )
+          done()
+        })
     })
 
     it('should emit events for the master instance', function (done) {
-      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.called(IsolationService._emitUpdateForInstances)
-        sinon.assert.calledWithExactly(
-          IsolationService._emitUpdateForInstances,
-          [ mockInstance ],
-          mockSessionUser
-        )
-        done()
-      })
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.called(IsolationService._emitUpdateForInstances)
+          sinon.assert.calledWithExactly(
+            IsolationService._emitUpdateForInstances,
+            [ mockInstance ],
+            mockSessionUser
+          )
+          done()
+        })
     })
 
     it('should emit events for the non-repo children instance', function (done) {
-      data.children.push(mockNonRepoInstance)
-      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.called(IsolationService._emitUpdateForInstances)
-        sinon.assert.calledWithExactly(
-          IsolationService._emitUpdateForInstances,
-          [ mockNewChildInstance ],
-          mockSessionUser
-        )
-        done()
-      })
+      isolationConfig.children.push(mockNonRepoInstance)
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.called(IsolationService._emitUpdateForInstances)
+          sinon.assert.calledWithExactly(
+            IsolationService._emitUpdateForInstances,
+            [ mockNewChildInstance ],
+            mockSessionUser
+          )
+          done()
+        })
     })
 
     it('should return the new isolation', function (done) {
-      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err, newIsolation) {
-        expect(err).to.not.exist()
-        expect(newIsolation).to.equal(mockNewIsolation)
-        done()
-      })
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err, newIsolation) {
+          expect(err).to.not.exist()
+          expect(newIsolation).to.equal(mockNewIsolation)
+          done()
+        })
     })
   })
 
