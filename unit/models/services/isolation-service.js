@@ -16,6 +16,7 @@ var Bunyan = require('bunyan')
 var Instance = require('models/mongo/instance')
 var InstanceForkService = require('models/services/instance-fork-service')
 var Isolation = require('models/mongo/isolation')
+var rabbitMQ = require('models/rabbitmq')
 
 var IsolationService = require('models/services/isolation-service')
 
@@ -440,19 +441,26 @@ describe('Isolation Services Model', function () {
     var mockIsolation = {}
     var mockInstance = { _id: 'foobar' }
     var mockSessionUser = { accounts: {} }
+    var mockChildInstances
+    var mockChildInstance = { _id: 'childInstanceId' }
 
     beforeEach(function (done) {
+      mockChildInstances = []
       mockInstance.deIsolate = sinon.stub().resolves(mockInstance)
+      sinon.stub(Instance, 'find').yieldsAsync(null, mockChildInstances)
       sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
       sinon.stub(Isolation, 'findOneAndRemove').yieldsAsync(null, mockIsolation)
       sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
+      sinon.stub(rabbitMQ, 'deleteInstance').returns()
       done()
     })
 
     afterEach(function (done) {
+      Instance.find.restore()
       Instance.findOne.restore()
       Isolation.findOneAndRemove.restore()
       IsolationService._emitUpdateForInstances.restore()
+      rabbitMQ.deleteInstance.restore()
       done()
     })
 
@@ -471,6 +479,17 @@ describe('Isolation Services Model', function () {
           expect(err.message).to.match(/sessionUser.+required/i)
           done()
         })
+      })
+
+      it('should reject with any find errors', function (done) {
+        var error = new Error('pugsly')
+        Instance.find.yieldsAsync(error)
+        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
       })
 
       it('should reject with any findOne errors', function (done) {
@@ -524,7 +543,27 @@ describe('Isolation Services Model', function () {
           sinon.assert.calledOnce(Instance.findOne)
           sinon.assert.calledWithExactly(
             Instance.findOne,
-            { isolated: isolationId },
+            {
+              isolated: isolationId,
+              isIsolationGroupMaster: true
+            },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should find all children in the isolation group', function (done) {
+      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.find)
+          sinon.assert.calledWithExactly(
+            Instance.find,
+            {
+              isolated: isolationId,
+              isIsolationGroupMaster: false
+            },
             sinon.match.func
           )
           done()
@@ -551,6 +590,39 @@ describe('Isolation Services Model', function () {
             { _id: isolationId },
             sinon.match.func
           )
+          done()
+        })
+    })
+
+    it('should delete any children instances (0)', function (done) {
+      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(rabbitMQ.deleteInstance)
+          done()
+        })
+    })
+
+    it('should delete any children instances (1)', function (done) {
+      mockChildInstances.push(mockChildInstance)
+      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(rabbitMQ.deleteInstance)
+          sinon.assert.calledWithExactly(
+            rabbitMQ.deleteInstance,
+            { instanceId: mockChildInstance._id }
+          )
+          done()
+        })
+    })
+
+    it('should delete any children instances (2)', function (done) {
+      mockChildInstances.push(mockChildInstance, mockChildInstance)
+      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(rabbitMQ.deleteInstance)
           done()
         })
     })
