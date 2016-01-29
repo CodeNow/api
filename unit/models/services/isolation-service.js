@@ -146,6 +146,7 @@ describe('Isolation Services Model', function () {
   describe('#createIsolationAndEmitInstanceUpdates', function () {
     var mockNonRepoInstance = { instance: 'childNonRepo' }
     var mockInstance = {}
+    var mockNewChildInstance = { _id: 'newChildInstanceId' }
     var mockNewIsolation = { _id: 'newIsolationId' }
     var mockSessionUser = {}
     var data
@@ -156,12 +157,11 @@ describe('Isolation Services Model', function () {
         children: []
       }
       mockInstance.isolate = sinon.stub().resolves(mockInstance)
-      mockInstance.emitInstanceUpdateAsync = sinon.stub().resolves()
       sinon.stub(Isolation, '_validateMasterNotIsolated').resolves(mockInstance)
       sinon.stub(Isolation, '_validateCreateData').resolves()
       sinon.stub(Isolation, 'createIsolation').resolves(mockNewIsolation)
-      sinon.stub(IsolationService, 'forkNonRepoChild').resolves()
-      sinon.spy(Bunyan.prototype, 'warn')
+      sinon.stub(IsolationService, 'forkNonRepoChild').resolves(mockNewChildInstance)
+      sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
       done()
     })
 
@@ -170,7 +170,7 @@ describe('Isolation Services Model', function () {
       Isolation._validateCreateData.restore()
       Isolation.createIsolation.restore()
       IsolationService.forkNonRepoChild.restore()
-      Bunyan.prototype.warn.restore()
+      IsolationService._emitUpdateForInstances.restore()
       done()
     })
 
@@ -238,21 +238,6 @@ describe('Isolation Services Model', function () {
         IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(error)
-          done()
-        })
-      })
-
-      it('should silence errors from instance events but log', function (done) {
-        var error = new Error('pugsly')
-        mockInstance.emitInstanceUpdateAsync.rejects(error)
-        IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(Bunyan.prototype.warn)
-          sinon.assert.calledWithExactly(
-            Bunyan.prototype.warn,
-            sinon.match.object,
-            'isolation service create failed to emit instance updates'
-          )
           done()
         })
       })
@@ -333,6 +318,103 @@ describe('Isolation Services Model', function () {
     it('should emit events for the master instance', function (done) {
       IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
         expect(err).to.not.exist()
+        sinon.assert.called(IsolationService._emitUpdateForInstances)
+        sinon.assert.calledWithExactly(
+          IsolationService._emitUpdateForInstances,
+          [ mockInstance ],
+          mockSessionUser
+        )
+        done()
+      })
+    })
+
+    it('should emit events for the non-repo children instance', function (done) {
+      data.children.push(mockNonRepoInstance)
+      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.called(IsolationService._emitUpdateForInstances)
+        sinon.assert.calledWithExactly(
+          IsolationService._emitUpdateForInstances,
+          [ mockNewChildInstance ],
+          mockSessionUser
+        )
+        done()
+      })
+    })
+
+    it('should return the new isolation', function (done) {
+      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err, newIsolation) {
+        expect(err).to.not.exist()
+        expect(newIsolation).to.equal(mockNewIsolation)
+        done()
+      })
+    })
+  })
+
+  describe('#_emitUpdateForInstances', function () {
+    var mockInstance = { _id: 'mockInstanceId' }
+    var mockInstances
+    var mockSessionUser = { session: 'user' }
+
+    beforeEach(function (done) {
+      mockInstances = []
+      mockInstance.emitInstanceUpdateAsync = sinon.stub().resolves()
+      mockInstances.push(mockInstance)
+      sinon.stub(Bunyan.prototype, 'warn')
+      done()
+    })
+
+    afterEach(function (done) {
+      Bunyan.prototype.warn.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      describe('validation', function () {
+        it('should require instances', function (done) {
+          IsolationService._emitUpdateForInstances().asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/instances.+required/i)
+            done()
+          })
+        })
+
+        it('should require sessionUser', function (done) {
+          IsolationService._emitUpdateForInstances(mockInstances).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/sessionuser.+required/i)
+            done()
+          })
+        })
+      })
+
+      it('should not reject with emit errors, but log', function (done) {
+        var error = new Error('pugsly')
+        mockInstance.emitInstanceUpdateAsync.rejects(error)
+        IsolationService._emitUpdateForInstances(mockInstances, mockSessionUser).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Bunyan.prototype.warn)
+          sinon.assert.calledWithExactly(
+            Bunyan.prototype.warn,
+            sinon.match.object,
+            'isolation service failed to emit instance updates'
+          )
+          done()
+        })
+      })
+    })
+
+    it('should emit events for all instances passed in (0)', function (done) {
+      IsolationService._emitUpdateForInstances([], mockSessionUser).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.notCalled(mockInstance.emitInstanceUpdateAsync)
+        done()
+      })
+    })
+
+    it('should emit events for all instances passed in (1)', function (done) {
+      IsolationService._emitUpdateForInstances(mockInstances, mockSessionUser).asCallback(function (err) {
+        expect(err).to.not.exist()
         sinon.assert.calledOnce(mockInstance.emitInstanceUpdateAsync)
         sinon.assert.calledWithExactly(
           mockInstance.emitInstanceUpdateAsync,
@@ -343,10 +425,11 @@ describe('Isolation Services Model', function () {
       })
     })
 
-    it('should return the new isolation', function (done) {
-      IsolationService.createIsolationAndEmitInstanceUpdates(data, mockSessionUser).asCallback(function (err, newIsolation) {
+    it('should emit events for all instances passed in (2)', function (done) {
+      mockInstances.push(mockInstance)
+      IsolationService._emitUpdateForInstances(mockInstances, mockSessionUser).asCallback(function (err) {
         expect(err).to.not.exist()
-        expect(newIsolation).to.equal(mockNewIsolation)
+        sinon.assert.calledTwice(mockInstance.emitInstanceUpdateAsync)
         done()
       })
     })
