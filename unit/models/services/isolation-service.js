@@ -27,6 +27,7 @@ describe('Isolation Services Model', function () {
     var mockSessionUser = {}
     var mockInstance = { _id: mockInstanceId }
     var mockNewInstance = { _id: 'newInstance' }
+    var mockMasterName = 'branch-repo'
 
     beforeEach(function (done) {
       sinon.stub(Instance, 'findById').yieldsAsync(null, mockInstance)
@@ -51,8 +52,17 @@ describe('Isolation Services Model', function () {
             })
         })
 
-        it('should require isolationId', function (done) {
+        it('should require masterInstanceName', function (done) {
           IsolationService.forkNonRepoChild(mockInstanceId)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/masterinstancename.+required/i)
+              done()
+            })
+        })
+
+        it('should require isolationId', function (done) {
+          IsolationService.forkNonRepoChild(mockInstanceId, mockMasterName)
             .asCallback(function (err) {
               expect(err).to.exist()
               expect(err.message).to.match(/isolationid.+required/i)
@@ -61,7 +71,7 @@ describe('Isolation Services Model', function () {
         })
 
         it('should require sessionUser', function (done) {
-          IsolationService.forkNonRepoChild(mockInstanceId, mockIsolationId)
+          IsolationService.forkNonRepoChild(mockInstanceId, mockMasterName, mockIsolationId)
             .asCallback(function (err) {
               expect(err).to.exist()
               expect(err.message).to.match(/sessionuser.+required/i)
@@ -73,7 +83,7 @@ describe('Isolation Services Model', function () {
       it('should reject with any findOne error', function (done) {
         var error = new Error('pugsly')
         Instance.findById.yieldsAsync(error)
-        IsolationService.forkNonRepoChild(mockInstanceId, mockIsolationId, mockSessionUser)
+        IsolationService.forkNonRepoChild(mockInstanceId, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -84,7 +94,7 @@ describe('Isolation Services Model', function () {
       it('should reject with any _forkNonRepoInstance error', function (done) {
         var error = new Error('pugsly')
         InstanceForkService._forkNonRepoInstance.rejects(error)
-        IsolationService.forkNonRepoChild(mockInstanceId, mockIsolationId, mockSessionUser)
+        IsolationService.forkNonRepoChild(mockInstanceId, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err).to.equal(error)
@@ -94,7 +104,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should find the instance', function (done) {
-      IsolationService.forkNonRepoChild(mockInstanceId, mockIsolationId, mockSessionUser)
+      IsolationService.forkNonRepoChild(mockInstanceId, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findById)
@@ -108,13 +118,14 @@ describe('Isolation Services Model', function () {
     })
 
     it('should fork the instance', function (done) {
-      IsolationService.forkNonRepoChild(mockInstanceId, mockIsolationId, mockSessionUser)
+      IsolationService.forkNonRepoChild(mockInstanceId, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(InstanceForkService._forkNonRepoInstance)
           sinon.assert.calledWithExactly(
             InstanceForkService._forkNonRepoInstance,
             mockInstance,
+            mockMasterName,
             mockIsolationId,
             mockSessionUser
           )
@@ -123,7 +134,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should search then fork', function (done) {
-      IsolationService.forkNonRepoChild(mockInstanceId, mockIsolationId, mockSessionUser)
+      IsolationService.forkNonRepoChild(mockInstanceId, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.callOrder(
@@ -135,7 +146,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should return the new forked instance', function (done) {
-      IsolationService.forkNonRepoChild(mockInstanceId, mockIsolationId, mockSessionUser)
+      IsolationService.forkNonRepoChild(mockInstanceId, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err, newInstance) {
           expect(err).to.not.exist()
           expect(newInstance).to.equal(mockNewInstance)
@@ -146,7 +157,7 @@ describe('Isolation Services Model', function () {
 
   describe('#createIsolationAndEmitInstanceUpdates', function () {
     var mockNonRepoInstance = { instance: 'childNonRepo' }
-    var mockInstance = {}
+    var mockInstance = { name: 'branch-repo' }
     var mockNewChildInstance = { _id: 'newChildInstanceId' }
     var mockNewIsolation = { _id: 'newIsolationId' }
     var mockSessionUser = {}
@@ -309,6 +320,7 @@ describe('Isolation Services Model', function () {
         sinon.assert.calledWithExactly(
           IsolationService.forkNonRepoChild,
           mockNonRepoInstance.instance,
+          mockInstance.name,
           mockNewIsolation._id,
           mockSessionUser
         )
