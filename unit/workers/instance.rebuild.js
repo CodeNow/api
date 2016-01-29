@@ -200,7 +200,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
         it('should callback with error', function (done) {
           Worker(testData)
             .asCallback(function (err) {
-              expect(err.message).to.equal(loginError.message)
+              expect(err.message).to.match(/unable.*to.login/ig)
               sinon.assert.calledOnce(Instance.findByIdAsync)
               sinon.assert.calledWith(Instance.findByIdAsync, testData.instanceId)
               sinon.assert.calledOnce(User.findByGithubIdAsync)
