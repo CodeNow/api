@@ -31,13 +31,13 @@ describe('Isolation Services Model', function () {
 
     beforeEach(function (done) {
       sinon.stub(Instance, 'findById').yieldsAsync(null, mockInstance)
-      sinon.stub(InstanceForkService, '_forkNonRepoInstance').resolves(mockNewInstance)
+      sinon.stub(InstanceForkService, 'forkNonRepoInstance').resolves(mockNewInstance)
       done()
     })
 
     afterEach(function (done) {
       Instance.findById.restore()
-      InstanceForkService._forkNonRepoInstance.restore()
+      InstanceForkService.forkNonRepoInstance.restore()
       done()
     })
 
@@ -91,9 +91,9 @@ describe('Isolation Services Model', function () {
           })
       })
 
-      it('should reject with any _forkNonRepoInstance error', function (done) {
+      it('should reject with any forkNonRepoInstance error', function (done) {
         var error = new Error('pugsly')
-        InstanceForkService._forkNonRepoInstance.rejects(error)
+        InstanceForkService.forkNonRepoInstance.rejects(error)
         IsolationService.forkNonRepoChild(mockInstanceId, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -121,9 +121,9 @@ describe('Isolation Services Model', function () {
       IsolationService.forkNonRepoChild(mockInstanceId, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(InstanceForkService._forkNonRepoInstance)
+          sinon.assert.calledOnce(InstanceForkService.forkNonRepoInstance)
           sinon.assert.calledWithExactly(
-            InstanceForkService._forkNonRepoInstance,
+            InstanceForkService.forkNonRepoInstance,
             mockInstance,
             mockMasterName,
             mockIsolationId,
@@ -139,7 +139,7 @@ describe('Isolation Services Model', function () {
           expect(err).to.not.exist()
           sinon.assert.callOrder(
             Instance.findById,
-            InstanceForkService._forkNonRepoInstance
+            InstanceForkService.forkNonRepoInstance
           )
           done()
         })

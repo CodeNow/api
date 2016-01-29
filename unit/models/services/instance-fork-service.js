@@ -891,7 +891,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
   })
 
-  describe('#_forkNonRepoInstance', function () {
+  describe('#forkNonRepoInstance', function () {
     var mockInstance
     var mockIsolationId = 'deadbeefdeadbeefdeadbeef'
     var mockSessionUser
@@ -933,7 +933,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     describe('errors', function () {
       describe('validation', function () {
         it('should require an instance', function (done) {
-          InstanceForkService._forkNonRepoInstance().asCallback(function (err) {
+          InstanceForkService.forkNonRepoInstance().asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.match(/instance.+required/i)
             done()
@@ -942,7 +942,7 @@ describe('InstanceForkService: ' + moduleName, function () {
 
         it('should require a context version on the instance', function (done) {
           delete mockInstance.contextVersion
-          InstanceForkService._forkNonRepoInstance(mockInstance).asCallback(function (err) {
+          InstanceForkService.forkNonRepoInstance(mockInstance).asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.match(/contextversion.+required/i)
             done()
@@ -951,7 +951,7 @@ describe('InstanceForkService: ' + moduleName, function () {
 
         it('should require an owner on the instance', function (done) {
           delete mockInstance.owner
-          InstanceForkService._forkNonRepoInstance(mockInstance).asCallback(function (err) {
+          InstanceForkService.forkNonRepoInstance(mockInstance).asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.match(/owner\.github.+required/i)
             done()
@@ -959,7 +959,7 @@ describe('InstanceForkService: ' + moduleName, function () {
         })
 
         it('should require a master instance name', function (done) {
-          InstanceForkService._forkNonRepoInstance(mockInstance).asCallback(function (err) {
+          InstanceForkService.forkNonRepoInstance(mockInstance).asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.match(/masterinstanceshorthash.+required/i)
             done()
@@ -967,7 +967,7 @@ describe('InstanceForkService: ' + moduleName, function () {
         })
 
         it('should require an isolation ID', function (done) {
-          InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName).asCallback(function (err) {
+          InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName).asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.match(/isolation.+required/i)
             done()
@@ -975,7 +975,7 @@ describe('InstanceForkService: ' + moduleName, function () {
         })
 
         it('should require a sessionUser', function (done) {
-          InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId).asCallback(function (err) {
+          InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId).asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.match(/sessionuser.+required/i)
             done()
@@ -984,7 +984,7 @@ describe('InstanceForkService: ' + moduleName, function () {
 
         it('should require the github ID on the sessionUser', function (done) {
           delete mockSessionUser.accounts.github
-          InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+          InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
             .asCallback(function (err) {
               expect(err).to.exist()
               expect(err.message).to.match(/github\.id.+required/i)
@@ -996,7 +996,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       it('should reject with any newNonRepoContextVersion error', function (done) {
         var error = new Error('robot')
         InstanceForkService._createNewNonRepoContextVersion.rejects(error)
-        InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err).to.equal(error)
@@ -1007,7 +1007,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       it('should reject with any createBuild error', function (done) {
         var error = new Error('robot')
         mockRunnableClient.createBuild.yieldsAsync(error)
-        InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -1018,7 +1018,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       it('should reject with any buildBuild error', function (done) {
         var error = new Error('robot')
         mockRunnableClient.buildBuild.yieldsAsync(error)
-        InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -1029,7 +1029,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       it('should reject with any createInstance error', function (done) {
         var error = new Error('robot')
         mockRunnableClient.createInstance.yieldsAsync(error)
-        InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -1040,7 +1040,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       it('should reject with any instance update error', function (done) {
         var error = new Error('robot')
         Instance.findOneAndUpdate.yieldsAsync(error)
-        InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -1050,7 +1050,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     it('should create a new context version', function (done) {
-      InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(InstanceForkService._createNewNonRepoContextVersion)
@@ -1065,7 +1065,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     it('should create a new build with the new context version', function (done) {
-      InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(mockRunnableClient.createBuild)
@@ -1084,7 +1084,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     it('should build the new build', function (done) {
-      InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(mockRunnableClient.buildBuild)
@@ -1103,7 +1103,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     it('should create a new instance with the new build', function (done) {
-      InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(mockRunnableClient.buildBuild)
@@ -1122,7 +1122,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     it('should update the new instance w/ isolation information', function (done) {
-      InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(mockRunnableClient.createInstance)
@@ -1143,7 +1143,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     it('should create the runnable clients with sessionUser', function (done) {
-      InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err, newInstance) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Runnable.createClient)
@@ -1153,7 +1153,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     it('should do all the things in the right order', function (done) {
-      InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err, newInstance) {
           expect(err).to.not.exist()
           sinon.assert.callOrder(
@@ -1169,7 +1169,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     it('should return the new updated instance', function (done) {
-      InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err, newInstance) {
           expect(err).to.not.exist()
           expect(newInstance).to.equal(mockNewInstance)
