@@ -1142,14 +1142,12 @@ describe('InstanceForkService: ' + moduleName, function () {
         })
     })
 
-    it('should create _all_ the runnable clients with sessionUser', function (done) {
+    it('should create the runnable clients with sessionUser', function (done) {
       InstanceForkService._forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err, newInstance) {
           expect(err).to.not.exist()
-          sinon.assert.calledThrice(Runnable.createClient)
-          sinon.assert.calledWithExactly(Runnable.createClient.firstCall, {}, mockSessionUser)
-          sinon.assert.calledWithExactly(Runnable.createClient.secondCall, {}, mockSessionUser)
-          sinon.assert.calledWithExactly(Runnable.createClient.thirdCall, {}, mockSessionUser)
+          sinon.assert.calledOnce(Runnable.createClient)
+          sinon.assert.calledWithExactly(Runnable.createClient, {}, mockSessionUser)
           done()
         })
     })
@@ -1162,9 +1160,7 @@ describe('InstanceForkService: ' + moduleName, function () {
             InstanceForkService._createNewNonRepoContextVersion,
             Runnable.createClient,
             mockRunnableClient.createBuild,
-            Runnable.createClient,
             mockRunnableClient.buildBuild,
-            Runnable.createClient,
             mockRunnableClient.createInstance,
             Instance.findOneAndUpdate
           )
