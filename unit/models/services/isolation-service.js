@@ -241,6 +241,16 @@ describe('Isolation Services Model', function () {
           })
       })
 
+      it('should reject if it cannot find the instance', function (done) {
+        Instance.findOne.yieldsAsync(null, null)
+        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/no instance found/i)
+            done()
+          })
+      })
+
       it('should reject with any deIsolate errors', function (done) {
         var error = new Error('pugsly')
         mockInstance.deIsolate.rejects(error)
