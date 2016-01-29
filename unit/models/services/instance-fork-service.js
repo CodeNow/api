@@ -961,7 +961,7 @@ describe('InstanceForkService: ' + moduleName, function () {
         it('should require a master instance name', function (done) {
           InstanceForkService._forkNonRepoInstance(mockInstance).asCallback(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.match(/masterinstancename.+required/i)
+            expect(err.message).to.match(/masterinstanceshorthash.+required/i)
             done()
           })
         })

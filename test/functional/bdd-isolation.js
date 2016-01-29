@@ -113,7 +113,7 @@ describe('BDD - Isolation', function () {
           expect(instances).to.have.length(2)
           var instanceNames = instances.map(pluck('lowerName'))
           expect(instanceNames).to.contain(
-            ctx.webInstance.attrs.lowerName +
+            ctx.webInstance.attrs.shortHash +
             '--' +
             ctx.apiInstance.attrs.lowerName
           )

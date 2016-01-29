@@ -52,11 +52,11 @@ describe('Isolation Services Model', function () {
             })
         })
 
-        it('should require masterInstanceName', function (done) {
+        it('should require masterInstanceShortHash', function (done) {
           IsolationService.forkNonRepoChild(mockInstanceId)
             .asCallback(function (err) {
               expect(err).to.exist()
-              expect(err.message).to.match(/masterinstancename.+required/i)
+              expect(err.message).to.match(/masterinstanceshorthash.+required/i)
               done()
             })
         })
@@ -157,7 +157,7 @@ describe('Isolation Services Model', function () {
 
   describe('#createIsolationAndEmitInstanceUpdates', function () {
     var mockNonRepoInstance = { instance: 'childNonRepo' }
-    var mockInstance = { name: 'branch-repo' }
+    var mockInstance = { shortHash: 'shorthash' }
     var mockNewChildInstance = { _id: 'newChildInstanceId' }
     var mockNewIsolation = { _id: 'newIsolationId' }
     var mockSessionUser = {}
@@ -320,7 +320,7 @@ describe('Isolation Services Model', function () {
         sinon.assert.calledWithExactly(
           IsolationService.forkNonRepoChild,
           mockNonRepoInstance.instance,
-          mockInstance.name,
+          mockInstance.shortHash,
           mockNewIsolation._id,
           mockSessionUser
         )
