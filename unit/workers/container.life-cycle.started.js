@@ -7,9 +7,7 @@ var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
 var clone = require('101/clone')
-var Code = require('code')
 var sinon = require('sinon')
-var TaskFatalError = require('ponos').TaskFatalError
 
 var ContainerLifeCycleStarted = require('workers/container.life-cycle.started')
 var rabbitMQ = require('models/rabbitmq')
@@ -17,7 +15,6 @@ var rabbitMQ = require('models/rabbitmq')
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
-var expect = Code.expect
 var it = lab.it
 
 describe('container.life-cycle.started unit test', function () {
@@ -39,28 +36,6 @@ describe('container.life-cycle.started unit test', function () {
     testJob = clone(baseJob)
     done()
   })
-
-  describe('job validation', function () {
-    it('should throw if missing contextVersion.build._id', function (done) {
-      delete testJob.inspectData.Config.Labels['contextVersion.build._id']
-
-      ContainerLifeCycleStarted(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.data.err.message).to.match(/contextVersion.build._id.*required/)
-        done()
-      })
-    })
-
-    it('should throw if missing type', function (done) {
-      delete testJob.inspectData.Config.Labels.type
-
-      ContainerLifeCycleStarted(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.data.err.message).to.match(/type.*required/)
-        done()
-      })
-    })
-  }) // end job validation
 
   describe('createNextJob', function () {
     beforeEach(function (done) {
@@ -87,6 +62,17 @@ describe('container.life-cycle.started unit test', function () {
 
     it('should do nothing if unknown type', function (done) {
       testJob.inspectData.Config.Labels.type = 'unknown'
+
+      ContainerLifeCycleStarted(testJob).asCallback(function (err) {
+        if (err) { return done(err) }
+
+        sinon.assert.notCalled(rabbitMQ.publishContainerImageBuilderStarted)
+        done()
+      })
+    })
+
+    it('should do nothing if empty job', function (done) {
+      testJob = 'unknown'
 
       ContainerLifeCycleStarted(testJob).asCallback(function (err) {
         if (err) { return done(err) }
