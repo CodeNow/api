@@ -532,7 +532,9 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             sinon.assert.calledWith(User.prototype.findGithubUsernameByGithubId, instance.owner.github)
 
             sinon.assert.calledOnce(Worker._deleteOldContainer)
+            sinon.assert.calledWith(Worker._deleteOldContainer, testData)
             sinon.assert.calledOnce(Worker._createNewContainer)
+            sinon.assert.calledWith(Worker._createNewContainer, testData)
             sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
             sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
               instance, testData.sessionUserGithubId, 'redeploy', true)
@@ -559,7 +561,12 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
         },
         user: new User({_id: '507f191e810c19729de860eb'})
       }
-      Worker._deleteOldContainer(data)
+      var job = {
+        instanceId: ctx.mockInstance._id,
+        sessionUserGithubId: 429706,
+        deploymentUuid: 'some-deployment-uuid'
+      }
+      Worker._deleteOldContainer(job, data)
       expect(rabbitMQ.deleteInstanceContainer.calledOnce).to.be.true()
       var jobData = rabbitMQ.deleteInstanceContainer.getCall(0).args[0]
       expect(jobData.instanceShortHash).to.equal(data.instance.shortHash)
@@ -570,6 +577,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       expect(jobData.container).to.equal(data.oldContainer)
       expect(jobData.ownerGithubId).to.equal(data.instance.owner.github)
       expect(jobData.ownerGithubUsername).to.equal(data.instance.owner.username)
+      expect(jobData.deploymentUuid).to.equal(job.deploymentUuid)
       done()
     })
   })
@@ -586,7 +594,8 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
     it('should publish new job', function (done) {
       var job = {
         instanceId: ctx.mockInstance._id,
-        sessionUserGithubId: 429706
+        sessionUserGithubId: 429706,
+        deploymentUuid: 'some-deployment-uuid'
       }
       var data = {
         instance: new Instance(ctx.mockInstance),
@@ -606,6 +615,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       expect(jobData.contextVersionId).to.equal('507f191e810c19729de860ev')
       expect(jobData.sessionUserGithubId).to.equal(job.sessionUserGithubId)
       expect(jobData.ownerUsername).to.equal('codenow')
+      expect(jobData.deploymentUuid).to.equal(job.deploymentUuid)
       done()
     })
   })
