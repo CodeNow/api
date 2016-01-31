@@ -53,7 +53,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.message).to.match(/host.*required/)
+        expect(err.data.err.message).to.match(/host.*required/)
         done()
       })
     })
@@ -63,7 +63,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.message).to.match(/Id.*required/)
+        expect(err.data.err.message).to.match(/Id.*required/)
         done()
       })
     })
@@ -73,7 +73,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.message).to.match(/contextVersion.build._id.*required/)
+        expect(err.data.err.message).to.match(/contextVersion.build._id.*required/)
         done()
       })
     })

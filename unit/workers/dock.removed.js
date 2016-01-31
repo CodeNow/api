@@ -358,22 +358,26 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     })
 
     it('should callback with no error', function (done) {
-      Worker._redeployContainers(instances)
-      expect(rabbitMQ.redeployInstanceContainer.callCount).to.equal(3)
+      var deploymentUuid = 'some-unique-uuid'
+      Worker._redeployContainers(instances, deploymentUuid)
+      sinon.assert.calledThrice(rabbitMQ.redeployInstanceContainer)
       var call1 = rabbitMQ.redeployInstanceContainer.getCall(0).args
       expect(call1[0]).to.deep.equal({
         instanceId: instances[0]._id,
-        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID
+        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID,
+        deploymentUuid: deploymentUuid
       })
       var call2 = rabbitMQ.redeployInstanceContainer.getCall(1).args
       expect(call2[0]).to.deep.equal({
         instanceId: instances[1]._id,
-        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID
+        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID,
+        deploymentUuid: deploymentUuid
       })
       var call3 = rabbitMQ.redeployInstanceContainer.getCall(2).args
       expect(call3[0]).to.deep.equal({
         instanceId: instances[2]._id,
-        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID
+        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID,
+        deploymentUuid: deploymentUuid
       })
       done()
     })
@@ -395,10 +399,17 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
         {_id: '1', build: { completed: true, failed: false }},
         {_id: '2', build: { completed: false, failed: false }}
       ]
-      Worker._rebuildInstances(instances)
+      var deploymentUuid = 'some-unique-uuid'
+      Worker._rebuildInstances(instances, deploymentUuid)
       sinon.assert.calledTwice(rabbitMQ.publishInstanceRebuild)
-      expect(rabbitMQ.publishInstanceRebuild.getCall(0).args[0].instanceId).to.equal('1')
-      expect(rabbitMQ.publishInstanceRebuild.getCall(1).args[0].instanceId).to.equal('2')
+      expect(rabbitMQ.publishInstanceRebuild.getCall(0).args[0]).to.deep.equal({
+        instanceId: '1',
+        deploymentUuid: deploymentUuid
+      })
+      expect(rabbitMQ.publishInstanceRebuild.getCall(1).args[0]).to.deep.equal({
+        instanceId: '2',
+        deploymentUuid: deploymentUuid
+      })
       done()
     })
     it('should not publish jobs if nothing was passed', function (done) {
