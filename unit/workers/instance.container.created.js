@@ -51,6 +51,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
             ownerUsername: 'fifo',
             sessionUserGithubId: 444,
             contextVersionId: '123',
+            tid: 'some-tid',
             deploymentUuid: 'some-deployment-uuid'
           }
         }
@@ -96,7 +97,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
           instanceId: ctx.data.inspectData.Config.Labels.instanceId,
           ownerUsername: ctx.data.inspectData.Config.Labels.ownerUsername,
           sessionUserGithubId: ctx.data.inspectData.Config.Labels.sessionUserGithubId,
-          tid: ctx.data.inspectData.Config.Labels.uuid,
+          tid: ctx.data.inspectData.Config.Labels.tid,
           deploymentUuid: ctx.data.inspectData.Config.Labels.deploymentUuid
         }
         sinon.assert.calledWith(rabbitMQ.startInstanceContainer, payload)
