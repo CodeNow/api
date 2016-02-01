@@ -190,7 +190,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
         })
       })
 
-      describe('login failure', function () {
+      describe('generic login failure', function () {
         var loginError = new Error('Login failed')
         beforeEach(function (done) {
           Runnable.prototype.githubLogin.yields(loginError)
@@ -200,7 +200,29 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
         it('should callback with error', function (done) {
           Worker(testData)
             .asCallback(function (err) {
-              expect(err.message).to.match(/unable.*to.login/ig)
+              expect(err.message).to.match(/login.*failed/ig)
+              sinon.assert.calledOnce(Instance.findByIdAsync)
+              sinon.assert.calledWith(Instance.findByIdAsync, testData.instanceId)
+              sinon.assert.calledOnce(User.findByGithubIdAsync)
+              sinon.assert.calledOnce(User.findByGithubIdAsync, testInstance.createdBy.github)
+              sinon.assert.calledOnce(Runnable.prototype.githubLogin)
+              sinon.assert.calledWith(Runnable.prototype.githubLogin, testUser.accounts.github.accessToken)
+              done()
+            })
+        })
+      })
+
+      describe('login failure because user is not whitelisted', function () {
+        var loginError = new Error('User was authenticated, but does not belong to any whitelisted org')
+        beforeEach(function (done) {
+          Runnable.prototype.githubLogin.yields(loginError)
+          done()
+        })
+
+        it('should callback with error', function (done) {
+          Worker(testData)
+            .asCallback(function (err) {
+              expect(err.message).to.match(/unable.*to.*login/ig)
               sinon.assert.calledOnce(Instance.findByIdAsync)
               sinon.assert.calledWith(Instance.findByIdAsync, testData.instanceId)
               sinon.assert.calledOnce(User.findByGithubIdAsync)
