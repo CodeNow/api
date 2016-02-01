@@ -103,6 +103,23 @@ describe('BDD - Isolation', function () {
         ctx.isolation = ctx.user.createIsolation(opts, done)
       })
 
+      it('should list the isolated instance when asked for by name', function (done) {
+        var childName = [
+          ctx.webInstance.attrs.shortHash,
+          ctx.apiInstance.attrs.lowerName
+        ].join('--')
+        var opts = {
+          owner: { github: ctx.user.attrs.accounts.github.id },
+          name: childName
+        }
+        ctx.user.fetchInstances(opts, function (err, instances) {
+          if (err) { return done(err) }
+          expect(instances).to.have.length(1)
+          expect(instances[0].lowerName).to.equal(childName)
+          done()
+        })
+      })
+
       it('should list instances with the isolation', function (done) {
         var opts = {
           owner: { github: ctx.user.attrs.accounts.github.id },
