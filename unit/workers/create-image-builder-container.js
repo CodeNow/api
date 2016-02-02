@@ -31,6 +31,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
 
   beforeEach(function (done) {
     ctx = {}
+    sinon.spy(ContextVersion, 'recover')
     ctx.mockContextVersion = {
       '_id': '55d3ef733e1b620e00eb6292',
       name: 'name1',
@@ -46,7 +47,6 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
       populate: function (id, cb) {
         cb()
       },
-      handleRecovery: sinon.stub().yieldsAsync()
     }
     ctx.mockContext = {
       '_id': '55d3ef733e1b620e00eb6242',
@@ -86,6 +86,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
   })
   afterEach(function (done) {
     Docker.getDockerTag.restore()
+    ContextVersion.recover.restore()
     done()
   })
 
@@ -118,7 +119,8 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
         ctx.worker.handle(function (err) {
           expect(err).to.be.undefined()
 
-          sinon.assert.calledOnce(ctx.mockContextVersion.handleRecovery)
+          sinon.assert.calledOnce(ContextVersion.recover)
+          sinon.assert.calledWith(ContextVersion.recover, ctx.data.contextVersionId)
           expect(ctx.worker.manualBuild).to.equal(ctx.data.manualBuild)
           expect(ctx.worker.sessionUser).to.equal(ctx.data.sessionUser)
           expect(ctx.worker.contextId).to.equal(ctx.data.contextId)
@@ -508,7 +510,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
         })
         it('should query mongo for contextVersion', function (done) {
           ctx.worker._updateContextVersionWithContainer(function (err) {
-            expect(err).to.be.undefined()
+            expect(err).to.be.null()
             expect(ContextVersion.updateContainerByBuildId.callCount).to.equal(1)
             var opts = ContextVersion.updateContainerByBuildId.args[0][0]
             expect(opts.buildId).to.equal(ctx.mockContextVersion.build._id)
