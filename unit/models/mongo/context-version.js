@@ -324,26 +324,24 @@ describe('Context Version: ' + moduleName, function () {
         write: function (data) { cache.push(data) },
         end: sinon.stub()
       }
-      try {
-        cv.writeLogsToPrimusStream(stream)
-      } catch (err) {
-        return done(err)
-      }
-      expect(cache).to.have.length(1)
-      expect(cache[0]).to.deep.equal([
-        {
-          type: 'log',
-          content: 'hello'
-        }, {
-          type: 'log',
-          content: 'world'
-        }, {
-          type: 'log',
-          content: ''
-        }
-      ])
-      expect(stream.end.callCount).to.equal(1)
-      done()
+      cv.writeLogsToPrimusStream(stream, function (err) {
+        if (err) { return done(err) }
+        expect(cache).to.have.length(3)
+        expect(cache).to.deep.equal([
+          {
+            type: 'log',
+            content: 'hello'
+          }, {
+            type: 'log',
+            content: 'world'
+          }, {
+            type: 'log',
+            content: ''
+          }
+        ])
+        expect(stream.end.callCount).to.equal(1)
+        done()
+      })
     })
 
     it('should return objects from an array of objects', function (done) {
@@ -365,23 +363,21 @@ describe('Context Version: ' + moduleName, function () {
         write: function (data) { cache.push(data) },
         end: sinon.stub()
       }
-      try {
-        cv.writeLogsToPrimusStream(stream)
-      } catch (err) {
-        done(err)
-      }
-      expect(cache).to.have.length(1)
-      expect(cache[0]).to.deep.equal([
-        {
-          type: 'log',
-          content: 'hello'
-        }, {
-          type: 'log',
-          content: 'world'
-        }
-      ])
-      expect(stream.end.callCount).to.equal(1)
-      done()
+      cv.writeLogsToPrimusStream(stream, function (err) {
+        if (err) { return done(err) }
+        expect(cache).to.have.length(2)
+        expect(cache).to.deep.equal([
+          {
+            type: 'log',
+            content: 'hello'
+          }, {
+            type: 'log',
+            content: 'world'
+          }
+        ])
+        expect(stream.end.callCount).to.equal(1)
+        done()
+      })
     })
   })
 
