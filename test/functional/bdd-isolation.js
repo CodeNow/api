@@ -11,7 +11,12 @@ var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 
+var async = require('async')
 var createCount = require('callback-count')
+var pluck = require('101/pluck')
+var sinon = require('sinon')
+
+var Isolation = require('models/mongo/isolation')
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
@@ -44,7 +49,21 @@ describe('BDD - Isolation', function () {
         if (err) { return done(err) }
         ctx.webInstance = instance
         ctx.user = user
-        done()
+        ctx.build = build
+        // boy this is a bummer... let's cheat a little bit
+        require('./fixtures/mocks/github/user')(ctx.user)
+        require('./fixtures/mocks/github/user')(ctx.user)
+        require('./fixtures/mocks/github/user')(ctx.user)
+        ctx.apiInstance = ctx.user.createInstance({
+          name: 'api-instance',
+          build: ctx.build.id(),
+          masterPod: true
+        }, function (err) {
+          if (err) { return done(err) }
+          primus.expectAction('start', {}, function () {
+            ctx.apiInstance.fetch(done)
+          })
+        })
       })
   })
 
@@ -59,6 +78,117 @@ describe('BDD - Isolation', function () {
       expect(isolation.owner.github).to.equal(ctx.webInstance.attrs.owner.github)
       expect(isolation.createdBy.github).to.equal(ctx.webInstance.attrs.createdBy.github)
       done()
+    })
+  })
+
+  describe('with children', function () {
+    it('should let us make an isolation', function (done) {
+      var opts = {
+        master: ctx.webInstance.attrs._id.toString(),
+        children: [
+          { instance: ctx.apiInstance.attrs._id.toString() }
+        ]
+      }
+      ctx.user.createIsolation(opts, function (err, isolation) {
+        if (err) { return done(err) }
+        expect(isolation).to.exist()
+        done()
+      })
+    })
+
+    describe('once it is created', function (done) {
+      beforeEach(function (done) {
+        sinon.spy(Isolation, 'findOneAndRemoveAsync')
+        var opts = {
+          master: ctx.webInstance.attrs._id.toString(),
+          children: [
+            { instance: ctx.apiInstance.attrs._id.toString() }
+          ]
+        }
+        ctx.isolation = ctx.user.createIsolation(opts, done)
+      })
+
+      afterEach(function (done) {
+        Isolation.findOneAndRemoveAsync.restore()
+        done()
+      })
+
+      it('should list the isolated instance when asked for by name', function (done) {
+        var childName = [
+          ctx.webInstance.attrs.shortHash,
+          ctx.apiInstance.attrs.lowerName
+        ].join('--')
+        var opts = {
+          owner: { github: ctx.user.attrs.accounts.github.id },
+          name: childName
+        }
+        ctx.user.fetchInstances(opts, function (err, instances) {
+          if (err) { return done(err) }
+          expect(instances).to.have.length(1)
+          expect(instances[0].lowerName).to.equal(childName)
+          done()
+        })
+      })
+
+      it('should mark the child as a master pod', function (done) {
+        var childName = [
+          ctx.webInstance.attrs.shortHash,
+          ctx.apiInstance.attrs.lowerName
+        ].join('--')
+        var opts = {
+          owner: { github: ctx.user.attrs.accounts.github.id },
+          name: childName
+        }
+        ctx.user.fetchInstances(opts, function (err, instances) {
+          if (err) { return done(err) }
+          expect(instances).to.have.length(1)
+          expect(instances[0].masterPod).to.equal(true)
+          done()
+        })
+      })
+
+      it('should list instances with the isolation', function (done) {
+        var opts = {
+          owner: { github: ctx.user.attrs.accounts.github.id },
+          isolated: ctx.isolation.attrs._id.toString()
+        }
+        ctx.user.fetchInstances(opts, function (err, instances) {
+          if (err) { return done(err) }
+          expect(instances).to.have.length(2)
+          var instanceNames = instances.map(pluck('lowerName'))
+          expect(instanceNames).to.contain(
+            ctx.webInstance.attrs.shortHash +
+            '--' +
+            ctx.apiInstance.attrs.lowerName
+          )
+          expect(instanceNames).to.contain(
+            ctx.webInstance.attrs.lowerName
+          )
+          done()
+        })
+      })
+
+      it('should delete the children when we delete the master', function (done) {
+        ctx.webInstance.destroy(function (err) {
+          if (err) { return done(err) }
+          var opts = {
+            owner: { github: ctx.user.attrs.accounts.github.id },
+            isolated: ctx.isolation.attrs._id.toString()
+          }
+          async.doUntil(
+            function (cb) { setTimeout(cb, 50) },
+            function () { return Isolation.findOneAndRemoveAsync.callCount },
+            function (err) {
+              if (err) { return done(err) }
+              ctx.user.fetchInstances(opts, function (err, instances) {
+                if (err) { return done(err) }
+                expect(instances).to.have.length(0)
+                done()
+              })
+            }
+          )
+        })
+      })
     })
   })
 

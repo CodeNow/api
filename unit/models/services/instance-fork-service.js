@@ -15,6 +15,7 @@ require('sinon-as-promised')(Promise)
 var Context = require('models/mongo/context')
 var ContextService = require('models/services/context-service')
 var ContextVersion = require('models/mongo/context-version')
+var Instance = require('models/mongo/instance')
 var InstanceForkService = require('models/services/instance-fork-service')
 var PullRequest = require('models/apis/pullrequest')
 var Runnable = require('models/apis/runnable')
@@ -721,6 +722,459 @@ describe('InstanceForkService: ' + moduleName, function () {
         expect(newInstance).to.equal(mockInstance)
         done()
       })
+    })
+  })
+
+  describe('#_createNewNonRepoContextVersion', function () {
+    var mockContextVersion
+    var mockOwnerId = 'mockOwnerId'
+    var mockCreatedById = 'mockCreatedById'
+    var mockFoundContext = {}
+    var mockNewContextVersion
+
+    beforeEach(function (done) {
+      mockContextVersion = {
+        context: 'mockContextId'
+      }
+      mockNewContextVersion = {}
+      mockNewContextVersion.update = sinon.stub().yieldsAsync(null, mockNewContextVersion)
+      sinon.stub(Context, 'findOne').yieldsAsync(null, mockFoundContext)
+      sinon.stub(ContextService, 'handleVersionDeepCopy').yieldsAsync(null, mockNewContextVersion)
+      done()
+    })
+
+    afterEach(function (done) {
+      Context.findOne.restore()
+      ContextService.handleVersionDeepCopy.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      describe('validation', function () {
+        it('should require a context version', function (done) {
+          InstanceForkService._createNewNonRepoContextVersion()
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/requires.+contextversion/i)
+              done()
+            })
+        })
+
+        it('should require the context in the context version', function (done) {
+          delete mockContextVersion.context
+          InstanceForkService._createNewNonRepoContextVersion(mockContextVersion)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/requires.+contextversion\.context/i)
+              done()
+            })
+        })
+
+        it('should require the owner id', function (done) {
+          InstanceForkService._createNewNonRepoContextVersion(mockContextVersion)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/requires.+ownerId/i)
+              done()
+            })
+        })
+
+        it('should require the createdBy id', function (done) {
+          InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/requires.+createdbyid/i)
+              done()
+            })
+        })
+      })
+
+      it('should reject with any context find error', function (done) {
+        var error = new Error('robot')
+        Context.findOne.yieldsAsync(error)
+        InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should reject with any context version copy error', function (done) {
+        var error = new Error('robot')
+        ContextService.handleVersionDeepCopy.yieldsAsync(error)
+        InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should reject with any context version update error', function (done) {
+        var error = new Error('robot')
+        mockNewContextVersion.update.yieldsAsync(error)
+        InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+    })
+
+    it('should find a context', function (done) {
+      InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Context.findOne)
+          sinon.assert.calledWithExactly(
+            Context.findOne,
+            { _id: 'mockContextId' },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should make a new context version', function (done) {
+      InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+          sinon.assert.calledWithExactly(
+            ContextService.handleVersionDeepCopy,
+            mockFoundContext,
+            mockContextVersion,
+            { accounts: { github: { id: mockCreatedById } } },
+            { owner: { github: mockOwnerId } },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should update the new context version as advanced', function (done) {
+      InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockNewContextVersion.update)
+          sinon.assert.calledWithExactly(
+            mockNewContextVersion.update,
+            { $set: { advanced: true } },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should call all the things in the correct order', function (done) {
+      InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.callOrder(
+            Context.findOne,
+            ContextService.handleVersionDeepCopy,
+            mockNewContextVersion.update
+          )
+          done()
+        })
+    })
+
+    it('should return a new context version', function (done) {
+      InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
+        .asCallback(function (err, newContextVersion) {
+          expect(err).to.not.exist()
+          expect(newContextVersion).to.equal(mockNewContextVersion)
+          done()
+        })
+    })
+  })
+
+  describe('#forkNonRepoInstance', function () {
+    var mockInstance
+    var mockIsolationId = 'deadbeefdeadbeefdeadbeef'
+    var mockSessionUser
+    var mockRunnableClient
+    var mockNewContextVersion = { _id: 'beefdeadbeefdeadbeefdead' }
+    var mockNewBuild = { _id: 'mockBuildId' }
+    var mockNewInstance = { _id: 'mockInstanceId' }
+    var mockMasterName = 'foo-repo'
+
+    beforeEach(function (done) {
+      mockInstance = {
+        name: 'branch-name-repo',
+        contextVersion: { _id: '4' },
+        owner: { github: 17 }
+      }
+      mockSessionUser = {
+        accounts: {
+          github: { id: 100 }
+        }
+      }
+      sinon.stub(InstanceForkService, '_createNewNonRepoContextVersion').resolves(mockNewContextVersion)
+      mockRunnableClient = {
+        createBuild: sinon.stub().yieldsAsync(null, mockNewBuild),
+        buildBuild: sinon.stub().yieldsAsync(null, mockNewBuild),
+        createInstance: sinon.stub().yieldsAsync(null, mockNewInstance)
+      }
+      sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockNewInstance)
+      done()
+    })
+
+    afterEach(function (done) {
+      InstanceForkService._createNewNonRepoContextVersion.restore()
+      Runnable.createClient.restore()
+      Instance.findOneAndUpdate.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      describe('validation', function () {
+        it('should require an instance', function (done) {
+          InstanceForkService.forkNonRepoInstance().asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/instance.+required/i)
+            done()
+          })
+        })
+
+        it('should require a context version on the instance', function (done) {
+          delete mockInstance.contextVersion
+          InstanceForkService.forkNonRepoInstance(mockInstance).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/contextversion.+required/i)
+            done()
+          })
+        })
+
+        it('should require an owner on the instance', function (done) {
+          delete mockInstance.owner
+          InstanceForkService.forkNonRepoInstance(mockInstance).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/owner\.github.+required/i)
+            done()
+          })
+        })
+
+        it('should require a master instance name', function (done) {
+          InstanceForkService.forkNonRepoInstance(mockInstance).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/masterinstanceshorthash.+required/i)
+            done()
+          })
+        })
+
+        it('should require an isolation ID', function (done) {
+          InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/isolation.+required/i)
+            done()
+          })
+        })
+
+        it('should require a sessionUser', function (done) {
+          InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/sessionuser.+required/i)
+            done()
+          })
+        })
+
+        it('should require the github ID on the sessionUser', function (done) {
+          delete mockSessionUser.accounts.github
+          InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/github\.id.+required/i)
+              done()
+            })
+        })
+      })
+
+      it('should reject with any newNonRepoContextVersion error', function (done) {
+        var error = new Error('robot')
+        InstanceForkService._createNewNonRepoContextVersion.rejects(error)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
+      })
+
+      it('should reject with any createBuild error', function (done) {
+        var error = new Error('robot')
+        mockRunnableClient.createBuild.yieldsAsync(error)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should reject with any buildBuild error', function (done) {
+        var error = new Error('robot')
+        mockRunnableClient.buildBuild.yieldsAsync(error)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should reject with any createInstance error', function (done) {
+        var error = new Error('robot')
+        mockRunnableClient.createInstance.yieldsAsync(error)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should reject with any instance update error', function (done) {
+        var error = new Error('robot')
+        Instance.findOneAndUpdate.yieldsAsync(error)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+    })
+
+    it('should create a new context version', function (done) {
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(InstanceForkService._createNewNonRepoContextVersion)
+          sinon.assert.calledWithExactly(
+            InstanceForkService._createNewNonRepoContextVersion,
+            mockInstance.contextVersion,
+            mockInstance.owner.github,
+            mockSessionUser.accounts.github.id
+          )
+          done()
+        })
+    })
+
+    it('should create a new build with the new context version', function (done) {
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockRunnableClient.createBuild)
+          sinon.assert.calledWithExactly(
+            mockRunnableClient.createBuild,
+            {
+              json: {
+                contextVersions: [ mockNewContextVersion._id ],
+                owner: { github: mockInstance.owner.github }
+              }
+            },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should build the new build', function (done) {
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockRunnableClient.buildBuild)
+          sinon.assert.calledWithExactly(
+            mockRunnableClient.buildBuild,
+            mockNewBuild,
+            {
+              json: {
+                message: 'Initial Isolation Build'
+              }
+            },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should create a new instance with the new build', function (done) {
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockRunnableClient.buildBuild)
+          sinon.assert.calledWithExactly(
+            mockRunnableClient.buildBuild,
+            mockNewBuild,
+            {
+              json: {
+                message: 'Initial Isolation Build'
+              }
+            },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should update the new instance w/ isolation information', function (done) {
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockRunnableClient.createInstance)
+          sinon.assert.calledWithExactly(
+            mockRunnableClient.createInstance,
+            {
+              build: mockNewBuild._id,
+              // FIXME(bryan): name
+              name: mockMasterName + '--' + mockInstance.name,
+              env: mockInstance.env,
+              owner: { github: mockInstance.owner.github },
+              masterPod: true
+            },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should create the runnable clients with sessionUser', function (done) {
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        .asCallback(function (err, newInstance) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Runnable.createClient)
+          sinon.assert.calledWithExactly(Runnable.createClient, {}, mockSessionUser)
+          done()
+        })
+    })
+
+    it('should do all the things in the right order', function (done) {
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        .asCallback(function (err, newInstance) {
+          expect(err).to.not.exist()
+          sinon.assert.callOrder(
+            InstanceForkService._createNewNonRepoContextVersion,
+            Runnable.createClient,
+            mockRunnableClient.createBuild,
+            mockRunnableClient.buildBuild,
+            mockRunnableClient.createInstance,
+            Instance.findOneAndUpdate
+          )
+          done()
+        })
+    })
+
+    it('should return the new updated instance', function (done) {
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        .asCallback(function (err, newInstance) {
+          expect(err).to.not.exist()
+          expect(newInstance).to.equal(mockNewInstance)
+          done()
+        })
     })
   })
 
