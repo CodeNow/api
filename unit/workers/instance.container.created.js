@@ -60,16 +60,14 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
       }
     }
     ctx.cv = new ContextVersion({ _id: '123' })
-    sinon.stub(ContextVersion, 'findByIdAsync').returns(Promise.resolve(ctx.cv))
-    sinon.stub(ContextVersion.prototype, 'handleRecoveryAsync').returns(Promise.resolve())
+    sinon.stub(ContextVersion, 'recoverAsync').returns(Promise.resolve(ctx.cv))
     sinon.stub(InstanceService, 'updateContainerInspect').yieldsAsync(null, ctx.mockInstance)
     sinon.stub(rabbitMQ, 'startInstanceContainer', noop)
     done()
   })
 
   afterEach(function (done) {
-    ContextVersion.findByIdAsync.restore()
-    ContextVersion.prototype.handleRecoveryAsync.restore()
+    ContextVersion.recoverAsync.restore()
     InstanceService.updateContainerInspect.restore()
     rabbitMQ.startInstanceContainer.restore()
     done()
@@ -94,9 +92,8 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
             ports: ctx.data.inspectData.NetworkSettings.Ports
           }
         }
-        sinon.assert.calledOnce(ContextVersion.findByIdAsync)
-        sinon.assert.calledWith(ContextVersion.findByIdAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
-        sinon.assert.calledOnce(ContextVersion.prototype.handleRecoveryAsync)
+        sinon.assert.calledOnce(ContextVersion.recoverAsync)
+        sinon.assert.calledWith(ContextVersion.recoverAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
         sinon.assert.calledOnce(InstanceService.updateContainerInspect)
         sinon.assert.calledWith(InstanceService.updateContainerInspect,
           query, updateData)
@@ -121,8 +118,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(TaskFatalError)
         expect(err.message).to.equal('instance.container.created: Invalid Job')
-        sinon.assert.notCalled(ContextVersion.findByIdAsync)
-        sinon.assert.notCalled(ContextVersion.prototype.handleRecoveryAsync)
+        sinon.assert.notCalled(ContextVersion.recoverAsync)
         sinon.assert.notCalled(InstanceService.updateContainerInspect)
         sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
         done()
@@ -133,8 +129,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(TaskFatalError)
         expect(err.message).to.equal('instance.container.created: Invalid Job')
-        sinon.assert.notCalled(ContextVersion.findByIdAsync)
-        sinon.assert.notCalled(ContextVersion.prototype.handleRecoveryAsync)
+        sinon.assert.notCalled(ContextVersion.recoverAsync)
         sinon.assert.notCalled(InstanceService.updateContainerInspect)
         sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
         done()
@@ -147,22 +142,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(TaskFatalError)
         expect(err.message).to.equal('instance.container.created: Invalid Job')
-        sinon.assert.notCalled(ContextVersion.findByIdAsync)
-        sinon.assert.notCalled(ContextVersion.prototype.handleRecoveryAsync)
-        sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
-        done()
-      })
-    })
-    it('should fail if context version was not found', function (done) {
-      ContextVersion.findByIdAsync.returns(Promise.resolve(null))
-      InstanceContainerCreated(ctx.data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.container.created: ContextVersion not found')
-        sinon.assert.calledOnce(ContextVersion.findByIdAsync)
-        sinon.assert.calledWith(ContextVersion.findByIdAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
-        sinon.assert.notCalled(ContextVersion.prototype.handleRecoveryAsync)
+        sinon.assert.notCalled(ContextVersion.recoverAsync)
         sinon.assert.notCalled(InstanceService.updateContainerInspect)
         sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
         done()
@@ -172,29 +152,12 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
       var mongoError = new Error('Mongo error')
       var rejectionPromise = Promise.reject(mongoError)
       rejectionPromise.suppressUnhandledRejections()
-      ContextVersion.findByIdAsync.returns(rejectionPromise)
+      ContextVersion.recoverAsync.returns(rejectionPromise)
       InstanceContainerCreated(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
-        sinon.assert.calledOnce(ContextVersion.findByIdAsync)
-        sinon.assert.calledWith(ContextVersion.findByIdAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
-        sinon.assert.notCalled(ContextVersion.prototype.handleRecoveryAsync)
-        sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
-        done()
-      })
-    })
-    it('should callback with error if handleRecovery failed', function (done) {
-      var mongoError = new Error('Mongo error')
-      var rejectionPromise = Promise.reject(mongoError)
-      rejectionPromise.suppressUnhandledRejections()
-      ContextVersion.prototype.handleRecoveryAsync.returns(rejectionPromise)
-      InstanceContainerCreated(ctx.data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.equal(mongoError.message)
-        sinon.assert.calledOnce(ContextVersion.findByIdAsync)
-        sinon.assert.calledWith(ContextVersion.findByIdAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
-        sinon.assert.calledOnce(ContextVersion.prototype.handleRecoveryAsync)
+        sinon.assert.calledOnce(ContextVersion.recoverAsync)
+        sinon.assert.calledWith(ContextVersion.recoverAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
         sinon.assert.notCalled(InstanceService.updateContainerInspect)
         sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
         done()
@@ -221,9 +184,8 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
             ports: ctx.data.inspectData.NetworkSettings.Ports
           }
         }
-        sinon.assert.calledOnce(ContextVersion.findByIdAsync)
-        sinon.assert.calledWith(ContextVersion.findByIdAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
-        sinon.assert.calledOnce(ContextVersion.prototype.handleRecoveryAsync)
+        sinon.assert.calledOnce(ContextVersion.recoverAsync)
+        sinon.assert.calledWith(ContextVersion.recoverAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
         sinon.assert.calledOnce(InstanceService.updateContainerInspect)
         sinon.assert.calledWith(InstanceService.updateContainerInspect,
           query, updateData)

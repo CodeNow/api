@@ -1233,6 +1233,52 @@ describe('Context Version: ' + moduleName, function () {
     })
   })
 
+  describe('recover', function () {
+    var updatedCv
+    var contextVersion
+    beforeEach(function (done) {
+      updatedCv = {
+        dockRemoved: false,
+        dockRemovedNeedsUserConfirmation: true
+      }
+      contextVersion = new ContextVersion({
+        createdBy: { github: 1000 },
+        owner: { github: 2874589 },
+        context: ctx.c._id
+      })
+      sinon.stub(ContextVersion, 'findOneAndUpdate').yieldsAsync(null, updatedCv)
+      done()
+    })
+    afterEach(function (done) {
+      ContextVersion.findOneAndUpdate.restore()
+      done()
+    })
+    it('should return success', function (done) {
+      ContextVersion.recover(contextVersion._id, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(ContextVersion.findOneAndUpdate)
+        sinon.assert.calledWith(ContextVersion.findOneAndUpdate,
+          { '_id': contextVersion._id, 'dockRemoved': true },
+          { $set: { 'dockRemoved': false, 'dockRemovedNeedsUserConfirmation': true } },
+          sinon.match.func)
+        done()
+      })
+    })
+    it('should cb error', function (done) {
+      var error = new Error('DB Error!')
+      ContextVersion.findOneAndUpdate.yieldsAsync(error)
+      ContextVersion.recover(contextVersion._id, function (err) {
+        expect(err).to.equal(error)
+        sinon.assert.calledOnce(ContextVersion.findOneAndUpdate)
+        sinon.assert.calledWith(ContextVersion.findOneAndUpdate,
+          { '_id': contextVersion._id, 'dockRemoved': true },
+          { $set: { 'dockRemoved': false, 'dockRemovedNeedsUserConfirmation': true } },
+          sinon.match.func)
+        done()
+      })
+    })
+  })
+
   describe('handleRecovery', function () {
     var updatedCv
     var contextVersion
