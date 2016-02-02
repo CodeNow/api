@@ -120,6 +120,23 @@ describe('BDD - Isolation', function () {
         })
       })
 
+      it('should mark the child as a master pod', function (done) {
+        var childName = [
+          ctx.webInstance.attrs.shortHash,
+          ctx.apiInstance.attrs.lowerName
+        ].join('--')
+        var opts = {
+          owner: { github: ctx.user.attrs.accounts.github.id },
+          name: childName
+        }
+        ctx.user.fetchInstances(opts, function (err, instances) {
+          if (err) { return done(err) }
+          expect(instances).to.have.length(1)
+          expect(instances[0].masterPod).to.equal(true)
+          done()
+        })
+      })
+
       it('should list instances with the isolation', function (done) {
         var opts = {
           owner: { github: ctx.user.attrs.accounts.github.id },

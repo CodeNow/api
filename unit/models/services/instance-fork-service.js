@@ -1134,7 +1134,7 @@ describe('InstanceForkService: ' + moduleName, function () {
               name: mockMasterName + '--' + mockInstance.name,
               env: mockInstance.env,
               owner: { github: mockInstance.owner.github },
-              masterPod: false
+              masterPod: true
             },
             sinon.match.func
           )
