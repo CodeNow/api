@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "6.19.1",
+  "version": "6.20.1",
   "npm-shrinkwrap-version": "5.4.1",
   "node-version": "v0.10.38",
   "dependencies": {
@@ -5033,9 +5033,9 @@
       }
     },
     "runnable": {
-      "version": "4.7.1",
-      "from": "runnable@git+ssh://git@github.com/CodeNow/runnable-api-client.git#a57b8b4a733b3f3f4116e763cf0a367f03d3bff8",
-      "resolved": "git+ssh://git@github.com/CodeNow/runnable-api-client.git#a57b8b4a733b3f3f4116e763cf0a367f03d3bff8",
+      "version": "4.11.3",
+      "from": "runnable@git+ssh://git@github.com/CodeNow/runnable-api-client.git#591235bf26881046a0f07e8e2d1ceb26f35ad805",
+      "resolved": "git+ssh://git@github.com/CodeNow/runnable-api-client.git#591235bf26881046a0f07e8e2d1ceb26f35ad805",
       "dependencies": {
         "boom": {
           "version": "2.4.2",
