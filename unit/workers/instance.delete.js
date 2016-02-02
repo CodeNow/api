@@ -6,28 +6,25 @@
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
-var Code = require('code')
-var sinon = require('sinon')
-
-var Promise = require('bluebird')
-
-var rabbitMQ = require('models/rabbitmq')
-var Worker = require('workers/instance.delete')
-var Instance = require('models/mongo/instance')
-var InstanceService = require('models/services/instance-service')
-var messenger = require('socket/messenger')
-
-var TaskFatalError = require('ponos').TaskFatalError
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
-var expect = Code.expect
+var expect = require('code').expect
 var it = lab.it
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
+var Promise = require('bluebird')
+var TaskFatalError = require('ponos').TaskFatalError
+var sinon = require('sinon')
+require('sinon-as-promised')(Promise)
 
-describe('InstanceDelete: ' + moduleName, function () {
+var Instance = require('models/mongo/instance')
+var InstanceService = require('models/services/instance-service')
+var IsolationService = require('models/services/isolation-service')
+var Worker = require('workers/instance.delete')
+var messenger = require('socket/messenger')
+var rabbitMQ = require('models/rabbitmq')
+
+describe('Instance Delete Worker', function () {
   describe('worker', function () {
     var testInstanceId = '5633e9273e2b5b0c0077fd41'
     var testData = {
@@ -64,12 +61,14 @@ describe('InstanceDelete: ' + moduleName, function () {
         ]
       }
     })
+
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findByIdAsync').returns(Promise.resolve(testInstance))
+      sinon.stub(Instance, 'findByIdAsync').resolves(testInstance)
       sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
-      sinon.stub(Instance.prototype, 'removeSelfFromGraphAsync').returns(Promise.resolve())
-      sinon.stub(Instance.prototype, 'removeAsync').returns(Promise.resolve())
-      sinon.stub(InstanceService, 'deleteAllInstanceForks').returns(Promise.resolve())
+      sinon.stub(Instance.prototype, 'removeSelfFromGraphAsync').resolves()
+      sinon.stub(Instance.prototype, 'removeAsync').resolves()
+      sinon.stub(InstanceService, 'deleteAllInstanceForks').resolves()
+      sinon.stub(IsolationService, 'deleteIsolation').resolves()
       sinon.stub(messenger, 'emitInstanceDelete').returns()
       done()
     })
@@ -80,246 +79,236 @@ describe('InstanceDelete: ' + moduleName, function () {
       Instance.prototype.removeSelfFromGraphAsync.restore()
       Instance.prototype.removeAsync.restore()
       InstanceService.deleteAllInstanceForks.restore()
+      IsolationService.deleteIsolation.restore()
       messenger.emitInstanceDelete.restore()
       done()
     })
 
-    describe('invalid Job', function () {
-      it('should throw a task fatal error if the job is missing entirely', function (done) {
-        Worker().asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/job.+required/)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the job is missing a instanceId', function (done) {
-        Worker({}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/instanceId.*required/i)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the job is not an object', function (done) {
-        Worker(true).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.contain('must be an object')
-          done()
-        })
-      })
-      it('should throw a task fatal error if the instanceId is not a string', function (done) {
-        Worker({instanceId: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/instanceId.*string/i)
-          done()
-        })
-      })
-    })
-
-    describe('instance lookup fails', function () {
-      var mongoError = new Error('Mongo failed')
-      beforeEach(function (done) {
-        var rejectionPromise = Promise.reject(mongoError)
-        rejectionPromise.suppressUnhandledRejections()
-        Instance.findByIdAsync.returns(rejectionPromise)
-        done()
-      })
-
-      it('should callback with error', function (done) {
-        Worker(testData)
-          .asCallback(function (err) {
-            expect(err.message).to.equal(mongoError.message)
-            sinon.assert.calledOnce(Instance.findByIdAsync)
-            sinon.assert.calledWith(Instance.findByIdAsync, testInstanceId)
-            sinon.assert.notCalled(Instance.prototype.removeSelfFromGraphAsync)
-            sinon.assert.notCalled(Instance.prototype.removeAsync)
-            sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
-            sinon.assert.notCalled(InstanceService.deleteAllInstanceForks)
-            sinon.assert.notCalled(messenger.emitInstanceDelete)
-            done()
-          })
-      })
-    })
-
-    describe('instance was not found', function () {
-      beforeEach(function (done) {
-        Instance.findByIdAsync.returns(Promise.resolve(null))
-        done()
-      })
-
-      it('should callback with fatal error', function (done) {
-        Worker(testData)
-          .asCallback(function (err) {
+    describe('errors', function () {
+      describe('invalid Job', function () {
+        it('should throw a task fatal error if the job is missing entirely', function (done) {
+          Worker().asCallback(function (err) {
+            expect(err).to.exist()
             expect(err).to.be.instanceOf(TaskFatalError)
-            expect(err.message).to.contain('Instance not found')
-            sinon.assert.calledOnce(Instance.findByIdAsync)
-            sinon.assert.calledWith(Instance.findByIdAsync, testInstanceId)
-            sinon.assert.notCalled(Instance.prototype.removeSelfFromGraphAsync)
-            sinon.assert.notCalled(Instance.prototype.removeAsync)
-            sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
-            sinon.assert.notCalled(InstanceService.deleteAllInstanceForks)
-            sinon.assert.notCalled(messenger.emitInstanceDelete)
+            expect(err.data.validationError).to.exist()
+            expect(err.data.validationError.message)
+              .to.match(/job.+required/)
             done()
           })
-      })
-    })
+        })
 
-    describe('removeSelfFromGraph failed', function () {
-      var neoError = new Error('Neo failed')
-      beforeEach(function (done) {
-        var rejectionPromise = Promise.reject(neoError)
-        rejectionPromise.suppressUnhandledRejections()
-        Instance.prototype.removeSelfFromGraphAsync.returns(rejectionPromise)
-        done()
-      })
-
-      it('should callback with fatal error', function (done) {
-        Worker(testData)
-          .asCallback(function (err) {
-            expect(err.message).to.equal(neoError.message)
-            sinon.assert.calledOnce(Instance.findByIdAsync)
-            sinon.assert.calledWith(Instance.findByIdAsync, testInstanceId)
-            sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraphAsync)
-            sinon.assert.notCalled(Instance.prototype.removeAsync)
-            sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
-            sinon.assert.notCalled(InstanceService.deleteAllInstanceForks)
-            sinon.assert.notCalled(messenger.emitInstanceDelete)
+        it('should throw a task fatal error if the job is missing a instanceId', function (done) {
+          Worker({}).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err.data.validationError).to.exist()
+            expect(err.data.validationError.message)
+              .to.match(/instanceId.*required/i)
             done()
           })
-      })
-    })
+        })
 
-    describe('remove failed', function () {
-      var mongoError = new Error('Mongo failed')
-      beforeEach(function (done) {
-        var rejectionPromise = Promise.reject(mongoError)
-        rejectionPromise.suppressUnhandledRejections()
-        Instance.prototype.removeAsync.returns(rejectionPromise)
-        done()
-      })
-
-      it('should callback with fatal error', function (done) {
-        Worker(testData)
-          .asCallback(function (err) {
-            expect(err.message).to.equal(mongoError.message)
-            sinon.assert.calledOnce(Instance.findByIdAsync)
-            sinon.assert.calledWith(Instance.findByIdAsync, testInstanceId)
-            sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraphAsync)
-            sinon.assert.calledOnce(Instance.prototype.removeAsync)
-            sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
-            sinon.assert.notCalled(InstanceService.deleteAllInstanceForks)
-            sinon.assert.notCalled(messenger.emitInstanceDelete)
+        it('should throw a task fatal error if the job is not an object', function (done) {
+          Worker(true).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err.data.validationError).to.exist()
+            expect(err.data.validationError.message)
+              .to.contain('must be an object')
             done()
           })
-      })
-    })
+        })
 
-    describe('delete forks failed', function () {
-      var mongoError = new Error('Mongo failed')
-      beforeEach(function (done) {
-        var rejectionPromise = Promise.reject(mongoError)
-        rejectionPromise.suppressUnhandledRejections()
-        InstanceService.deleteAllInstanceForks.returns(rejectionPromise)
-        done()
-      })
-
-      it('should callback with fatal error', function (done) {
-        Worker(testData)
-          .asCallback(function (err) {
-            expect(err.message).to.equal(mongoError.message)
-            sinon.assert.calledOnce(Instance.findByIdAsync)
-            sinon.assert.calledWith(Instance.findByIdAsync, testInstanceId)
-            sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
-            sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraphAsync)
-            sinon.assert.calledOnce(Instance.prototype.removeAsync)
-            sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
-            sinon.assert.calledWith(InstanceService.deleteAllInstanceForks, testInstance)
-            sinon.assert.notCalled(messenger.emitInstanceDelete)
+        it('should throw a task fatal error if the instanceId is not a string', function (done) {
+          Worker({instanceId: {}}).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err.data.validationError).to.exist()
+            expect(err.data.validationError.message)
+              .to.match(/instanceId.*string/i)
             done()
           })
-      })
-    })
-
-    describe('pass', function () {
-      it('should return no error', function (done) {
-        Worker(testData)
-          .asCallback(function (err) {
-            expect(err).to.not.exists()
-            sinon.assert.calledOnce(Instance.findByIdAsync)
-            sinon.assert.calledWith(Instance.findByIdAsync, testInstanceId)
-            sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraphAsync)
-            sinon.assert.calledOnce(Instance.prototype.removeAsync)
-            sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
-            sinon.assert.calledWith(rabbitMQ.deleteInstanceContainer, {
-              instanceShortHash: testInstance.shortHash,
-              instanceName: testInstance.name,
-              instanceMasterPod: testInstance.masterPod,
-              instanceMasterBranch: testInstance.contextVersion.appCodeVersions[0].lowerBranch,
-              container: testInstance.container,
-              ownerGithubId: testInstance.owner.github,
-              ownerGithubUsername: testInstance.owner.username
-            })
-            sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
-            sinon.assert.calledWith(InstanceService.deleteAllInstanceForks, testInstance)
-            sinon.assert.calledOnce(messenger.emitInstanceDelete)
-            sinon.assert.calledWith(messenger.emitInstanceDelete, testInstance)
-            done()
-          })
+        })
       })
 
-      describe('no container', function () {
-        beforeEach(function (done) {
-          testInstance.container = null
-          Instance.findByIdAsync.returns(Promise.resolve(testInstance))
+      it('should reject with any findById error', function (done) {
+        var mongoError = new Error('Mongo failed')
+        Instance.findByIdAsync.rejects(mongoError)
+
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.equal(mongoError)
           done()
         })
-        it('should not delete container if there is no container', function (done) {
-          Worker(testData)
-            .asCallback(function (err) {
-              expect(err).to.not.exists()
-              sinon.assert.calledOnce(Instance.findByIdAsync)
-              sinon.assert.calledWith(Instance.findByIdAsync, testInstanceId)
-              sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraphAsync)
-              sinon.assert.calledOnce(Instance.prototype.removeAsync)
-              sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
-              sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
-              sinon.assert.calledWith(InstanceService.deleteAllInstanceForks, testInstance)
-              sinon.assert.calledOnce(messenger.emitInstanceDelete)
-              sinon.assert.calledWith(messenger.emitInstanceDelete, testInstance)
-              done()
-            })
-        })
       })
-      describe('not a master instance', function () {
-        beforeEach(function (done) {
-          testInstance.masterPod = false
-          testInstance.container = null
-          Instance.findByIdAsync.returns(Promise.resolve(testInstance))
+
+      it('should reject when instance not found with TaskFatalError', function (done) {
+        Instance.findByIdAsync.resolves(null)
+
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err.message).to.match(/instance not found/i)
           done()
         })
-        it('should not mark forks if not master', function (done) {
-          Worker(testData)
-            .asCallback(function (err) {
-              expect(err).to.not.exists()
-              sinon.assert.calledOnce(Instance.findByIdAsync)
-              sinon.assert.calledWith(Instance.findByIdAsync, testInstanceId)
-              sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraphAsync)
-              sinon.assert.calledOnce(Instance.prototype.removeAsync)
-              sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
-              sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
-              sinon.assert.calledWith(InstanceService.deleteAllInstanceForks, testInstance)
-              sinon.assert.calledOnce(messenger.emitInstanceDelete)
-              sinon.assert.calledWith(messenger.emitInstanceDelete, testInstance)
-              done()
-            })
+      })
+
+      it('should reject with any removeSelfFromGraph error', function (done) {
+        var neoError = new Error('Neo failed')
+        Instance.prototype.removeSelfFromGraphAsync.rejects(neoError)
+
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(neoError.message)
+          done()
         })
+      })
+
+      it('should reject with any delete isolation error', function (done) {
+        testInstance.isolated = 'deadbeefdeadbeefdeadbeef'
+        testInstance.isIsolationGroupMaster = true
+        var error = new Error('pugsly')
+        IsolationService.deleteIsolation.rejects(error)
+
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.equal(error)
+          done()
+        })
+      })
+
+      it('should reject with any remove error', function (done) {
+        var mongoError = new Error('Mongo failed')
+        Instance.prototype.removeAsync.rejects(mongoError)
+
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.equal(mongoError)
+          done()
+        })
+      })
+
+      it('should reject with any deleteAllInstanceForks error', function (done) {
+        var mongoError = new Error('Mongo failed')
+        InstanceService.deleteAllInstanceForks.rejects(mongoError)
+
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.equal(mongoError)
+          done()
+        })
+      })
+    })
+
+    it('should return no error', function (done) {
+      Worker(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        done()
+      })
+    })
+
+    it('should find an instance by id', function (done) {
+      Worker(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.findByIdAsync)
+        sinon.assert.calledWithExactly(Instance.findByIdAsync, testInstanceId)
+        done()
+      })
+    })
+
+    it('should remove the instance from the graph', function (done) {
+      Worker(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraphAsync)
+        done()
+      })
+    })
+
+    it('should delete the isolation if it is the master', function (done) {
+      testInstance.isolated = 'deadbeefdeadbeefdeadbeef'
+      testInstance.isIsolationGroupMaster = true
+
+      Worker(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(IsolationService.deleteIsolation)
+        sinon.assert.calledWithExactly(
+          IsolationService.deleteIsolation,
+          testInstance.isolated
+        )
+        done()
+      })
+    })
+
+    it('should remove the mongo model', function (done) {
+      Worker(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.prototype.removeAsync)
+        done()
+      })
+    })
+
+    it('should enqueue a job to remove the container', function (done) {
+      Worker(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
+        sinon.assert.calledWithExactly(rabbitMQ.deleteInstanceContainer, {
+          instanceShortHash: testInstance.shortHash,
+          instanceName: testInstance.name,
+          instanceMasterPod: testInstance.masterPod,
+          instanceMasterBranch: testInstance.contextVersion.appCodeVersions[0].lowerBranch,
+          container: testInstance.container,
+          ownerGithubId: testInstance.owner.github,
+          ownerGithubUsername: testInstance.owner.username
+        })
+        done()
+      })
+    })
+
+    it('should delete all instance forks', function (done) {
+      Worker(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
+        sinon.assert.calledWithExactly(InstanceService.deleteAllInstanceForks, testInstance)
+        done()
+      })
+    })
+
+    it('should emit events about the instance deletion', function (done) {
+      Worker(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(messenger.emitInstanceDelete)
+        sinon.assert.calledWithExactly(messenger.emitInstanceDelete, testInstance)
+        done()
+      })
+    })
+
+    describe('no container', function () {
+      beforeEach(function (done) {
+        testInstance.container = null
+        done()
+      })
+
+      it('should not delete container if there is no container', function (done) {
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+          done()
+        })
+      })
+    })
+
+    it('should perform all these tasks in order', function (done) {
+      Worker(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.callOrder(
+          Instance.findByIdAsync,
+          Instance.prototype.removeSelfFromGraphAsync,
+          Instance.prototype.removeAsync,
+          rabbitMQ.deleteInstanceContainer,
+          InstanceService.deleteAllInstanceForks,
+          messenger.emitInstanceDelete
+        )
+        done()
       })
     })
   })
