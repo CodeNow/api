@@ -1492,6 +1492,24 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
       done()
     })
+
+    it('should not add them when looking up by lowerName', function (done) {
+      var opts = {}
+      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+        $or: [
+          { isolated: { $exists: false } },
+          { isIsolationGroupMaster: true }
+        ]
+      })
+      // enforce the function returns a new object, not the same one
+      expect(opts).to.deep.equal({})
+      // check by lowerName
+      opts = { lowerName: 'foobar' }
+      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+        lowerName: 'foobar'
+      })
+      done()
+    })
   })
 
   describe('#emitInstanceUpdates', function () {
