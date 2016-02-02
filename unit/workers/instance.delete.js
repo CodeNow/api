@@ -19,6 +19,7 @@ require('sinon-as-promised')(Promise)
 
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
+var IsolationService = require('models/services/isolation-service')
 var Worker = require('workers/instance.delete')
 var messenger = require('socket/messenger')
 var rabbitMQ = require('models/rabbitmq')
@@ -67,6 +68,7 @@ describe('Instance Delete Worker', function () {
       sinon.stub(Instance.prototype, 'removeSelfFromGraphAsync').resolves()
       sinon.stub(Instance.prototype, 'removeAsync').resolves()
       sinon.stub(InstanceService, 'deleteAllInstanceForks').resolves()
+      sinon.stub(IsolationService, 'deleteIsolation').resolves()
       sinon.stub(messenger, 'emitInstanceDelete').returns()
       done()
     })
@@ -77,6 +79,7 @@ describe('Instance Delete Worker', function () {
       Instance.prototype.removeSelfFromGraphAsync.restore()
       Instance.prototype.removeAsync.restore()
       InstanceService.deleteAllInstanceForks.restore()
+      IsolationService.deleteIsolation.restore()
       messenger.emitInstanceDelete.restore()
       done()
     })
@@ -161,6 +164,19 @@ describe('Instance Delete Worker', function () {
         })
       })
 
+      it('should reject with any delete isolation error', function (done) {
+        testInstance.isolated = 'deadbeefdeadbeefdeadbeef'
+        testInstance.isIsolationGroupMaster = true
+        var error = new Error('pugsly')
+        IsolationService.deleteIsolation.rejects(error)
+
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.equal(error)
+          done()
+        })
+      })
+
       it('should reject with any remove error', function (done) {
         var mongoError = new Error('Mongo failed')
         Instance.prototype.removeAsync.rejects(mongoError)
@@ -204,6 +220,21 @@ describe('Instance Delete Worker', function () {
       Worker(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraphAsync)
+        done()
+      })
+    })
+
+    it('should delete the isolation if it is the master', function (done) {
+      testInstance.isolated = 'deadbeefdeadbeefdeadbeef'
+      testInstance.isIsolationGroupMaster = true
+
+      Worker(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(IsolationService.deleteIsolation)
+        sinon.assert.calledWithExactly(
+          IsolationService.deleteIsolation,
+          testInstance.isolated
+        )
         done()
       })
     })
