@@ -64,6 +64,7 @@ describe('InstanceDelete: ' + moduleName, function () {
         ]
       }
     })
+
     beforeEach(function (done) {
       sinon.stub(Instance, 'findByIdAsync').returns(Promise.resolve(testInstance))
       sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
@@ -94,6 +95,7 @@ describe('InstanceDelete: ' + moduleName, function () {
           done()
         })
       })
+
       it('should throw a task fatal error if the job is missing a instanceId', function (done) {
         Worker({}).asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
@@ -103,6 +105,7 @@ describe('InstanceDelete: ' + moduleName, function () {
           done()
         })
       })
+
       it('should throw a task fatal error if the job is not an object', function (done) {
         Worker(true).asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
@@ -112,6 +115,7 @@ describe('InstanceDelete: ' + moduleName, function () {
           done()
         })
       })
+
       it('should throw a task fatal error if the instanceId is not a string', function (done) {
         Worker({instanceId: {}}).asCallback(function (err) {
           expect(err).to.be.instanceOf(TaskFatalError)
@@ -125,6 +129,7 @@ describe('InstanceDelete: ' + moduleName, function () {
 
     describe('instance lookup fails', function () {
       var mongoError = new Error('Mongo failed')
+
       beforeEach(function (done) {
         var rejectionPromise = Promise.reject(mongoError)
         rejectionPromise.suppressUnhandledRejections()
@@ -173,6 +178,7 @@ describe('InstanceDelete: ' + moduleName, function () {
 
     describe('removeSelfFromGraph failed', function () {
       var neoError = new Error('Neo failed')
+
       beforeEach(function (done) {
         var rejectionPromise = Promise.reject(neoError)
         rejectionPromise.suppressUnhandledRejections()
@@ -198,6 +204,7 @@ describe('InstanceDelete: ' + moduleName, function () {
 
     describe('remove failed', function () {
       var mongoError = new Error('Mongo failed')
+
       beforeEach(function (done) {
         var rejectionPromise = Promise.reject(mongoError)
         rejectionPromise.suppressUnhandledRejections()
@@ -223,6 +230,7 @@ describe('InstanceDelete: ' + moduleName, function () {
 
     describe('delete forks failed', function () {
       var mongoError = new Error('Mongo failed')
+
       beforeEach(function (done) {
         var rejectionPromise = Promise.reject(mongoError)
         rejectionPromise.suppressUnhandledRejections()
@@ -280,6 +288,7 @@ describe('InstanceDelete: ' + moduleName, function () {
           Instance.findByIdAsync.returns(Promise.resolve(testInstance))
           done()
         })
+
         it('should not delete container if there is no container', function (done) {
           Worker(testData)
             .asCallback(function (err) {
@@ -297,6 +306,7 @@ describe('InstanceDelete: ' + moduleName, function () {
             })
         })
       })
+
       describe('not a master instance', function () {
         beforeEach(function (done) {
           testInstance.masterPod = false
@@ -304,6 +314,7 @@ describe('InstanceDelete: ' + moduleName, function () {
           Instance.findByIdAsync.returns(Promise.resolve(testInstance))
           done()
         })
+
         it('should not mark forks if not master', function (done) {
           Worker(testData)
             .asCallback(function (err) {
