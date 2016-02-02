@@ -36,7 +36,46 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     it('should just callback if the rabbitmq is not started', function (done) {
       ctx.rabbitMQ.close(done)
     })
-  })
+
+    describe('on error', function () {
+      var closeError = new Error('error on close')
+
+      beforeEach(function (done) {
+        ctx.rabbitMQ.hermesClient = { close: noop }
+        sinon.stub(ctx.rabbitMQ.hermesClient, 'close').yieldsAsync(closeError)
+        done()
+      })
+
+      it('should pass errors to the callback', function (done) {
+        ctx.rabbitMQ.close(function (err) {
+          expect(err).to.equal(closeError)
+          done()
+        })
+      })
+
+      describe('in staging', function () {
+        var originalNodeEnv
+
+        beforeEach(function (done) {
+          originalNodeEnv = process.env.NODE_ENV
+          process.env.NODE_ENV = 'staging'
+          done()
+        })
+
+        afterEach(function (done) {
+          process.env.NODE_ENV = originalNodeEnv
+          done()
+        })
+
+        it('should not pass errors to the callback', function (done) {
+          ctx.rabbitMQ.close(function (err) {
+            expect(err).to.not.exist()
+            done()
+          })
+        })
+      }) // end 'in staging'
+    }) // end 'on error'
+  }) // end 'close'
 
   describe('unloadWorkers', function () {
     it('should just callback if the rabbitmq is not started', function (done) {
