@@ -1206,7 +1206,7 @@ describe('Context Version: ' + moduleName, function () {
         sinon.assert.calledOnce(ContextVersion.update)
         sinon.assert.calledWith(ContextVersion.update,
           { dockerHost: dockerHost },
-          { $set: { dockRemoved: true, dockRemovedNeedsUserConfirmation: true } },
+          { $set: { dockRemoved: true } },
           { multi: true },
           sinon.match.func
         )
@@ -1283,8 +1283,7 @@ describe('Context Version: ' + moduleName, function () {
     var contextVersion
     beforeEach(function (done) {
       updatedCv = {
-        dockRemoved: false,
-        dockRemovedNeedsUserConfirmation: true
+        dockRemoved: false
       }
       contextVersion = new ContextVersion({
         createdBy: { github: 1000 },

@@ -616,7 +616,7 @@ describe('Instance Model Tests ' + moduleName, function () {
   describe('#updateContextVersion', function () {
     var id = '1234'
     var updateObj = {
-      dockRemovedNeedsUserConfirmation: false
+      dockRemoved: false
     }
     beforeEach(function (done) {
       sinon.stub(Instance, 'update').yieldsAsync(null)
@@ -634,7 +634,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           'contextVersion.id': id
         }, {
           $set: {
-            'contextVersion.dockRemovedNeedsUserConfirmation': false
+            'contextVersion.dockRemoved': false
           }
         }, {
           multi: true
