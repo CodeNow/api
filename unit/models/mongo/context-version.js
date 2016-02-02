@@ -1238,8 +1238,7 @@ describe('Context Version: ' + moduleName, function () {
     var contextVersion
     beforeEach(function (done) {
       updatedCv = {
-        dockRemoved: false,
-        dockRemovedNeedsUserConfirmation: true
+        dockRemoved: false
       }
       contextVersion = new ContextVersion({
         createdBy: { github: 1000 },
@@ -1259,7 +1258,7 @@ describe('Context Version: ' + moduleName, function () {
         sinon.assert.calledOnce(ContextVersion.findOneAndUpdate)
         sinon.assert.calledWith(ContextVersion.findOneAndUpdate,
           { '_id': contextVersion._id, 'dockRemoved': true },
-          { $set: { 'dockRemoved': false, 'dockRemovedNeedsUserConfirmation': true } },
+          { $set: { 'dockRemoved': false } },
           sinon.match.func)
         done()
       })
@@ -1272,7 +1271,7 @@ describe('Context Version: ' + moduleName, function () {
         sinon.assert.calledOnce(ContextVersion.findOneAndUpdate)
         sinon.assert.calledWith(ContextVersion.findOneAndUpdate,
           { '_id': contextVersion._id, 'dockRemoved': true },
-          { $set: { 'dockRemoved': false, 'dockRemovedNeedsUserConfirmation': true } },
+          { $set: { 'dockRemoved': false } },
           sinon.match.func)
         done()
       })
