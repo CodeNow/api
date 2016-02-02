@@ -88,7 +88,7 @@
     "request": "2.42.0",
     "rollbar": "0.5.4",
     "runna4j": "^0.1.0",
-    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.7.1",
+    "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.11.3",
     "runnable-hermes": "git://github.com/Runnable/hermes.git#v6.4.0",
     "runnable-hostname": "git+ssh://git@github.com:CodeNow/runnable-hostname#v1.0.4",
     "sendgrid": "^1.9.2",
