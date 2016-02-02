@@ -327,13 +327,7 @@ describe('Context Version: ' + moduleName, function () {
           expect(cache[0]).to.deep.equal([
             {
               type: 'log',
-              content: 'hello'
-            }, {
-              type: 'log',
-              content: 'world'
-            }, {
-              type: 'log',
-              content: ''
+              content: 'hello\nworld\n'
             }
           ])
           expect(stream.end.callCount).to.equal(1)
