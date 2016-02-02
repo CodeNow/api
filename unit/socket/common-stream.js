@@ -66,10 +66,7 @@ describe('common stream: ' + moduleName, function () {
           sinon.assert.calledOnce(isModeratorSpy)
           sinon.assert.calledWith(
             isModeratorSpy,
-            {
-              sessionUser: ctx.sessionUser,
-              model: ctx.cvAttrs
-            },
+            {sessionUser: ctx.sessionUser},
             sinon.match.object,
             sinon.match.func
           )
@@ -78,10 +75,7 @@ describe('common stream: ' + moduleName, function () {
           sinon.assert.calledOnce(isOwnerOfSpy)
           sinon.assert.calledWith(
             isOwnerOfSpy,
-            {
-              sessionUser: ctx.sessionUser,
-              model: ctx.cvAttrs
-            },
+            {sessionUser: ctx.sessionUser},
             sinon.match.object,
             sinon.match.func
           )
@@ -100,10 +94,7 @@ describe('common stream: ' + moduleName, function () {
           sinon.assert.calledOnce(isModeratorSpy)
           sinon.assert.calledWith(
             isModeratorSpy,
-            {
-              sessionUser: ctx.sessionUser,
-              model: ctx.cvAttrs
-            },
+            {sessionUser: ctx.sessionUser},
             sinon.match.object,
             sinon.match.func
           )
@@ -112,10 +103,7 @@ describe('common stream: ' + moduleName, function () {
           sinon.assert.calledOnce(isOwnerOfSpy)
           sinon.assert.calledWith(
             isOwnerOfSpy,
-            {
-              sessionUser: ctx.sessionUser,
-              model: ctx.cvAttrs
-            },
+            {sessionUser: ctx.sessionUser},
             sinon.match.object,
             sinon.match.func
           )
@@ -134,10 +122,7 @@ describe('common stream: ' + moduleName, function () {
           sinon.assert.calledOnce(isModeratorSpy)
           sinon.assert.calledWith(
             isModeratorSpy,
-            {
-              sessionUser: ctx.sessionUser,
-              model: ctx.cvAttrs
-            },
+            {sessionUser: ctx.sessionUser},
             sinon.match.object,
             sinon.match.func
           )
@@ -146,10 +131,7 @@ describe('common stream: ' + moduleName, function () {
           sinon.assert.calledOnce(isOwnerOfSpy)
           sinon.assert.calledWith(
             isOwnerOfSpy,
-            {
-              sessionUser: ctx.sessionUser,
-              model: ctx.cvAttrs
-            },
+            {sessionUser: ctx.sessionUser},
             sinon.match.object,
             sinon.match.func
           )
@@ -168,10 +150,7 @@ describe('common stream: ' + moduleName, function () {
           sinon.assert.calledOnce(isModeratorSpy)
           sinon.assert.calledWith(
             isModeratorSpy,
-            {
-              sessionUser: ctx.sessionUser,
-              model: ctx.cvAttrs
-            },
+            {sessionUser: ctx.sessionUser},
             sinon.match.object,
             sinon.match.func
           )
@@ -180,10 +159,7 @@ describe('common stream: ' + moduleName, function () {
           sinon.assert.calledOnce(isOwnerOfSpy)
           sinon.assert.calledWith(
             isOwnerOfSpy,
-            {
-              sessionUser: ctx.sessionUser,
-              model: ctx.cvAttrs
-            },
+            {sessionUser: ctx.sessionUser},
             sinon.match.object,
             sinon.match.func
           )
@@ -202,10 +178,7 @@ describe('common stream: ' + moduleName, function () {
           sinon.assert.calledOnce(isModeratorSpy)
           sinon.assert.calledWith(
             isModeratorSpy,
-            {
-              sessionUser: ctx.sessionUser,
-              model: ctx.cvAttrs
-            },
+            {sessionUser: ctx.sessionUser},
             sinon.match.object,
             sinon.match.func
           )
@@ -214,10 +187,7 @@ describe('common stream: ' + moduleName, function () {
           sinon.assert.calledOnce(isOwnerOfSpy)
           sinon.assert.calledWith(
             isOwnerOfSpy,
-            {
-              sessionUser: ctx.sessionUser,
-              model: ctx.cvAttrs
-            },
+            {sessionUser: ctx.sessionUser},
             sinon.match.object,
             sinon.match.func
           )

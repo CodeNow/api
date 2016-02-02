@@ -95,8 +95,7 @@ describe('Build Stream', function () {
           buildStream.on('end', function () {
             client.end()
             expect(objectBuffer).to.have.length(1)
-            expect(objectBuffer[0]).to.have.length(1)
-            expect(objectBuffer[0][0].content).to.match(/^Successfully built .+/)
+            expect(objectBuffer[0].content).to.match(/^Successfully built .+/)
             done()
           })
         })
@@ -164,7 +163,6 @@ describe('Build Stream', function () {
         buildStream.on('data', function (d) { objectBuffer.push(d) })
         buildStream.on('end', function () {
           client.end()
-          // Since this is getting the stream 'live', it's not an array
           expect(objectBuffer).to.have.length(1)
           expect(objectBuffer[0].content).to.match(/^Successfully built .+/)
           count.next()
@@ -209,8 +207,7 @@ describe('Build Stream', function () {
             s.on('end', function () {
               c.end()
               expect(objectBuffer).to.have.length(1)
-              expect(objectBuffer[0]).to.have.length(1)
-              expect(objectBuffer[0][0].content).to.match(/^Successfully built .+/)
+              expect(objectBuffer[0].content).to.match(/^Successfully built .+/)
               cb()
             })
           }
