@@ -46,7 +46,7 @@ describe('CreateImageBuilderContainerWorker: ' + moduleName, function () {
       },
       populate: function (id, cb) {
         cb()
-      },
+      }
     }
     ctx.mockContext = {
       '_id': '55d3ef733e1b620e00eb6242',
