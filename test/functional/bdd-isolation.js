@@ -149,6 +149,21 @@ describe('BDD - Isolation', function () {
         done()
       })
 
+      it('should not list the isolation children by default', function (done) {
+        var opts = {
+          owner: { github: ctx.user.attrs.accounts.github.id }
+        }
+        ctx.user.fetchInstances(opts, function (err, instances) {
+          if (err) { return done(err) }
+          expect(instances).to.have.length(2)
+          expect(instances.map(pluck('lowerName'))).to.contain([
+            'web-instance',
+            'api-instance'
+          ])
+          done()
+        })
+      })
+
       it('should list the isolated instance when asked for by name', function (done) {
         var childName = [
           ctx.webInstance.attrs.shortHash,
