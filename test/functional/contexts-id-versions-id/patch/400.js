@@ -33,14 +33,6 @@ describe('400 PATCH /contexts/:contextid/versions/:id', function () {
     })
   })
 
-  it('should handle error with dockRemovedNeedsUserConfirmation', function (done) {
-    ctx.cv.update({ dockRemovedNeedsUserConfirmation: '1234' }, function (err) {
-      expect(err.message).to.contain('must be a boolean')
-      expect(err.message).to.contain('dockRemovedNeedsUserConfirmation')
-      done()
-    })
-  })
-
   it('should handle error with advanced', function (done) {
     ctx.cv.update({ advanced: '1234' }, function (err) {
       expect(err.message).to.contain('must be a boolean')

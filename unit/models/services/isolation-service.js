@@ -462,7 +462,7 @@ describe('Isolation Services Model', function () {
     })
   })
 
-  describe('#deleteIsolationAndEmitInstanceUpdates', function () {
+  describe('#deleteIsolation', function () {
     var isolationId = 'deadbeefdeadbeefdeadbeef'
     var mockIsolation = {}
     var mockInstance = { _id: 'foobar' }
@@ -649,6 +649,77 @@ describe('Isolation Services Model', function () {
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(rabbitMQ.deleteInstance)
+          done()
+        })
+    })
+  })
+
+  describe('#deleteIsolationAndEmitInstanceUpdates', function (done) {
+    var isolationId = 'deadbeefdeadbeefdeadbeef'
+    var mockInstance = { _id: 'foobar' }
+    var mockSessionUser = { accounts: {} }
+
+    beforeEach(function (done) {
+      sinon.stub(IsolationService, 'deleteIsolation').resolves(mockInstance)
+      sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
+      done()
+    })
+
+    afterEach(function (done) {
+      IsolationService.deleteIsolation.restore()
+      IsolationService._emitUpdateForInstances.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      it('should require isolationId', function (done) {
+        IsolationService.deleteIsolationAndEmitInstanceUpdates().asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/isolationId.+required/i)
+          done()
+        })
+      })
+
+      it('should require sessionUser', function (done) {
+        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/sessionUser.+required/i)
+          done()
+        })
+      })
+
+      it('should reject with any deleteIsolation error', function (done) {
+        var error = new Error('pugsly')
+        IsolationService.deleteIsolation.rejects(error)
+        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            done()
+          })
+      })
+
+      it('should reject with any _emitUpdateForInstances error', function (done) {
+        var error = new Error('pugsly')
+        IsolationService._emitUpdateForInstances.rejects(error)
+        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            done()
+          })
+      })
+    })
+
+    it('should delete the isolation', function (done) {
+      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(IsolationService.deleteIsolation)
+          sinon.assert.calledWithExactly(
+            IsolationService.deleteIsolation,
+            isolationId
+          )
           done()
         })
     })

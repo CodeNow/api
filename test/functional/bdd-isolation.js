@@ -11,8 +11,12 @@ var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 
+var async = require('async')
 var createCount = require('callback-count')
 var pluck = require('101/pluck')
+var sinon = require('sinon')
+
+var Isolation = require('models/mongo/isolation')
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
@@ -94,6 +98,7 @@ describe('BDD - Isolation', function () {
 
     describe('once it is created', function (done) {
       beforeEach(function (done) {
+        sinon.spy(Isolation, 'findOneAndRemoveAsync')
         var opts = {
           master: ctx.webInstance.attrs._id.toString(),
           children: [
@@ -101,6 +106,11 @@ describe('BDD - Isolation', function () {
           ]
         }
         ctx.isolation = ctx.user.createIsolation(opts, done)
+      })
+
+      afterEach(function (done) {
+        Isolation.findOneAndRemoveAsync.restore()
+        done()
       })
 
       it('should list the isolated instance when asked for by name', function (done) {
@@ -155,6 +165,28 @@ describe('BDD - Isolation', function () {
             ctx.webInstance.attrs.lowerName
           )
           done()
+        })
+      })
+
+      it('should delete the children when we delete the master', function (done) {
+        ctx.webInstance.destroy(function (err) {
+          if (err) { return done(err) }
+          var opts = {
+            owner: { github: ctx.user.attrs.accounts.github.id },
+            isolated: ctx.isolation.attrs._id.toString()
+          }
+          async.doUntil(
+            function (cb) { setTimeout(cb, 50) },
+            function () { return Isolation.findOneAndRemoveAsync.callCount },
+            function (err) {
+              if (err) { return done(err) }
+              ctx.user.fetchInstances(opts, function (err, instances) {
+                if (err) { return done(err) }
+                expect(instances).to.have.length(0)
+                done()
+              })
+            }
+          )
         })
       })
     })
