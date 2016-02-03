@@ -34,6 +34,7 @@ var Version = require('models/mongo/context-version')
 var pubsub = require('models/redis/pubsub')
 var Promise = require('bluebird')
 var validation = require('../../fixtures/validation')(lab)
+require('sinon-as-promised')(Promise)
 
 var expectErr = function (expectedErr, done) {
   return function (err) {
@@ -1804,8 +1805,8 @@ describe('Instance Model Tests ' + moduleName, function () {
 
     describe('when instances are not all populated', function () {
       beforeEach(function (done) {
-        sinon.stub(ContextVersion, 'findAsync').returns(Promise.resolve([ctx.mockContextVersion]))
-        sinon.stub(Build, 'findAsync').returns(Promise.resolve([ctx.mockBuild]))
+        sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
+        sinon.stub(Build, 'findAsync').resolves([ctx.mockBuild])
         done()
       })
       afterEach(function (done) {
@@ -1893,8 +1894,8 @@ describe('Instance Model Tests ' + moduleName, function () {
 
       describe('when an instance is missing its container Inspect', function () {
         beforeEach(function (done) {
-          sinon.stub(ContextVersion, 'findAsync').returns(Promise.resolve([ctx.mockContextVersion]))
-          sinon.stub(Build, 'findAsync').returns(Promise.resolve([ctx.mockBuild]))
+          sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
+          sinon.stub(Build, 'findAsync').resolves([ctx.mockBuild])
           done()
         })
         afterEach(function (done) {
@@ -1944,7 +1945,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
       describe('when a failure happens during a db query', function () {
         beforeEach(function (done) {
-          sinon.stub(Instance, 'findOneAndUpdateAsync').returns(Promise.resolve())
+          sinon.stub(Instance, 'findOneAndUpdateAsync').resolves(null)
           done()
         })
         afterEach(function (done) {
@@ -1953,7 +1954,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         })
         describe('CV.find', function () {
           beforeEach(function (done) {
-            sinon.stub(Build, 'findAsync').returns(Promise.resolve([ctx.mockBuild]))
+            sinon.stub(Build, 'findAsync').resolves([ctx.mockBuild])
             sinon.stub(ContextVersion, 'find').yieldsAsync(testErr)
             done()
           })
@@ -1975,7 +1976,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         describe('Build.find', function () {
           beforeEach(function (done) {
             sinon.stub(Build, 'find').yieldsAsync(testErr)
-            sinon.stub(ContextVersion, 'findAsync').returns(Promise.resolve([ctx.mockContextVersion]))
+            sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
             done()
           })
           afterEach(function (done) {
