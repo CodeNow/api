@@ -11,13 +11,10 @@ var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
-var Promise = require('bluebird')
-
 var Docker = require('models/apis/docker')
 var Worker = require('workers/instance.stop')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
-var messenger = require('socket/messenger')
 
 var TaskFatalError = require('ponos').TaskFatalError
 var afterEach = lab.afterEach
@@ -165,6 +162,24 @@ describe('InstanceStop: ' + moduleName, function () {
       done()
     })
   })
-
-
+  it('should return no error if success', function (done) {
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.not.exist()
+      sinon.assert.calledOnce(Instance.markAsStoppingAsync)
+      sinon.assert.calledWith(Instance.markAsStoppingAsync, testInstanceId, dockerContainer)
+      sinon.assert.calledOnce(Docker.prototype.stopContainer)
+      sinon.assert.calledWith(Docker.prototype.stopContainer, dockerContainer)
+      sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
+      sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
+        testInstance,
+        testData.sessionUserGithubId,
+        'stopping',
+        true)
+      sinon.assert.callOrder(
+        Instance.markAsStoppingAsync,
+        Docker.prototype.stopContainer,
+        InstanceService.emitInstanceUpdate)
+      done()
+    })
+  })
 })
