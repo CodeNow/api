@@ -15,7 +15,6 @@ require('sinon-as-promised')(Promise)
 var Context = require('models/mongo/context')
 var ContextService = require('models/services/context-service')
 var ContextVersion = require('models/mongo/context-version')
-var Instance = require('models/mongo/instance')
 var InstanceForkService = require('models/services/instance-fork-service')
 var PullRequest = require('models/apis/pullrequest')
 var Runnable = require('models/apis/runnable')
@@ -919,14 +918,12 @@ describe('InstanceForkService: ' + moduleName, function () {
         createInstance: sinon.stub().yieldsAsync(null, mockNewInstance)
       }
       sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
-      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockNewInstance)
       done()
     })
 
     afterEach(function (done) {
       InstanceForkService._createNewNonRepoContextVersion.restore()
       Runnable.createClient.restore()
-      Instance.findOneAndUpdate.restore()
       done()
     })
 
@@ -1036,17 +1033,6 @@ describe('InstanceForkService: ' + moduleName, function () {
             done()
           })
       })
-
-      it('should reject with any instance update error', function (done) {
-        var error = new Error('robot')
-        Instance.findOneAndUpdate.yieldsAsync(error)
-        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
-          .asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.equal(error.message)
-            done()
-          })
-      })
     })
 
     it('should create a new context version', function (done) {
@@ -1130,11 +1116,12 @@ describe('InstanceForkService: ' + moduleName, function () {
             mockRunnableClient.createInstance,
             {
               build: mockNewBuild._id,
-              // FIXME(bryan): name
               name: mockMasterName + '--' + mockInstance.name,
               env: mockInstance.env,
               owner: { github: mockInstance.owner.github },
-              masterPod: true
+              masterPod: true,
+              isolated: mockIsolationId,
+              isIsolationGroupMaster: false
             },
             sinon.match.func
           )
@@ -1161,8 +1148,7 @@ describe('InstanceForkService: ' + moduleName, function () {
             Runnable.createClient,
             mockRunnableClient.createBuild,
             mockRunnableClient.buildBuild,
-            mockRunnableClient.createInstance,
-            Instance.findOneAndUpdate
+            mockRunnableClient.createInstance
           )
           done()
         })
