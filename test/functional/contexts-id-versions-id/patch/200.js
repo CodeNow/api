@@ -73,21 +73,4 @@ describe('200 PATCH /contexts/:contextid/versions/:id', function () {
       })
     })
   })
-
-  it('should update dockRemovedNeedsUserConfirmation', function (done) {
-    expect(ctx.instance.contextVersion.dockRemovedNeedsUserConfirmation).to.be.false()
-    expect(ctx.cv.json().dockRemovedNeedsUserConfirmation).to.be.false()
-    var expected = put(ctx.cv.json(), 'dockRemovedNeedsUserConfirmation', true)
-    ctx.cv.update({ dockRemovedNeedsUserConfirmation: true }, function (err, body, statusCode) {
-      if (err) { return done(err) }
-      expect(statusCode).to.equal(200)
-      expect(body).to.deep.equal(expected)
-
-      Instance.findById(ctx.instance.id, function (err, refreshedInstance) {
-        if (err) { return done(err) }
-        expect(refreshedInstance.contextVersion.dockRemovedNeedsUserConfirmation).to.equal(true)
-        done()
-      })
-    })
-  })
 })
