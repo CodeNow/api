@@ -212,7 +212,7 @@ describe('BDD - Isolation', function () {
             isolated: ctx.isolation.attrs._id.toString()
           }
           async.doUntil(
-            function (cb) { setTimeout(cb, 50) },
+            function (cb) { setTimeout(cb, 100) },
             function () { return Isolation.findOneAndRemoveAsync.callCount },
             function (err) {
               if (err) { return done(err) }
