@@ -20,7 +20,7 @@ var Instance = require('models/mongo/instance')
 var mongoFactory = require('../../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 
-describe('Instance Model Query Integration Tests', function () {
+describe('Instance Model Integration Tests', function () {
   before(mongooseControl.start)
   var ctx
   beforeEach(function (done) {
