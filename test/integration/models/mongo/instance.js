@@ -12,11 +12,10 @@ var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
 
+var async = require('async')
 var createCount = require('callback-count')
 var error = require('error')
 
-var Build = require('models/mongo/build')
-var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
 var mongoFactory = require('../../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
@@ -53,6 +52,8 @@ describe('Instance Model Query Integration Tests', function () {
       done()
     })
     beforeEach(function (done) {
+      // Both of the cvs that are saved to the instance have their build.completed removed
+      // so that they are different after the update
       mongoFactory.createCompletedCv(ctx.mockSessionUser._id, function (err, cv) {
         if (err) {
           return done(err)
@@ -63,7 +64,10 @@ describe('Instance Model Query Integration Tests', function () {
             return done(err)
           }
           ctx.build = build
-          mongoFactory.createInstance(ctx.mockSessionUser._id, ctx.build, false, ctx.cv, function (err, instance) {
+          var tempCv = ctx.cv
+          // Delete completed so the cv in the instance is 'out of date'
+          delete tempCv._doc.build.completed
+          mongoFactory.createInstance(ctx.mockSessionUser._id, ctx.build, false, tempCv, function (err, instance) {
             if (err) {
               return done(err)
             }
@@ -84,7 +88,9 @@ describe('Instance Model Query Integration Tests', function () {
             return done(err)
           }
           ctx.build2 = build
-          mongoFactory.createInstance(ctx.mockSessionUser._id, ctx.build2, false, ctx.cv2, function (err, instance) {
+          var tempCv = ctx.cv2
+          delete tempCv._doc.build.completed
+          mongoFactory.createInstance(ctx.mockSessionUser._id, ctx.build2, false, tempCv, function (err, instance) {
             if (err) {
               return done(err)
             }
@@ -98,40 +104,9 @@ describe('Instance Model Query Integration Tests', function () {
       ctx.instances = [ctx.instance, ctx.instance2]
       done()
     })
-    afterEach(function (done) {
-      Instance.findOneAndUpdateAsync.restore()
-      done()
-    })
 
     describe('when instances are not all populated', function () {
       it('should fetch build and cv, then update the cv', function (done) {
-        var count = createCount(2, function () {
-          // do this setTimeout so the Instance.findOneAndUpdateAsync stub has knowledge of
-          // both calls
-          setTimeout(function () {
-            try {
-              sinon.assert.calledTwice(Instance.findOneAndUpdateAsync)
-              sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
-                _id: ctx.instance._id
-              }, {
-                $set: {
-                  contextVersion: ctx.cv.toJSON()
-                }
-              })
-              sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
-                _id: ctx.instance2._id
-              }, {
-                $set: {
-                  contextVersion: ctx.cv2.toJSON()
-                }
-              })
-              done()
-            } catch (err) {
-              done(err)
-            }
-          }, 0)
-        })
-        sinon.stub(Instance, 'findOneAndUpdateAsync', count.next)
         Instance.populateModels(ctx.instances, function (err, instances) {
           expect(err).to.not.exist()
           expect(instances[0]._id, 'instance._id').to.deep.equal(ctx.instance._id)
@@ -145,14 +120,55 @@ describe('Instance Model Query Integration Tests', function () {
           expect(instances[1].build, 'build2').to.be.object()
           expect(instances[1].contextVersion._id, 'cv2._id').to.deep.equal(ctx.cv2._id)
           expect(instances[1].build._id, 'build2._id').to.deep.equal(ctx.build2._id)
+
+          var count = createCount(2, done)
+          async.retry(
+            10,
+            function (callback) {
+              Instance.findById(ctx.instance._id, function (err, instance) {
+                if (err) { return done(err) }
+                try {
+                  expect(instance.contextVersion, 'cv').to.be.object()
+                  expect(instance.build, 'buildId').to.deep.equal(ctx.build._id)
+                  expect(instance.contextVersion._id, 'cv._id').to.deep.equal(ctx.cv._id)
+                  expect(instance.contextVersion.build, 'cv.build').to.deep.equal(ctx.cv._doc.build)
+                } catch (e) {
+                  return setTimeout(function () {
+                    callback(e)
+                  }, 25)
+                }
+                callback()
+              })
+            },
+            count.next
+          )
+          async.retry(
+            10,
+            function (callback) {
+              Instance.findById(ctx.instance2._id, function (err, instance) {
+                if (err) { return done(err) }
+                try {
+                  expect(instance.contextVersion, 'cv').to.be.object()
+                  expect(instance.build, 'buildId').to.deep.equal(ctx.build2._id)
+                  expect(instance.contextVersion._id, 'cv._id').to.deep.equal(ctx.cv2._id)
+                  expect(instance.contextVersion.build, 'cv.build').to.deep.equal(ctx.cv2._doc.build)
+                } catch (e) {
+                  return setTimeout(function () {
+                    callback(e)
+                  }, 25)
+                }
+                callback()
+              })
+            },
+            count.next
+          )
         })
       })
     })
 
     describe('when errors happen', function () {
-      var testErr = new Error('Test Error!')
       beforeEach(function (done) {
-        sinon.stub(error, 'log')
+        sinon.spy(error, 'log')
         done()
       })
       afterEach(function (done) {
@@ -165,81 +181,68 @@ describe('Instance Model Query Integration Tests', function () {
           ctx.instance2.container = {
             dockerContainer: 'asdasdasd'
           }
-          sinon.stub(Instance, 'findOneAndUpdateAsync', function () {
-            try {
-              sinon.assert.calledOnce(error.log)
-              sinon.assert.calledWith(
-                error.log,
-                sinon.match.has('message', 'instance missing inspect data' + ctx.instance2._id)
-              )
-              sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
-              sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
-                _id: ctx.instance._id
-              }, {
-                $set: {
-                  contextVersion: ctx.cv.toJSON()
-                }
-              })
-              done()
-            } catch (err) {
-              done(err)
-            }
-          })
 
           Instance.populateModels(ctx.instances, function (err, instances) {
             expect(err).to.not.exist()
             if (err) {
               done(err)
             }
+            sinon.assert.calledOnce(error.log)
+            sinon.assert.calledWith(
+              error.log,
+              sinon.match.has('message', 'instance missing inspect data' + ctx.instance2._id)
+            )
+
             expect(instances.length, 'instances length').to.equal(1)
             expect(instances[0]._id, 'instance._id').to.deep.equal(ctx.instance._id)
             expect(instances[0].contextVersion, 'cv').to.be.object()
             expect(instances[0].build, 'build').to.be.object()
             expect(instances[0].contextVersion._id, 'cv._id').to.deep.equal(ctx.cv._id)
             expect(instances[0].build._id, 'build._id').to.deep.equal(ctx.build._id)
+
+            async.retry(
+              10,
+              function (callback) {
+                Instance.findById(ctx.instance2._id, function (err, instance) {
+                  if (err) { return done(err) }
+                  try {
+                    expect(instance.contextVersion, 'cv').to.be.object()
+                    expect(instance.build, 'buildId').to.deep.equal(ctx.build2._id)
+                    expect(instance.contextVersion._id, 'cv._id').to.deep.equal(ctx.cv2._id)
+                    expect(instance.contextVersion.build, 'cv.build').to.deep.equal(ctx.cv2._doc.build)
+                  } catch (e) {
+                    return setTimeout(function () {
+                      callback(e)
+                    }, 25)
+                  }
+                  callback()
+                })
+              },
+              done
+            )
           })
         })
       })
       describe('when a failure happens during a db query', function () {
-        beforeEach(function (done) {
-          sinon.spy(Instance, 'findOneAndUpdateAsync')
-          done()
-        })
         describe('CV.find', function () {
-          beforeEach(function (done) {
-            sinon.stub(ContextVersion, 'find').yieldsAsync(testErr)
-            done()
-          })
-          afterEach(function (done) {
-            ContextVersion.find.restore()
-            done()
-          })
           it('should return error', function (done) {
+            // This should cause a casting error
+            ctx.instance._doc.contextVersion = {
+              _id: 'asdasdasd'
+            }
             Instance.populateModels(ctx.instances, function (err) {
               expect(err).to.exist()
-              setTimeout(function () {
-                sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
-                done()
-              })
+              done()
             })
           })
         })
         describe('Build.find', function () {
-          beforeEach(function (done) {
-            sinon.stub(Build, 'find').yieldsAsync(testErr)
-            done()
-          })
-          afterEach(function (done) {
-            Build.find.restore()
-            done()
-          })
           it('should return error', function (done) {
+            // This should cause a casting error
+            ctx.instance._doc.build = 'asdasdasd'
             Instance.populateModels(ctx.instances, function (err) {
               expect(err).to.exist()
-              setTimeout(function () {
-                sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
-                done()
-              })
+              done()
             })
           })
         })

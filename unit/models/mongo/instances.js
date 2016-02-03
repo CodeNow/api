@@ -1752,7 +1752,12 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  describe('PopulateModels', function () {
+  /**
+   * These tests are a little complicated due to the actual function doing extra async work after
+   * the cb resolves.  A stub and a counter are used on the instance findOneAndUpdate to track
+   * when everything is done
+   */
+  describe('.populateModels', function () {
     beforeEach(function (done) {
       ctx.mockSessionUser = {
         _id: 1234,
