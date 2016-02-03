@@ -926,6 +926,82 @@ describe('InstanceService: ' + moduleName, function () {
     })
   })
 
+  describe('stopInstance', function () {
+    beforeEach(function (done) {
+      sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').returns(Promise.resolve())
+      sinon.stub(Instance.prototype, 'setContainerStateToStoppingAsync').returns(Promise.resolve())
+      sinon.stub(rabbitMQ, 'stopInstanceContainer').returns()
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.prototype.isNotStartingOrStoppingAsync.restore()
+      Instance.prototype.setContainerStateToStoppingAsync.restore()
+      rabbitMQ.stopInstanceContainer.restore()
+      done()
+    })
+
+    it('should fail if instance has not container', function (done) {
+      InstanceService.stopInstance({}, 21331).asCallback(function (err) {
+        expect(err.message).to.equal('Instance does not have a container')
+        sinon.assert.notCalled(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.notCalled(Instance.prototype.setContainerStateToStoppingAsync)
+        sinon.assert.notCalled(rabbitMQ.stopInstanceContainer)
+        done()
+      })
+    })
+
+    it('should fail isNotStartingOrStoppingAsync failed', function (done) {
+      var testErr = new Error('Mongo error')
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      Instance.prototype.isNotStartingOrStoppingAsync.returns(rejectionPromise)
+      var instance = createNewInstance('testy', {})
+      InstanceService.stopInstance(instance, 21331).asCallback(function (err) {
+        expect(err.message).to.equal(testErr.message)
+        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.notCalled(Instance.prototype.setContainerStateToStoppingAsync)
+        sinon.assert.notCalled(rabbitMQ.stopInstanceContainer)
+        done()
+      })
+    })
+
+    it('should fail setContainerStateToStoppingAsync failed', function (done) {
+      var testErr = new Error('Mongo error')
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      Instance.prototype.setContainerStateToStoppingAsync.returns(rejectionPromise)
+      var instance = createNewInstance('testy', {})
+      InstanceService.stopInstance(instance, 21331).asCallback(function (err) {
+        expect(err.message).to.equal(testErr.message)
+        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.calledOnce(Instance.prototype.setContainerStateToStoppingAsync)
+        sinon.assert.notCalled(rabbitMQ.stopInstanceContainer)
+        done()
+      })
+    })
+
+    it('should pass', function (done) {
+      var instance = createNewInstance('testy', {})
+      var sessionUserGithubId = 21331
+      InstanceService.stopInstance(instance, sessionUserGithubId).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.calledOnce(Instance.prototype.setContainerStateToStoppingAsync)
+        sinon.assert.calledOnce(rabbitMQ.stopInstanceContainer)
+        sinon.assert.calledWith(rabbitMQ.stopInstanceContainer, {
+          dockerContainer: instance.container.dockerContainer,
+          dockerHost: instance.container.dockerHost,
+          instanceId: instance._id.toString(),
+          ownerUsername: instance.owner.username,
+          sessionUserGithubId: sessionUserGithubId,
+          tid: null
+        })
+        done()
+      })
+    })
+  })
+
   describe('emitInstanceUpdate', function () {
     var instance
 
