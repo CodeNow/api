@@ -96,6 +96,42 @@ describe('BDD - Isolation', function () {
       })
     })
 
+    it('should message us about the child post', function (done) {
+      var socketIsolationId
+      var createdIsolationId
+      // final callback
+      var count = createCount(2, function (err) {
+        if (err) { return done(err) }
+        expect(createdIsolationId).to.equal(socketIsolationId)
+        done()
+      })
+      // should get a primus action
+      primus.expectAction('post', function (err, data) {
+        if (err) { return count.next(err) }
+        // try because having multiple throws can be bad
+        try {
+          expect(data.data.data.isIsolationGroupMaster).to.be.false()
+          expect(data.data.data.isolated).to.exist()
+        } catch (expectErr) {
+          err = expectErr
+        }
+        socketIsolationId = data.data.data.isolated
+        count.next(err)
+      })
+      var opts = {
+        master: ctx.webInstance.attrs._id.toString(),
+        children: [
+          { instance: ctx.apiInstance.attrs._id.toString() }
+        ]
+      }
+      // should create the isolation correctly
+      ctx.user.createIsolation(opts, function (err, newIsolation) {
+        if (err) { count.next(err) }
+        createdIsolationId = newIsolation._id
+        count.next()
+      })
+    })
+
     describe('once it is created', function (done) {
       beforeEach(function (done) {
         sinon.spy(Isolation, 'findOneAndRemoveAsync')
