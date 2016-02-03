@@ -15,6 +15,7 @@ require('sinon-as-promised')(Promise)
 var Context = require('models/mongo/context')
 var ContextService = require('models/services/context-service')
 var ContextVersion = require('models/mongo/context-version')
+var Instance = require('models/mongo/instance')
 var InstanceForkService = require('models/services/instance-fork-service')
 var PullRequest = require('models/apis/pullrequest')
 var Runnable = require('models/apis/runnable')
@@ -898,6 +899,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     var mockNewContextVersion = { _id: 'beefdeadbeefdeadbeefdead' }
     var mockNewBuild = { _id: 'mockBuildId' }
     var mockNewInstance = { _id: 'mockInstanceId' }
+    var mockNewInstanceModel = { _id: 'mockInstanceId', isModel: true } // for diff
     var mockMasterName = 'foo-repo'
 
     beforeEach(function (done) {
@@ -918,12 +920,14 @@ describe('InstanceForkService: ' + moduleName, function () {
         createInstance: sinon.stub().yieldsAsync(null, mockNewInstance)
       }
       sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
+      sinon.stub(Instance, 'findByIdAsync').resolves(mockNewInstanceModel)
       done()
     })
 
     afterEach(function (done) {
       InstanceForkService._createNewNonRepoContextVersion.restore()
       Runnable.createClient.restore()
+      Instance.findByIdAsync.restore()
       done()
     })
 
@@ -1033,6 +1037,17 @@ describe('InstanceForkService: ' + moduleName, function () {
             done()
           })
       })
+
+      it('should reject with any find instance error', function (done) {
+        var error = new Error('robot')
+        Instance.findByIdAsync.rejects(error)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
+      })
     })
 
     it('should create a new context version', function (done) {
@@ -1107,7 +1122,7 @@ describe('InstanceForkService: ' + moduleName, function () {
         })
     })
 
-    it('should update the new instance w/ isolation information', function (done) {
+    it('should create the new instance w/ isolation information', function (done) {
       InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
@@ -1124,6 +1139,19 @@ describe('InstanceForkService: ' + moduleName, function () {
               isIsolationGroupMaster: false
             },
             sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should fetch the instance model that was created', function (done) {
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findByIdAsync)
+          sinon.assert.calledWithExactly(
+            Instance.findByIdAsync,
+            mockNewInstanceModel._id
           )
           done()
         })
@@ -1148,17 +1176,18 @@ describe('InstanceForkService: ' + moduleName, function () {
             Runnable.createClient,
             mockRunnableClient.createBuild,
             mockRunnableClient.buildBuild,
-            mockRunnableClient.createInstance
+            mockRunnableClient.createInstance,
+            Instance.findByIdAsync
           )
           done()
         })
     })
 
-    it('should return the new updated instance', function (done) {
+    it('should return the new updated instance model', function (done) {
       InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err, newInstance) {
           expect(err).to.not.exist()
-          expect(newInstance).to.equal(mockNewInstance)
+          expect(newInstance).to.equal(mockNewInstanceModel)
           done()
         })
     })
