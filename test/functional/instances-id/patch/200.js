@@ -209,6 +209,25 @@ describe('200 PATCH /instances/:id', function () {
           dockerMockEvents.emitBuildComplete(ctx.cv)
         })
       })
+
+      it('should update an instance with an ipWhitelist change', function (done) {
+        ctx.instance.update({
+          ipWhitelist: {
+            enabled: true
+          }
+        }, function (err, body) {
+          if (err) { return done(err) }
+          expect(body.ipWhitelist).to.be.object()
+          expect(body.ipWhitelist.enabled).to.be.true()
+          // Just to verify
+          ctx.instance.fetch(function (err) {
+            if (err) { return done(err) }
+            expect(ctx.instance.attrs.ipWhitelist).to.be.object()
+            expect(ctx.instance.attrs.ipWhitelist.enabled).to.be.true()
+            done()
+          })
+        })
+      })
     })
   })
 })
