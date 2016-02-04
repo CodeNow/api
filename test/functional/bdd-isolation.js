@@ -79,6 +79,38 @@ describe('BDD - Isolation', function () {
   })
 
   describe('with children', function () {
+    describe('that are referenced via environment variables', function () {
+      beforeEach(function (done) {
+        var username = ctx.user.attrs.accounts.github.username
+        var update = {
+          env: [ 'FOO=api-instance-staging-' + username + '.' + process.env.USER_CONTENT_DOMAIN ]
+        }
+        ctx.webInstance.update(update, done)
+      })
+
+      it('should modify the envs of the isolated instance', function (done) {
+        var username = ctx.user.attrs.accounts.github.username.toLowerCase()
+        var opts = {
+          master: ctx.webInstance.attrs._id.toString(),
+          children: [
+            { instance: ctx.apiInstance.attrs._id.toString() }
+          ]
+        }
+        ctx.user.createIsolation(opts, function (err, isolation) {
+          if (err) { return done(err) }
+          expect(isolation).to.exist()
+          ctx.webInstance.fetch(function (err, instance) {
+            if (err) { return done(err) }
+            var shortHash = ctx.webInstance.attrs.shortHash.toLowerCase()
+            expect(instance.env[0]).to.equal(
+              'FOO=' + shortHash + '--api-instance-staging-' + username + '.' + process.env.USER_CONTENT_DOMAIN
+            )
+            done()
+          })
+        })
+      })
+    })
+
     it('should let us make an isolation', function (done) {
       var opts = {
         master: ctx.webInstance.attrs._id.toString(),
