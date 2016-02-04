@@ -899,6 +899,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     var mockNewContextVersion = { _id: 'beefdeadbeefdeadbeefdead' }
     var mockNewBuild = { _id: 'mockBuildId' }
     var mockNewInstance = { _id: 'mockInstanceId' }
+    var mockNewInstanceModel = { _id: 'mockInstanceId', isModel: true } // for diff
     var mockMasterName = 'foo-repo'
 
     beforeEach(function (done) {
@@ -919,14 +920,14 @@ describe('InstanceForkService: ' + moduleName, function () {
         createInstance: sinon.stub().yieldsAsync(null, mockNewInstance)
       }
       sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
-      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockNewInstance)
+      sinon.stub(Instance, 'findByIdAsync').resolves(mockNewInstanceModel)
       done()
     })
 
     afterEach(function (done) {
       InstanceForkService._createNewNonRepoContextVersion.restore()
       Runnable.createClient.restore()
-      Instance.findOneAndUpdate.restore()
+      Instance.findByIdAsync.restore()
       done()
     })
 
@@ -1037,13 +1038,13 @@ describe('InstanceForkService: ' + moduleName, function () {
           })
       })
 
-      it('should reject with any instance update error', function (done) {
+      it('should reject with any find instance error', function (done) {
         var error = new Error('robot')
-        Instance.findOneAndUpdate.yieldsAsync(error)
+        Instance.findByIdAsync.rejects(error)
         InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.equal(error.message)
+            expect(err).to.equal(error)
             done()
           })
       })
@@ -1121,7 +1122,7 @@ describe('InstanceForkService: ' + moduleName, function () {
         })
     })
 
-    it('should update the new instance w/ isolation information', function (done) {
+    it('should create the new instance w/ isolation information', function (done) {
       InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
@@ -1130,13 +1131,27 @@ describe('InstanceForkService: ' + moduleName, function () {
             mockRunnableClient.createInstance,
             {
               build: mockNewBuild._id,
-              // FIXME(bryan): name
               name: mockMasterName + '--' + mockInstance.name,
               env: mockInstance.env,
               owner: { github: mockInstance.owner.github },
-              masterPod: true
+              masterPod: true,
+              isolated: mockIsolationId,
+              isIsolationGroupMaster: false
             },
             sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should fetch the instance model that was created', function (done) {
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findByIdAsync)
+          sinon.assert.calledWithExactly(
+            Instance.findByIdAsync,
+            mockNewInstanceModel._id
           )
           done()
         })
@@ -1162,17 +1177,17 @@ describe('InstanceForkService: ' + moduleName, function () {
             mockRunnableClient.createBuild,
             mockRunnableClient.buildBuild,
             mockRunnableClient.createInstance,
-            Instance.findOneAndUpdate
+            Instance.findByIdAsync
           )
           done()
         })
     })
 
-    it('should return the new updated instance', function (done) {
+    it('should return the new updated instance model', function (done) {
       InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err, newInstance) {
           expect(err).to.not.exist()
-          expect(newInstance).to.equal(mockNewInstance)
+          expect(newInstance).to.equal(mockNewInstanceModel)
           done()
         })
     })
