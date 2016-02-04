@@ -14,9 +14,6 @@ var expect = Code.expect
 var async = require('async')
 var createCount = require('callback-count')
 var pluck = require('101/pluck')
-var sinon = require('sinon')
-
-var Isolation = require('models/mongo/isolation')
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
@@ -96,9 +93,44 @@ describe('BDD - Isolation', function () {
       })
     })
 
+    it('should message us about the child post', function (done) {
+      var socketIsolationId
+      var createdIsolationId
+      // final callback
+      var count = createCount(2, function (err) {
+        if (err) { return done(err) }
+        expect(createdIsolationId).to.equal(socketIsolationId)
+        done()
+      })
+      // should get a primus action
+      primus.expectAction('post', function (err, data) {
+        if (err) { return count.next(err) }
+        // try because having multiple throws can be bad
+        try {
+          expect(data.data.data.isIsolationGroupMaster).to.be.false()
+          expect(data.data.data.isolated).to.exist()
+        } catch (expectErr) {
+          err = expectErr
+        }
+        socketIsolationId = data.data.data.isolated
+        count.next(err)
+      })
+      var opts = {
+        master: ctx.webInstance.attrs._id.toString(),
+        children: [
+          { instance: ctx.apiInstance.attrs._id.toString() }
+        ]
+      }
+      // should create the isolation correctly
+      ctx.user.createIsolation(opts, function (err, newIsolation) {
+        if (err) { count.next(err) }
+        createdIsolationId = newIsolation._id
+        count.next()
+      })
+    })
+
     describe('once it is created', function (done) {
       beforeEach(function (done) {
-        sinon.spy(Isolation, 'findOneAndRemoveAsync')
         var opts = {
           master: ctx.webInstance.attrs._id.toString(),
           children: [
@@ -108,9 +140,19 @@ describe('BDD - Isolation', function () {
         ctx.isolation = ctx.user.createIsolation(opts, done)
       })
 
-      afterEach(function (done) {
-        Isolation.findOneAndRemoveAsync.restore()
-        done()
+      it('should not list the isolation children by default', function (done) {
+        var opts = {
+          owner: { github: ctx.user.attrs.accounts.github.id }
+        }
+        ctx.user.fetchInstances(opts, function (err, instances) {
+          if (err) { return done(err) }
+          expect(instances).to.have.length(2)
+          expect(instances.map(pluck('lowerName'))).to.contain([
+            'web-instance',
+            'api-instance'
+          ])
+          done()
+        })
       })
 
       it('should list the isolated instance when asked for by name', function (done) {
@@ -175,17 +217,21 @@ describe('BDD - Isolation', function () {
             owner: { github: ctx.user.attrs.accounts.github.id },
             isolated: ctx.isolation.attrs._id.toString()
           }
-          async.doUntil(
-            function (cb) { setTimeout(cb, 50) },
-            function () { return Isolation.findOneAndRemoveAsync.callCount },
-            function (err) {
+          async.retry(
+            10,
+            function (callback) {
               if (err) { return done(err) }
               ctx.user.fetchInstances(opts, function (err, instances) {
                 if (err) { return done(err) }
-                expect(instances).to.have.length(0)
-                done()
+                try {
+                  expect(instances).to.have.length(0)
+                } catch (e) {
+                  return setTimeout(function () { callback(e) }, 25)
+                }
+                callback()
               })
-            }
+            },
+            done
           )
         })
       })

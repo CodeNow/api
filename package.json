@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "6.22.0",
+  "version": "6.22.2",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -153,7 +153,7 @@
     "lint": "standard --verbose",
     "lint-snazzy": "standard --verbose | snazzy",
     "shrinkwrap": "npm-shrinkwrap --dev",
-    "start": "NODE_PATH=./lib node --abort-on-uncaught-exception index.js 2>&1 | bunyan -o json-0 --strict",
+    "start": "NODE_PATH=./lib node --prof index.js",
     "start-debug": "NODE_PATH=./lib node --debug index.js",
     "todo": "grep -nR TODO lib test",
     "test": "npm run clear; npm run lint && npm run bdd && npm run unit",
