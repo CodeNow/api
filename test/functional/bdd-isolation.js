@@ -78,32 +78,45 @@ describe('BDD - Isolation', function () {
     })
   })
 
-  describe('with children', function () {
+  describe('isolation with children', function () {
     describe('that are referenced via environment variables', function () {
       beforeEach(function (done) {
         var username = ctx.user.attrs.accounts.github.username
         var update = {
           env: [ 'FOO=api-instance-staging-' + username + '.' + process.env.USER_CONTENT_DOMAIN ]
         }
-        ctx.webInstance.update(update, done)
+        ctx.webInstance.update(update, function (err) {
+          if (err) { return done(err) }
+          var opts = {
+            master: ctx.webInstance.attrs._id.toString(),
+            children: [
+              { instance: ctx.apiInstance.attrs._id.toString() }
+            ]
+          }
+          ctx.isolation = ctx.user.createIsolation(opts, done)
+        })
       })
 
       it('should modify the envs of the isolated instance', function (done) {
         var username = ctx.user.attrs.accounts.github.username.toLowerCase()
-        var opts = {
-          master: ctx.webInstance.attrs._id.toString(),
-          children: [
-            { instance: ctx.apiInstance.attrs._id.toString() }
-          ]
-        }
-        ctx.user.createIsolation(opts, function (err, isolation) {
+        ctx.webInstance.fetch(function (err, instance) {
           if (err) { return done(err) }
-          expect(isolation).to.exist()
+          var shortHash = ctx.webInstance.attrs.shortHash.toLowerCase()
+          expect(instance.env[0]).to.equal(
+            'FOO=' + shortHash + '--api-instance-staging-' + username + '.' + process.env.USER_CONTENT_DOMAIN
+          )
+          done()
+        })
+      })
+
+      it('should remove the env updates when the isolation is deleted', function (done) {
+        var username = ctx.user.attrs.accounts.github.username.toLowerCase()
+        ctx.isolation.destroy(function (err) {
+          if (err) { return done(err) }
           ctx.webInstance.fetch(function (err, instance) {
             if (err) { return done(err) }
-            var shortHash = ctx.webInstance.attrs.shortHash.toLowerCase()
             expect(instance.env[0]).to.equal(
-              'FOO=' + shortHash + '--api-instance-staging-' + username + '.' + process.env.USER_CONTENT_DOMAIN
+              'FOO=api-instance-staging-' + username + '.' + process.env.USER_CONTENT_DOMAIN
             )
             done()
           })
