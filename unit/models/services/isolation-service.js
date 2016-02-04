@@ -155,6 +155,197 @@ describe('Isolation Services Model', function () {
     })
   })
 
+  describe('#_updateMasterEnv', function () {
+    var mockMaster = {
+      _id: 'mockMasterId',
+      shortHash: 'beef',
+      owner: {
+        username: 'myorg'
+      }
+    }
+    var mockChildOne = {
+      _id: 'mockChildOneId',
+      lowerName: 'beef--childone'
+    }
+    var mockChildTwo = {
+      _id: 'mockChildTwoId',
+      lowerName: 'beef--childtwo'
+    }
+    var mockChildren
+    var mockUpdatedMaster = { _id: 'mockMasterId', __v: 2 }
+
+    beforeEach(function (done) {
+      mockMaster.env = [ 'childone-staging-myorg.' + process.env.USER_CONTENT_DOMAIN ]
+      mockChildren = [ mockChildOne ]
+      mockUpdatedMaster.setDependenciesFromEnvironmentAsync = sinon.stub().resolves(mockUpdatedMaster)
+      sinon.stub(Instance, 'findOneAndUpdateAsync').resolves(mockUpdatedMaster)
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAndUpdateAsync.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      it('should require a master', function (done) {
+        IsolationService._updateMasterEnv().asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/master.+required/)
+          done()
+        })
+      })
+
+      it('should require children', function (done) {
+        IsolationService._updateMasterEnv(mockMaster).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/children.+required/)
+          done()
+        })
+      })
+
+      it('should require children to be an array', function (done) {
+        IsolationService._updateMasterEnv(mockMaster, {}).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/children.+array/)
+          done()
+        })
+      })
+
+      describe('when updates are made', function () {
+        it('should reject with any database error', function (done) {
+          var error = new Error('pugsly')
+          Instance.findOneAndUpdateAsync.rejects(error)
+          IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
+        })
+
+        it('should reject with any dependencies update error', function (done) {
+          var error = new Error('pugsly')
+          mockUpdatedMaster.setDependenciesFromEnvironmentAsync.rejects(error)
+          IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
+        })
+      })
+    })
+
+    it('should not replace env values if none match', function (done) {
+      mockMaster.env[0] = mockMaster.env[0].replace('childone', 'otherchild')
+      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
+        done()
+      })
+    })
+
+    it('should replace envs values of non-repo containers if it exists', function (done) {
+      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdateAsync,
+          { _id: mockMaster._id },
+          {
+            $set: {
+              env: [
+                'beef--childone-staging-myorg.' + process.env.USER_CONTENT_DOMAIN
+              ]
+            }
+          }
+        )
+        done()
+      })
+    })
+
+    it('should replace multiple envs values of non-repo containers if it exists', function (done) {
+      mockMaster.env.push('childtwo-staging-myorg.' + process.env.USER_CONTENT_DOMAIN)
+      mockChildren.push(mockChildTwo)
+      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdateAsync,
+          { _id: mockMaster._id },
+          {
+            $set: {
+              env: [
+                'beef--childone-staging-myorg.' + process.env.USER_CONTENT_DOMAIN,
+                'beef--childtwo-staging-myorg.' + process.env.USER_CONTENT_DOMAIN
+              ]
+            }
+          }
+        )
+        done()
+      })
+    })
+
+    it('should ignore envs that do not match', function (done) {
+      mockMaster.env.push('childthree-staging-myorg.' + process.env.USER_CONTENT_DOMAIN)
+      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdateAsync,
+          { _id: mockMaster._id },
+          {
+            $set: {
+              env: [
+                'beef--childone-staging-myorg.' + process.env.USER_CONTENT_DOMAIN,
+                'childthree-staging-myorg.' + process.env.USER_CONTENT_DOMAIN
+              ]
+            }
+          }
+        )
+        done()
+      })
+    })
+
+    it('should do nothing with extra children', function (done) {
+      mockMaster.env.push('childthree-staging-myorg.' + process.env.USER_CONTENT_DOMAIN)
+      mockChildren.push(mockChildTwo)
+      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdateAsync,
+          { _id: mockMaster._id },
+          {
+            $set: {
+              env: [
+                'beef--childone-staging-myorg.' + process.env.USER_CONTENT_DOMAIN,
+                'childthree-staging-myorg.' + process.env.USER_CONTENT_DOMAIN
+              ]
+            }
+          }
+        )
+        done()
+      })
+    })
+
+    it('should return the updated instance model', function (done) {
+      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
+        expect(err).to.not.exist()
+        expect(instance).to.equal(mockUpdatedMaster)
+        done()
+      })
+    })
+
+    it('should not replace env values if none match', function (done) {
+      mockMaster.env[0] = mockMaster.env[0].replace('childone', 'otherchild')
+      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
+        expect(err).to.not.exist()
+        expect(instance).to.equal(mockMaster)
+        done()
+      })
+    })
+  })
+
   describe('#createIsolationAndEmitInstanceUpdates', function () {
     var mockNonRepoInstance = { instance: 'childNonRepo' }
     var mockInstance = { shortHash: 'shorthash' }
@@ -173,6 +364,7 @@ describe('Isolation Services Model', function () {
       sinon.stub(Isolation, '_validateCreateData').resolves()
       sinon.stub(Isolation, 'createIsolation').resolves(mockNewIsolation)
       sinon.stub(IsolationService, 'forkNonRepoChild').resolves(mockNewChildInstance)
+      sinon.stub(IsolationService, '_updateMasterEnv').resolves(mockInstance)
       sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
       done()
     })
@@ -182,6 +374,7 @@ describe('Isolation Services Model', function () {
       Isolation._validateCreateData.restore()
       Isolation.createIsolation.restore()
       IsolationService.forkNonRepoChild.restore()
+      IsolationService._updateMasterEnv.restore()
       IsolationService._emitUpdateForInstances.restore()
       done()
     })
@@ -247,6 +440,17 @@ describe('Isolation Services Model', function () {
           })
       })
 
+      it('should reject with any _updateMasterEnv error', function (done) {
+        var error = new Error('pugsly')
+        IsolationService._updateMasterEnv.rejects(error)
+        IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
+      })
+
       it('should reject with any forkNonRepoChild error', function (done) {
         var error = new Error('pugsly')
         IsolationService.forkNonRepoChild.rejects(error)
@@ -299,7 +503,7 @@ describe('Isolation Services Model', function () {
         })
     })
 
-    it('should update the master instance', function (done) {
+    it('should create the master instance', function (done) {
       IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
@@ -318,6 +522,20 @@ describe('Isolation Services Model', function () {
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.notCalled(IsolationService.forkNonRepoChild)
+          done()
+        })
+    })
+
+    it('should update the master env', function (done) {
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(IsolationService._updateMasterEnv)
+          sinon.assert.calledWithExactly(
+            IsolationService._updateMasterEnv,
+            mockInstance,
+            []
+          )
           done()
         })
     })
