@@ -1951,7 +1951,7 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('markAsStopping', function () {
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, { _id: 'some-id'})
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, { _id: 'some-id' })
       done()
     })
     afterEach(function (done) {
