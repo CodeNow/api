@@ -98,7 +98,8 @@ function createNewVersion (opts) {
 function createNewInstance (name, opts) {
   opts = opts || {}
   var container = {
-    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID
+    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
+    dockerHost: 'http://10.0.0.1:4242'
   }
   return new Instance({
     name: name || 'name',
@@ -108,7 +109,7 @@ function createNewInstance (name, opts) {
     masterPod: opts.masterPod || false,
     parent: opts.parent,
     autoForked: opts.autoForked || false,
-    owner: { github: validation.VALID_GITHUB_ID },
+    owner: { github: validation.VALID_GITHUB_ID, username: 'anton' },
     createdBy: { github: validation.VALID_GITHUB_ID },
     build: validation.VALID_OBJECT_ID,
     created: Date.now(),
@@ -990,7 +991,7 @@ describe('InstanceService: ' + moduleName, function () {
         sinon.assert.calledOnce(Instance.prototype.setContainerStateToStoppingAsync)
         sinon.assert.calledOnce(rabbitMQ.stopInstanceContainer)
         sinon.assert.calledWith(rabbitMQ.stopInstanceContainer, {
-          dockerContainer: instance.container.dockerContainer,
+          containerId: instance.container.dockerContainer,
           dockerHost: instance.container.dockerHost,
           instanceId: instance._id.toString(),
           ownerUsername: instance.owner.username,
