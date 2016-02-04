@@ -1948,4 +1948,55 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
   })
+
+  describe('markAsStopping', function () {
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, { _id: 'some-id'})
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOneAndUpdate.restore()
+      done()
+    })
+    it('should return found instance', function (done) {
+      var query = {
+        _id: 'some-id',
+        'container.dockerContainer': 'container-id',
+        'container.inspect.State.Starting': {
+          $exists: false
+        }
+      }
+      var update = {
+        $set: {
+          'container.inspect.State.Stopping': true
+        }
+      }
+      Instance.markAsStopping('some-id', 'container-id', function (err, instance) {
+        expect(err).to.not.exist()
+        sinon.assert.calledWith(Instance.findOneAndUpdate, query, update)
+        done()
+      })
+    })
+    it('should return error if query failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOneAndUpdate.yieldsAsync(mongoError)
+      var query = {
+        _id: 'some-id',
+        'container.dockerContainer': 'container-id',
+        'container.inspect.State.Starting': {
+          $exists: false
+        }
+      }
+      var update = {
+        $set: {
+          'container.inspect.State.Stopping': true
+        }
+      }
+      Instance.markAsStopping('some-id', 'container-id', function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledWith(Instance.findOneAndUpdate, query, update)
+        done()
+      })
+    })
+  })
 })
