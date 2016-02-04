@@ -680,6 +680,125 @@ describe('Isolation Services Model', function () {
     })
   })
 
+  describe('#_removeIsolationFromEnv', function () {
+    var mockInstance = {
+      _id: 'mockInstanceId',
+      shortHash: 'foobar',
+      owner: { username: 'bartothefoo' }
+    }
+    var mockUpdatedInstance = { _id: 'mockInstanceId', __v: 2 }
+
+    beforeEach(function (done) {
+      mockInstance.env = []
+      mockUpdatedInstance.setDependenciesFromEnvironmentAsync = sinon.stub().resolves(mockUpdatedInstance)
+      sinon.stub(Instance, 'findOneAndUpdateAsync').resolves(mockUpdatedInstance)
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAndUpdateAsync.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      it('should require an instance', function (done) {
+        IsolationService._removeIsolationFromEnv().asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/instance.+required/i)
+          done()
+        })
+      })
+
+      it('should reject with any findOneAndUpdate error', function (done) {
+        var error = new Error('pugsly')
+        mockInstance.env.push('FOO=foobar--thing.etc.com')
+        Instance.findOneAndUpdateAsync.rejects(error)
+        IsolationService._removeIsolationFromEnv(mockInstance).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+
+      it('should reject with any setDependenciesFromEnvironment error', function (done) {
+        var error = new Error('pugsly')
+        mockInstance.env.push('FOO=foobar--thing.etc.com')
+        mockUpdatedInstance.setDependenciesFromEnvironmentAsync.rejects(error)
+        IsolationService._removeIsolationFromEnv(mockInstance).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+    })
+
+    it('should not replace anything if no envs are present', function (done) {
+      IsolationService._removeIsolationFromEnv(mockInstance).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
+        done()
+      })
+    })
+
+    it('should not replace anything if no envs match', function (done) {
+      mockInstance.env.push('BAR=bar--thing.etc.com')
+      IsolationService._removeIsolationFromEnv(mockInstance).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
+        done()
+      })
+    })
+
+    it('should return the instance if no updates made', function (done) {
+      mockInstance.env.push('BAR=bar--thing.etc.com')
+      IsolationService._removeIsolationFromEnv(mockInstance).asCallback(function (err, instance) {
+        expect(err).to.not.exist()
+        expect(instance).to.equal(mockInstance)
+        done()
+      })
+    })
+
+    describe('with matching envs', function () {
+      beforeEach(function (done) {
+        mockInstance.env.push('FOO=foobar--thing.etc.com')
+        done()
+      })
+
+      it('should replace isolation related envs', function (done) {
+        IsolationService._removeIsolationFromEnv(mockInstance).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+          sinon.assert.calledWithExactly(
+            Instance.findOneAndUpdateAsync,
+            { _id: mockInstance._id },
+            { $set: { env: [ 'FOO=thing.etc.com' ] } }
+          )
+          done()
+        })
+      })
+
+      it('should update the dependencies', function (done) {
+        IsolationService._removeIsolationFromEnv(mockInstance).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockUpdatedInstance.setDependenciesFromEnvironmentAsync)
+          sinon.assert.calledWithExactly(
+            mockUpdatedInstance.setDependenciesFromEnvironmentAsync,
+            'bartothefoo'
+          )
+          done()
+        })
+      })
+
+      it('should return the updated instance', function (done) {
+        IsolationService._removeIsolationFromEnv(mockInstance).asCallback(function (err, instance) {
+          expect(err).to.not.exist()
+          expect(instance).to.equal(mockUpdatedInstance)
+          done()
+        })
+      })
+    })
+  })
+
   describe('#deleteIsolation', function () {
     var isolationId = 'deadbeefdeadbeefdeadbeef'
     var mockIsolation = {}
@@ -691,6 +810,7 @@ describe('Isolation Services Model', function () {
     beforeEach(function (done) {
       mockChildInstances = []
       mockInstance.deIsolate = sinon.stub().resolves(mockInstance)
+      sinon.stub(IsolationService, '_removeIsolationFromEnv').resolves(mockInstance)
       sinon.stub(Instance, 'find').yieldsAsync(null, mockChildInstances)
       sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
       sinon.stub(Isolation, 'findOneAndRemove').yieldsAsync(null, mockIsolation)
@@ -704,6 +824,7 @@ describe('Isolation Services Model', function () {
       Instance.findOne.restore()
       Isolation.findOneAndRemove.restore()
       IsolationService._emitUpdateForInstances.restore()
+      IsolationService._removeIsolationFromEnv.restore()
       rabbitMQ.deleteInstance.restore()
       done()
     })
@@ -768,6 +889,17 @@ describe('Isolation Services Model', function () {
           })
       })
 
+      it('should reject with any _removeIsolationFromEnv errors', function (done) {
+        var error = new Error('pugsly')
+        IsolationService._removeIsolationFromEnv.rejects(error)
+        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
+      })
+
       it('should reject with any findOneAndRemove errors', function (done) {
         var error = new Error('pugsly')
         Isolation.findOneAndRemove.yieldsAsync(error)
@@ -820,6 +952,16 @@ describe('Isolation Services Model', function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(mockInstance.deIsolate)
           sinon.assert.calledWithExactly(mockInstance.deIsolate)
+          done()
+        })
+    })
+
+    it('should update the envs of the instance', function (done) {
+      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(IsolationService._removeIsolationFromEnv)
+          sinon.assert.calledWithExactly(IsolationService._removeIsolationFromEnv, mockInstance)
           done()
         })
     })
