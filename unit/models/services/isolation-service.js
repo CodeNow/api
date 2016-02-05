@@ -802,8 +802,7 @@ describe('Isolation Services Model', function () {
   describe('#deleteIsolation', function () {
     var isolationId = 'deadbeefdeadbeefdeadbeef'
     var mockIsolation = {}
-    var mockInstance = { _id: 'foobar' }
-    var mockSessionUser = { accounts: {} }
+    var mockInstance = { _id: 'foobar', createdBy: { github: 4 } }
     var mockChildInstances
     var mockChildInstance = { _id: 'childInstanceId' }
 
@@ -816,6 +815,7 @@ describe('Isolation Services Model', function () {
       sinon.stub(Isolation, 'findOneAndRemove').yieldsAsync(null, mockIsolation)
       sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
+      sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       done()
     })
 
@@ -826,41 +826,23 @@ describe('Isolation Services Model', function () {
       IsolationService._emitUpdateForInstances.restore()
       IsolationService._removeIsolationFromEnv.restore()
       rabbitMQ.deleteInstance.restore()
+      rabbitMQ.redeployInstanceContainer.restore()
       done()
     })
 
     describe('errors', function () {
       it('should require isolationId', function (done) {
-        IsolationService.deleteIsolationAndEmitInstanceUpdates().asCallback(function (err) {
+        IsolationService.deleteIsolation().asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/isolationId.+required/i)
           done()
         })
       })
 
-      it('should require sessionUser', function (done) {
-        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/sessionUser.+required/i)
-          done()
-        })
-      })
-
-      it('should reject with any find errors', function (done) {
-        var error = new Error('pugsly')
-        Instance.find.yieldsAsync(error)
-        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
-          .asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.equal(error.message)
-            done()
-          })
-      })
-
       it('should reject with any findOne errors', function (done) {
         var error = new Error('pugsly')
         Instance.findOne.yieldsAsync(error)
-        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+        IsolationService.deleteIsolation(isolationId)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -870,7 +852,7 @@ describe('Isolation Services Model', function () {
 
       it('should reject if it cannot find the instance', function (done) {
         Instance.findOne.yieldsAsync(null, null)
-        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+        IsolationService.deleteIsolation(isolationId)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.match(/no instance found/i)
@@ -881,7 +863,7 @@ describe('Isolation Services Model', function () {
       it('should reject with any deIsolate errors', function (done) {
         var error = new Error('pugsly')
         mockInstance.deIsolate.rejects(error)
-        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+        IsolationService.deleteIsolation(isolationId)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err).to.equal(error)
@@ -892,7 +874,7 @@ describe('Isolation Services Model', function () {
       it('should reject with any _removeIsolationFromEnv errors', function (done) {
         var error = new Error('pugsly')
         IsolationService._removeIsolationFromEnv.rejects(error)
-        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+        IsolationService.deleteIsolation(isolationId)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err).to.equal(error)
@@ -903,7 +885,18 @@ describe('Isolation Services Model', function () {
       it('should reject with any findOneAndRemove errors', function (done) {
         var error = new Error('pugsly')
         Isolation.findOneAndRemove.yieldsAsync(error)
-        IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+        IsolationService.deleteIsolation(isolationId)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should reject with any redeployInstanceContainer error', function (done) {
+        var error = new Error('pugsly')
+        rabbitMQ.redeployInstanceContainer.throws(error)
+        IsolationService.deleteIsolation(isolationId)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -913,7 +906,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should find the instance that is isolated by the given id', function (done) {
-      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+      IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findOne)
@@ -930,7 +923,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should find all children in the isolation group', function (done) {
-      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+      IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.find)
@@ -947,7 +940,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should deisolate the instance', function (done) {
-      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+      IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(mockInstance.deIsolate)
@@ -957,7 +950,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should update the envs of the instance', function (done) {
-      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+      IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(IsolationService._removeIsolationFromEnv)
@@ -967,7 +960,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should remove the isolation', function (done) {
-      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+      IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Isolation.findOneAndRemove)
@@ -981,7 +974,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should delete any children instances (0)', function (done) {
-      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+      IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.notCalled(rabbitMQ.deleteInstance)
@@ -991,7 +984,7 @@ describe('Isolation Services Model', function () {
 
     it('should delete any children instances (1)', function (done) {
       mockChildInstances.push(mockChildInstance)
-      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+      IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(rabbitMQ.deleteInstance)
@@ -1005,12 +998,52 @@ describe('Isolation Services Model', function () {
 
     it('should delete any children instances (2)', function (done) {
       mockChildInstances.push(mockChildInstance, mockChildInstance)
-      IsolationService.deleteIsolationAndEmitInstanceUpdates(isolationId, mockSessionUser)
+      IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(rabbitMQ.deleteInstance)
           done()
         })
+    })
+
+    it('should enqueue a job to redeploy the container', function (done) {
+      IsolationService.deleteIsolation(isolationId)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
+          sinon.assert.calledWith(
+            rabbitMQ.redeployInstanceContainer,
+            {
+              instanceId: mockInstance._id,
+              sessionUserGithubId: mockInstance.createdBy.github
+            }
+          )
+          done()
+        })
+    })
+
+    it('should do all the things in order', function (done) {
+      IsolationService.deleteIsolation(isolationId)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          Instance.findOne.calledBefore(mockInstance.deIsolate)
+          Instance.find.calledBefore(mockInstance.deIsolate)
+          sinon.assert.callOrder(
+            mockInstance.deIsolate,
+            IsolationService._removeIsolationFromEnv,
+            Isolation.findOneAndRemove,
+            rabbitMQ.redeployInstanceContainer
+          )
+          done()
+        })
+    })
+
+    it('should return the updated instance', function (done) {
+      IsolationService.deleteIsolation(isolationId).asCallback(function (err, instance) {
+        expect(err).to.not.exist()
+        expect(instance).to.equal(mockInstance)
+        done()
+      })
     })
   })
 
