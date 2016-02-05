@@ -206,7 +206,6 @@ describe('Instance Model Integration Tests', function () {
             expect(instances[1].contextVersion._id, 'cv2._id').to.deep.equal(ctx.cv2._id)
             expect(instances[1].build._id, 'build2._id').to.deep.equal(ctx.build2._id)
 
-
             var count = createCount(2, done)
             async.retry(
               10,
