@@ -98,33 +98,39 @@ describe('BDD - Isolation', function () {
       })
 
       it('should modify the envs of the isolated instance', function (done) {
+        var count = createCount(2, done)
+        primus.expectAction('redeploy', count.next)
         var username = ctx.user.attrs.accounts.github.username.toLowerCase()
         ctx.webInstance.fetch(function (err, instance) {
-          if (err) { return done(err) }
+          if (err) { return count.next(err) }
           var shortHash = ctx.webInstance.attrs.shortHash.toLowerCase()
           expect(instance.env[0]).to.equal(
             'FOO=' + shortHash + '--api-instance-staging-' + username + '.' + process.env.USER_CONTENT_DOMAIN
           )
-          done()
+          count.next()
         })
       })
 
       it('should remove the env updates when the isolation is deleted', function (done) {
+        var count = createCount(2, done)
+        primus.expectAction('redeploy', count.next)
         var username = ctx.user.attrs.accounts.github.username.toLowerCase()
         ctx.isolation.destroy(function (err) {
-          if (err) { return done(err) }
+          if (err) { return count.next(err) }
           ctx.webInstance.fetch(function (err, instance) {
-            if (err) { return done(err) }
+            if (err) { return count.next(err) }
             expect(instance.env[0]).to.equal(
               'FOO=api-instance-staging-' + username + '.' + process.env.USER_CONTENT_DOMAIN
             )
-            done()
+            count.next()
           })
         })
       })
     })
 
     it('should let us make an isolation', function (done) {
+      var count = createCount(2, done)
+      primus.expectAction('redeploy', count.next)
       var opts = {
         master: ctx.webInstance.attrs._id.toString(),
         children: [
@@ -132,9 +138,9 @@ describe('BDD - Isolation', function () {
         ]
       }
       ctx.user.createIsolation(opts, function (err, isolation) {
-        if (err) { return done(err) }
+        if (err) { return count.next(err) }
         expect(isolation).to.exist()
-        done()
+        count.next()
       })
     })
 
@@ -142,11 +148,12 @@ describe('BDD - Isolation', function () {
       var socketIsolationId
       var createdIsolationId
       // final callback
-      var count = createCount(2, function (err) {
+      var count = createCount(3, function (err) {
         if (err) { return done(err) }
         expect(createdIsolationId).to.equal(socketIsolationId)
         done()
       })
+      primus.expectAction('redeploy', count.next)
       // should get a primus action
       primus.expectAction('post', function (err, data) {
         if (err) { return count.next(err) }
@@ -176,13 +183,15 @@ describe('BDD - Isolation', function () {
 
     describe('once it is created', function (done) {
       beforeEach(function (done) {
+        var count = createCount(2, done)
+        primus.expectAction('redeploy', count.next)
         var opts = {
           master: ctx.webInstance.attrs._id.toString(),
           children: [
             { instance: ctx.apiInstance.attrs._id.toString() }
           ]
         }
-        ctx.isolation = ctx.user.createIsolation(opts, done)
+        ctx.isolation = ctx.user.createIsolation(opts, count.next)
       })
 
       it('should not list the isolation children by default', function (done) {
@@ -287,11 +296,12 @@ describe('BDD - Isolation', function () {
     var socketIsolationId
     var createdIsolationId
     // final callback
-    var count = createCount(2, function (err) {
+    var count = createCount(3, function (err) {
       if (err) { return done(err) }
       expect(createdIsolationId).to.equal(socketIsolationId)
       done()
     })
+    primus.expectAction('redeploy', count.next)
     // should get a primus action
     primus.expectAction('isolation', function (err, data) {
       if (err) { return count.next(err) }
@@ -319,11 +329,13 @@ describe('BDD - Isolation', function () {
 
   describe('when an instance is isolated', function () {
     beforeEach(function (done) {
+      var count = createCount(2, done)
+      primus.expectAction('redeploy', count.next)
       var opts = {
         master: ctx.webInstance.attrs._id.toString(),
         children: []
       }
-      ctx.isolation = ctx.user.createIsolation(opts, done)
+      ctx.isolation = ctx.user.createIsolation(opts, count.next)
     })
 
     it('should be reflected in the instance', function (done) {
