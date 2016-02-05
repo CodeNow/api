@@ -1904,7 +1904,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           Build.findAsync.restore()
           done()
         })
-        it('should remove the bad instance and keep going', function (done) {
+        it('should log the bad instance and keep going', function (done) {
           ctx.mockInstance2 = createNewInstance('hello2', {
             contextVersion: ctx.mockContextVersion,
             build: ctx.mockBuild._id
@@ -1912,26 +1912,36 @@ describe('Instance Model Tests ' + moduleName, function () {
           ctx.mockInstance2.container = {
             dockerContainer: 'asdasdasdsad'
           }
-          sinon.stub(Instance, 'findOneAndUpdateAsync', function () {
-            try {
-              sinon.assert.calledOnce(error.log)
-              sinon.assert.calledWith(
-                error.log,
-                sinon.match.has('message', 'instance missing inspect data' + ctx.mockInstance2._id)
-              )
-              sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
-              sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
-                _id: ctx.mockInstance._id
-              }, {
-                $set: {
-                  contextVersion: ctx.mockContextVersion.toJSON()
-                }
-              })
-              done()
-            } catch (err) {
-              done(err)
-            }
+          var count = createCount(2, function () {
+            setTimeout(function () {
+              try {
+                sinon.assert.calledOnce(error.log)
+                sinon.assert.calledWith(
+                  error.log,
+                  sinon.match.has('message', 'instance missing inspect data' + ctx.mockInstance2._id)
+                )
+                sinon.assert.calledTwice(Instance.findOneAndUpdateAsync)
+                sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+                  _id: ctx.mockInstance._id
+                }, {
+                  $set: {
+                    contextVersion: ctx.mockContextVersion.toJSON()
+                  }
+                })
+                sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+                  _id: ctx.mockInstance2._id
+                }, {
+                  $set: {
+                    contextVersion: ctx.mockContextVersion.toJSON()
+                  }
+                })
+                done()
+              } catch (err) {
+                done(err)
+              }
+            })
           })
+          sinon.stub(Instance, 'findOneAndUpdateAsync', count.next)
 
           Instance.populateModels([ctx.mockInstance, ctx.mockInstance2], function (err, instances) {
             expect(err).to.not.exist()
