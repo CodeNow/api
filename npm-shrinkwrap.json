@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "6.22.3",
+  "version": "6.22.4",
   "npm-shrinkwrap-version": "5.4.1",
   "node-version": "v0.10.38",
   "dependencies": {
@@ -4591,20 +4591,20 @@
       }
     },
     "primus": {
-      "version": "3.2.1",
-      "resolved": "https://registry.npmjs.org/primus/-/primus-3.2.1.tgz",
+      "version": "4.0.5",
+      "resolved": "https://registry.npmjs.org/primus/-/primus-4.0.5.tgz",
       "dependencies": {
         "access-control": {
-          "version": "0.0.8",
-          "resolved": "https://registry.npmjs.org/access-control/-/access-control-0.0.8.tgz",
+          "version": "1.0.0",
+          "resolved": "https://registry.npmjs.org/access-control/-/access-control-1.0.0.tgz",
           "dependencies": {
             "millisecond": {
-              "version": "0.1.1",
-              "resolved": "https://registry.npmjs.org/millisecond/-/millisecond-0.1.1.tgz"
+              "version": "0.1.2",
+              "resolved": "https://registry.npmjs.org/millisecond/-/millisecond-0.1.2.tgz"
             },
             "vary": {
-              "version": "1.0.1",
-              "resolved": "https://registry.npmjs.org/vary/-/vary-1.0.1.tgz"
+              "version": "1.1.0",
+              "resolved": "https://registry.npmjs.org/vary/-/vary-1.1.0.tgz"
             }
           }
         },
@@ -4613,8 +4613,8 @@
           "resolved": "https://registry.npmjs.org/asyncemit/-/asyncemit-3.0.1.tgz"
         },
         "create-server": {
-          "version": "0.0.7",
-          "resolved": "https://registry.npmjs.org/create-server/-/create-server-0.0.7.tgz",
+          "version": "1.0.1",
+          "resolved": "https://registry.npmjs.org/create-server/-/create-server-1.0.1.tgz",
           "dependencies": {
             "connected": {
               "version": "0.0.2",
@@ -4647,8 +4647,8 @@
                       "resolved": "https://registry.npmjs.org/color-string/-/color-string-0.3.0.tgz",
                       "dependencies": {
                         "color-name": {
-                          "version": "1.0.0",
-                          "resolved": "https://registry.npmjs.org/color-name/-/color-name-1.0.0.tgz"
+                          "version": "1.1.1",
+                          "resolved": "https://registry.npmjs.org/color-name/-/color-name-1.1.1.tgz"
                         }
                       }
                     }
@@ -4661,8 +4661,8 @@
               }
             },
             "enabled": {
-              "version": "1.0.1",
-              "resolved": "https://registry.npmjs.org/enabled/-/enabled-1.0.1.tgz",
+              "version": "1.0.2",
+              "resolved": "https://registry.npmjs.org/enabled/-/enabled-1.0.2.tgz",
               "dependencies": {
                 "env-variable": {
                   "version": "0.0.3",
@@ -4719,12 +4719,12 @@
           "resolved": "https://registry.npmjs.org/querystringify/-/querystringify-0.0.3.tgz"
         },
         "recovery": {
-          "version": "0.2.5",
-          "resolved": "https://registry.npmjs.org/recovery/-/recovery-0.2.5.tgz",
+          "version": "0.2.6",
+          "resolved": "https://registry.npmjs.org/recovery/-/recovery-0.2.6.tgz",
           "dependencies": {
             "millisecond": {
-              "version": "0.1.1",
-              "resolved": "https://registry.npmjs.org/millisecond/-/millisecond-0.1.1.tgz"
+              "version": "0.1.2",
+              "resolved": "https://registry.npmjs.org/millisecond/-/millisecond-0.1.2.tgz"
             },
             "one-time": {
               "version": "0.0.4",
@@ -4743,12 +4743,12 @@
           }
         },
         "tick-tock": {
-          "version": "0.1.6",
-          "resolved": "https://registry.npmjs.org/tick-tock/-/tick-tock-0.1.6.tgz",
+          "version": "1.0.0",
+          "resolved": "https://registry.npmjs.org/tick-tock/-/tick-tock-1.0.0.tgz",
           "dependencies": {
             "millisecond": {
-              "version": "0.1.1",
-              "resolved": "https://registry.npmjs.org/millisecond/-/millisecond-0.1.1.tgz"
+              "version": "0.1.2",
+              "resolved": "https://registry.npmjs.org/millisecond/-/millisecond-0.1.2.tgz"
             }
           }
         },
@@ -4757,14 +4757,18 @@
           "resolved": "https://registry.npmjs.org/ultron/-/ultron-1.0.2.tgz"
         },
         "url-parse": {
-          "version": "1.0.2",
-          "resolved": "https://registry.npmjs.org/url-parse/-/url-parse-1.0.2.tgz",
+          "version": "1.0.5",
+          "resolved": "https://registry.npmjs.org/url-parse/-/url-parse-1.0.5.tgz",
           "dependencies": {
             "requires-port": {
-              "version": "0.0.1",
-              "resolved": "https://registry.npmjs.org/requires-port/-/requires-port-0.0.1.tgz"
+              "version": "1.0.0",
+              "resolved": "https://registry.npmjs.org/requires-port/-/requires-port-1.0.0.tgz"
             }
           }
+        },
+        "yeast": {
+          "version": "0.1.2",
+          "resolved": "https://registry.npmjs.org/yeast/-/yeast-0.1.2.tgz"
         }
       }
     },
@@ -5054,10 +5058,6 @@
         "debug": {
           "version": "0.8.1",
           "resolved": "https://registry.npmjs.org/debug/-/debug-0.8.1.tgz"
-        },
-        "deep-equal": {
-          "version": "1.0.1",
-          "resolved": "https://registry.npmjs.org/deep-equal/-/deep-equal-1.0.1.tgz"
         },
         "runnable-hostname": {
           "version": "1.0.4",
