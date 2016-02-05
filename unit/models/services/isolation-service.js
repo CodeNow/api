@@ -348,10 +348,10 @@ describe('Isolation Services Model', function () {
 
   describe('#createIsolationAndEmitInstanceUpdates', function () {
     var mockNonRepoInstance = { instance: 'childNonRepo' }
-    var mockInstance = { shortHash: 'shorthash' }
+    var mockInstance = { _id: 'deadbeef', shortHash: 'shorthash' }
     var mockNewChildInstance = { _id: 'newChildInstanceId' }
     var mockNewIsolation = { _id: 'newIsolationId' }
-    var mockSessionUser = {}
+    var mockSessionUser = { accounts: { github: { id: 44 } } }
     var isolationConfig
 
     beforeEach(function (done) {
@@ -366,6 +366,7 @@ describe('Isolation Services Model', function () {
       sinon.stub(IsolationService, 'forkNonRepoChild').resolves(mockNewChildInstance)
       sinon.stub(IsolationService, '_updateMasterEnv').resolves(mockInstance)
       sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
+      sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       done()
     })
 
@@ -376,6 +377,7 @@ describe('Isolation Services Model', function () {
       IsolationService.forkNonRepoChild.restore()
       IsolationService._updateMasterEnv.restore()
       IsolationService._emitUpdateForInstances.restore()
+      rabbitMQ.redeployInstanceContainer.restore()
       done()
     })
 
@@ -459,6 +461,17 @@ describe('Isolation Services Model', function () {
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err).to.equal(error)
+            done()
+          })
+      })
+
+      it('should reject with any redeployInstanceContainer error', function (done) {
+        var error = new Error('pugsly')
+        rabbitMQ.redeployInstanceContainer.throws(error)
+        IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
             done()
           })
       })
@@ -581,6 +594,22 @@ describe('Isolation Services Model', function () {
             IsolationService._emitUpdateForInstances,
             [ mockNewChildInstance ],
             mockSessionUser
+          )
+          done()
+        })
+    })
+
+    it('should enqueue a job to redeploy the instance', function (done) {
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
+          sinon.assert.calledWithExactly(
+            rabbitMQ.redeployInstanceContainer,
+            {
+              instanceId: mockInstance._id,
+              sessionUserGithubId: mockSessionUser.accounts.github.id
+            }
           )
           done()
         })
