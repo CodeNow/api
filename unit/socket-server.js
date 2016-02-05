@@ -234,6 +234,7 @@ describe('socket-server: ' + moduleName, function () {
         })
       })
       client.on('data', function (message) {
+        console.log('hello>>>', message)
         client.substream(message.data.roomId).write('test')
       })
     })
