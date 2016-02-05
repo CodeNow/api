@@ -177,7 +177,7 @@ describe('Instance Model Integration Tests', function () {
       })
 
       describe('when an instance is missing its container Inspect', function () {
-        it('should remove the bad instance and keep going', function (done) {
+        it('should report the bad instance and keep going', function (done) {
           ctx.instance2.container = {
             dockerContainer: 'asdasdasd'
           }
@@ -193,13 +193,41 @@ describe('Instance Model Integration Tests', function () {
               sinon.match.has('message', 'instance missing inspect data' + ctx.instance2._id)
             )
 
-            expect(instances.length, 'instances length').to.equal(1)
+            expect(instances.length, 'instances length').to.equal(2)
             expect(instances[0]._id, 'instance._id').to.deep.equal(ctx.instance._id)
             expect(instances[0].contextVersion, 'cv').to.be.object()
             expect(instances[0].build, 'build').to.be.object()
             expect(instances[0].contextVersion._id, 'cv._id').to.deep.equal(ctx.cv._id)
             expect(instances[0].build._id, 'build._id').to.deep.equal(ctx.build._id)
 
+            expect(instances[1]._id, 'instance 2').to.deep.equal(ctx.instance2._id)
+            expect(instances[1].contextVersion, 'cv2').to.be.object()
+            expect(instances[1].build, 'build2').to.be.object()
+            expect(instances[1].contextVersion._id, 'cv2._id').to.deep.equal(ctx.cv2._id)
+            expect(instances[1].build._id, 'build2._id').to.deep.equal(ctx.build2._id)
+
+
+            var count = createCount(2, done)
+            async.retry(
+              10,
+              function (callback) {
+                Instance.findById(ctx.instance._id, function (err, instance) {
+                  if (err) { return done(err) }
+                  try {
+                    expect(instance.contextVersion, 'cv').to.be.object()
+                    expect(instance.build, 'buildId').to.deep.equal(ctx.build._id)
+                    expect(instance.contextVersion._id, 'cv._id').to.deep.equal(ctx.cv._id)
+                    expect(instance.contextVersion.build, 'cv.build').to.deep.equal(ctx.cv._doc.build)
+                  } catch (e) {
+                    return setTimeout(function () {
+                      callback(e)
+                    }, 25)
+                  }
+                  callback()
+                })
+              },
+              count.next
+            )
             async.retry(
               10,
               function (callback) {
@@ -218,7 +246,7 @@ describe('Instance Model Integration Tests', function () {
                   callback()
                 })
               },
-              done
+              count.next
             )
           })
         })
