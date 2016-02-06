@@ -58,7 +58,7 @@ describe('PATCH 400 - /instances/:id', function () {
           type: 'object',
           keys: [
             {
-              name: 'enable',
+              name: 'enabled',
               type: 'boolean'
             }
           ]
