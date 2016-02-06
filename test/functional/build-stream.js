@@ -91,7 +91,9 @@ describe('Build Stream', function () {
           })
           var buildStream = client.substream(body.contextVersions[0])
           var objectBuffer = []
-          buildStream.on('data', function (d) { objectBuffer.push(d) })
+          buildStream.on('data', function (d) {
+            objectBuffer = objectBuffer.concat(d)
+          })
           buildStream.on('end', function () {
             client.end()
             expect(objectBuffer).to.have.length(1)
@@ -160,7 +162,9 @@ describe('Build Stream', function () {
         dockerMockEvents.emitBuildComplete(ctx.cv)
 
         var objectBuffer = []
-        buildStream.on('data', function (d) { objectBuffer.push(d) })
+        buildStream.on('data', function (d) {
+          objectBuffer = objectBuffer.concat(d)
+        })
         buildStream.on('end', function () {
           client.end()
           expect(objectBuffer).to.have.length(1)
@@ -203,7 +207,9 @@ describe('Build Stream', function () {
           }
           function watchClientAndStream (c, s, cb) {
             var objectBuffer = []
-            s.on('data', function (d) { objectBuffer.push(d) })
+            s.on('data', function (d) {
+              objectBuffer = objectBuffer.concat(d)
+            })
             s.on('end', function () {
               c.end()
               expect(objectBuffer).to.have.length(1)
