@@ -19,7 +19,6 @@ var it = lab.it
 var Container = require('dockerode/lib/container')
 var createCount = require('callback-count')
 var exists = require('101/exists')
-var sinon = require('sinon')
 var uuid = require('uuid')
 
 var Docker = require('models/apis/docker')
@@ -30,7 +29,6 @@ var expects = require('../../fixtures/expects')
 var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
-var rabbitMQ = require('models/rabbitmq/index')
 var redisCleaner = require('../../fixtures/redis-cleaner')
 
 describe('PUT /instances/:id/actions/restart', function () {
