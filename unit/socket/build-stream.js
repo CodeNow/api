@@ -17,6 +17,7 @@ var createCount = require('callback-count')
 var createFrame = require('docker-frame')
 var EventEmitter = require('events').EventEmitter
 var util = require('util')
+var dogstatsd = require('models/datadog')
 
 var BuildStream = require('socket/build-stream').BuildStream
 var ContextVersion = require('models/mongo/context-version')
@@ -166,8 +167,11 @@ describe('build stream: ' + moduleName, function () {
         .catch(done)
     })
     it('should allow logs when check ownership passes', function (done) {
-      ctx.buildStream.socket.substream = sinon.spy()
+      ctx.buildStream.socket.substream = sinon.spy(function () {
+        return new ClientStream()
+      })
       sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
+      sinon.stub(dogstatsd, 'captureSteamData').returns()
       ctx.buildStream.handleStream()
         .then(function () {
           sinon.assert.calledOnce(ctx.buildStream.socket.substream)
