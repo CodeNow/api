@@ -27,10 +27,15 @@ var pick = require('101/pick')
 var pluck = require('101/pluck')
 var toObjectId = require('utils/to-object-id')
 
+var Build = require('models/mongo/build')
+var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
 var Version = require('models/mongo/context-version')
 var pubsub = require('models/redis/pubsub')
+var Promise = require('bluebird')
 var validation = require('../../fixtures/validation')(lab)
+require('sinon-as-promised')(Promise)
+
 var expectErr = function (expectedErr, done) {
   return function (err) {
     expect(err).to.equal(expectedErr)
@@ -125,9 +130,9 @@ function createNewInstance (name, opts) {
     autoForked: opts.autoForked || false,
     owner: { github: validation.VALID_GITHUB_ID },
     createdBy: { github: validation.VALID_GITHUB_ID },
-    build: validation.VALID_OBJECT_ID,
+    build: opts.build || validation.VALID_OBJECT_ID,
     created: Date.now(),
-    contextVersion: createNewVersion(opts),
+    contextVersion: opts.contextVersion || createNewVersion(opts),
     container: container,
     containers: [],
     network: {
@@ -1743,6 +1748,261 @@ describe('Instance Model Tests ' + moduleName, function () {
         Instance.populateOwnerAndCreatedByForInstances(ctx.mockSessionUser, ctx.instances, function (err) {
           expect(err).to.not.exist()
           done()
+        })
+      })
+    })
+  })
+
+  /**
+   * These tests are a little complicated due to the actual function doing extra async work after
+   * the cb resolves.  A stub and a counter are used on the instance findOneAndUpdate to track
+   * when everything is done
+   */
+  describe('.populateModels', function () {
+    beforeEach(function (done) {
+      ctx.mockSessionUser = {
+        _id: 1234,
+        findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
+          login: 'TEST-login',
+          avatar_url: 'TEST-avatar_url'
+        }),
+        accounts: {
+          github: {
+            id: 1234
+          }
+        }
+      }
+      ctx.cvAttrs = {
+        name: 'name1',
+        owner: {
+          github: '2335750'
+        },
+        createdBy: {
+          github: '146592'
+        },
+        build: {
+          _id: '23412312h3nk1lj2h3l1k2',
+          completed: true
+        }
+      }
+      ctx.mockContextVersion = createNewVersion(ctx.cvAttrs)
+      ctx.buildAttrs = {
+        name: 'name1',
+        owner: {
+          github: '2335750'
+        },
+        createdBy: {
+          github: '146592'
+        }
+      }
+      ctx.mockBuild = new Build(ctx.buildAttrs)
+      ctx.mockInstance = createNewInstance('hello', {
+        contextVersion: ctx.mockContextVersion,
+        build: ctx.mockBuild._id
+      })
+      done()
+    })
+
+    describe('when instances are not all populated', function () {
+      beforeEach(function (done) {
+        sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
+        sinon.stub(Build, 'findAsync').resolves([ctx.mockBuild])
+        done()
+      })
+      afterEach(function (done) {
+        Instance.findOneAndUpdateAsync.restore()
+        ContextVersion.findAsync.restore()
+        Build.findAsync.restore()
+        done()
+      })
+      it('should fetch build and cv, then update the cv', function (done) {
+        sinon.stub(Instance, 'findOneAndUpdateAsync', function () {
+          // do this setTimeout so the Instance.findOneAndUpdateAsync stub has knowledge of
+          // both calls
+          setTimeout(function () {
+            try {
+              sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+              sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+                _id: ctx.mockInstance._id
+              }, {
+                $set: {
+                  contextVersion: ctx.mockContextVersion.toJSON()
+                }
+              })
+              done()
+            } catch (err) {
+              done(err)
+            }
+          }, 0)
+        })
+        Instance.populateModels([ctx.mockInstance], function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(ContextVersion.findAsync)
+          sinon.assert.calledOnce(Build.findAsync)
+        })
+      })
+      it('should handle when 2 instances share a cv', function (done) {
+        ctx.mockInstance2 = createNewInstance('hello2', {
+          contextVersion: ctx.mockContextVersion,
+          build: ctx.mockBuild._id
+        })
+        var count = createCount(2, function () {
+          // do this setTimeout so the Instance.findOneAndUpdateAsync stub has knowledge of
+          // both calls
+          setTimeout(function () {
+            try {
+              sinon.assert.calledTwice(Instance.findOneAndUpdateAsync)
+              sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+                _id: ctx.mockInstance._id
+              }, {
+                $set: {
+                  contextVersion: ctx.mockContextVersion.toJSON()
+                }
+              })
+              sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+                _id: ctx.mockInstance2._id
+              }, {
+                $set: {
+                  contextVersion: ctx.mockContextVersion.toJSON()
+                }
+              })
+              done()
+            } catch (err) {
+              done(err)
+            }
+          }, 0)
+        })
+        sinon.stub(Instance, 'findOneAndUpdateAsync', count.next)
+        Instance.populateModels([ctx.mockInstance, ctx.mockInstance2], function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(ContextVersion.findAsync)
+          sinon.assert.calledOnce(Build.findAsync)
+        })
+      })
+    })
+
+    describe('when errors happen', function () {
+      var testErr = new Error('Test Error!')
+      beforeEach(function (done) {
+        sinon.stub(error, 'log')
+        done()
+      })
+      afterEach(function (done) {
+        error.log.restore()
+        done()
+      })
+
+      describe('when an instance is missing its container Inspect', function () {
+        beforeEach(function (done) {
+          sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
+          sinon.stub(Build, 'findAsync').resolves([ctx.mockBuild])
+          done()
+        })
+        afterEach(function (done) {
+          Instance.findOneAndUpdateAsync.restore()
+          ContextVersion.findAsync.restore()
+          Build.findAsync.restore()
+          done()
+        })
+        it('should log the bad instance and keep going', function (done) {
+          ctx.mockInstance2 = createNewInstance('hello2', {
+            contextVersion: ctx.mockContextVersion,
+            build: ctx.mockBuild._id
+          })
+          ctx.mockInstance2.container = {
+            dockerContainer: 'asdasdasdsad'
+          }
+          var count = createCount(2, function () {
+            setTimeout(function () {
+              try {
+                sinon.assert.calledOnce(error.log)
+                sinon.assert.calledWith(
+                  error.log,
+                  sinon.match.has('message', 'instance missing inspect data' + ctx.mockInstance2._id)
+                )
+                sinon.assert.calledTwice(Instance.findOneAndUpdateAsync)
+                sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+                  _id: ctx.mockInstance._id
+                }, {
+                  $set: {
+                    contextVersion: ctx.mockContextVersion.toJSON()
+                  }
+                })
+                sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+                  _id: ctx.mockInstance2._id
+                }, {
+                  $set: {
+                    contextVersion: ctx.mockContextVersion.toJSON()
+                  }
+                })
+                done()
+              } catch (err) {
+                done(err)
+              }
+            })
+          })
+          sinon.stub(Instance, 'findOneAndUpdateAsync', count.next)
+
+          Instance.populateModels([ctx.mockInstance, ctx.mockInstance2], function (err, instances) {
+            expect(err).to.not.exist()
+            if (err) {
+              done(err)
+            }
+            sinon.assert.calledOnce(ContextVersion.findAsync)
+            sinon.assert.calledOnce(Build.findAsync)
+          })
+        })
+      })
+      describe('when a failure happens during a db query', function () {
+        beforeEach(function (done) {
+          sinon.stub(Instance, 'findOneAndUpdateAsync').resolves(null)
+          done()
+        })
+        afterEach(function (done) {
+          Instance.findOneAndUpdateAsync.restore()
+          done()
+        })
+        describe('CV.find', function () {
+          beforeEach(function (done) {
+            sinon.stub(Build, 'findAsync').resolves([ctx.mockBuild])
+            sinon.stub(ContextVersion, 'find').yieldsAsync(testErr)
+            done()
+          })
+          afterEach(function (done) {
+            ContextVersion.find.restore()
+            Build.findAsync.restore()
+            done()
+          })
+          it('should return error', function (done) {
+            Instance.populateModels([ctx.mockInstance], function (err) {
+              expect(err).to.exist()
+              setTimeout(function () {
+                sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
+                done()
+              })
+            })
+          })
+        })
+        describe('Build.find', function () {
+          beforeEach(function (done) {
+            sinon.stub(Build, 'find').yieldsAsync(testErr)
+            sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
+            done()
+          })
+          afterEach(function (done) {
+            ContextVersion.findAsync.restore()
+            Build.find.restore()
+            done()
+          })
+          it('should return error', function (done) {
+            Instance.populateModels([ctx.mockInstance], function (err) {
+              expect(err).to.exist()
+              setTimeout(function () {
+                sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
+                done()
+              })
+            })
+          })
         })
       })
     })
