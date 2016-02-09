@@ -143,7 +143,6 @@ describe('PUT /instances/:id/actions/start', function () {
         dockerContainer: ctx.instance.attrs.container.dockerContainer,
         dockerHost: ctx.instance.attrs.container.dockerHost,
         instanceId: ctx.instance.attrs._id,
-        ownerUsername: ctx.instance.user.attrs.accounts.github.login,
         sessionUserGithubId: ctx.instance.user.attrs.accounts.github.id
       })
       // tix uuid set server side
