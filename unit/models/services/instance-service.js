@@ -899,7 +899,6 @@ describe('InstanceService: ' + moduleName, function () {
           dockerContainer: instance.container.dockerContainer,
           dockerHost: instance.container.dockerHost,
           instanceId: instance._id.toString(),
-          ownerUsername: instance.owner.username,
           sessionUserGithubId: sessionUserGithubId,
           tid: null
         })
