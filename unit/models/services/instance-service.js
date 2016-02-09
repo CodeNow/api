@@ -992,9 +992,7 @@ describe('InstanceService: ' + moduleName, function () {
         sinon.assert.calledOnce(rabbitMQ.stopInstanceContainer)
         sinon.assert.calledWith(rabbitMQ.stopInstanceContainer, {
           containerId: instance.container.dockerContainer,
-          dockerHost: instance.container.dockerHost,
           instanceId: instance._id.toString(),
-          ownerUsername: instance.owner.username,
           sessionUserGithubId: sessionUserGithubId,
           tid: null
         })
