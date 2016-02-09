@@ -54,6 +54,16 @@ describe('PATCH 400 - /instances/:id', function () {
           type: 'boolean'
         },
         {
+          name: 'ipWhitelist',
+          type: 'object',
+          keys: [
+            {
+              name: 'enabled',
+              type: 'boolean'
+            }
+          ]
+        },
+        {
           name: 'locked',
           type: 'boolean'
         },
