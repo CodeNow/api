@@ -102,7 +102,6 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
           dockerContainer: ctx.data.id,
           dockerHost: ctx.data.host,
           instanceId: ctx.data.inspectData.Config.Labels.instanceId,
-          ownerUsername: ctx.data.inspectData.Config.Labels.ownerUsername,
           sessionUserGithubId: ctx.data.inspectData.Config.Labels.sessionUserGithubId,
           tid: ctx.data.inspectData.Config.Labels.tid,
           deploymentUuid: ctx.data.inspectData.Config.Labels.deploymentUuid

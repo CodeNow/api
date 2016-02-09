@@ -220,7 +220,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         dockerHost: 'http://0.0.0.0',
         hostIp: '0.0.0.0',
         instanceId: '55555',
-        ownerUsername: 'test1',
         sessionUserGithubId: '9494949',
         tid: '000000'
       }
@@ -229,7 +228,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         dockerHost: 'http://0.0.0.0',
         hostIp: '0.0.0.0',
         instanceId: '55555',
-        ownerUsername: 'test1',
         sessionUserGithubId: '9494949',
         tid: '000000'
       }
