@@ -410,6 +410,27 @@ describe('Github - /actions/github', function () {
         })
 
         it('should fork instance from master', function (done) {
+          // three callbacks here:
+          // 1. post should complete
+          // 2. context versions should finish
+          // 3. 'start' action from primus
+          var finalCount = createCount(3, function (err) {
+            if (err) { return done(err) }
+            // validate what we stubbed
+            sinon.assert.calledOnce(successStub)
+            sinon.assert.calledOnce(slackStub)
+            sinon.assert.calledWith(
+              slackStub,
+              sinon.match.object,
+              sinon.match.object
+            )
+            var forkedInstance = slackStub.args[0][1]
+            expect(forkedInstance.name).to.equal('feature-1-' + ctx.instance.attrs.name)
+            sinon.assert.calledOnce(UserWhitelist.findOne)
+            sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: login.toLowerCase() })
+            done()
+          })
+
           var login = ctx.user.attrs.accounts.github.login
           var id = ctx.user.attrs.accounts.github.id
           require('./fixtures/mocks/github/users-username')(id, login)
@@ -423,25 +444,22 @@ describe('Github - /actions/github', function () {
             owner: login
           }
           var options = hooks(data).push
-          // wait for container create worker to finish
-          primus.expectActionCount('start', 1, function () {
-            // restore what we stubbed
-            expect(successStub.calledOnce).to.equal(true)
-            expect(slackStub.calledOnce).to.equal(true)
-            expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true)
-            var forkedInstance = slackStub.args[0][1]
-            expect(forkedInstance.name).to.equal('feature-1-' + ctx.instance.attrs.name)
-            sinon.assert.calledOnce(UserWhitelist.findOne)
-            sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: login.toLowerCase() })
-            done()
-          })
+
+          var contextCount = finishContextVersions(1, finalCount.next)
+
+          // 3. wait for container create worker to finish
+          primus.expectActionCount('start', 1, finalCount.next)
+
+          // post must complete
           request.post(options, function (err, res, cvIds) {
-            if (err) { return done(err) }
+            if (err) { return finalCount.next(err) }
             expect(res.statusCode).to.equal(200)
             expect(cvIds).to.exist()
             expect(cvIds).to.be.an.array()
             expect(cvIds).to.have.length(1)
-            finishAllIncompleteVersions()
+            expect(cvIds[0]).to.exist()
+            contextCount(cvIds[0])
+            finalCount.next()
           })
         })
 
@@ -480,26 +498,41 @@ describe('Github - /actions/github', function () {
             require('./fixtures/mocks/github/user')(username)
             require('./fixtures/mocks/github/users-username')(user.id, username)
             require('./fixtures/mocks/github/user')(username)
-            // wait for container create worker to finish
-            primus.expectActionCount('start', 1, function () {
-              sinon.stub(rabbitMQ, 'deleteInstance', function () {
-                countCb.next()
-              })
-              expect(slackStub.calledOnce).to.equal(true)
-              expect(slackStub.calledWith(sinon.match.object, sinon.match.object)).to.equal(true)
+
+            // counter for finishing building forks.
+            var contextCount = finishContextVersions(1, function (err) {
+              if (err) { return countCb.next(err) }
+              sinon.assert.calledOnce(slackStub)
+              sinon.assert.calledWith(
+                slackStub,
+                sinon.match.object,
+                sinon.match.object
+              )
+              // at this point, the create worker has finished.
+
+              // wait for the deleteInstance task to be enqueued.
+              sinon.stub(rabbitMQ, 'deleteInstance', function () { countCb.next() })
+
               var deleteOptions = hooks(data).push
               deleteOptions.json.deleted = true
-              require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
-                ctx.user.attrs.accounts.github.login)
-              require('./fixtures/mocks/github/user-id')(ctx.user.attrs.accounts.github.id,
-                ctx.user.attrs.accounts.github.login)
+              require('./fixtures/mocks/github/user-id')(
+                ctx.user.attrs.accounts.github.id,
+                ctx.user.attrs.accounts.github.login
+              )
+              require('./fixtures/mocks/github/user-id')(
+                ctx.user.attrs.accounts.github.id,
+                ctx.user.attrs.accounts.github.login
+              )
+              // post should complete to delete instance.
               request.post(deleteOptions, function (err, res, body) {
-                if (err) { return done(err) }
+                if (err) { return countCb.next(err) }
                 expect(res.statusCode).to.equal(201)
                 expect(body.length).to.equal(1)
                 countCb.next()
               })
             })
+
+            // post to kick off build.
             request.post(options, function (err, res, cvIds) {
               if (err) { return done(err) }
               expect(res.statusCode).to.equal(200)
@@ -508,7 +541,7 @@ describe('Github - /actions/github', function () {
               expect(cvIds).to.have.length(1)
               sinon.assert.calledOnce(UserWhitelist.findOne)
               sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: sinon.match.string })
-              finishAllIncompleteVersions()
+              contextCount(cvIds[0])
             })
           })
         })
@@ -581,10 +614,15 @@ describe('Github - /actions/github', function () {
         })
       })
 
-      it('should redeploy two instances with new build', function (done) {
-        require('./fixtures/mocks/docker/build-logs')()
-        ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, function (err) {
-          if (err) { return done(err) }
+      describe('with two instances', function () {
+        beforeEach(function (done) {
+          var count = createCount(2, done)
+          ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, count.next)
+          primus.expectActionCount('start', 1, count.next)
+        })
+
+        it('should redeploy two instances with new build', function (done) {
+          require('./fixtures/mocks/docker/build-logs')()
           var acv = ctx.contextVersion.attrs.appCodeVersions[0]
           var user = ctx.user.attrs.accounts.github
           var data = {
@@ -694,4 +732,26 @@ function finishAllIncompleteVersions (cb) {
       cb()
     }
   })
+}
+
+function finishContextVersions (numberOfCvs, callback) {
+  var contextVersions = []
+
+  var count = createCount(1 + numberOfCvs, function (err) {
+    if (err) { return callback(err) }
+    ContextVersion.find({ _id: { $in: contextVersions } }, function (err, cvs) {
+      if (err) { return callback(err) }
+      cvs.forEach(function (cv) {
+        dockerMockEvents.emitBuildComplete(cv)
+      })
+      callback()
+    })
+  })
+
+  primus.expectActionCount('build_running', numberOfCvs, function () { count.next() })
+
+  return function watchVersion (contextVersionId) {
+    contextVersions.push(contextVersionId)
+    count.next()
+  }
 }
