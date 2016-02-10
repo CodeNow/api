@@ -889,7 +889,7 @@ describe('InstanceService: ' + moduleName, function () {
       })
     })
 
-    it('should pass', function (done) {
+    it('should pass if dependant calls pass', function (done) {
       var instance = createNewInstance('testy', {})
       var sessionUserGithubId = 21331
       InstanceService.startInstance(instance, sessionUserGithubId).asCallback(function (err) {
@@ -983,7 +983,7 @@ describe('InstanceService: ' + moduleName, function () {
       })
     })
 
-    it('should pass', function (done) {
+    it('should pass if dependant calls pass', function (done) {
       var instance = createNewInstance('testy', {})
       var sessionUserGithubId = 21331
       Instance.markAsStoppingAsync.returns(Promise.resolve(instance))

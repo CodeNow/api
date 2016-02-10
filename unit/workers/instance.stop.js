@@ -88,14 +88,7 @@ describe('InstanceStop: ' + moduleName, function () {
       })
     })
     it('should fail if payload is {}', function (done) {
-      Worker(null).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.equal('instance.stop: Invalid Job')
-        done()
-      })
-    })
-    it('should fail if payload is {}', function (done) {
-      Worker(null).asCallback(function (err) {
+      Worker({}).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal('instance.stop: Invalid Job')
         done()
@@ -162,7 +155,7 @@ describe('InstanceStop: ' + moduleName, function () {
       done()
     })
   })
-  it('should return no error if success', function (done) {
+  it('should pass if dependant calls pass', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(Instance.markAsStoppingAsync)
