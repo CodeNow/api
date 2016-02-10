@@ -29,7 +29,7 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
     ctx.job = {
       contextVersionId: '123456789012345678901234',
       instanceId: '123456789012345678901234',
-      ownerUsername: 'runnable'
+      ownerGitHubUsername: 'runnable'
     }
     sinon.stub(InstanceService, 'createContainer')
     done()

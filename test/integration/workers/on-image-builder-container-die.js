@@ -99,7 +99,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
           var opts = {
             manualBuild: true,
             sessionUser: ctx.user,
-            ownerUsername: ctx.user.accounts.github.username,
+            ownerGitHubUsername: ctx.user.accounts.github.username,
             contextVersion: ctx.cv,
             network: {
               hostIp: '1.1.1.1'
@@ -252,7 +252,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
                 contextVersionId: ctx.cv._id.toString(),
                 instanceId: ctx.instance._id.toString(),
-                ownerUsername: ctx.user.accounts.github.username,
+                ownerGitHubUsername: ctx.user.accounts.github.username,
                 sessionUserGithubId: ctx.user.accounts.github.id.toString()
               })
               ContextVersion.findOne(ctx.cv._id, function (err, cv) {
@@ -592,7 +592,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
                   contextVersionId: ctx.cv2._id.toString(),
                   instanceId: ctx.instance._id.toString(),
-                  ownerUsername: ctx.user.accounts.github.username,
+                  ownerGitHubUsername: ctx.user.accounts.github.username,
                   sessionUserGithubId: ctx.user.accounts.github.id.toString()
                 })
                 Instance.findById(ctx.instance._id, function (err, instance) {

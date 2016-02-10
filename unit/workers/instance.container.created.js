@@ -50,7 +50,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         Config: {
           Labels: {
             instanceId: ctx.mockInstance._id,
-            ownerUsername: 'fifo',
+            ownerGitHubUsername: 'fifo',
             sessionUserGithubId: 444,
             contextVersionId: '123',
             tid: 'some-tid',
@@ -102,7 +102,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
           dockerContainer: ctx.data.id,
           dockerHost: ctx.data.host,
           instanceId: ctx.data.inspectData.Config.Labels.instanceId,
-          ownerUsername: ctx.data.inspectData.Config.Labels.ownerUsername,
+          ownerGitHubUsername: ctx.data.inspectData.Config.Labels.ownerGitHubUsername,
           sessionUserGithubId: ctx.data.inspectData.Config.Labels.sessionUserGithubId,
           tid: ctx.data.inspectData.Config.Labels.tid,
           deploymentUuid: ctx.data.inspectData.Config.Labels.deploymentUuid

@@ -178,7 +178,7 @@ expects.updatedNaviEntries = function (username, instance, container, cb) {
       exposedPort: containerPort,
       branch: branch,
       instanceName: instanceName,
-      ownerUsername: username,
+      ownerGitHubUsername: username,
       ownerGithub: ownerGithub,
       userContentDomain: process.env.USER_CONTENT_DOMAIN,
       masterPod: masterPod
@@ -238,7 +238,7 @@ expects.deletedNaviEntries = function (username, instance, container, cb) {
       exposedPort: containerPort,
       branch: branch,
       instanceName: instanceName,
-      ownerUsername: username,
+      ownerGitHubUsername: username,
       ownerGithub: ownerGithub,
       userContentDomain: process.env.USER_CONTENT_DOMAIN,
       masterPod: masterPod

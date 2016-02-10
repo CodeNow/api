@@ -161,7 +161,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         dockerHost: '0.0.0.0',
         noCache: false,
         tid: '9494949',
-        ownerUsername: 'tjmehta'
+        ownerGitHubUsername: 'tjmehta'
       }
       // missing manualBuild and noCache
       ctx.invalidJobData = {
@@ -220,7 +220,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         dockerHost: 'http://0.0.0.0',
         hostIp: '0.0.0.0',
         instanceId: '55555',
-        ownerUsername: 'test1',
+        ownerGitHubUsername: 'test1',
         sessionUserGithubId: '9494949',
         tid: '000000'
       }
@@ -229,7 +229,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         dockerHost: 'http://0.0.0.0',
         hostIp: '0.0.0.0',
         instanceId: '55555',
-        ownerUsername: 'test1',
+        ownerGitHubUsername: 'test1',
         sessionUserGithubId: '9494949',
         tid: '000000'
       }
@@ -278,7 +278,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       ctx.opts = {
         contextVersionId: '123456789012345678901234',
         instanceId: '123456789012345678901234',
-        ownerUsername: 'runnable',
+        ownerGitHubUsername: 'runnable',
         sessionUserGithubId: '10'
       }
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')

@@ -385,7 +385,7 @@ describe('docker: ' + moduleName, function () {
             network: opts.network,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername,
+            ownerGitHubUsername: opts.ownerGitHubUsername,
             tid: opts.tid
           })
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.deep.equal({
@@ -437,7 +437,7 @@ describe('docker: ' + moduleName, function () {
             network: opts.network,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername,
+            ownerGitHubUsername: opts.ownerGitHubUsername,
             tid: opts.tid
           })
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.deep.equal({
@@ -560,7 +560,7 @@ describe('docker: ' + moduleName, function () {
         manualBuild: 'manualBuild',
         noCache: 'noCache',
         sessionUser: ctx.mockSessionUser,
-        ownerUsername: 'ownerUsername',
+        ownerGitHubUsername: 'ownerGitHubUsername',
         tid: 'tid'
       }
       var labels = model._createImageBuilderLabels(opts)
@@ -572,8 +572,8 @@ describe('docker: ' + moduleName, function () {
           noCache: opts.noCache,
           sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
           sessionUserGithubId: opts.sessionUser.accounts.github.id.toString(),
-          sessionUserUsername: opts.sessionUser.accounts.github.username,
-          ownerUsername: opts.ownerUsername,
+          sessionUserGitHubUsername: opts.sessionUser.accounts.github.username,
+          ownerGitHubUsername: opts.ownerGitHubUsername,
           tid: opts.tid,
           'com.docker.swarm.constraints': '["org==owner"]',
           type: 'image-builder-container'
@@ -912,7 +912,7 @@ describe('docker: ' + moduleName, function () {
       ctx.opts = {
         instance: ctx.mockInstance,
         contextVersion: ctx.mockContextVersion,
-        ownerUsername: 'runnable',
+        ownerGitHubUsername: 'runnable',
         sessionUserGithubId: 10
       }
       sinon.stub(Docker.prototype, '_createUserContainerLabels')
@@ -1140,7 +1140,7 @@ describe('docker: ' + moduleName, function () {
             github: 132456
           }
         },
-        ownerUsername: 'runnable',
+        ownerGitHubUsername: 'runnable',
         sessionUserGithubId: 10
       }
       done()
@@ -1157,7 +1157,7 @@ describe('docker: ' + moduleName, function () {
             instanceName: opts.instance.name,
             instanceShortHash: opts.instance.shortHash,
             contextVersionId: opts.contextVersion._id.toString(),
-            ownerUsername: opts.ownerUsername,
+            ownerGitHubUsername: opts.ownerGitHubUsername,
             sessionUserGithubId: opts.sessionUserGithubId.toString(),
             tid: process.domain.runnableData.tid,
             'com.docker.swarm.constraints': '["org==132456","node==~ip-10-0-0-1"]',
@@ -1178,7 +1178,7 @@ describe('docker: ' + moduleName, function () {
             instanceName: opts.instance.name,
             instanceShortHash: opts.instance.shortHash,
             contextVersionId: opts.contextVersion._id.toString(),
-            ownerUsername: opts.ownerUsername,
+            ownerGitHubUsername: opts.ownerGitHubUsername,
             sessionUserGithubId: opts.sessionUserGithubId.toString(),
             tid: process.domain.runnableData.tid,
             'com.docker.swarm.constraints': '["org==132456"]',

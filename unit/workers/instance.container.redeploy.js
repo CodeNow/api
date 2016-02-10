@@ -606,7 +606,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
         build: {
           contextVersions: ['507f191e810c19729de860ev']
         },
-        ownerUsername: 'codenow'
+        ownerGitHubUsername: 'codenow'
       }
       Worker._createNewContainer(job, data)
       expect(rabbitMQ.createInstanceContainer.calledOnce).to.be.true()
@@ -614,7 +614,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       expect(jobData.instanceId).to.equal(data.instance._id)
       expect(jobData.contextVersionId).to.equal('507f191e810c19729de860ev')
       expect(jobData.sessionUserGithubId).to.equal(job.sessionUserGithubId)
-      expect(jobData.ownerUsername).to.equal('codenow')
+      expect(jobData.ownerGitHubUsername).to.equal('codenow')
       expect(jobData.deploymentUuid).to.equal(job.deploymentUuid)
       done()
     })

@@ -328,7 +328,7 @@ describe('Github - /actions/github', function () {
       it('should send a 404 and not autofork if the committer is not a Github user',
         function (done) {
           var ownerGithubId = ctx.user.attrs.accounts.github.id
-          var ownerUsername = ctx.user.attrs.accounts.github.login
+          var ownerGitHubUsername = ctx.user.attrs.accounts.github.login
           var committerUsername = 'non-github-user'
           require('./fixtures/mocks/github/users-username')(99567, committerUsername, {
             fail: true
@@ -338,7 +338,7 @@ describe('Github - /actions/github', function () {
             branch: 'some-branch-that-doesnt-exist',
             repo: acv.repo,
             ownerId: ownerGithubId,
-            owner: ownerUsername,
+            owner: ownerGitHubUsername,
             committer: committerUsername
           }
           var options = hooks(data).push
@@ -352,7 +352,7 @@ describe('Github - /actions/github', function () {
       it('should send a 403 and not autofork if the committer is not a Runnable user',
         function (done) {
           var ownerGithubId = ctx.user.attrs.accounts.github.id
-          var ownerUsername = ctx.user.attrs.accounts.github.login
+          var ownerGitHubUsername = ctx.user.attrs.accounts.github.login
           var committerUsername = 'thejsj'
           require('./fixtures/mocks/github/users-username')(1, committerUsername)
           var acv = ctx.contextVersion.attrs.appCodeVersions[0]
@@ -360,7 +360,7 @@ describe('Github - /actions/github', function () {
             branch: 'some-branch-that-doesnt-exist',
             repo: acv.repo,
             ownerId: ownerGithubId,
-            owner: ownerUsername,
+            owner: ownerGitHubUsername,
             committer: committerUsername
           }
           var options = hooks(data).push

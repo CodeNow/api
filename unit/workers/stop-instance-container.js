@@ -48,7 +48,7 @@ describe('StopInstanceContainerWorker: ' + moduleName, function () {
       dockerHost: '0.0.0.0',
       instanceId: 'instanceid123',
       sessionUserGithubId: '12345'
-    // ownerUsername: req.sessionUser.accounts.github.login,
+    // ownerGitHubUsername: req.sessionUser.accounts.github.login,
     // tid: req.domain.runnableData.tid
     }
     ctx.mockInstance = {

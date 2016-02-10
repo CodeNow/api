@@ -21,17 +21,17 @@ mongoose.start(function (err) {
     if (err) { throw err }
     // Reset deps for instances task
     async.eachLimit(instances, 100, function (instance, cb) {
-      // Find ownerUsername
-      findInstanceOwnerUsername(instance, function (err, ownerUsername) {
+      // Find ownerGitHubUsername
+      findInstanceOwnerUsername(instance, function (err, ownerGitHubUsername) {
         if (err) { return log(err, instance, cb) }
         // Reset deps for instance from env
         if (dryRun) {
           console.log('Dry Run Success:')
           console.log('Instance Id', instance._id)
-          console.log('setDependenciesFromEnvironment', ownerUsername)
+          console.log('setDependenciesFromEnvironment', ownerGitHubUsername)
           return cb()
         }
-        instance.setDependenciesFromEnvironment(ownerUsername, function (err) {
+        instance.setDependenciesFromEnvironment(ownerGitHubUsername, function (err) {
           if (err) { return log(err, instance, cb) }
 
           console.log('Success w/ ' + instance._id)
@@ -70,9 +70,9 @@ function findInstanceOwnerUsername (instance, cb) {
 }
 
 function checkGithubUsernameCache (githubId, cb) {
-  var ownerUsername = githubIdToUsername[githubId]
-  if (ownerUsername) {
-    cb(null, ownerUsername)
+  var ownerGitHubUsername = githubIdToUsername[githubId]
+  if (ownerGitHubUsername) {
+    cb(null, ownerGitHubUsername)
     return true
   }
   var populateHandlers = populateHandlersMap[githubId]

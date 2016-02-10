@@ -92,7 +92,7 @@
         "noCache": "body.noCache",
         "sessionUserDisplayName": "Ryan Sandor Richards",
         "sessionUserId": "146592",
-        "sessionUserUsername": "rsandor",
+        "sessionUserGitHubUsername": "rsandor",
         "tid": "e5e14545-0d40-45bb-90fd-0128cbc6fbaa",
         "type": "image-builder-container"
       },
