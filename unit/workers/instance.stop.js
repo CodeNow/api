@@ -160,19 +160,33 @@ describe('InstanceStop: ' + moduleName, function () {
       done()
     })
   })
-  it('should pass if dependant calls pass', function (done) {
+  it('should call markAsStoppingAsync', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(Instance.markAsStoppingAsync)
       sinon.assert.calledWith(Instance.markAsStoppingAsync, testInstanceId, dockerContainer)
+      done()
+    })
+  })
+  it('should call stopContainer', function (done) {
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.not.exist()
       sinon.assert.calledOnce(Docker.prototype.stopContainer)
       sinon.assert.calledWith(Docker.prototype.stopContainer, dockerContainer)
-      sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
-      sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
-        testInstance,
-        testData.sessionUserGithubId,
-        'stopping',
-        true)
+      done()
+    })
+  })
+  it('should call emitInstanceUpdate', function (done) {
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.not.exist()
+      sinon.assert.calledOnce(Docker.prototype.stopContainer)
+      sinon.assert.calledWith(Docker.prototype.stopContainer, dockerContainer)
+      done()
+    })
+  })
+  it('should call out to various models and helper methods in the correct order', function (done) {
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.not.exist()
       sinon.assert.callOrder(
         Instance.markAsStoppingAsync,
         Docker.prototype.stopContainer,
