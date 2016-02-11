@@ -80,7 +80,7 @@ describe('InstanceStop: ' + moduleName, function () {
   })
 
   describe('validation', function () {
-    it('should fail if job is null', function (done) {
+    it('should fatally fail if job is null', function (done) {
       Worker(null).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(TaskFatalError)
@@ -88,7 +88,7 @@ describe('InstanceStop: ' + moduleName, function () {
         done()
       })
     })
-    it('should fail if job is {}', function (done) {
+    it('should fatally fail if job is {}', function (done) {
       Worker({}).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(TaskFatalError)
@@ -96,7 +96,7 @@ describe('InstanceStop: ' + moduleName, function () {
         done()
       })
     })
-    it('should fail if job has no instanceId', function (done) {
+    it('should fatally fail if job has no instanceId', function (done) {
       var data = omit(testData, 'instanceId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
@@ -105,7 +105,7 @@ describe('InstanceStop: ' + moduleName, function () {
         done()
       })
     })
-    it('should fail if job has no containerId', function (done) {
+    it('should fatally fail if job has no containerId', function (done) {
       var data = omit(testData, 'containerId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
@@ -114,7 +114,7 @@ describe('InstanceStop: ' + moduleName, function () {
         done()
       })
     })
-    it('should fail if job has no sessionUserGithubId', function (done) {
+    it('should fatally fail if job has no sessionUserGithubId', function (done) {
       var data = omit(testData, 'sessionUserGithubId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
