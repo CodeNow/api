@@ -64,14 +64,14 @@ describe('Workers: Instance Stop', function () {
   })
   beforeEach(function (done) {
     sinon.stub(Instance, 'findOneStoppingAsync').resolves(testInstance)
-    sinon.stub(Docker.prototype, 'stopContainer').yieldsAsync()
+    sinon.stub(Docker.prototype, 'stopContainerAsync').resolves()
     sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
     done()
   })
 
   afterEach(function (done) {
     Instance.findOneStoppingAsync.restore()
-    Docker.prototype.stopContainer.restore()
+    Docker.prototype.stopContainerAsync.restore()
     InstanceService.emitInstanceUpdate.restore()
     done()
   })
@@ -141,7 +141,7 @@ describe('Workers: Instance Stop', function () {
   })
   it('should fail if docker stopContainer failed', function (done) {
     var error = new Error('Docker error')
-    Docker.prototype.stopContainer.yieldsAsync(error)
+    Docker.prototype.stopContainerAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
@@ -168,16 +168,16 @@ describe('Workers: Instance Stop', function () {
   it('should call stopContainer', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
-      sinon.assert.calledOnce(Docker.prototype.stopContainer)
-      sinon.assert.calledWith(Docker.prototype.stopContainer, dockerContainer)
+      sinon.assert.calledOnce(Docker.prototype.stopContainerAsync)
+      sinon.assert.calledWith(Docker.prototype.stopContainerAsync, dockerContainer)
       done()
     })
   })
   it('should call emitInstanceUpdate', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
-      sinon.assert.calledOnce(Docker.prototype.stopContainer)
-      sinon.assert.calledWith(Docker.prototype.stopContainer, dockerContainer)
+      sinon.assert.calledOnce(Docker.prototype.stopContainerAsync)
+      sinon.assert.calledWith(Docker.prototype.stopContainerAsync, dockerContainer)
       done()
     })
   })
@@ -186,8 +186,8 @@ describe('Workers: Instance Stop', function () {
       expect(err).to.not.exist()
       sinon.assert.callOrder(
         Instance.findOneStoppingAsync,
-        Docker.prototype.stopContainer,
-        InstanceService.emitInstanceUpdate)
+        InstanceService.emitInstanceUpdate,
+        Docker.prototype.stopContainerAsync)
       done()
     })
   })
