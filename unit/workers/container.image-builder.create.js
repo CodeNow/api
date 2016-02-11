@@ -18,6 +18,7 @@ var sinon = require('sinon')
 
 var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
+var Docker = require('models/apis/docker')
 var joi = require('utils/joi')
 var Promise = require('bluebird')
 var TaskFatalError = require('ponos').TaskFatalError
@@ -41,7 +42,7 @@ describe('ContainerImageBuilderCreate', function () {
     _id: 'context-version-id',
     build: {
       _id: 'some-build-id'
-    }
+    },
     populateAsync: noop
   }
   var mockContainer = {
