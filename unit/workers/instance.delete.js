@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/instance.container.redeploy
+ * @module unit/workers/instance.delete
  */
 'use strict'
 
