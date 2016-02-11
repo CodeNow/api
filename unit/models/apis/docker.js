@@ -364,7 +364,6 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          network: ctx.mockNetwork,
           noCache: false,
           tid: '000-0000-0000-0000'
         }
@@ -416,7 +415,6 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          network: ctx.mockNetwork,
           noCache: false,
           tid: '000-0000-0000-0000'
         }
@@ -434,7 +432,6 @@ describe('docker: ' + moduleName, function () {
             contextVersion: opts.contextVersion,
             dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
-            network: opts.network,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
             ownerUsername: opts.ownerUsername,
