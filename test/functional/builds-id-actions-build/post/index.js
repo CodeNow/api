@@ -21,6 +21,7 @@ var createCount = require('callback-count')
 var exists = require('101/exists')
 var equals = require('101/equals')
 var last = require('101/last')
+var not = require('101/not')
 var uuid = require('uuid')
 var mockGetUserById = require('./../../fixtures/mocks/github/getByUserId')
 
@@ -90,7 +91,7 @@ describe('Build - /builds/:id/actions/build', function () {
               'build.completed': exists,
               'build.dockerImage': exists,
               'build.dockerTag': exists,
-              'build.log': exists,
+              'build.log': not(exists),
               'build.triggeredAction.manual': true
             }
             require('./../../fixtures/mocks/github/user')(ctx.user) // non owner org
@@ -141,7 +142,7 @@ describe('Build - /builds/:id/actions/build', function () {
                   'build.completed': exists,
                   'build.dockerImage': exists,
                   'build.dockerTag': exists,
-                  'build.log': exists,
+                  'build.log': not(exists),
                   'build.triggeredAction.manual': true
                 }
                 require('./../../fixtures/mocks/github/user')(ctx.user) // non owner org
