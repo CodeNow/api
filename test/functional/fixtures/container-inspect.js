@@ -58,7 +58,7 @@ module.exports.getContainerInspect = function (instance) {
           contextVersionId: instance.json().contextVersion.id,
           instanceId: instance.attrs._id,
           instanceShortHash: instance.attrs.shortHash,
-          ownerUsername: 'cflynn07',
+          ownerGitHubUsername: 'cflynn07',
           type: 'user-container',
           userGithubId: instance.json().owner.github
         },

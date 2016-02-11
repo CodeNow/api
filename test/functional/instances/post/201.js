@@ -219,7 +219,7 @@ describe('201 POST /instances', function () {
           expect(jobData.instanceId.toString()).to.equal(body._id.toString())
           expect(jobData.contextVersionId.toString()).to.equal(ctx.cv.attrs._id.toString())
           expect(jobData.sessionUserGithubId).to.equal(ctx.user.attrs.accounts.github.id)
-          expect(jobData.ownerUsername).to.equal(ctx.user.attrs.accounts.github.username)
+          expect(jobData.ownerGitHubUsername).to.equal(ctx.user.attrs.accounts.github.username)
           count.next()
         })
       })

@@ -54,7 +54,7 @@ describe('ContainerNetworkAttached: ' + moduleName, function () {
       Config: {
         Labels: {
           instanceId: ctx.instanceId,
-          ownerUsername: 'anton',
+          ownerGitHubUsername: 'anton',
           sessionUserGithubId: 111987,
           contextVersionId: 'some-cv-id'
         }

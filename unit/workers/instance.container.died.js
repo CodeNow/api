@@ -57,7 +57,7 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
       Config: {
         Labels: {
           instanceId: ctx.instanceId,
-          ownerUsername: 'anton',
+          ownerGitHubUsername: 'anton',
           sessionUserGithubId: ctx.sessionUserGithubId,
           contextVersionId: 'some-cv-id'
         }

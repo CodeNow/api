@@ -220,7 +220,7 @@ describe('InstanceService: ' + moduleName, function () {
         Config: {
           Labels: {
             instanceId: ctx.instance._id,
-            ownerUsername: 'anton',
+            ownerGitHubUsername: 'anton',
             sessionUserGithubId: 111987,
             contextVersionId: 'some-cv-id'
           }
@@ -369,7 +369,7 @@ describe('InstanceService: ' + moduleName, function () {
       ctx.opts = {
         instanceId: '123456789012345678901234',
         contextVersionId: '123456789012345678901234',
-        ownerUsername: 'runnable'
+        ownerGitHubUsername: 'runnable'
       }
       ctx.mockContextVersion = { }
       ctx.mockInstance = {
@@ -482,7 +482,7 @@ describe('InstanceService: ' + moduleName, function () {
       ctx.opts = {
         instanceId: '123456789012345678901234',
         contextVersionId: '123456789012345678901234',
-        ownerUsername: 'runnable'
+        ownerGitHubUsername: 'runnable'
       }
       // mock results
       ctx.mockContextVersion = {
@@ -701,11 +701,11 @@ describe('InstanceService: ' + moduleName, function () {
   describe('#_createDockerContainer', function () {
     beforeEach(function (done) {
       // correct opts
-      ctx.ownerUsername = 'runnable'
+      ctx.ownerGitHubUsername = 'runnable'
       ctx.opts = {
         contextVersion: { _id: '123456789012345678901234' },
         instance: {},
-        ownerUsername: 'runnable',
+        ownerGitHubUsername: 'runnable',
         sessionUserGithubId: 10
       }
       // results
@@ -899,7 +899,7 @@ describe('InstanceService: ' + moduleName, function () {
           dockerContainer: instance.container.dockerContainer,
           dockerHost: instance.container.dockerHost,
           instanceId: instance._id.toString(),
-          ownerUsername: instance.owner.username,
+          ownerGitHubUsername: instance.owner.username,
           sessionUserGithubId: sessionUserGithubId,
           tid: null
         })

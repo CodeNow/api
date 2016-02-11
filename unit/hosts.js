@@ -37,7 +37,7 @@ describe('Hosts: ' + moduleName, function () {
     })
     afterEach(function (done) {
       var entry = {
-        ownerUsername: ctx.username,
+        ownerGitHubUsername: ctx.username,
         ownerGithub: ctx.instance.owner.github,
         branch: ctx.branch,
         masterPod: ctx.instance.masterPod,
