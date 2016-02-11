@@ -64,12 +64,14 @@ describe('Workers: Instance Stop', function () {
   beforeEach(function (done) {
     sinon.stub(Instance, 'findOneStoppingAsync').resolves(testInstance)
     sinon.stub(Docker.prototype, 'stopContainer').yieldsAsync()
+    sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
     done()
   })
 
   afterEach(function (done) {
     Instance.findOneStoppingAsync.restore()
     Docker.prototype.stopContainer.restore()
+    InstanceService.emitInstanceUpdate.restore()
     done()
   })
 
@@ -145,6 +147,15 @@ describe('Workers: Instance Stop', function () {
       done()
     })
   })
+  it('should fail if sending events failed', function (done) {
+    var error = new Error('Primus error')
+    InstanceService.emitInstanceUpdate.rejects(error)
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.exist()
+      expect(err.message).to.equal(error.message)
+      done()
+    })
+  })
   it('should call findOneStoppingAsync', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
@@ -157,7 +168,15 @@ describe('Workers: Instance Stop', function () {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(Docker.prototype.stopContainer)
-      sinon.assert.calledWith(Docker.prototype.stopContainer, dockerContainer, true)
+      sinon.assert.calledWith(Docker.prototype.stopContainer, dockerContainer)
+      done()
+    })
+  })
+  it('should call emitInstanceUpdate', function (done) {
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.not.exist()
+      sinon.assert.calledOnce(Docker.prototype.stopContainer)
+      sinon.assert.calledWith(Docker.prototype.stopContainer, dockerContainer)
       done()
     })
   })
@@ -166,7 +185,8 @@ describe('Workers: Instance Stop', function () {
       expect(err).to.not.exist()
       sinon.assert.callOrder(
         Instance.findOneStoppingAsync,
-        Docker.prototype.stopContainer)
+        Docker.prototype.stopContainer,
+        InstanceService.emitInstanceUpdate)
       done()
     })
   })
