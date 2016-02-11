@@ -14,7 +14,6 @@ require('sinon-as-promised')(require('bluebird'))
 var Docker = require('models/apis/docker')
 var Worker = require('workers/instance.stop')
 var Instance = require('models/mongo/instance')
-var InstanceService = require('models/services/instance-service')
 
 var TaskFatalError = require('ponos').TaskFatalError
 var afterEach = lab.afterEach
