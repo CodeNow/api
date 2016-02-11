@@ -66,14 +66,14 @@ describe('InstanceStop: ' + moduleName, function () {
     }
   })
   beforeEach(function (done) {
-    sinon.stub(Instance, 'markAsStoppingAsync').resolves(testInstance)
+    sinon.stub(Instance, 'findOneStoppingAsync').resolves(testInstance)
     sinon.stub(Docker.prototype, 'stopContainer').yieldsAsync()
     sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
     done()
   })
 
   afterEach(function (done) {
-    Instance.markAsStoppingAsync.restore()
+    Instance.findOneStoppingAsync.restore()
     Docker.prototype.stopContainer.restore()
     InstanceService.emitInstanceUpdate.restore()
     done()
@@ -124,17 +124,17 @@ describe('InstanceStop: ' + moduleName, function () {
       })
     })
   })
-  it('should fail if markAsStoppingAsync failed', function (done) {
+  it('should fail if findOneStoppingAsync failed', function (done) {
     var error = new Error('Mongo error')
-    Instance.markAsStoppingAsync.rejects(error)
+    Instance.findOneStoppingAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
     })
   })
-  it('should fail fatally if markAsStoppingAsync returned no instance', function (done) {
-    Instance.markAsStoppingAsync.resolves(null)
+  it('should fail fatally if findOneStoppingAsync returned no instance', function (done) {
+    Instance.findOneStoppingAsync.resolves(null)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err).to.be.instanceOf(TaskFatalError)
@@ -160,11 +160,11 @@ describe('InstanceStop: ' + moduleName, function () {
       done()
     })
   })
-  it('should call markAsStoppingAsync', function (done) {
+  it('should call findOneStoppingAsync', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
-      sinon.assert.calledOnce(Instance.markAsStoppingAsync)
-      sinon.assert.calledWith(Instance.markAsStoppingAsync, testInstanceId, dockerContainer)
+      sinon.assert.calledOnce(Instance.findOneStoppingAsync)
+      sinon.assert.calledWith(Instance.findOneStoppingAsync, testInstanceId, dockerContainer)
       done()
     })
   })
@@ -188,7 +188,7 @@ describe('InstanceStop: ' + moduleName, function () {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.callOrder(
-        Instance.markAsStoppingAsync,
+        Instance.findOneStoppingAsync,
         Docker.prototype.stopContainer,
         InstanceService.emitInstanceUpdate)
       done()
