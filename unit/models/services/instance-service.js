@@ -846,7 +846,7 @@ describe('InstanceService: ' + moduleName, function () {
       done()
     })
 
-    it('should fail if instance has not container', function (done) {
+    it('should fail if instance has no container', function (done) {
       InstanceService.startInstance({}, 21331).asCallback(function (err) {
         expect(err.message).to.equal('Instance does not have a container')
         sinon.assert.notCalled(Instance.prototype.isNotStartingOrStoppingAsync)
@@ -943,7 +943,7 @@ describe('InstanceService: ' + moduleName, function () {
       done()
     })
 
-    it('should fail if instance has not container', function (done) {
+    it('should fail if instance has no container', function (done) {
       InstanceService.stopInstance({}, 21331).asCallback(function (err) {
         expect(err.message).to.equal('Instance does not have a container')
         sinon.assert.notCalled(Instance.prototype.isNotStartingOrStoppingAsync)
