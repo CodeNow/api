@@ -8,10 +8,10 @@ var lab = exports.lab = Lab.script()
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
+var Code = require('code')
 var expect = Code.expect
 var it = lab.it
 
-var Code = require('code')
 var noop = require('101/noop')
 var omit = require('101/omit')
 var sinon = require('sinon')
@@ -51,12 +51,15 @@ describe('ContainerImageBuilderCreate', function () {
   var mockDockerTag = 'docker-tag'
 
   beforeEach(function (done) {
-    sinon.stub(User, 'findByGithubIdAsync')
-      .returns(Promise.resolve(mockUser))
-    sinon.stub(Context, 'findOneAsync')
-      .returns(Promise.resolve(mockContext))
-    sinon.stub(ContextVersion, 'findOneAsync')
-      .returns(Promise.resolve(mockContextVersion))
+    sinon.stub(User, 'findByGithubIdAsync', function () {
+      return Promise.resolve(mockUser)
+    })
+    sinon.stub(Context, 'findOneAsync', function () {
+      return Promise.resolve(mockContext)
+    })
+    sinon.stub(ContextVersion, 'findOneAsync', function () {
+      return Promise.resolve(mockContextVersion)
+    })
     sinon.stub(ContextVersion, 'recoverAsync')
       .returns(Promise.resolve())
     sinon.stub(ContextVersion, 'updateContainerByBuildIdAsync')
@@ -83,13 +86,21 @@ describe('ContainerImageBuilderCreate', function () {
   })
 
   describe('validations', function () {
+    it('should resolve when given a valid job', function (done) {
+      ContainerImageBuilderCreate(validJob).asCallback(function (err) {
+        expect(err).to.not.exist()
+        done()
+      })
+    })
+
     describe('on validation error', function () {
       var validationError
 
       beforeEach(function (done) {
         validationError = new Error('thing broke... ugg sad')
-        sinon.stub(joi, 'validateOrBoomAsync')
-          .returns(Promise.reject(validationError))
+        sinon.stub(joi, 'validateOrBoomAsync', function () {
+          return Promise.reject(validationError)
+        })
         done()
       })
 
@@ -130,13 +141,6 @@ describe('ContainerImageBuilderCreate', function () {
         })
       })
     }) // end 'on validation error'
-
-    it('should resolve when given a valid job', function (done) {
-      ContainerImageBuilderCreate(validJob).asCallback(function (err) {
-        expect(err).to.not.exist()
-        done()
-      })
-    })
 
     it('should fatally reject with non-object `job`', function (done) {
       ContainerImageBuilderCreate(1234).asCallback(function (err) {
