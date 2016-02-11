@@ -1,13 +1,13 @@
 # Full list of versions available here: https://registry.hub.docker.com/_/node/tags/manage/\n' +
 FROM node:<nodejs-version>
 
-# Open up ports on the container
-EXPOSE <user-specified-ports>
-
 # Add repository files to container
 <before-main-repo>
 #default run: npm install
 <after-main-repo>
+
+# Open up ports on the container
+EXPOSE <user-specified-ports>
 
 # Command to start the app
 CMD <start-command>

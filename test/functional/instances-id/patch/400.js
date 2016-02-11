@@ -1,40 +1,46 @@
-'use strict';
+'use strict'
 
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var before = lab.before;
-var beforeEach = lab.beforeEach;
-var after = lab.after;
-var afterEach = lab.afterEach;
+var Lab = require('lab')
+var lab = exports.lab = Lab.script()
+var describe = lab.describe
+var before = lab.before
+var beforeEach = lab.beforeEach
+var after = lab.after
+var afterEach = lab.afterEach
 
-var api = require('../../fixtures/api-control');
-var dock = require('../../fixtures/dock');
-var multi = require('../../fixtures/multi-factory');
-var typesTests = require('../../fixtures/types-test-util');
-var primus = require('../../fixtures/primus');
-var noop = require('101/noop');
+var api = require('../../fixtures/api-control')
+var dock = require('../../fixtures/dock')
+var multi = require('../../fixtures/multi-factory')
+var typesTests = require('../../fixtures/types-test-util')
+var primus = require('../../fixtures/primus')
+var noop = require('101/noop')
+var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 describe('PATCH 400 - /instances/:id', function () {
-  var ctx = {};
+  var ctx = {}
 
-  before(api.start.bind(ctx));
-  before(dock.start.bind(ctx));
-  before(require('../../fixtures/mocks/api-client').setup);
-  beforeEach(primus.connect);
-  afterEach(primus.disconnect);
-  after(api.stop.bind(ctx));
-  after(dock.stop.bind(ctx));
-  after(require('../../fixtures/mocks/api-client').clean);
-
+  before(api.start.bind(ctx))
+  before(dock.start.bind(ctx))
+  before(require('../../fixtures/mocks/api-client').setup)
+  beforeEach(primus.connect)
+  afterEach(primus.disconnect)
+  after(api.stop.bind(ctx))
+  after(dock.stop.bind(ctx))
+  after(require('../../fixtures/mocks/api-client').clean)
+  beforeEach(
+    mockGetUserById.stubBefore(function () {
+      return []
+    })
+  )
+  afterEach(mockGetUserById.stubAfter)
   describe('invalid types', function () {
     beforeEach(function (done) {
       multi.createAndTailInstance(primus, function (err, instance) {
-        if (err) { return done(err); }
-        ctx.instance = instance;
-        done();
-      });
-    });
+        if (err) { return done(err) }
+        ctx.instance = instance
+        done()
+      })
+    })
 
     var def = {
       action: 'update an instance',
@@ -46,6 +52,16 @@ describe('PATCH 400 - /instances/:id', function () {
         {
           name: 'public',
           type: 'boolean'
+        },
+        {
+          name: 'ipWhitelist',
+          type: 'object',
+          keys: [
+            {
+              name: 'enabled',
+              type: 'boolean'
+            }
+          ]
         },
         {
           name: 'locked',
@@ -63,12 +79,11 @@ describe('PATCH 400 - /instances/:id', function () {
           ]
         }
       ]
-    };
+    }
 
     typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
-      ctx.instance.setupChildren = noop; // setup children causes model id warning spam
-      ctx.instance.update(body, cb);
-    });
-
-  });
-});
+      ctx.instance.setupChildren = noop // setup children causes model id warning spam
+      ctx.instance.update(body, cb)
+    })
+  })
+})

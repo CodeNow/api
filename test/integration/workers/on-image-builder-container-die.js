@@ -1,520 +1,632 @@
-var Lab = require('lab');
-var lab = exports.lab = Lab.script();
-var describe = lab.describe;
-var expect = require('code').expect;
-var it = lab.it;
-var before = lab.before;
-var after = lab.after;
-var beforeEach = lab.beforeEach;
-var afterEach = lab.afterEach;
+var Lab = require('lab')
+var lab = exports.lab = Lab.script()
+var describe = lab.describe
+var expect = require('code').expect
+var it = lab.it
+var before = lab.before
+var after = lab.after
+var beforeEach = lab.beforeEach
+var afterEach = lab.afterEach
 
-var Dockerode = require('dockerode');
-var through = require('through');
-var createFrame = require('docker-frame');
-var createCount = require('callback-count');
-var uuid = require('uuid');
-var rabbitMQ = require('models/rabbitmq');
-var sinon = require('sinon');
-var Docker = require('models/apis/docker');
-var dock = require('../../functional/fixtures/dock');
-var mongooseControl = require('models/mongo/mongoose-control.js');
-var Build = require('models/mongo/build.js');
-var ContextVersion = require('models/mongo/context-version.js');
-var Instance = require('models/mongo/instance.js');
-var User = require('models/mongo/user.js');
-var messenger = require('socket/messenger');
-var Sauron = require('models/apis/sauron.js');
+var createCount = require('callback-count')
+var rabbitMQ = require('models/rabbitmq')
+var sinon = require('sinon')
+var Docker = require('models/apis/docker')
+var dock = require('../../functional/fixtures/dock')
+var dockerMockEvents = require('../../functional/fixtures/docker-mock-events')
+var mongooseControl = require('models/mongo/mongoose-control.js')
+var Build = require('models/mongo/build.js')
+var ContextVersion = require('models/mongo/context-version.js')
+var Instance = require('models/mongo/instance.js')
+var User = require('models/mongo/user.js')
+var messenger = require('socket/messenger')
+var toObjectId = require('utils/to-object-id')
+var dockerListenerRabbit = require('docker-listener/lib/hermes-client.js')
+var mockFactory = require('../fixtures/factory')
 
-var mockFactory = require('../fixtures/factory');
-
-var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js');
+var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js')
 
 describe('OnImageBuilderContainerDie Integration Tests', function () {
-  before(mongooseControl.start);
-  var ctx = {};
+  before(mongooseControl.start)
+  var ctx = {}
   beforeEach(function (done) {
-    ctx = {};
-    done();
-  });
-
-  before(dock.start.bind(ctx));
-  after(dock.stop.bind(ctx));
+    ctx = {}
+    done()
+  })
+  before(dock.start.bind(ctx))
+  before(function (done) {
+    var oldPublish = dockerListenerRabbit.publish
+    sinon.stub(dockerListenerRabbit, 'publish', function (queue, data) {
+      if (queue !== 'on-image-builder-container-create') {
+        oldPublish.bind(dockerListenerRabbit)(queue, data)
+      }
+    })
+    rabbitMQ.connect(done)
+    rabbitMQ.loadWorkers()
+  })
   after(function (done) {
-    var count = createCount(4, done);
-    ContextVersion.remove({}, count.next);
-    Instance.remove({}, count.next);
-    Build.remove({}, count.next);
-    User.remove({}, count.next);
-  });
-  afterEach(function (done) {
-    var count = createCount(4, done);
-    ContextVersion.remove({}, count.next);
-    Instance.remove({}, count.next);
-    Build.remove({}, count.next);
-    User.remove({}, count.next);
-  });
-  after(mongooseControl.stop);
+    dockerListenerRabbit.publish.restore()
+    rabbitMQ.close(done)
+  })
+  after(dock.stop.bind(ctx))
+  beforeEach(deleteMongoDocs)
+  afterEach(deleteMongoDocs)
+  function deleteMongoDocs (done) {
+    var count = createCount(4, done)
+    ContextVersion.remove({}, count.next)
+    Instance.remove({}, count.next)
+    Build.remove({}, count.next)
+    User.remove({}, count.next)
+  }
+  after(mongooseControl.stop)
 
   describe('Running the Worker', function () {
     describe('deploying a manual build', function () {
       beforeEach(function (done) {
-        sinon.stub(rabbitMQ, 'deployInstance');
-
-        sinon.stub(messenger, '_emitInstanceUpdateAction');
-        sinon.stub(messenger, 'emitContextVersionUpdate');
-        done();
-      });
-      afterEach(function (done) {
-        rabbitMQ.deployInstance.restore();
-        messenger._emitInstanceUpdateAction.restore();
-        messenger.emitContextVersionUpdate.restore();
-        done();
-      });
-      beforeEach(function (done) {
-        ctx.githubId = 10;
+        ctx.githubId = 10
+        var count = createCount(2, createImageBuilder)
         mockFactory.createUser(ctx.githubId, function (err, user) {
-          if (err) { return done(err); }
-          ctx.user = user;
-          ctx.hash = uuid();
-          mockFactory.createStartedCv(ctx.githubId, {build: {manual: true}}, function (err, cv) {
-            if (err) { return done(err); }
-            ctx.cv = cv;
-            mockFactory.createBuild(ctx.githubId, cv, function (err, build) {
-              if (err) { return done(err); }
-              ctx.build = build;
-              mockFactory.createInstance(
-                ctx.githubId,
-                ctx.build,
-                false,
-                ctx.cv,
-                function (err, instance) {
-                  ctx.instance = instance;
-                  done();
-                });
-            });
-          });
-        });
-      });
+          ctx.user = user
+          count.next(err)
+        })
+        mockFactory.createStartedCv(ctx.githubId, function (err, cv) {
+          if (err) { return count.next(err) }
+          ctx.cv = cv
+          mockFactory.createBuild(ctx.githubId, cv, function (err, build) {
+            if (err) { return count.next(err) }
+            ctx.build = build
+            ContextVersion.updateById(ctx.cv._id, {
+              $set: {
+                'build._id': toObjectId(ctx.build._id)
+              }
+            }, {}, function (err) {
+              if (err) { return count.next(err) }
+              ContextVersion.findById(ctx.cv._id, function (err, cv) {
+                if (err) { return count.next(err) }
+                ctx.cv = cv
+                mockFactory.createInstance(ctx.githubId, build, false, cv, function (err, instance) {
+                  ctx.instance = instance
+                  count.next(err)
+                })
+              })
+            })
+          })
+        })
+        function createImageBuilder (err) {
+          if (err) { return done(err) }
+          var docker = new Docker()
+          ctx.cv.dockerHost = process.env.SWARM_HOST
+          var opts = {
+            manualBuild: true,
+            sessionUser: ctx.user,
+            ownerUsername: ctx.user.accounts.github.username,
+            contextVersion: ctx.cv,
+            network: {
+              hostIp: '1.1.1.1'
+            },
+            tid: 1
+          }
+          ctx.cv.populate('infraCodeVersion', function () {
+            if (err) { return done(err) }
+            ctx.cv.infraCodeVersion = {
+              context: ctx.cv.context
+            } // mock
+            docker.createImageBuilder(opts, function (err, container) {
+              if (err) { return done(err) }
+              ctx.usedDockerContainer = container
+              ContextVersion.updateBy('_id', ctx.cv._id, {
+                $set: {
+                  'build.dockerContainer': container.id,
+                  'build.dockerTag': Docker.getDockerTag(opts.contextVersion)
+                }
+              }, {}, function (err) {
+                if (err) { return done(err) }
+                ContextVersion.findById(ctx.cv._id, function (err, cv) {
+                  if (err) { return done(err) }
+                  ctx.cv = cv
+                  Instance.findOneAndUpdate({
+                    _id: ctx.instance._id
+                  }, {
+                    $set: { contextVersion: ctx.cv.toJSON() }
+                  }, function (err, instance) {
+                    ctx.instance = instance
+                    done(err)
+                  })
+                })
+              })
+            })
+          })
+        }
+      })
 
       beforeEach(function (done) {
-        sinon.stub(User.prototype, 'findGithubUserByGithubId').yieldsAsync(null, ctx.user);
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_baseWorkerValidateDieData');
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_baseWorkerFindContextVersion');
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_getBuildInfo');
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_findBuildAndEmitUpdate');
-        sinon.spy(Docker.prototype, 'getBuildInfo');
-        sinon.spy(Build.prototype, 'modifyCompleted');
-        sinon.spy(User, 'findByGithubId');
-
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_baseWorkerUpdateInstanceFrontend');
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_deallocImageBuilderNetwork');
-
-        sinon.stub(Sauron.prototype, 'deleteHost', function (net, host, cb) {
-          cb();
-        });
-        done();
-      });
+        sinon.stub(rabbitMQ, 'createInstanceContainer')
+        sinon.stub(rabbitMQ, 'instanceUpdated')
+        sinon.stub(messenger, 'messageRoom')
+        sinon.spy(Instance, 'emitInstanceUpdates')
+        sinon.spy(Instance.prototype, 'emitInstanceUpdate')
+        sinon.spy(messenger, '_emitInstanceUpdateAction')
+        sinon.spy(messenger, 'emitContextVersionUpdate')
+        sinon.spy(OnImageBuilderContainerDie.prototype, '_handleBuildComplete')
+        sinon.spy(OnImageBuilderContainerDie.prototype, '_handleBuildError')
+        sinon.spy(Build, 'updateFailedByContextVersionIds')
+        sinon.spy(Build, 'updateCompletedByContextVersionIds')
+        sinon.spy(ContextVersion, 'updateBuildErrorByContainer')
+        sinon.stub(User.prototype, 'findGithubUserByGithubId').yieldsAsync(null, {
+          login: 'nathan219',
+          avatar_url: 'testingtesting123'
+        })
+        done()
+      })
       afterEach(function (done) {
-        User.prototype.findGithubUserByGithubId.restore();
-        OnImageBuilderContainerDie.prototype._baseWorkerValidateDieData.restore();
-        OnImageBuilderContainerDie.prototype._baseWorkerFindContextVersion.restore();
-        OnImageBuilderContainerDie.prototype._getBuildInfo.restore();
-        OnImageBuilderContainerDie.prototype._findBuildAndEmitUpdate.restore();
-        Docker.prototype.getBuildInfo.restore();
-        Build.prototype.modifyCompleted.restore();
-        User.findByGithubId.restore();
-
-        OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.restore();
-        OnImageBuilderContainerDie.prototype._deallocImageBuilderNetwork.restore();
-
-        Sauron.prototype.deleteHost.restore();
-        done();
-      });
+        rabbitMQ.createInstanceContainer.restore()
+        rabbitMQ.instanceUpdated.restore()
+        messenger.messageRoom.restore()
+        messenger._emitInstanceUpdateAction.restore()
+        messenger.emitContextVersionUpdate.restore()
+        Instance.emitInstanceUpdates.restore()
+        Instance.prototype.emitInstanceUpdate.restore()
+        OnImageBuilderContainerDie.prototype._finalSeriesHandler.restore()
+        OnImageBuilderContainerDie.prototype._handleBuildComplete.restore()
+        OnImageBuilderContainerDie.prototype._handleBuildError.restore()
+        Build.updateFailedByContextVersionIds.restore()
+        Build.updateCompletedByContextVersionIds.restore()
+        ContextVersion.updateBuildErrorByContainer.restore()
+        User.prototype.findGithubUserByGithubId.restore()
+        done()
+      })
       describe('With a successful build', function () {
-        afterEach(function (done) {
-          Dockerode.prototype.getContainer.restore();
-          done();
-        });
         it('should attempt to deploy', function (done) {
-
-          var worker = new OnImageBuilderContainerDie(imageBuilderDieTemplate(ctx.cv, ctx.user));
-
-          var dockerStub = {
-            start: sinon.stub().yieldsAsync(),
-            remove: sinon.stub().yieldsAsync(),
-            logs: function () {}
-          };
-          var successString = JSON.stringify({
-            type: 'log',
-            content: 'Successfully built d776bdb409ab783cea9b986170a2a496684c9a99a6f9c0480521e743'
-          });
-          ctx.mockReadWriteStream = through(function (data) {
-            this.emit('data', data);
-          }, function () {
-            this.emit('end');
-          }, {
-            autoDestroy: true
-          });
-          sinon.stub(dockerStub, 'logs', function (opts, cb) {
-            cb(null, ctx.mockReadWriteStream);
-            ctx.mockReadWriteStream.write(createFrame(1, successString));
-            ctx.mockReadWriteStream.end();
-          });
-          sinon.stub(Dockerode.prototype, 'getContainer').returns(dockerStub);
-
-
-          worker.handle(function (err) {
+          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
+            workerDone()
+            if (err) { return done(err) }
             try {
-              expect(err).to.be.undefined();
-              expect(rabbitMQ.deployInstance.callCount, 'deployInstance')
-                .to.equal(1);
-              expect(messenger._emitInstanceUpdateAction.callCount, '_emitInstanceUpdateAction')
-                .to.equal(1);
+              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
+              sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
+              sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
 
-              checkEmittedInstance(messenger._emitInstanceUpdateAction.args[0][0], false);
-              expect(
-                OnImageBuilderContainerDie.prototype._baseWorkerValidateDieData.callCount,
-                '_baseWorkerValidateDieData'
-              ).to.equal(1);
-              expect(
-                OnImageBuilderContainerDie.prototype._baseWorkerFindContextVersion.callCount,
-                '_baseWorkerFindContextVersion'
-              ).to.equal(1);
-              expect(OnImageBuilderContainerDie.prototype._getBuildInfo.callCount, '_getBuildInfo')
-                .to.equal(1);
-              expect(Docker.prototype.getBuildInfo.callCount, 'Docker.getBuildInfo')
-                .to.equal(1);
-              expect(Docker.prototype.getBuildInfo.args[0][0], 'Docker.getBuildInfo')
-                .to.equal(ctx.cv.build.dockerContainer);
-              expect(
-                OnImageBuilderContainerDie.prototype._findBuildAndEmitUpdate.callCount,
-                '_findBuildAndEmitUpdate'
-              ).to.equal(1);
-              expect(
-                Build.prototype.modifyCompleted.callCount,
-                'Build.modifyCompleted'
-              ).to.equal(1);
+              sinon.assert.calledWith(
+                messenger.emitContextVersionUpdate,
+                sinon.match({_id: ctx.cv._id}),
+                'build_completed'
+              )
+              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
+              sinon.assert.calledWith(
+                Instance.emitInstanceUpdates,
+                sinon.match({
+                  _id: ctx.user._id
+                }), {
+                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
+                },
+                'patch'
+              )
+              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
+              sinon.assert.calledTwice(messenger.messageRoom)
 
-              expect(Build.prototype.modifyCompleted.args[0][0], 'Build.modifyCompleted')
-                .to.equal(false);
+              var cvCall = messenger.messageRoom.getCall(0)
+              sinon.assert.calledWith(
+                cvCall,
+                'org',
+                ctx.githubId,
+                sinon.match({
+                  event: 'CONTEXTVERSION_UPDATE',
+                  action: 'build_completed',
+                  data: sinon.match({_id: ctx.cv._id})
+                })
+              )
+              sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
 
-              expect(User.findByGithubId.callCount, 'User.findByGithubId').to.equal(1);
-              expect(OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.callCount,
-                '_baseWorkerUpdateInstanceFrontend'
-              ).to.equal(1);
-              expect(OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][0],
-                '_baseWorkerUpdateInstanceFrontend'
-              ).to.deep.equal({'contextVersion._id': ctx.cv._id});
-              expect(OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][1],
-                '_baseWorkerUpdateInstanceFrontend'
-              ).to.deep.equal(ctx.githubId);
-              expect(OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][2],
-                '_baseWorkerUpdateInstanceFrontend'
-              ).to.deep.equal('patch');
-              expect(OnImageBuilderContainerDie.prototype._deallocImageBuilderNetwork.callCount,
-                '_deallocImageBuilderNetwork'
-              ).to.equal(1);
-            } catch(e) {
-              return done(e);
+              var instanceCall = messenger.messageRoom.getCall(1)
+              sinon.assert.calledWith(
+                instanceCall,
+                'org',
+                ctx.githubId,
+                sinon.match({
+                  event: 'INSTANCE_UPDATE',
+                  action: 'patch',
+                  data: sinon.match({
+                    _id: ctx.instance._id,
+                    owner: {
+                      github: ctx.githubId,
+                      username: 'nathan219',
+                      gravatar: 'testingtesting123'
+                    },
+                    createdBy: {
+                      github: ctx.githubId,
+                      username: 'nathan219',
+                      gravatar: 'testingtesting123'
+                    },
+                    contextVersion: sinon.match({
+                      _id: ctx.cv._id,
+                      build: sinon.match({
+                        failed: sinon.match.falsy,
+                        completed: sinon.match.truthy
+                      })
+                    })
+                  })
+                })
+              )
+              sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
+
+              sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
+              sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
+                contextVersionId: ctx.cv._id.toString(),
+                instanceId: ctx.instance._id.toString(),
+                ownerUsername: ctx.user.accounts.github.username,
+                sessionUserGithubId: ctx.user.accounts.github.id.toString()
+              })
+              ContextVersion.findOne(ctx.cv._id, function (err, cv) {
+                if (err) { return done(err) }
+                expect(cv.build.completed).to.exist()
+                Build.findBy('contextVersions', cv._id, function (err, builds) {
+                  if (err) { return done(err) }
+                  builds.forEach(function (build) {
+                    expect(build.completed).to.exist()
+                  })
+                  done()
+                })
+              })
+            } catch (e) {
+              done(e)
             }
-            done();
-          });
-        });
-      });
+          }) // stub end
+          dockerMockEvents.emitBuildComplete(ctx.cv)
+        })
+      })
       describe('With an unsuccessful build', function () {
-        afterEach(function (done) {
-          Dockerode.prototype.getContainer.restore();
-          done();
-        });
-        it('should attempt to deploy', function (done) {
-
-          var worker = new OnImageBuilderContainerDie(imageBuilderDieTemplate(ctx.cv, ctx.user));
-
-          var dockerStub = {
-            start: sinon.stub().yieldsAsync(),
-            remove: sinon.stub().yieldsAsync(),
-            logs: function () {}
-          };
-          var successString = JSON.stringify({
-            type: 'log',
-            content: 'Nopesies'
-          });
-          ctx.mockReadWriteStream = through(function (data) {
-            this.emit('data', data);
-          }, function () {
-            this.emit('end');
-          }, {
-            autoDestroy: true
-          });
-          sinon.stub(dockerStub, 'logs', function (opts, cb) {
-            cb(null, ctx.mockReadWriteStream);
-            ctx.mockReadWriteStream.write(createFrame(1, successString));
-            ctx.mockReadWriteStream.end();
-          });
-          sinon.stub(Dockerode.prototype, 'getContainer').returns(dockerStub);
-
-          worker.handle(function (err) {
+        it('should update the UI with a socket event', function (done) {
+          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
+            workerDone()
+            if (err) { return done(err) }
             try {
-              expect(err).to.be.undefined();
-              expect(rabbitMQ.deployInstance.callCount, 'deployInstance')
-                .to.equal(0);
-              expect(messenger._emitInstanceUpdateAction.callCount, '_emitInstanceUpdateAction')
-                .to.equal(1);
-              checkEmittedInstance(messenger._emitInstanceUpdateAction.args[0][0], true);
+              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
 
-              expect(
-                OnImageBuilderContainerDie.prototype._baseWorkerValidateDieData.callCount,
-                '_baseWorkerValidateDieData'
-              ).to.equal(1);
-              expect(
-                OnImageBuilderContainerDie.prototype._baseWorkerFindContextVersion.callCount,
-                '_baseWorkerFindContextVersion'
-              ).to.equal(1);
-              expect(OnImageBuilderContainerDie.prototype._getBuildInfo.callCount, '_getBuildInfo')
-                .to.equal(1);
-              expect(Docker.prototype.getBuildInfo.callCount, 'Docker.getBuildInfo')
-                .to.equal(1);
-              expect(Docker.prototype.getBuildInfo.args[0][0], 'Docker.getBuildInfo')
-                .to.equal(ctx.cv.build.dockerContainer);
-              expect(
-                OnImageBuilderContainerDie.prototype._findBuildAndEmitUpdate.callCount,
-                '_findBuildAndEmitUpdate'
-              ).to.equal(1);
-              expect(
-                Build.prototype.modifyCompleted.callCount,
-                'Build.modifyCompleted'
-              ).to.equal(1);
+              sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
+              // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
+              sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
+              sinon.assert.calledWith(
+                messenger.emitContextVersionUpdate,
+                sinon.match({_id: ctx.cv._id}),
+                'build_completed'
+              )
+              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
+              sinon.assert.calledWith(
+                Instance.emitInstanceUpdates,
+                sinon.match({
+                  _id: ctx.user._id
+                }), {
+                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
+                },
+                'patch'
+              )
+              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
+              sinon.assert.calledTwice(messenger.messageRoom)
 
-              expect(Build.prototype.modifyCompleted.args[0][0], 'Build.modifyCompleted')
-                .to.equal(true);
+              // the first call is a build_running
+              var cvCall = messenger.messageRoom.getCall(0)
+              sinon.assert.calledWith(
+                cvCall,
+                'org',
+                ctx.githubId,
+                sinon.match({
+                  event: 'CONTEXTVERSION_UPDATE',
+                  action: 'build_completed',
+                  data: sinon.match({_id: ctx.cv._id})
+                })
+              )
+              sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
 
-              expect(User.findByGithubId.callCount, 'User.findByGithubId').to.equal(1);
-              expect(
-                OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.callCount,
-                '_baseWorkerUpdateInstanceFrontend'
-              ).to.equal(1);
-              expect(
-                OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][0],
-                '_baseWorkerUpdateInstanceFrontend'
-              ).to.deep.equal({ 'contextVersion._id': ctx.cv._id});
-              expect(
-                OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][1],
-                '_baseWorkerUpdateInstanceFrontend'
-              ).to.deep.equal(ctx.githubId);
-              expect(
-                OnImageBuilderContainerDie.prototype._baseWorkerUpdateInstanceFrontend.args[0][2],
-                '_baseWorkerUpdateInstanceFrontend'
-              ).to.deep.equal('patch');
-              expect(
-                OnImageBuilderContainerDie.prototype._deallocImageBuilderNetwork.callCount,
-                '_deallocImageBuilderNetwork'
-              ).to.equal(1);
-            } catch(e) {
-              return done(e);
+              var instanceCall = messenger.messageRoom.getCall(1)
+              sinon.assert.calledWith(
+                instanceCall,
+                'org',
+                ctx.githubId,
+                sinon.match({
+                  event: 'INSTANCE_UPDATE',
+                  action: 'patch',
+                  data: sinon.match({
+                    _id: ctx.instance._id,
+                    owner: {
+                      github: ctx.githubId,
+                      username: 'nathan219',
+                      gravatar: 'testingtesting123'
+                    },
+                    createdBy: {
+                      github: ctx.githubId,
+                      username: 'nathan219',
+                      gravatar: 'testingtesting123'
+                    },
+                    contextVersion: sinon.match({
+                      _id: ctx.cv._id,
+                      build: sinon.match({
+                        failed: sinon.match.truthy,
+                        completed: sinon.match.truthy
+                      })
+                    })
+                  })
+                })
+              )
+              sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
+
+              sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+              ContextVersion.findOne(ctx.cv._id, function (err, cv) {
+                if (err) { return done(err) }
+                expect(cv.build.completed).to.exist()
+                expect(cv.build.failed).to.be.true()
+                Build.findBy('contextVersions', cv._id, function (err, builds) {
+                  if (err) { return done(err) }
+                  builds.forEach(function (build) {
+                    expect(build.completed).to.exist()
+                    expect(build.failed).to.be.true()
+                  })
+                  done()
+                })
+              })
+            } catch (e) {
+              done(e)
             }
-            done();
-          });
-        });
-      });
-    });
-  });
+          }) // stub end
+          dockerMockEvents.emitBuildComplete(ctx.cv, 'This is an error')
+        })
+      })
+      describe('With an errored build', function () {
+        it('should still update the UI with a socket event', function (done) {
+          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
+            workerDone()
+            if (err) { return done(err) }
+            try {
+              sinon.assert.notCalled(OnImageBuilderContainerDie.prototype._handleBuildComplete)
+              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildError)
+              sinon.assert.calledOnce(ContextVersion.updateBuildErrorByContainer)
 
-  function checkEmittedInstance(instance, expectedFail ) {
-    expect(instance._id, 'emitted instance id').to.deep.equal(ctx.instance._id);
-    expect(instance.build.completed, 'emitted instance.build.complete').to.exist();
-    expect(instance.contextVersion.build.completed, 'emitted contextVersion.build.completed')
-      .to.exist();
-    expect(instance.build.failed, 'emitted instance.build.failed').to.equal(expectedFail);
-    expect(instance.contextVersion.build.failed, 'emitted contextVersion.build.failed')
-      .to.equal(expectedFail);
-  }
+              sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
+              // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
+              sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
+              sinon.assert.calledWith(
+                messenger.emitContextVersionUpdate,
+                sinon.match({_id: ctx.cv._id}),
+                'build_completed'
+              )
+              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
+              sinon.assert.calledWith(
+                Instance.emitInstanceUpdates,
+                sinon.match({
+                  _id: ctx.user._id
+                }), {
+                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
+                },
+                'patch'
+              )
+              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
+              sinon.assert.calledTwice(messenger.messageRoom)
 
-  function imageBuilderDieTemplate (contextVersion, user) {
-    return {
-      'status': 'die',
-      'id': contextVersion.build.dockerContainer ||
-          '1234567890123456789012345678901234567890123456789012345678901234',
-      'from': 'runnable/image-builder:d1.6.2-v2.3.2',
-      'time': 1439952757,
-      'uuid': uuid(),
-      'ip': '127.0.0.1',
-      'numCpus': 2,
-      'mem': 7843336192,
-      'tags': '2335750,build',
-      'host': 'http://127.0.0.1:4242',
-      'inspectData': {
-        'AppArmorProfile': '',
-        'Args': [],
-        'Config': {
-          'AttachStderr': false,
-          'AttachStdin': false,
-          'AttachStdout': false,
-          'Cmd': ['/source/dockerBuild.sh'],
-          'CpuShares': 0,
-          'Cpuset': '',
-          'Domainname': '',
-          'Entrypoint': null,
-          'Env': [
-            'RUNNABLE_AWS_ACCESS_KEY=AKIAIDC4WVMTCGV7KRVQ',
-            'RUNNABLE_AWS_SECRET_KEY=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',
-            'RUNNABLE_FILES_BUCKET=runnable.context.resources.production-beta',
-            'RUNNABLE_PREFIX=55d2d0e93e1b620e00eb61bd/source/'
-          ],
-          'ExposedPorts': null,
-          'Hostname': 'c2e4530647da',
-          'Image': 'runnable/image-builder:d1.6.2-v2.3.2',
-          'Labels': {
-            'contextVersion._v': '0',
-            'contextVersion._id._bsontype': 'ObjectID',
-            'contextVersion._id.id': 'U??s>\u001bb\u000e\u0000?b?',
-            'contextVersion.advanced': 'true',
-            'contextVersion.appCodeVersions[0]._id._bsontype': 'ObjectID',
-            'contextVersion.appCodeVersions[0]._id.id': 'U???>\u001bb\u000e\u0000?a?',
-            'contextVersion.appCodeVersions[0].branch': 'queue',
-            'contextVersion.appCodeVersions[0].commit': 'c1650832f3ca5a54cc7763bca91b4c83b739c648',
-            'contextVersion.appCodeVersions[0].defaultBranch': 'master',
-            'contextVersion.appCodeVersions[0].lowerBranch': 'queue',
-            'contextVersion.appCodeVersions[0].lowerRepo': 'codenow/shiva',
-            'contextVersion.appCodeVersions[0].privateKey': 'CodeNow/shiva.key',
-            'contextVersion.appCodeVersions[0].publicKey': 'CodeNow/shiva.key.pub',
-            'contextVersion.appCodeVersions[0].repo': 'CodeNow/shiva',
-            'contextVersion.build._id._bsontype': 'ObjectID',
-            'contextVersion.build._id.id': 'U??s>\u001bb\u000e\u0000?b?',
-            'contextVersion.build.dockerContainerName._bsontype': 'ObjectID',
-            'contextVersion.build.dockerContainerName.id': 'U??s>\u001bb\u000e\u0000?b?',
-            'contextVersion.build.duration': 'undefined',
-            'contextVersion.build.hash': 'b054d62cc793290867abddeb73586987',
-            'contextVersion.build.triggeredAction.appCodeVersion.commit':
-                'c1650832f3ca5a54cc7763bca91b4c83b739c648',
-            'contextVersion.build.triggeredAction.appCodeVersion.repo': 'CodeNow/shiva',
-            'contextVersion.build.triggeredAction.manual': 'false',
-            'contextVersion.build.triggeredBy.github': '146592',
-            'contextVersion.containerId': '55d3ef733e1b620e00eb6291',
-            'contextVersion.context._bsontype': 'ObjectID',
-            'contextVersion.context.id': 'U???>\u001bb\u000e\u0000?a?',
-            'contextVersion.createdBy.github': '146592',
-            'contextVersion.dockerHost': 'http://127.0.0.1:4242',
-            'contextVersion.id': contextVersion._id,
-            'contextVersion.infraCodeVersion._v': '0',
-            'contextVersion.infraCodeVersion._id._bsontype': 'ObjectID',
-            'contextVersion.infraCodeVersion._id.id': 'U?????;\u0015\u0000I??',
-            'contextVersion.infraCodeVersion.context._bsontype': 'ObjectID',
-            'contextVersion.infraCodeVersion.context.id': 'U???>\u001bb\u000e\u0000?a?',
-            'contextVersion.infraCodeVersion.edited': 'true',
-            'contextVersion.infraCodeVersion.parent._bsontype': 'ObjectID',
-            'contextVersion.infraCodeVersion.parent.id': 'U????U?\u001d\u0000 g?',
-            'contextVersion.owner.github': '2335750',
-            'dockerTag':
-                'registry.runnable.com/146592/55d2d0e93e1b620e00eb61bd:55d3ef733e1b620e00eb6292',
-            'hostIp': '10.255.244.68',
-            'manualBuild': 'false',
-            'networkIp': '10.255.244.0',
-            'noCache': 'body.noCache',
-            'sauronHost': '127.0.0.1:3200',
-            'sessionUserDisplayName': 'Ryan Sandor Richards',
-            'sessionUserGithubId': user.accounts.github.id,
-            'sessionUserUsername': user.accounts.github.username,
-            'tid': 'e5e14545-0d40-45bb-90fd-0128cbc6fbaa',
-            'type': 'image-builder-container'
-          },
-          'MacAddress': '',
-          'Memory': 1000000000,
-          'MemorySwap': -1,
-          'NetworkDisabled': false,
-          'OnBuild': null,
-          'OpenStdin': false,
-          'PortSpecs': null,
-          'StdinOnce': false,
-          'Tty': false,
-          'User': '',
-          'Volumes': {'/cache': {}, '/layer-cache': {}},
-          'WorkingDir': '/source'
-        },
-        'Created': '2015-08-19T02:52:33.553672014Z',
-        'Driver': 'aufs',
-        'ExecDriver': 'native-0.2',
-        'ExecIDs': null,
-        'HostConfig': {
-          'Binds': [
-            '/var/run/docker.sock:/var/run/docker.sock',
-            '/git-cache:/cache:rw',
-            '/layer-cache:/layer-cache:rw'
-          ],
-          'CapAdd': null,
-          'CapDrop': null,
-          'CgroupParent': '',
-          'ContainerIDFile': '',
-          'CpuShares': 0,
-          'CpusetCpus': '',
-          'Devices': null,
-          'Dns': null,
-          'DnsSearch': null,
-          'ExtraHosts': null,
-          'IpcMode': '',
-          'Links': null,
-          'LogConfig': {'Config': null, 'Type': 'json-file'},
-          'LxcConf': null,
-          'Memory': 0,
-          'MemorySwap': 0,
-          'NetworkMode': '',
-          'PidMode': '',
-          'PortBindings': null,
-          'Privileged': false,
-          'PublishAllPorts': false,
-          'ReadonlyRootfs': false,
-          'RestartPolicy': {'MaximumRetryCount': 0, 'Name': ''},
-          'SecurityOpt': null,
-          'Ulimits': null,
-          'VolumesFrom': null
-        },
-        'HostnamePath': '/docker/containers/c2e4530647da729430dc2' +
-            '52da581872356b3aad463b7214d13cd8e8dbc3c7a9f/hostname',
-        'HostsPath': '/docker/containers/c2e4530647da729430dc252da581872356b' +
-            '3aad463b7214d13cd8e8dbc3c7a9f/hosts',
-        'Id': contextVersion.build.dockerContainer ||
-            '1234567890123456789012345678901234567890123456789012345678901234',
-        'Image': '45d2215ee80ddf33e1fbe8ef9d17da1fbf52083700a7bc0b9582dc43f816348a',
-        'LogPath': '/docker/containers/c2e4530647da729430dc252da58187235' +
-            '6b3aad463aad463b7214d13cd8e8dbc3c7a9f-json.log',
-        'MountLabel': '',
-        'Name': '/55d3ef733e1b620e00eb6291',
-        'NetworkSettings': {
-          'Bridge': '',
-          'Gateway': '',
-          'GlobalIPv6Address': '',
-          'GlobalIPv6PrefixLen': 0,
-          'IPAddress': '',
-          'IPPrefixLen': 0,
-          'IPv6Gateway': '',
-          'LinkLocalIPv6Address': '',
-          'LinkLocalIPv6PrefixLen': 0,
-          'MacAddress': '',
-          'PortMapping': null,
-          'Ports': null
-        },
-        'Path': '/source/dockerBuild.sh',
-        'ProcessLabel': '',
-        'ResolvConfPath': '/docker/containers/c2e4530647da729430dca9f/resolv.conf',
-        'RestartCount': 0,
-        'State': {
-          'Dead': false,
-          'Error': '',
-          'ExitCode': 0,
-          'FinishedAt': '2015-08-19T02:52:37.424373486Z',
-          'OOMKilled': false,
-          'Paused': false,
-          'Pid': 0,
-          'Restarting': false,
-          'Running': false,
-          'StartedAt': '2015-08-19T02:52:33.80923025Z'
-        },
-        'Volumes': {
-          '/cache': '/git-cache',
-          '/layer-cache': '/layer-cache',
-          '/var/run/docker.sock': '/run/docker.sock'
-        },
-        'VolumesRW': {'/cache': true, '/layer-cache': true, '/var/run/docker.sock': true}
-      }
-    };
-  }
-});
+              // the first call is a build_running
+              var cvCall = messenger.messageRoom.getCall(0)
+              sinon.assert.calledWith(
+                cvCall,
+                'org',
+                ctx.githubId,
+                sinon.match({
+                  event: 'CONTEXTVERSION_UPDATE',
+                  action: 'build_completed',
+                  data: sinon.match({_id: ctx.cv._id})
+                })
+              )
+              sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
+
+              var instanceCall = messenger.messageRoom.getCall(1)
+              sinon.assert.calledWith(
+                instanceCall,
+                'org',
+                ctx.githubId,
+                sinon.match({
+                  event: 'INSTANCE_UPDATE',
+                  action: 'patch',
+                  data: sinon.match({
+                    _id: ctx.instance._id,
+                    owner: {
+                      github: ctx.githubId,
+                      username: 'nathan219',
+                      gravatar: 'testingtesting123'
+                    },
+                    createdBy: {
+                      github: ctx.githubId,
+                      username: 'nathan219',
+                      gravatar: 'testingtesting123'
+                    },
+                    contextVersion: sinon.match({
+                      _id: ctx.cv._id,
+                      build: sinon.match({
+                        completed: sinon.match.truthy
+                      })
+                    })
+                  })
+                })
+              )
+              sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
+
+              sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+              ContextVersion.findOne(ctx.cv._id, function (err, cv) {
+                if (err) { return done(err) }
+                expect(cv.build.completed).to.exist()
+                expect(cv.build.failed).to.be.true()
+                Build.findBy('contextVersions', cv._id, function (err, builds) {
+                  if (err) { return done(err) }
+                  builds.forEach(function (build) {
+                    expect(build.completed).to.exist()
+                    expect(build.failed).to.be.true()
+                  })
+                  done()
+                })
+              })
+            } catch (e) {
+              done(e)
+            }
+          }) // stub end
+          dockerMockEvents.emitBuildComplete(ctx.cv, false, true)
+        })
+      })
+      describe('With 2 CVs, one that dedups', function () {
+        beforeEach(function (done) {
+          mockFactory.createStartedCv(ctx.githubId, ctx.cv.toJSON(), function (err, version) {
+            if (err) { return done(err) }
+            ctx.cv2 = version
+            mockFactory.createBuild(ctx.githubId, ctx.cv2, function (err, build) {
+              if (err) { return done(err) }
+              ctx.build2 = build
+              ctx.cv2.copyBuildFromContextVersion(ctx.cv, function (err) {
+                if (err) { return done(err) }
+                ContextVersion.findById(ctx.cv2._id, function (err, cv) {
+                  ctx.cv2 = cv
+                  done(err)
+                })
+              })
+            })
+          })
+        })
+        describe('both cvs are attached to the same instance, one after the other', function () {
+          beforeEach(function (done) {
+            Instance.findOneAndUpdate({
+              _id: ctx.instance._id
+            }, {
+              $set: { contextVersion: ctx.cv2.toJSON() }
+            }, function (err, instance) {
+              ctx.instance = instance
+              done(err)
+            })
+          })
+          it('should update the instance with the second cv, and update both cvs', function (done) {
+            sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
+              workerDone()
+              if (err) {
+                return done(err)
+              }
+              try {
+                sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
+                sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
+                sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
+
+                sinon.assert.calledWith(
+                  messenger.emitContextVersionUpdate,
+                  sinon.match({_id: ctx.cv._id}),
+                  'build_completed'
+                )
+                sinon.assert.calledWith(
+                  messenger.emitContextVersionUpdate,
+                  sinon.match({_id: ctx.cv2._id}),
+                  'build_completed'
+                )
+                sinon.assert.calledOnce(Instance.emitInstanceUpdates)
+                sinon.assert.calledWith(
+                  Instance.emitInstanceUpdates,
+                  sinon.match({
+                    _id: ctx.user._id
+                  }), {
+                    'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
+                  },
+                  'patch'
+                )
+                sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
+                sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
+
+                sinon.assert.calledWith(messenger._emitInstanceUpdateAction, sinon.match({
+                  _id: ctx.instance._id
+                }), 'patch')
+
+                sinon.assert.calledThrice(messenger.messageRoom)
+                // Since these basically happen at the same time, I can't separate the cv calls
+                sinon.assert.calledWith(
+                  messenger.messageRoom,
+                  'org',
+                  ctx.githubId,
+                  sinon.match({
+                    event: 'CONTEXTVERSION_UPDATE',
+                    action: 'build_completed',
+                    data: sinon.match({_id: ctx.cv._id})
+                  })
+                )
+                sinon.assert.calledWith(
+                  messenger.messageRoom,
+                  'org',
+                  ctx.githubId,
+                  sinon.match({
+                    event: 'CONTEXTVERSION_UPDATE',
+                    action: 'build_completed',
+                    data: sinon.match({_id: ctx.cv2._id})
+                  })
+                )
+
+                var instanceCall = messenger.messageRoom.getCall(2)
+                sinon.assert.calledWith(
+                  instanceCall,
+                  'org',
+                  ctx.githubId,
+                  sinon.match({
+                    event: 'INSTANCE_UPDATE',
+                    action: 'patch',
+                    data: sinon.match({
+                      _id: ctx.instance._id,
+                      owner: {
+                        github: ctx.githubId,
+                        username: 'nathan219',
+                        gravatar: 'testingtesting123'
+                      },
+                      createdBy: {
+                        github: ctx.githubId,
+                        username: 'nathan219',
+                        gravatar: 'testingtesting123'
+                      },
+                      contextVersion: sinon.match({
+                        _id: ctx.cv2._id,
+                        build: sinon.match({
+                          failed: sinon.match.falsy,
+                          completed: sinon.match.truthy
+                        })
+                      })
+                    })
+                  })
+                )
+                sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
+
+                sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
+                sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
+                  contextVersionId: ctx.cv2._id.toString(),
+                  instanceId: ctx.instance._id.toString(),
+                  ownerUsername: ctx.user.accounts.github.username,
+                  sessionUserGithubId: ctx.user.accounts.github.id.toString()
+                })
+                Instance.findById(ctx.instance._id, function (err, instance) {
+                  if (err) {
+                    return done(err)
+                  }
+                  expect(instance.contextVersion.build.completed).to.exist()
+                  ContextVersion.findBy('build._id', ctx.build._id, function (err, cvs) {
+                    if (err) {
+                      return done(err)
+                    }
+                    expect(cvs.length).to.equal(2)
+                    cvs.forEach(function (cv) {
+                      expect(cv.build.completed).to.exist()
+                    })
+                    Build.findBy('contextVersions', ctx.cv2._id, function (err, builds) {
+                      if (err) {
+                        return done(err)
+                      }
+                      builds.forEach(function (build) {
+                        expect(build.completed).to.exist()
+                      })
+                      done()
+                    })
+                  })
+                })
+              } catch (e) {
+                done(e)
+              }
+            }) // stub end
+            dockerMockEvents.emitBuildComplete(ctx.cv)
+          })
+        })
+      })
+    })
+  })
+})

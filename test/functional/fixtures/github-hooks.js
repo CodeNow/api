@@ -1,12 +1,13 @@
-var url = require('url');
+var url = require('url')
 
 module.exports = function (data) {
-  data = data || {};
-  var fullRepo = data.repo || 'podviaznikov/hellonode';
-  var owner = data.owner || 'podviaznikov';
-  var repo = data.name || 'hellonode';
-  var branch = data.branch || 'master';
-  var ownerId = data.ownerId || 429706;
+  data = data || {}
+  var fullRepo = data.repo || 'podviaznikov/hellonode'
+  var owner = data.owner || 'podviaznikov'
+  var repo = data.name || 'hellonode'
+  var branch = data.branch || 'master'
+  var ownerId = data.ownerId || 429706
+  var committer = data.committer || owner
   return {
     ping: {
       url: url.format({
@@ -25,21 +26,19 @@ module.exports = function (data) {
       },
       json: {
         zen: 'Encourage flow.',
-        hook:
-         { url: 'https://api.github.com/repos/' + fullRepo + '/hooks/2472869',
-           test_url: 'https://api.github.com/repos/' + fullRepo + '/hooks/2472869/test',
-           id: 2472869,
-           name: 'web',
-           active: true,
-           events: [ 'push' ],
-           config:
-            { secret: process.env.GITHUB_HOOK_SECRET,
-              url   : process.env.GITHUB_HOOK_URL,
-              content_type: 'json',
-              insecure_ssl: '0' },
-           last_response: { code: null, status: 'unused', message: null },
-           updated_at: '2014-06-24T17:49:23Z',
-           created_at: '2014-06-24T17:49:23Z' },
+        hook: { url: 'https://api.github.com/repos/' + fullRepo + '/hooks/2472869',
+          test_url: 'https://api.github.com/repos/' + fullRepo + '/hooks/2472869/test',
+          id: 2472869,
+          name: 'web',
+          active: true,
+          events: [ 'push' ],
+          config: { secret: process.env.GITHUB_HOOK_SECRET,
+            url: process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH,
+            content_type: 'json',
+          insecure_ssl: '0' },
+          last_response: { code: null, status: 'unused', message: null },
+          updated_at: '2014-06-24T17:49:23Z',
+        created_at: '2014-06-24T17:49:23Z' },
         hook_id: 2472869
       }
     },
@@ -60,172 +59,86 @@ module.exports = function (data) {
       },
       json: {
         'action': 'created',
-          'issue': {
-            'url': 'https://api.github.com/repos/' + fullRepo + '/issues/4',
-            'labels_url': 'https://api.github.com/repos/' + fullRepo + '/issues/4/labels{/name}',
-            'comments_url': 'https://api.github.com/repos/' + fullRepo + '/issues/4/comments',
-            'events_url': 'https://api.github.com/repos/' + fullRepo + '/issues/4/events',
+        'issue': {
+          'url': 'https://api.github.com/repos/' + fullRepo + '/issues/4',
+          'labels_url': 'https://api.github.com/repos/' + fullRepo + '/issues/4/labels{/name}',
+          'comments_url': 'https://api.github.com/repos/' + fullRepo + '/issues/4/comments',
+          'events_url': 'https://api.github.com/repos/' + fullRepo + '/issues/4/events',
+          'html_url': 'https://github.com/' + fullRepo + '/pull/4',
+          'id': 55673598,
+          'number': 4,
+          'title': 'Feature 1 - progress',
+          'user': {
+            'login': owner,
+            'id': ownerId,
+            'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
+            'gravatar_id': '',
+            'url': 'https://api.github.com/users/' + owner,
+            'html_url': 'https://github.com/' + owner,
+            'followers_url': 'https://api.github.com/users/' + owner + '/followers',
+            'following_url': 'https://api.github.com/users/' + owner + '/following{/other_user}',
+            'gists_url': 'https://api.github.com/users/' + owner + '/gists{/gist_id}',
+            'starred_url': 'https://api.github.com/users/' + owner + '/starred{/owner}{/repo}',
+            'subscriptions_url': 'https://api.github.com/users/' + owner + '/subscriptions',
+            'organizations_url': 'https://api.github.com/users/' + owner + '/orgs',
+            'repos_url': 'https://api.github.com/users/' + owner + '/repos',
+            'events_url': 'https://api.github.com/users/' + owner + '/events{/privacy}',
+            'received_events_url': 'https://api.github.com/users/' + owner + '/received_events',
+            'type': 'User',
+            'site_admin': false
+          },
+          'labels': [],
+          'state': 'closed',
+          'locked': false,
+          'assignee': null,
+          'milestone': null,
+          'comments': 2,
+          'created_at': '2015-01-27T20:59:47Z',
+          'updated_at': '2015-01-27T21:06:49Z',
+          'closed_at': '2015-01-27T21:06:47Z',
+          'pull_request': {
+            'url': 'https://api.github.com/repos/' + fullRepo + '/pulls/4',
             'html_url': 'https://github.com/' + fullRepo + '/pull/4',
-            'id': 55673598,
-            'number': 4,
-            'title': 'Feature 1 - progress',
-            'user': {
-              'login': owner,
-              'id': ownerId,
-              'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
-              'gravatar_id': '',
-              'url': 'https://api.github.com/users/' + owner,
-              'html_url': 'https://github.com/' + owner,
-              'followers_url': 'https://api.github.com/users/' + owner + '/followers',
-              'following_url': 'https://api.github.com/users/' + owner + '/following{/other_user}',
-              'gists_url': 'https://api.github.com/users/' + owner + '/gists{/gist_id}',
-              'starred_url': 'https://api.github.com/users/' + owner + '/starred{/owner}{/repo}',
-              'subscriptions_url': 'https://api.github.com/users/' + owner + '/subscriptions',
-              'organizations_url': 'https://api.github.com/users/' + owner + '/orgs',
-              'repos_url': 'https://api.github.com/users/' + owner + '/repos',
-              'events_url': 'https://api.github.com/users/' + owner + '/events{/privacy}',
-              'received_events_url': 'https://api.github.com/users/' + owner + '/received_events',
-              'type': 'User',
-              'site_admin': false
-            },
-            'labels': [
-
-            ],
-            'state': 'closed',
-            'locked': false,
-            'assignee': null,
-            'milestone': null,
-            'comments': 2,
-            'created_at': '2015-01-27T20:59:47Z',
-            'updated_at': '2015-01-27T21:06:49Z',
-            'closed_at': '2015-01-27T21:06:47Z',
-            'pull_request': {
-              'url': 'https://api.github.com/repos/' + fullRepo + '/pulls/4',
-              'html_url': 'https://github.com/' + fullRepo + '/pull/4',
-              'diff_url': 'https://github.com/' + fullRepo + '/pull/4.diff',
-              'patch_url': 'https://github.com/' + fullRepo + '/pull/4.patch'
-            },
-            'body': ''
+            'diff_url': 'https://github.com/' + fullRepo + '/pull/4.diff',
+            'patch_url': 'https://github.com/' + fullRepo + '/pull/4.patch'
           },
-          'comment': {
-            'url': 'https://api.github.com/repos/' + fullRepo + '/issues/comments/71727909',
-            'html_url': 'https://github.com/' + fullRepo + '/pull/4#issuecomment-71727909',
-            'issue_url': 'https://api.github.com/repos/' + fullRepo + '/issues/4',
-            'id': 71727909,
-            'user': {
-              'login': owner,
-              'id': ownerId,
-              'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
-              'gravatar_id': '',
-              'url': 'https://api.github.com/users/' + owner,
-              'html_url': 'https://github.com/' + owner,
-              'followers_url': 'https://api.github.com/users/' + owner + '/followers',
-              'following_url': 'https://api.github.com/users/' + owner + '/following{/other_user}',
-              'gists_url': 'https://api.github.com/users/' + owner + '/gists{/gist_id}',
-              'starred_url': 'https://api.github.com/users/' + owner + '/starred{/owner}{/repo}',
-              'subscriptions_url': 'https://api.github.com/users/' + owner + '/subscriptions',
-              'organizations_url': 'https://api.github.com/users/' + owner + '/orgs',
-              'repos_url': 'https://api.github.com/users/' + owner + '/repos',
-              'events_url': 'https://api.github.com/users/' + owner + '/events{/privacy}',
-              'received_events_url': 'https://api.github.com/users/' + owner + '/received_events',
-              'type': 'User',
-              'site_admin': false
-            },
-            'created_at': '2015-01-27T21:06:49Z',
-            'updated_at': '2015-01-27T21:06:49Z',
-            'body': '[Select Runnable server to run code from this PR](http://runnable3.net/' + owner +
-              '/serverSelection/hellonode?branch=feature-1' +
-              '&message=commit&commit=73033125786a9897dc92659245598be520a2d71d)'
+          'body': ''
+        },
+        'comment': {
+          'url': 'https://api.github.com/repos/' + fullRepo + '/issues/comments/71727909',
+          'html_url': 'https://github.com/' + fullRepo + '/pull/4#issuecomment-71727909',
+          'issue_url': 'https://api.github.com/repos/' + fullRepo + '/issues/4',
+          'id': 71727909,
+          'user': {
+            'login': owner,
+            'id': ownerId,
+            'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
+            'gravatar_id': '',
+            'url': 'https://api.github.com/users/' + owner,
+            'html_url': 'https://github.com/' + owner,
+            'followers_url': 'https://api.github.com/users/' + owner + '/followers',
+            'following_url': 'https://api.github.com/users/' + owner + '/following{/other_user}',
+            'gists_url': 'https://api.github.com/users/' + owner + '/gists{/gist_id}',
+            'starred_url': 'https://api.github.com/users/' + owner + '/starred{/owner}{/repo}',
+            'subscriptions_url': 'https://api.github.com/users/' + owner + '/subscriptions',
+            'organizations_url': 'https://api.github.com/users/' + owner + '/orgs',
+            'repos_url': 'https://api.github.com/users/' + owner + '/repos',
+            'events_url': 'https://api.github.com/users/' + owner + '/events{/privacy}',
+            'received_events_url': 'https://api.github.com/users/' + owner + '/received_events',
+            'type': 'User',
+            'site_admin': false
           },
-          'repository': {
-            'id': 28254077,
-            'name': 'hellonode',
-            'full_name': fullRepo,
-            'owner': {
-              'login': owner,
-              'id': 429706,
-              'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
-              'gravatar_id': '',
-              'url': 'https://api.github.com/users/' + owner,
-              'html_url': 'https://github.com/' + owner,
-              'followers_url': 'https://api.github.com/users/' + owner + '/followers',
-              'following_url': 'https://api.github.com/users/' + owner + '/following{/other_user}',
-              'gists_url': 'https://api.github.com/users/' + owner + '/gists{/gist_id}',
-              'starred_url': 'https://api.github.com/users/' + owner + '/starred{/owner}{/repo}',
-              'subscriptions_url': 'https://api.github.com/users/' + owner + '/subscriptions',
-              'organizations_url': 'https://api.github.com/users/' + owner + '/orgs',
-              'repos_url': 'https://api.github.com/users/' + owner + '/repos',
-              'events_url': 'https://api.github.com/users/' + owner + '/events{/privacy}',
-              'received_events_url': 'https://api.github.com/users/' + owner + '/received_events',
-              'type': 'User',
-              'site_admin': false
-            },
-            'private': false,
-            'html_url': 'https://github.com/' + fullRepo,
-            'description': '',
-            'fork': false,
-            'url': 'https://api.github.com/repos/' + fullRepo,
-            'forks_url': 'https://api.github.com/repos/' + fullRepo + '/forks',
-            'keys_url': 'https://api.github.com/repos/' + fullRepo + '/keys{/key_id}',
-            'collaborators_url': 'https://api.github.com/repos/' + fullRepo + '/collaborators{/collaborator}',
-            'teams_url': 'https://api.github.com/repos/' + fullRepo + '/teams',
-            'hooks_url': 'https://api.github.com/repos/' + fullRepo + '/hooks',
-            'issue_events_url': 'https://api.github.com/repos/' + fullRepo + '/issues/events{/number}',
-            'events_url': 'https://api.github.com/repos/' + fullRepo + '/events',
-            'assignees_url': 'https://api.github.com/repos/' + fullRepo + '/assignees{/user}',
-            'branches_url': 'https://api.github.com/repos/' + fullRepo + '/branches{/branch}',
-            'tags_url': 'https://api.github.com/repos/' + fullRepo + '/tags',
-            'blobs_url': 'https://api.github.com/repos/' + fullRepo + '/git/blobs{/sha}',
-            'git_tags_url': 'https://api.github.com/repos/' + fullRepo + '/git/tags{/sha}',
-            'git_refs_url': 'https://api.github.com/repos/' + fullRepo + '/git/refs{/sha}',
-            'trees_url': 'https://api.github.com/repos/' + fullRepo + '/git/trees{/sha}',
-            'statuses_url': 'https://api.github.com/repos/' + fullRepo + '/statuses/{sha}',
-            'languages_url': 'https://api.github.com/repos/' + fullRepo + '/languages',
-            'stargazers_url': 'https://api.github.com/repos/' + fullRepo + '/stargazers',
-            'contributors_url': 'https://api.github.com/repos/' + fullRepo + '/contributors',
-            'subscribers_url': 'https://api.github.com/repos/' + fullRepo + '/subscribers',
-            'subscription_url': 'https://api.github.com/repos/' + fullRepo + '/subscription',
-            'commits_url': 'https://api.github.com/repos/' + fullRepo + '/commits{/sha}',
-            'git_commits_url': 'https://api.github.com/repos/' + fullRepo + '/git/commits{/sha}',
-            'comments_url': 'https://api.github.com/repos/' + fullRepo + '/comments{/number}',
-            'issue_comment_url': 'https://api.github.com/repos/' + fullRepo + '/issues/comments/{number}',
-            'contents_url': 'https://api.github.com/repos/' + fullRepo + '/contents/{+path}',
-            'compare_url': 'https://api.github.com/repos/' + fullRepo + '/compare/{base}...{head}',
-            'merges_url': 'https://api.github.com/repos/' + fullRepo + '/merges',
-            'archive_url': 'https://api.github.com/repos/' + fullRepo + '/{archive_format}{/ref}',
-            'downloads_url': 'https://api.github.com/repos/' + fullRepo + '/downloads',
-            'issues_url': 'https://api.github.com/repos/' + fullRepo + '/issues{/number}',
-            'pulls_url': 'https://api.github.com/repos/' + fullRepo + '/pulls{/number}',
-            'milestones_url': 'https://api.github.com/repos/' + fullRepo + '/milestones{/number}',
-            'notifications_url': 'https://api.github.com/repos/' + fullRepo +
-              '/notifications{?since,all,participating}',
-            'labels_url': 'https://api.github.com/repos/' + fullRepo + '/labels{/name}',
-            'releases_url': 'https://api.github.com/repos/' + fullRepo + '/releases{/id}',
-            'created_at': '2014-12-20T02:22:29Z',
-            'updated_at': '2015-01-26T20:09:00Z',
-            'pushed_at': '2015-01-26T23:13:16Z',
-            'git_url': 'git://github.com/' + fullRepo + '.git',
-            'ssh_url': 'git@github.com:' + fullRepo + '.git',
-            'clone_url': 'https://github.com/' + fullRepo + '.git',
-            'svn_url': 'https://github.com/' + fullRepo,
-            'homepage': null,
-            'size': 1631,
-            'stargazers_count': 0,
-            'watchers_count': 0,
-            'language': 'JavaScript',
-            'has_issues': true,
-            'has_downloads': true,
-            'has_wiki': true,
-            'has_pages': false,
-            'forks_count': 1,
-            'mirror_url': null,
-            'open_issues_count': 3,
-            'forks': 1,
-            'open_issues': 3,
-            'watchers': 0,
-            'default_branch': 'master'
-          },
-          'sender': {
+          'created_at': '2015-01-27T21:06:49Z',
+          'updated_at': '2015-01-27T21:06:49Z',
+          'body': '[Select Runnable server to run code from this PR](http://runnable3.net/' + owner +
+            '/serverSelection/hellonode?branch=feature-1' +
+            '&message=commit&commit=73033125786a9897dc92659245598be520a2d71d)'
+        },
+        'repository': {
+          'id': 28254077,
+          'name': 'hellonode',
+          'full_name': fullRepo,
+          'owner': {
             'login': owner,
             'id': 429706,
             'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
@@ -243,7 +156,91 @@ module.exports = function (data) {
             'received_events_url': 'https://api.github.com/users/' + owner + '/received_events',
             'type': 'User',
             'site_admin': false
-          }
+          },
+          'private': false,
+          'html_url': 'https://github.com/' + fullRepo,
+          'description': '',
+          'fork': false,
+          'url': 'https://api.github.com/repos/' + fullRepo,
+          'forks_url': 'https://api.github.com/repos/' + fullRepo + '/forks',
+          'keys_url': 'https://api.github.com/repos/' + fullRepo + '/keys{/key_id}',
+          'collaborators_url': 'https://api.github.com/repos/' + fullRepo + '/collaborators{/collaborator}',
+          'teams_url': 'https://api.github.com/repos/' + fullRepo + '/teams',
+          'hooks_url': 'https://api.github.com/repos/' + fullRepo + '/hooks',
+          'issue_events_url': 'https://api.github.com/repos/' + fullRepo + '/issues/events{/number}',
+          'events_url': 'https://api.github.com/repos/' + fullRepo + '/events',
+          'assignees_url': 'https://api.github.com/repos/' + fullRepo + '/assignees{/user}',
+          'branches_url': 'https://api.github.com/repos/' + fullRepo + '/branches{/branch}',
+          'tags_url': 'https://api.github.com/repos/' + fullRepo + '/tags',
+          'blobs_url': 'https://api.github.com/repos/' + fullRepo + '/git/blobs{/sha}',
+          'git_tags_url': 'https://api.github.com/repos/' + fullRepo + '/git/tags{/sha}',
+          'git_refs_url': 'https://api.github.com/repos/' + fullRepo + '/git/refs{/sha}',
+          'trees_url': 'https://api.github.com/repos/' + fullRepo + '/git/trees{/sha}',
+          'statuses_url': 'https://api.github.com/repos/' + fullRepo + '/statuses/{sha}',
+          'languages_url': 'https://api.github.com/repos/' + fullRepo + '/languages',
+          'stargazers_url': 'https://api.github.com/repos/' + fullRepo + '/stargazers',
+          'contributors_url': 'https://api.github.com/repos/' + fullRepo + '/contributors',
+          'subscribers_url': 'https://api.github.com/repos/' + fullRepo + '/subscribers',
+          'subscription_url': 'https://api.github.com/repos/' + fullRepo + '/subscription',
+          'commits_url': 'https://api.github.com/repos/' + fullRepo + '/commits{/sha}',
+          'git_commits_url': 'https://api.github.com/repos/' + fullRepo + '/git/commits{/sha}',
+          'comments_url': 'https://api.github.com/repos/' + fullRepo + '/comments{/number}',
+          'issue_comment_url': 'https://api.github.com/repos/' + fullRepo + '/issues/comments/{number}',
+          'contents_url': 'https://api.github.com/repos/' + fullRepo + '/contents/{+path}',
+          'compare_url': 'https://api.github.com/repos/' + fullRepo + '/compare/{base}...{head}',
+          'merges_url': 'https://api.github.com/repos/' + fullRepo + '/merges',
+          'archive_url': 'https://api.github.com/repos/' + fullRepo + '/{archive_format}{/ref}',
+          'downloads_url': 'https://api.github.com/repos/' + fullRepo + '/downloads',
+          'issues_url': 'https://api.github.com/repos/' + fullRepo + '/issues{/number}',
+          'pulls_url': 'https://api.github.com/repos/' + fullRepo + '/pulls{/number}',
+          'milestones_url': 'https://api.github.com/repos/' + fullRepo + '/milestones{/number}',
+          'notifications_url': 'https://api.github.com/repos/' + fullRepo +
+            '/notifications{?since,all,participating}',
+          'labels_url': 'https://api.github.com/repos/' + fullRepo + '/labels{/name}',
+          'releases_url': 'https://api.github.com/repos/' + fullRepo + '/releases{/id}',
+          'created_at': '2014-12-20T02:22:29Z',
+          'updated_at': '2015-01-26T20:09:00Z',
+          'pushed_at': '2015-01-26T23:13:16Z',
+          'git_url': 'git://github.com/' + fullRepo + '.git',
+          'ssh_url': 'git@github.com:' + fullRepo + '.git',
+          'clone_url': 'https://github.com/' + fullRepo + '.git',
+          'svn_url': 'https://github.com/' + fullRepo,
+          'homepage': null,
+          'size': 1631,
+          'stargazers_count': 0,
+          'watchers_count': 0,
+          'language': 'JavaScript',
+          'has_issues': true,
+          'has_downloads': true,
+          'has_wiki': true,
+          'has_pages': false,
+          'forks_count': 1,
+          'mirror_url': null,
+          'open_issues_count': 3,
+          'forks': 1,
+          'open_issues': 3,
+          'watchers': 0,
+          'default_branch': 'master'
+        },
+        'sender': {
+          'login': owner,
+          'id': 429706,
+          'avatar_url': 'https://avatars.githubusercontent.com/u/429706?v=3',
+          'gravatar_id': '',
+          'url': 'https://api.github.com/users/' + owner,
+          'html_url': 'https://github.com/' + owner,
+          'followers_url': 'https://api.github.com/users/' + owner + '/followers',
+          'following_url': 'https://api.github.com/users/' + owner + '/following{/other_user}',
+          'gists_url': 'https://api.github.com/users/' + owner + '/gists{/gist_id}',
+          'starred_url': 'https://api.github.com/users/' + owner + '/starred{/owner}{/repo}',
+          'subscriptions_url': 'https://api.github.com/users/' + owner + '/subscriptions',
+          'organizations_url': 'https://api.github.com/users/' + owner + '/orgs',
+          'repos_url': 'https://api.github.com/users/' + owner + '/repos',
+          'events_url': 'https://api.github.com/users/' + owner + '/events{/privacy}',
+          'received_events_url': 'https://api.github.com/users/' + owner + '/received_events',
+          'type': 'User',
+          'site_admin': false
+        }
       }
     },
     pull_request_closed: {
@@ -307,7 +304,7 @@ module.exports = function (data) {
           'review_comment_url': 'https://api.github.com/repos/' + fullRepo + '/pulls/comments/{number}',
           'comments_url': 'https://api.github.com/repos/' + fullRepo + '/issues/2/comments',
           'statuses_url': 'https://api.github.com/repos/' + fullRepo +
-          '/statuses/023a0cba6759ed69cbcb91e4a7f61aa3b8ca6fd3',
+            '/statuses/023a0cba6759ed69cbcb91e4a7f61aa3b8ca6fd3',
           'head': {
             'label': '' + owner + ':feature-2',
             'ref': 'feature-2',
@@ -334,7 +331,7 @@ module.exports = function (data) {
             'repo': {
               'id': 28254077,
               'name': 'hellonode',
-              'full_name': fullRepo ,
+              'full_name': fullRepo,
               'owner': {
                 'login': owner,
                 'id': 429706,
@@ -392,7 +389,7 @@ module.exports = function (data) {
               'pulls_url': 'https://api.github.com/repos/' + fullRepo + '/pulls{/number}',
               'milestones_url': 'https://api.github.com/repos/' + fullRepo + '/milestones{/number}',
               'notifications_url': 'https://api.github.com/repos/' + fullRepo +
-              '/notifications{?since,all,participating}',
+                '/notifications{?since,all,participating}',
               'labels_url': 'https://api.github.com/repos/' + fullRepo + '/labels{/name}',
               'releases_url': 'https://api.github.com/repos/' + fullRepo + '/releases{/id}',
               'created_at': '2014-12-20T02:22:29Z',
@@ -504,7 +501,7 @@ module.exports = function (data) {
               'pulls_url': 'https://api.github.com/repos/' + fullRepo + '/pulls{/number}',
               'milestones_url': 'https://api.github.com/repos/' + fullRepo + '/milestones{/number}',
               'notifications_url': 'https://api.github.com/repos/' + fullRepo +
-              '/notifications{?since,all,participating}',
+                '/notifications{?since,all,participating}',
               'labels_url': 'https://api.github.com/repos/' + fullRepo + '/labels{/name}',
               'releases_url': 'https://api.github.com/repos/' + fullRepo + '/releases{/id}',
               'created_at': '2014-12-20T02:22:29Z',
@@ -738,7 +735,7 @@ module.exports = function (data) {
           'review_comment_url': 'https://api.github.com/repos/' + fullRepo + '/pulls/comments/{number}',
           'comments_url': 'https://api.github.com/repos/' + fullRepo + '/issues/2/comments',
           'statuses_url': 'https://api.github.com/repos/' + fullRepo +
-          '/statuses/023a0cba6759ed69cbcb91e4a7f61aa3b8ca6fd3',
+            '/statuses/023a0cba6759ed69cbcb91e4a7f61aa3b8ca6fd3',
           'head': {
             'label': '' + owner + ':feature-2',
             'ref': 'feature-2',
@@ -765,7 +762,7 @@ module.exports = function (data) {
             'repo': {
               'id': 28254077,
               'name': 'hellonode',
-              'full_name': fullRepo ,
+              'full_name': fullRepo,
               'owner': {
                 'login': owner,
                 'id': 429706,
@@ -823,7 +820,7 @@ module.exports = function (data) {
               'pulls_url': 'https://api.github.com/repos/' + fullRepo + '/pulls{/number}',
               'milestones_url': 'https://api.github.com/repos/' + fullRepo + '/milestones{/number}',
               'notifications_url': 'https://api.github.com/repos/' + fullRepo +
-              '/notifications{?since,all,participating}',
+                '/notifications{?since,all,participating}',
               'labels_url': 'https://api.github.com/repos/' + fullRepo + '/labels{/name}',
               'releases_url': 'https://api.github.com/repos/' + fullRepo + '/releases{/id}',
               'created_at': '2014-12-20T02:22:29Z',
@@ -935,7 +932,7 @@ module.exports = function (data) {
               'pulls_url': 'https://api.github.com/repos/' + fullRepo + '/pulls{/number}',
               'milestones_url': 'https://api.github.com/repos/' + fullRepo + '/milestones{/number}',
               'notifications_url': 'https://api.github.com/repos/' + fullRepo +
-              '/notifications{?since,all,participating}',
+                '/notifications{?since,all,participating}',
               'labels_url': 'https://api.github.com/repos/' + fullRepo + '/labels{/name}',
               'releases_url': 'https://api.github.com/repos/' + fullRepo + '/releases{/id}',
               'created_at': '2014-12-20T02:22:29Z',
@@ -1169,7 +1166,7 @@ module.exports = function (data) {
           'review_comment_url': 'https://api.github.com/repos/' + fullRepo + '/pulls/comments/{number}',
           'comments_url': 'https://api.github.com/repos/' + fullRepo + '/issues/2/comments',
           'statuses_url': 'https://api.github.com/repos/' + fullRepo +
-          '/statuses/023a0cba6759ed69cbcb91e4a7f61aa3b8ca6fd3',
+            '/statuses/023a0cba6759ed69cbcb91e4a7f61aa3b8ca6fd3',
           'head': {
             'label': '' + owner + ':feature-2',
             'ref': branch,
@@ -1196,7 +1193,7 @@ module.exports = function (data) {
             'repo': {
               'id': 28254077,
               'name': 'hellonode',
-              'full_name': fullRepo ,
+              'full_name': fullRepo,
               'owner': {
                 'login': owner,
                 'id': ownerId,
@@ -1254,7 +1251,7 @@ module.exports = function (data) {
               'pulls_url': 'https://api.github.com/repos/' + fullRepo + '/pulls{/number}',
               'milestones_url': 'https://api.github.com/repos/' + fullRepo + '/milestones{/number}',
               'notifications_url': 'https://api.github.com/repos/' + fullRepo +
-              '/notifications{?since,all,participating}',
+                '/notifications{?since,all,participating}',
               'labels_url': 'https://api.github.com/repos/' + fullRepo + '/labels{/name}',
               'releases_url': 'https://api.github.com/repos/' + fullRepo + '/releases{/id}',
               'created_at': '2014-12-20T02:22:29Z',
@@ -1366,7 +1363,7 @@ module.exports = function (data) {
               'pulls_url': 'https://api.github.com/repos/' + fullRepo + '/pulls{/number}',
               'milestones_url': 'https://api.github.com/repos/' + fullRepo + '/milestones{/number}',
               'notifications_url': 'https://api.github.com/repos/' + fullRepo +
-              '/notifications{?since,all,participating}',
+                '/notifications{?since,all,participating}',
               'labels_url': 'https://api.github.com/repos/' + fullRepo + '/labels{/name}',
               'releases_url': 'https://api.github.com/repos/' + fullRepo + '/releases{/id}',
               'created_at': '2014-12-20T02:22:29Z',
@@ -1598,7 +1595,7 @@ module.exports = function (data) {
           committer: {
             name: 'Bryan Kendall',
             email: 'bryan@runnable.com',
-            username: owner
+            username: committer
           },
           added: [],
           removed: [],
@@ -1619,6 +1616,7 @@ module.exports = function (data) {
           size: 0,
           owner: {
             name: owner,
+            login: owner,
             email: 'bryan.a.kendall@gmail.com'
           },
           'private': false,
@@ -1795,9 +1793,7 @@ module.exports = function (data) {
         'forced': true,
         'base_ref': null,
         'compare': 'https://github.com/CodeNow/api/compare/b96798ab32c6...000000000000',
-        'commits': [
-
-        ],
+        'commits': [],
         'head_commit': null,
         'repository': {
           'id': 20736018,
@@ -1909,5 +1905,5 @@ module.exports = function (data) {
         }
       }
     }
-  };
-};
+  }
+}

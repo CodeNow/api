@@ -1,12 +1,12 @@
 FROM golang:<go-version>
 
-# Open up ports on the container
-EXPOSE <user-specified-ports>
-
 # Add repository files to container
 <before-main-repo>
 #default run: go build -o main
 <after-main-repo>
+
+# Open up ports on the container
+EXPOSE <user-specified-ports>
 
 # Command to start the app
 CMD <start-command>

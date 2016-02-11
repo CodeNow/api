@@ -1,15 +1,15 @@
 /**
  * @module test/functional/fixtures/container-inspect
  */
-
-var dockerHost = require('./docker-host');
+'use strict'
+var dockerHost = require('./docker-host')
 
 /**
  * Generate an example set of meta data for job created
  * from docker-listener. Instance is required for container
  * labels.
- * @param {Object} instance
- * @return Object
+ * @param  {Object} instance instance object
+ * @return {Object} inspect object
  */
 module.exports.getContainerInspect = function (instance) {
   return {
@@ -22,22 +22,15 @@ module.exports.getContainerInspect = function (instance) {
     numCpus: 8,
     mem: 8589934592,
     tags: 'some,comma,tags',
-    host: dockerHost, //'http://10.1.10.40:4243',
-    inspectData:
-     { Id: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713',
-       Hostname: '',
-       User: '',
-       Memory: 1000000000,
-       MemorySwap: 0,
-       AttachStdin: false,
-       AttachStdout: true,
-       AttachStderr: true,
-       PortSpecs: null,
-       Tty: false,
-       OpenStdin: false,
-       StdinOnce: false,
-       Env:
-        [ 'RUNNABLE_AWS_ACCESS_KEY=FAKE_AWS_ACCESS_KEY_ID',
+    host: dockerHost, // 'http://10.1.10.40:4243',
+    inspectData: {
+      Id: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713',
+      Config: {
+        Cmd: [
+          '/source/dockerBuild.sh'
+        ],
+        Env: [
+          'RUNNABLE_AWS_ACCESS_KEY=FAKE_AWS_ACCESS_KEY_ID',
           'RUNNABLE_AWS_SECRET_KEY=FAKE_AWS_SECRET_ACCESS_KEY',
           'RUNNABLE_FILES_BUCKET=runnable.context.resources.test',
           'RUNNABLE_PREFIX=554169c7dd3f3d21e1fb380e/source/',
@@ -50,40 +43,91 @@ module.exports.getContainerInspect = function (instance) {
           'RUNNABLE_KEYS_BUCKET=runnable.deploykeys.test',
           'RUNNABLE_DEPLOYKEY=7d2f922a-a511-4fbc-bafa-02331b3edb6a/flaming-octo-nemesis.key',
           'DOCKER_IMAGE_BUILDER_CACHE=/git-cache',
-          'RUNNABLE_NETWORK_DRIVER=sauron',
-          'RUNNABLE_WAIT_FOR_WEAVE=until grep -q ethwe /proc/net/dev; do sleep 1; done;',
-          'RUNNABLE_SAURON_HOST=10.1.10.40:3200',
-          'RUNNABLE_NETWORK_IP=10.255.120.0',
-          'RUNNABLE_HOST_IP=10.255.120.1',
-          'RUNNABLE_BUILD_FLAGS={"Memory":1000000000}' ],
-       Cmd: [],
-       Config: {
-         Labels: {
-           contextVersionId: instance.json().contextVersion.id,
-           instanceId: instance.attrs._id,
-           instanceShortHash: instance.attrs.shortHash,
-           ownerUsername: 'cflynn07',
-           type: 'user-container',
-           userGithubId: instance.json().owner.github
-         }
-       },
-       Dns: null,
-       Image: 'runnable/image-builder:d1.4.1-v2.2.2',
-       Volumes: { '/cache': {} },
-       VolumesFrom: '',
-       WorkingDir: '',
-       ExposedPorts: {},
-       State: { Running: false, Pid: -1 },
-       NetworkSettings: {
-         Bridge: '',
-         Gateway: '',
-         IPAddress: '',
-         IPPrefixLen: 0,
-         MacAddress: '',
-         Ports: null
-       },
-       name: '554169c7dd3f3d21e1fb3810',
-       Binds: [ '/git-cache:/cache:rw' ]
+          'RUNNABLE_WAIT_FOR_WEAVE=until grep -q ethwe /proc/net/dev do sleep 1 done',
+          'RUNNABLE_BUILD_FLAGS={"Memory":1000000000}'
+        ],
+        Tty: false,
+        OpenStdin: false,
+        StdinOnce: false,
+        AttachStdin: false,
+        AttachStdout: true,
+        AttachStderr: true,
+        Hostname: '',
+        User: '',
+        Labels: {
+          contextVersionId: instance.json().contextVersion.id,
+          instanceId: instance.attrs._id,
+          instanceShortHash: instance.attrs.shortHash,
+          ownerUsername: 'cflynn07',
+          type: 'user-container',
+          userGithubId: instance.json().owner.github
+        },
+        Volumes: {
+          '/cache': '/git-cache',
+          '/layer-cache': '/layer-cache',
+          '/usr/local/bin/weave': '/usr/local/bin/weave',
+          '/var/run/docker.sock': '/run/docker.sock'
+        },
+        WorkingDir: '',
+        Image: 'runnable/image-builder:d1.4.1-v2.2.2'
+      },
+      Image: '51a6860f9a670a4145c2c3658c9aa227012f76314a91fd3d42e961806947f160',
+      State: {
+        Running: false,
+        Pid: -1,
+        Status: 'exited',
+        Paused: false,
+        Restarting: false,
+        OOMKilled: false,
+        Dead: false,
+        ExitCode: 0,
+        Error: '',
+        StartedAt: '2016-01-11T00:36:26.488101036Z',
+        FinishedAt: '2016-01-11T00:38:05.80668384Z'
+      },
+      NetworkSettings: {
+        Bridge: '',
+        SandboxID: '',
+        HairpinMode: false,
+        LinkLocalIPv6Address: '',
+        LinkLocalIPv6PrefixLen: 0,
+        Ports: null,
+        SandboxKey: '',
+        SecondaryIPAddresses: null,
+        SecondaryIPv6Addresses: null,
+        EndpointID: '',
+        Gateway: '',
+        GlobalIPv6Address: '',
+        GlobalIPv6PrefixLen: 0,
+        IPAddress: '',
+        IPPrefixLen: 0,
+        IPv6Gateway: '',
+        MacAddress: '',
+        Networks: {
+          bridge: {
+            EndpointID: '',
+            Gateway: '',
+            IPAddress: '',
+            IPPrefixLen: 0,
+            IPv6Gateway: '',
+            GlobalIPv6Address: '',
+            GlobalIPv6PrefixLen: 0,
+            MacAddress: ''
+          }
+        }
+      },
+      Name: '554169c7dd3f3d21e1fb3810',
+      HostConfig: {
+        MemorySwap: 0,
+        VolumesFrom: '',
+        Dns: null,
+        Memory: 1000000000,
+        Binds: [
+          '/var/run/docker.sock:/var/run/docker.sock',
+          '/git-cache:/cache:rw',
+          '/layer-cache:/layer-cache:rw'
+        ]
+      }
     }
-  };
-};
+  }
+}

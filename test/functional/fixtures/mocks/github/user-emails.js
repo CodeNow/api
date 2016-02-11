@@ -1,9 +1,9 @@
-var multiline = require('multiline');
-var uuid = require('uuid');
-var nock = require('nock');
+var multiline = require('multiline')
+var uuid = require('uuid')
+var nock = require('nock')
 
 module.exports = function (email) {
-  email = email || uuid()+'@random.net';
+  email = email || uuid() + '@random.net'
   nock('https://api.github.com:443')
     .filteringPath(/\/user\/emails\?.+/, '/user/emails')
     .get('/user/emails')
@@ -18,7 +18,7 @@ module.exports = function (email) {
     }], {
       server: 'GitHub.com',
       date: 'Tue, 24 Jun 2014 23:32:27 GMT',
-      'content-type': 'application/json; charset=utf-8',
+      'content-type': 'application/json charset=utf-8',
       status: '200 OK',
       'x-ratelimit-limit': '5000',
       'x-ratelimit-remaining': '4968',
@@ -29,12 +29,12 @@ module.exports = function (email) {
       'x-accepted-oauth-scopes': 'user, user:email',
       vary: 'Accept, Authorization, Cookie, X-GitHub-OTP',
       'x-github-media-type': 'github.v3',
-      'x-xss-protection': '1; mode=block',
+      'x-xss-protection': '1 mode=block',
       'x-frame-options': 'deny',
-      'content-security-policy': 'default-src \'none\'',
+      'content-security-policy': "default-src 'none'",
       'content-length': '122',
       'access-control-allow-credentials': 'true',
-      'access-control-expose-headers': multiline(function () {/*
+      'access-control-expose-headers': multiline(function () { /*
         ETag,
         Link,
         X-GitHub-OTP,
@@ -51,5 +51,5 @@ module.exports = function (email) {
       'strict-transport-security': 'max-age=31536000',
       'x-content-type-options': 'nosniff',
       'x-served-by': '62a1303ae95931e56e387e87d354bb24'
-    });
-};
+    })
+}
