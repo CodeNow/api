@@ -51,15 +51,12 @@ describe('ContainerImageBuilderCreate', function () {
   var mockDockerTag = 'docker-tag'
 
   beforeEach(function (done) {
-    sinon.stub(User, 'findByGithubIdAsync', function () {
-      return Promise.resolve(mockUser)
-    })
-    sinon.stub(Context, 'findOneAsync', function () {
-      return Promise.resolve(mockContext)
-    })
-    sinon.stub(ContextVersion, 'findOneAsync', function () {
-      return Promise.resolve(mockContextVersion)
-    })
+    sinon.stub(User, 'findByGithubIdAsync')
+      .returns(Promise.resolve(mockUser))
+    sinon.stub(Context, 'findOneAsync')
+      .returns(Promise.resolve(mockContext))
+    sinon.stub(ContextVersion, 'findOneAsync')
+      .returns(Promise.resolve(mockContextVersion))
     sinon.stub(ContextVersion, 'recoverAsync')
       .returns(Promise.resolve())
     sinon.stub(ContextVersion, 'updateContainerByBuildIdAsync')
