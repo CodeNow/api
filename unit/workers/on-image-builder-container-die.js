@@ -18,6 +18,7 @@ var User = require('models/mongo/user')
 var Docker = require('models/apis/docker')
 var messenger = require('socket/messenger.js')
 var keypather = require('keypather')()
+var noop = require('101/noop')
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die')
 
@@ -186,7 +187,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
 
   describe('_handleBuildComplete', function () {
     beforeEach(function (done) {
-      var instanceStub = {
+      ctx.instanceStub = {
         updateCvAsync: sinon.stub()
       }
       ctx.worker.contextVersions = [ctx.mockContextVersion]
@@ -194,7 +195,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       sinon.stub(ContextVersion, 'updateBuildCompletedByContainer')
       sinon.stub(Build, 'updateFailedByContextVersionIds')
       sinon.stub(Build, 'updateCompletedByContextVersionIds')
-      sinon.stub(Instance, 'find').yieldsAsync(null, [instanceStub])
+      sinon.stub(Instance, 'find').yieldsAsync(null, [ctx.instanceStub])
       done()
     })
     afterEach(function (done) {
@@ -214,6 +215,9 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
 
       it('it should handle successful build', function (done) {
         ctx.worker._handleBuildComplete(ctx.buildInfo, function () {
+          sinon.assert.calledOnce(Instance.find)
+          sinon.assert.calledWith(Instance.find, { 'contextVersion._id': { $in: [ctx.mockContextVersion._id] } })
+          sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
           sinon.assert.calledWith(
             ContextVersion.updateBuildCompletedByContainer,
             ctx.data.id,
@@ -246,6 +250,9 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           it('it should handle failed build', function (done) {
             ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
               if (err) { return done(err) }
+              sinon.assert.calledOnce(Instance.find)
+              sinon.assert.calledWith(Instance.find, { 'contextVersion._id': { $in: [ctx.mockContextVersion._id] } })
+              sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
               sinon.assert.calledWith(
                 ContextVersion.updateBuildCompletedByContainer,
                 ctx.data.id,
@@ -268,7 +275,12 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
             done()
           })
           it('should callback the error', function (done) {
-            ctx.worker._handleBuildComplete(ctx.buildInfo, expectErr(ctx.err, done))
+            ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
+              sinon.assert.calledOnce(Instance.find)
+              sinon.assert.calledWith(Instance.find, { 'contextVersion._id': { $in: [ctx.mockContextVersion._id] } })
+              sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+              expectErr(ctx.err, done)(err)
+            })
           })
         })
       })
@@ -279,7 +291,11 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           done()
         })
         it('should callback the error', function (done) {
-          ctx.worker._handleBuildComplete(ctx.buildInfo, expectErr(ctx.err, done))
+          ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
+            sinon.assert.notCalled(Instance.find)
+            sinon.assert.notCalled(ctx.instanceStub.updateCvAsync)
+            expectErr(ctx.err, done)(err)
+          })
         })
       })
       describe('Build.updateCompletedByContextVersionIds error', function () {
@@ -291,7 +307,12 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           done()
         })
         it('should callback the error', function (done) {
-          ctx.worker._handleBuildComplete(ctx.buildInfo, expectErr(ctx.err, done))
+          ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
+            sinon.assert.calledOnce(Instance.find)
+            sinon.assert.calledWith(Instance.find, { 'contextVersion._id': { $in: [ctx.mockContextVersion._id] } })
+            sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+            expectErr(ctx.err, done)(err)
+          })
         })
       })
     })
