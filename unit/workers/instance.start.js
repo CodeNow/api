@@ -33,9 +33,9 @@ describe('Workers: Instance Start', function () {
     containerId: dockerContainer,
     sessionUserGithubId: testSessionUserGithubId
   }
-  var testCV = {
+  var testCV = new ContextVersion({
     _id: 'cv-id'
-  }
+  })
   var testInstance = new Instance({
     _id: testInstanceId,
     name: 'name1',
@@ -71,7 +71,7 @@ describe('Workers: Instance Start', function () {
   beforeEach(function (done) {
     sinon.stub(Instance, 'findOneStartingAsync').resolves(testInstance)
     sinon.stub(ContextVersion, 'findByIdAsync').resolves(testCV)
-    sinon.stub(Docker.prototype, 'stopContainerAsync').resolves()
+    sinon.stub(Docker.prototype, 'startUserContainerAsync').resolves()
     sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
     done()
   })
@@ -79,7 +79,7 @@ describe('Workers: Instance Start', function () {
   afterEach(function (done) {
     Instance.findOneStartingAsync.restore()
     ContextVersion.findByIdAsync.restore()
-    Docker.prototype.stopContainerAsync.restore()
+    Docker.prototype.startUserContainerAsync.restore()
     InstanceService.emitInstanceUpdate.restore()
     done()
   })
@@ -147,18 +147,18 @@ describe('Workers: Instance Start', function () {
       done()
     })
   })
-  it('should fail fatally if findOneStartingAsync returned no instance', function (done) {
+  it('should fail fatally if ContextVersion.findByIdAsync returned no cv', function (done) {
     ContextVersion.findByIdAsync.resolves(null)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err).to.be.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('instance.start: Instance not found')
+      expect(err.message).to.equal('instance.start: ContextVersion not found')
       done()
     })
   })
-  it('should fail if docker stopContainer failed', function (done) {
+  it('should fail if docker startContainer failed', function (done) {
     var error = new Error('Docker error')
-    Docker.prototype.stopContainerAsync.rejects(error)
+    Docker.prototype.startUserContainerAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
@@ -190,11 +190,11 @@ describe('Workers: Instance Start', function () {
       done()
     })
   })
-  it('should call stopContainer', function (done) {
+  it('should call startContainer', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
-      sinon.assert.calledOnce(Docker.prototype.stopContainerAsync)
-      sinon.assert.calledWith(Docker.prototype.stopContainerAsync, dockerContainer)
+      sinon.assert.calledOnce(Docker.prototype.startUserContainerAsync)
+      sinon.assert.calledWith(Docker.prototype.startUserContainerAsync, dockerContainer, testCV)
       done()
     })
   })
@@ -213,7 +213,7 @@ describe('Workers: Instance Start', function () {
         Instance.findOneStartingAsync,
         ContextVersion.findByIdAsync,
         InstanceService.emitInstanceUpdate,
-        Docker.prototype.stopContainerAsync)
+        Docker.prototype.startUserContainerAsync)
       done()
     })
   })
