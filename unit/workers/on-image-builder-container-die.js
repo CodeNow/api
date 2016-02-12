@@ -28,7 +28,8 @@ var expect = Code.expect
 var it = lab.it
 var expectErr = function (expectedErr, done) {
   return function (err) {
-    expect(err).to.equal(expectedErr)
+    expect(err).to.exist()
+    expect(err.message).to.equal(expectedErr.message)
     done()
   }
 }
@@ -257,7 +258,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
         })
         describe('Build.updateFailedByContextVersionIds error', function () {
           beforeEach(function (done) {
-            ctx.err = new Error('boom')
+            ctx.err = new Error('boom0')
             Build.updateFailedByContextVersionIds.yieldsAsync(ctx.err)
             done()
           })
@@ -268,7 +269,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       })
       describe('CV.updateBuildCompletedByContainer error', function () {
         beforeEach(function (done) {
-          ctx.err = new Error('boom')
+          ctx.err = new Error('boom1')
           ContextVersion.updateBuildCompletedByContainer.yieldsAsync(ctx.err)
           done()
         })
@@ -278,7 +279,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       })
       describe('Build.updateCompletedByContextVersionIds error', function () {
         beforeEach(function (done) {
-          ctx.err = new Error('boom')
+          ctx.err = new Error('boom2')
           ContextVersion.updateBuildCompletedByContainer
             .yieldsAsync(null, [ctx.mockContextVersion])
           Build.updateCompletedByContextVersionIds.yieldsAsync(ctx.err)
