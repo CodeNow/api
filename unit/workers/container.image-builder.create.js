@@ -66,8 +66,8 @@ describe('ContainerImageBuilderCreate', function () {
       .returns(Promise.resolve())
     sinon.stub(mockContextVersion, 'populateAsync')
       .returns(Promise.resolve())
-    sinon.stub(Docker.prototype, 'createImageBuilder')
-      .yieldsAsync(null, mockContainer)
+    sinon.stub(Docker.prototype, 'createImageBuilderAsync')
+      .returns(Promise.resolve(mockContainer))
     sinon.stub(Docker, 'getDockerTag')
       .returns(mockDockerTag)
     done()
@@ -80,7 +80,7 @@ describe('ContainerImageBuilderCreate', function () {
     ContextVersion.recoverAsync.restore()
     ContextVersion.updateContainerByBuildIdAsync.restore()
     mockContextVersion.populateAsync.restore()
-    Docker.prototype.createImageBuilder.restore()
+    Docker.prototype.createImageBuilderAsync.restore()
     Docker.getDockerTag.restore()
     done()
   })
@@ -427,12 +427,12 @@ describe('ContainerImageBuilderCreate', function () {
       var createOpts
 
       beforeEach(function (done) {
-        createOpts = Docker.prototype.createImageBuilder.firstCall.args[0]
+        createOpts = Docker.prototype.createImageBuilderAsync.firstCall.args[0]
         done()
       })
 
       it('should create the image builder container', function (done) {
-        sinon.assert.calledOnce(Docker.prototype.createImageBuilder)
+        sinon.assert.calledOnce(Docker.prototype.createImageBuilderAsync)
         done()
       })
 
