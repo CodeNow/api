@@ -18,7 +18,6 @@ var User = require('models/mongo/user')
 var Docker = require('models/apis/docker')
 var messenger = require('socket/messenger.js')
 var keypather = require('keypather')()
-var noop = require('101/noop')
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die')
 
