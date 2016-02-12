@@ -253,6 +253,14 @@ describe('instance.container.delete unit test', function () {
       })
     })
 
+    it('should resolve if instanceMasterBranch is null', function (done) {
+      testJob.instanceMasterBranch = null
+      InstanceContainerDelete(testJob).asCallback(function (err) {
+        expect(err).to.not.exist()
+        done()
+      })
+    })
+
     it('should resolve if missing instanceMasterBranch', function (done) {
       delete testJob.instanceMasterBranch
       InstanceContainerDelete(testJob).asCallback(function (err) {
