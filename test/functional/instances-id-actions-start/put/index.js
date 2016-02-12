@@ -27,7 +27,6 @@ var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 var rabbitMQ = require('models/rabbitmq/index')
-var redisCleaner = require('../../fixtures/redis-cleaner')
 
 describe('PUT /instances/:id/actions/start', function () {
   var ctx = {}
