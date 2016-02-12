@@ -28,13 +28,14 @@ describe('Workers: Instance Start', function () {
   var testInstanceId = '5633e9273e2b5b0c0077fd41'
   var dockerContainer = '46080d6253c8db55b8bbb9408654896964b86c63e863f1b3b0301057d1ad92ba'
   var testSessionUserGithubId = 123123
+  var testCvId = '507f191e810c19729de860ea'
   var testData = {
     instanceId: testInstanceId,
     containerId: dockerContainer,
     sessionUserGithubId: testSessionUserGithubId
   }
   var testCV = new ContextVersion({
-    _id: 'cv-id'
+    _id: testCvId
   })
   var testInstance = new Instance({
     _id: testInstanceId,
@@ -59,7 +60,7 @@ describe('Workers: Instance Start', function () {
     },
     build: '507f191e810c19729de860e2',
     contextVersion: {
-      _id: 'cv-id',
+      _id: testCvId,
       appCodeVersions: [
         {
           lowerBranch: 'develop',
@@ -186,7 +187,7 @@ describe('Workers: Instance Start', function () {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(ContextVersion.findByIdAsync)
-      sinon.assert.calledWith(ContextVersion.findByIdAsync, testCV._id)
+      sinon.assert.calledWith(ContextVersion.findByIdAsync, testCvId)
       done()
     })
   })
