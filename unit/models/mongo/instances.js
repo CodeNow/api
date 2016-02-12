@@ -387,7 +387,6 @@ describe('Instance Model Tests ' + moduleName, function () {
         })
       })
     })
-
   })
 
   describe('save', function () {
