@@ -186,17 +186,22 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
 
   describe('_handleBuildComplete', function () {
     beforeEach(function (done) {
+      var instanceStub = {
+        updateCvAsync: sinon.stub()
+      }
       ctx.worker.contextVersions = [ctx.mockContextVersion]
       ctx.buildInfo = {}
       sinon.stub(ContextVersion, 'updateBuildCompletedByContainer')
       sinon.stub(Build, 'updateFailedByContextVersionIds')
       sinon.stub(Build, 'updateCompletedByContextVersionIds')
+      sinon.stub(Instance, 'find').yieldsAsync(null, [instanceStub])
       done()
     })
     afterEach(function (done) {
       ContextVersion.updateBuildCompletedByContainer.restore()
       Build.updateFailedByContextVersionIds.restore()
       Build.updateCompletedByContextVersionIds.restore()
+      Instance.find.restore()
       done()
     })
     describe('success', function () {
