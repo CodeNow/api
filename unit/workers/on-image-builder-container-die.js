@@ -332,6 +332,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       User.findByGithubId.restore()
       Instance.emitInstanceUpdates.restore()
       messenger.emitInstanceUpdate.restore()
+      OnImageBuilderContainerDie.prototype._createContainersIfSuccessful.restore()
       done()
     })
 
@@ -356,6 +357,29 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           ctx.mockInstances
         )
         done()
+      })
+    })
+
+    describe('No Instances Found', function () {
+      it('should throw an error and report to Rollbar if there are no instances to create containers for', function (done) {
+        Instance.emitInstanceUpdates.yieldsAsync(null, [])
+
+        ctx.worker._emitInstanceUpdateEvents(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/no.*instances.*found/i)
+          sinon.assert.calledWith(User.findByGithubId, ctx.data.inspectData.Config.Labels.sessionUserGithubId)
+          sinon.assert.calledWith(
+            Instance.emitInstanceUpdates,
+            ctx.mockUser,
+            {
+              'contextVersion.build.dockerContainer': ctx.worker.data.id
+            },
+            'patch',
+            sinon.match.func
+          )
+          sinon.assert.notCalled(OnImageBuilderContainerDie.prototype._createContainersIfSuccessful)
+          done()
+        })
       })
     })
   })
