@@ -28,7 +28,7 @@ describe('instance.container.delete unit test', function () {
       dockerContainer: 'dockerContainerTest'
     },
     instanceMasterBranch: 'instanceMasterBranchTest',
-    instanceMasterPod: 'instanceMasterPodTest',
+    instanceMasterPod: true,
     instanceName: 'instanceNameTest',
     instanceShortHash: 'instanceShortHashTest',
     ownerGithubId: 'ownerGithubIdTest',
