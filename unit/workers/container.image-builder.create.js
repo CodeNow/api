@@ -257,11 +257,24 @@ describe('ContainerImageBuilderCreate', function () {
   }) // end 'validations'
 
   describe('fetchRequiredModels', function () {
-    beforeEach(function (done) {
-      ContainerImageBuilderCreate(validJob).asCallback(done)
-    })
+    var expectedCVQuery = {
+      '_id': validJob.contextVersionId,
+      'build.dockerContainer': {
+        $exists: false
+      },
+      'build.started': {
+        $exists: true
+      },
+      'build.finished': {
+        $exists: false
+      }
+    }
 
-    describe('getUser', function () {
+    describe('on success', function () {
+      beforeEach(function (done) {
+        ContainerImageBuilderCreate(validJob).asCallback(done)
+      })
+
       it('should fetch the user by github id', function (done) {
         sinon.assert.calledOnce(User.findByGithubIdAsync)
         sinon.assert.calledWith(
@@ -270,34 +283,130 @@ describe('ContainerImageBuilderCreate', function () {
         )
         done()
       })
-    }) // end 'getUser'
 
-    describe('getContext', function () {
       it('should fetch the context by id', function (done) {
         sinon.assert.calledOnce(Context.findOneAsync)
         sinon.assert.calledWith(Context.findOneAsync, validJob.contextId)
         done()
       })
-    }) // end 'getContext'
 
-    describe('getContextVersion', function () {
       it('should use the correct query', function (done) {
         sinon.assert.calledOnce(ContextVersion.findOneAsync)
-        sinon.assert.calledWith(ContextVersion.findOneAsync, {
-          '_id': validJob.contextVersionId,
-          'build.dockerContainer': {
-            $exists: false
-          },
-          'build.started': {
-            $exists: true
-          },
-          'build.finished': {
-            $exists: false
-          }
-        })
+        sinon.assert.calledWith(ContextVersion.findOneAsync, expectedCVQuery)
         done()
       })
-    }) // end 'getContextVersion'
+    }) // end 'on success'
+
+    describe('on user not found', function () {
+      var rejectError
+
+      beforeEach(function (done) {
+        User.findByGithubIdAsync.restore()
+        sinon.stub(User, 'findByGithubIdAsync', function () {
+          return Promise.resolve(null)
+        })
+        ContainerImageBuilderCreate(validJob).asCallback(function (err) {
+          rejectError = err
+          done()
+        })
+      })
+
+      it('should fatally reject', function (done) {
+        expect(rejectError).to.exist()
+        expect(rejectError).to.be.an.instanceof(TaskFatalError)
+        done()
+      })
+
+      it('should set the correct error message', function (done) {
+        expect(rejectError.message).to.match(/User not found/)
+        done()
+      })
+
+      it('should set the correct queue data', function (done) {
+        expect(rejectError.data.queue)
+          .to.equal('container.image-builder.create')
+        done()
+      })
+
+      it('should set the correct query data', function (done) {
+        expect(rejectError.data.githubId).to.equal(validJob.sessionUserId)
+        done()
+      })
+    }) // end 'on user not found'
+
+    describe('on context not found', function () {
+      var rejectError
+
+      beforeEach(function (done) {
+        Context.findOneAsync.restore()
+        sinon.stub(Context, 'findOneAsync', function () {
+          return Promise.resolve(null)
+        })
+        ContainerImageBuilderCreate(validJob).asCallback(function (err) {
+          rejectError = err
+          done()
+        })
+      })
+
+      it('should fatally reject', function (done) {
+        expect(rejectError).to.exist()
+        expect(rejectError).to.be.an.instanceof(TaskFatalError)
+        done()
+      })
+
+      it('should set the correct error message', function (done) {
+        expect(rejectError.message).to.match(/Context not found/)
+        done()
+      })
+
+      it('should set the correct queue data', function (done) {
+        expect(rejectError.data.queue)
+          .to.equal('container.image-builder.create')
+        done()
+      })
+
+      it('should set the correct query data', function (done) {
+        expect(rejectError.data.contextId).to.equal(validJob.contextId)
+        done()
+      })
+    }) // end 'on context not found'
+
+    describe('on context version not found', function () {
+      var rejectError
+
+      beforeEach(function (done) {
+        ContextVersion.findOneAsync.restore()
+        sinon.stub(ContextVersion, 'findOneAsync', function () {
+          return Promise.resolve(null)
+        })
+        ContainerImageBuilderCreate(validJob).asCallback(function (err) {
+          rejectError = err
+          done()
+        })
+      })
+
+      it('should fatally reject', function (done) {
+        expect(rejectError).to.exist()
+        expect(rejectError).to.be.an.instanceof(TaskFatalError)
+        done()
+      })
+
+      it('should set the correct error message', function (done) {
+        expect(rejectError.message).to.match(/ContextVersion not found/)
+        done()
+      })
+
+      it('should set the correct queue data', function (done) {
+        expect(rejectError.data.queue)
+          .to.equal('container.image-builder.create')
+        done()
+      })
+
+      it('should set the correct query data', function (done) {
+        expect(rejectError.data.query).to.deep.equal(expectedCVQuery)
+        done()
+      })
+    }) // end 'on context version not found'
   }) // end 'fetchRequiredModels'
 
   describe('initiateBuild', function () {
