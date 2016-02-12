@@ -31,7 +31,7 @@ describe('instance.container.delete unit test', function () {
     instanceMasterPod: true,
     instanceName: 'instanceNameTest',
     instanceShortHash: 'instanceShortHashTest',
-    ownerGithubId: 'ownerGithubIdTest',
+    ownerGithubId: 12345,
     ownerGithubUsername: 'ownerGithubUsernameTest'
   }
 
