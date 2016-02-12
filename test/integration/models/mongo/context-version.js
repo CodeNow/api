@@ -20,6 +20,7 @@ var ObjectId = mongoose.Types.ObjectId
 var uuid = require('uuid')
 
 var mongooseControl = require('models/mongo/mongoose-control.js')
+var mongoFactory = require('../../fixtures/factory')
 var ContextVersion = require('models/mongo/context-version.js')
 
 describe('ContextVersion Model Query Integration Tests', function () {
@@ -182,6 +183,20 @@ describe('ContextVersion Model Query Integration Tests', function () {
         })
       })
 
+      it('should find the oldest pending dupe', function (done) {
+        ctx.cv.findCompletedDupe(function (err, youngestCompletedDupe) {
+          if (err) { return done(err) }
+          expect(youngestCompletedDupe).to.exist()
+          expect(youngestCompletedDupe._id.toString()).to.equal(last(ctx.completedDupes)._id.toString())
+          done()
+        })
+      })
+    })
+
+    describe('modifyContainerInspect', function () {
+      beforeEach(function (done) {
+
+      })
       it('should find the oldest pending dupe', function (done) {
         ctx.cv.findCompletedDupe(function (err, youngestCompletedDupe) {
           if (err) { return done(err) }

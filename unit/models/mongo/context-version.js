@@ -13,6 +13,7 @@ var sinon = require('sinon')
 
 var Boom = require('dat-middleware').Boom
 var isObject = require('101/is-object')
+var keypather = require('keypather')()
 
 var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
@@ -23,6 +24,11 @@ var messenger = require('socket/messenger')
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
+var rabbitMQ = require('models/rabbitmq')
+var uuid = require('uuid');
+var Promise = require('bluebird')
+require('sinon-as-promised')(Promise)
+
 
 describe('Context Version: ' + moduleName, function () {
   var ctx = {}
@@ -1270,6 +1276,276 @@ describe('Context Version: ' + moduleName, function () {
           sinon.match.func)
         done()
       })
+    })
+  })
+
+  describe('buildSelf', function () {
+    var updatedCv
+    var contextVersion
+    var opts
+    var sessionUser
+    var domain
+    beforeEach(function (done) {
+      updatedCv = {
+        dockRemoved: false
+      }
+      contextVersion = new ContextVersion({
+        createdBy: { github: 1000 },
+        owner: {
+          github: 2874589,
+          username: 'hello'
+        },
+        context: ctx.c._id
+      })
+      domain = {
+        runnableData: {
+          tid: uuid()
+        }
+      }
+      sessionUser =  {}
+      keypather.set(sessionUser, 'accounts.github.id', 1234)
+      sinon.stub(contextVersion, 'modifyAppCodeVersionWithLatestCommitAsync').resolves()
+      sinon.stub(contextVersion, 'dedupeAsync').resolves()
+      sinon.stub(contextVersion, 'removeAsync').resolves()
+      sinon.stub(contextVersion, '_startBuild').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      contextVersion.modifyAppCodeVersionWithLatestCommitAsync.restore()
+      contextVersion.dedupeAsync.restore()
+      contextVersion.removeAsync.restore()
+      contextVersion._startBuild.restore()
+      done()
+    })
+    it('should reject when a contextVersion is already building', function (done) {
+      opts = {
+        triggeredAction: {
+          manual: true
+        }
+      }
+      contextVersion._doc.build.started = new Date()
+      contextVersion.buildSelf(sessionUser, opts, domain)
+        .catch(function (err) {
+          expect(err.message).to.contain('cannot build a context version that is already building or built')
+          sinon.assert.notCalled(contextVersion.modifyAppCodeVersionWithLatestCommitAsync)
+          sinon.assert.notCalled(contextVersion.dedupeAsync)
+          sinon.assert.notCalled(contextVersion.removeAsync)
+          sinon.assert.notCalled(contextVersion.buildSelf)
+        })
+        .asCallback(done)
+    })
+    it('should try to start the build of a normal build', function (done) {
+      opts = {
+        triggeredAction: {
+          manual: true
+        }
+      }
+      contextVersion.buildSelf(sessionUser, opts, domain)
+        .then(function (contextVersion) {
+          sinon.assert.calledOnce(contextVersion.setBuildStartedAsync)
+          sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
+          sinon.assert.calledOnce(contextVersion.populateOwnerAsync)
+          sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
+          sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
+          sinon.assert.calledWith(contextVersion.dedupeBuildAsync)
+          sinon.assert.calledOnce(rabbitMQ.createImageBuilderContainer)
+          sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
+            manualBuild: true,
+            sessionUserGithubId: 1234,
+            ownerUsername: 'hello',
+            contextId: ctx.c._id.toString(),
+            contextVersionId: contextVersion._id.toString(),
+            noCache: false,
+            tid: domain.runnableData.tid
+          }))
+        })
+        .asCallback(done)
+    })
+    it('should create a build job for a no-cached build', function (done) {
+      opts = {
+        noCache: true
+      }
+      contextVersion.buildSelf(sessionUser, opts, domain)
+        .then(function (contextVersion) {
+          //sinon.assert.calledOnce(contextVersion.setBuildStartedAsync)
+          //sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
+          //sinon.assert.calledOnce(contextVersion.populateOwnerAsync)
+          //sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
+          //
+          //sinon.assert.notCalled(contextVersion.dedupeBuildAsync)
+          //
+          //sinon.assert.calledOnce(rabbitMQ.createImageBuilderContainer)
+          //sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
+          //  manualBuild: false,
+          //  sessionUserGithubId: 1234,
+          //  ownerUsername: 'hello',
+          //  contextId: ctx.c._id.toString(),
+          //  contextVersionId: contextVersion._id.toString(),
+          //  noCache: true,
+          //  tid: domain.runnableData.tid
+          //}))
+        })
+        .asCallback(done)
+    })
+    it('should not add job when a dedup happens', function (done) {
+      opts = {
+        triggeredAction: {
+          manual: true
+        }
+      }
+      contextVersion.dedupeAsync.restore()
+      sinon.stub(contextVersion, 'dedupeAsync', function () {
+        contextVersion._doc.build.started = new Date()
+        return Promise.resolve()
+      })
+      contextVersion.buildSelf(sessionUser, opts, domain)
+        .then(function (contextVersion) {
+          sinon.assert.calledOnce(contextVersion.modifyAppCodeVersionWithLatestCommitAsync)
+          sinon.assert.calledWith(contextVersion.modifyAppCodeVersionWithLatestCommitAsync, sessionUser)
+          sinon.assert.calledOnce(contextVersion.dedupeAsync)
+          sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
+          sinon.assert.calledWith(contextVersion.dedupeBuildAsync)
+          sinon.assert.notCalled(rabbitMQ.createImageBuilderContainer)
+        })
+        .asCallback(done)
+    })
+    it('should remove itself', function (done) {
+      opts = {
+        triggeredAction: {
+          manual: true
+        }
+      }
+      contextVersion.dedupeAsync.restore()
+      sinon.stub(contextVersion, 'dedupeAsync', function () {
+        contextVersion._doc.build.started = new Date()
+        return Promise.resolve()
+      })
+      contextVersion.buildSelf(sessionUser, opts, domain)
+        .then(function (contextVersion) {
+          sinon.assert.calledOnce(contextVersion.modifyAppCodeVersionWithLatestCommitAsync)
+          sinon.assert.calledWith(contextVersion.modifyAppCodeVersionWithLatestCommitAsync, sessionUser)
+          sinon.assert.calledOnce(contextVersion.dedupeAsync)
+          sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
+          sinon.assert.calledWith(contextVersion.dedupeBuildAsync)
+          sinon.assert.notCalled(rabbitMQ.createImageBuilderContainer)
+        })
+        .asCallback(done)
+    })
+  })
+
+  describe('_startBuild', function () {
+    var updatedCv
+    var contextVersion
+    var opts
+    var sessionUser
+    var domain
+    beforeEach(function (done) {
+      updatedCv = {
+        dockRemoved: false
+      }
+      contextVersion = new ContextVersion({
+        createdBy: { github: 1000 },
+        owner: {
+          github: 2874589,
+          username: 'hello'
+        },
+        context: ctx.c._id
+      })
+      domain = {
+        runnableData: {
+          tid: uuid()
+        }
+      }
+      sessionUser =  {}
+      keypather.set(sessionUser, 'accounts.github.id', 1234)
+      sinon.stub(contextVersion, 'setBuildStartedAsync').resolves()
+      sinon.stub(contextVersion, 'populateOwnerAsync').resolves()
+      sinon.stub(contextVersion, 'dedupeBuildAsync').resolves()
+      sinon.stub(rabbitMQ, 'createImageBuilderContainer').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      contextVersion.setBuildStartedAsync.restore()
+      contextVersion.populateOwnerAsync.restore()
+      contextVersion.dedupeBuildAsync.restore()
+      rabbitMQ.createImageBuilderContainer.restore()
+      done()
+    })
+    it('should create a build job for a normal build', function (done) {
+      opts = {
+        triggeredAction: {
+          manual: true
+        }
+      }
+      contextVersion._startBuild(sessionUser, opts, domain)
+        .then(function (contextVersion) {
+          sinon.assert.calledOnce(contextVersion.setBuildStartedAsync)
+          sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
+          sinon.assert.calledOnce(contextVersion.populateOwnerAsync)
+          sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
+          sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
+          sinon.assert.calledWith(contextVersion.dedupeBuildAsync)
+          sinon.assert.calledOnce(rabbitMQ.createImageBuilderContainer)
+          sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
+            manualBuild: true,
+            sessionUserGithubId: 1234,
+            ownerUsername: 'hello',
+            contextId: ctx.c._id.toString(),
+            contextVersionId: contextVersion._id.toString(),
+            noCache: false,
+            tid: domain.runnableData.tid
+          }))
+        })
+        .asCallback(done)
+    })
+    it('should create a build job for a no-cached build', function (done) {
+      opts = {
+        noCache: true
+      }
+      contextVersion._startBuild(sessionUser, opts, domain)
+        .then(function (contextVersion) {
+          sinon.assert.calledOnce(contextVersion.setBuildStartedAsync)
+          sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
+          sinon.assert.calledOnce(contextVersion.populateOwnerAsync)
+          sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
+
+          sinon.assert.notCalled(contextVersion.dedupeBuildAsync)
+
+          sinon.assert.calledOnce(rabbitMQ.createImageBuilderContainer)
+          sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
+            manualBuild: false,
+            sessionUserGithubId: 1234,
+            ownerUsername: 'hello',
+            contextId: ctx.c._id.toString(),
+            contextVersionId: contextVersion._id.toString(),
+            noCache: true,
+            tid: domain.runnableData.tid
+          }))
+        })
+        .asCallback(done)
+    })
+    it('should not add job when a dedup happens', function (done) {
+      opts = {
+        triggeredAction: {
+          manual: true
+        }
+      }
+      contextVersion.dedupeBuildAsync.restore()
+      sinon.stub(contextVersion, 'dedupeBuildAsync', function () {
+        contextVersion._doc.build._id = '13245dsf'
+        return Promise.resolve()
+      })
+      contextVersion._startBuild(sessionUser, opts, domain)
+        .then(function (contextVersion) {
+          sinon.assert.calledOnce(contextVersion.setBuildStartedAsync)
+          sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
+          sinon.assert.calledOnce(contextVersion.populateOwnerAsync)
+          sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
+          sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
+          sinon.assert.calledWith(contextVersion.dedupeBuildAsync)
+          sinon.assert.notCalled(rabbitMQ.createImageBuilderContainer)
+        })
+        .asCallback(done)
     })
   })
 })

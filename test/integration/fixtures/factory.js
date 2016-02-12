@@ -76,6 +76,23 @@ module.exports = {
     )
     ContextVersion.create(data, cb)
   },
+  createCv: function (ownerGithubId, props, cb) {
+    if (isFunction(props)) {
+      cb = props
+      props = null
+    }
+    props = props || { build: {} }
+    defaults(props.build, {
+      _id: '012345678901234567890123',
+      hash: uuid(),
+      dockerContainer: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713'
+    })
+    var data = this.cvTemplate(
+      ownerGithubId,
+      props.build
+    )
+    ContextVersion.create(data, cb)
+  },
   cvTemplate: function (ownerGithubId, buildExtend) {
     var cv = {
       infraCodeVersion: new ObjectId(),
