@@ -176,7 +176,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       beforeEach(function (done) {
         sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
-          expect(eventName).to.equal('create-image-builder-container')
+          expect(eventName).to.equal('container.image-builder.create')
           expect(eventData).to.equal(ctx.validJobData)
         })
         done()
