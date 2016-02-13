@@ -1416,18 +1416,20 @@ describe('Context Version: ' + moduleName, function () {
   })
 
   describe('_startBuild', function () {
+    var context
     var contextVersion
     var opts
     var sessionUser
     var domain
     beforeEach(function (done) {
+      context = new Context()
       contextVersion = new ContextVersion({
         createdBy: { github: 1000 },
         owner: {
           github: 2874589,
           username: 'hello'
         },
-        context: ctx.c._id
+        context: context._id
       })
       domain = {
         runnableData: {
@@ -1439,6 +1441,7 @@ describe('Context Version: ' + moduleName, function () {
       sinon.stub(contextVersion, 'setBuildStartedAsync').resolves(contextVersion)
       sinon.stub(contextVersion, 'populateOwnerAsync').resolves(contextVersion)
       sinon.stub(contextVersion, 'dedupeBuildAsync').resolves(contextVersion)
+      sinon.stub(contextVersion, 'getAndUpdateHashAsync').resolves()
       sinon.stub(rabbitMQ, 'createImageBuilderContainer').resolves()
       done()
     })
@@ -1446,6 +1449,7 @@ describe('Context Version: ' + moduleName, function () {
       contextVersion.setBuildStartedAsync.restore()
       contextVersion.populateOwnerAsync.restore()
       contextVersion.dedupeBuildAsync.restore()
+      contextVersion.getAndUpdateHashAsync.restore()
       rabbitMQ.createImageBuilderContainer.restore()
       done()
     })
@@ -1459,10 +1463,11 @@ describe('Context Version: ' + moduleName, function () {
         .then(function (contextVersion) {
           sinon.assert.calledOnce(contextVersion.setBuildStartedAsync)
           sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
-          sinon.assert.calledOnce(contextVersion.populateOwnerAsync)
-          sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
           sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
           sinon.assert.calledWith(contextVersion.dedupeBuildAsync)
+          sinon.assert.notCalled(contextVersion.getAndUpdateHashAsync)
+          sinon.assert.calledOnce(contextVersion.populateOwnerAsync)
+          sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
           sinon.assert.calledOnce(rabbitMQ.createImageBuilderContainer)
           sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
             manualBuild: true,
@@ -1486,6 +1491,8 @@ describe('Context Version: ' + moduleName, function () {
           sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
           sinon.assert.calledOnce(contextVersion.populateOwnerAsync)
           sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
+          sinon.assert.calledOnce(contextVersion.getAndUpdateHashAsync)
+          sinon.assert.calledWith(contextVersion.getAndUpdateHashAsync)
 
           sinon.assert.notCalled(contextVersion.dedupeBuildAsync)
 
@@ -1494,7 +1501,7 @@ describe('Context Version: ' + moduleName, function () {
             manualBuild: false,
             sessionUserGithubId: 1234,
             ownerUsername: 'hello',
-            contextId: ctx.c._id.toString(),
+            contextId: context._id.toString(),
             contextVersionId: contextVersion._id.toString(),
             noCache: true,
             tid: domain.runnableData.tid
