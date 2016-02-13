@@ -7,7 +7,9 @@ var mongoose = require('mongoose')
 var uuid = require('uuid')
 
 var Build = require('models/mongo/build.js')
+var Context = require('models/mongo/context.js')
 var ContextVersion = require('models/mongo/context-version.js')
+var InfraCodeVersion = require('models/mongo/infra-code-version.js')
 var Instance = require('models/mongo/instance.js')
 var ObjectId = mongoose.Types.ObjectId
 var User = require('models/mongo/user.js')
@@ -76,20 +78,40 @@ module.exports = {
     )
     ContextVersion.create(data, cb)
   },
+  createSourceInfraCodeVersion: function (cb) {
+    Context.create({
+      name: 'asdasd',
+      owner: {
+        github: process.env.HELLO_RUNNABLE_GITHUB_ID,
+        isSource: true
+      }
+    }, function (err, context) {
+      if (err) { return cb(err) }
+      InfraCodeVersion.create({ context: context._id}, cb)
+    })
+  },
+  createInfraCodeVersion: function ( props, cb) {
+    if (isFunction(props)) {
+      cb = props
+      props = null
+    }
+    props = props || { }
+    if (!props.parent) {
+      this.createSourceInfraCodeVersion(function (err, sIcv) {
+        if (err) { return cb(err) }
+        props.parent = sIcv._id
+        props.edited = true
+        InfraCodeVersion.create(props, cb)
+      })
+    }
+  },
   createCv: function (ownerGithubId, props, cb) {
     if (isFunction(props)) {
       cb = props
       props = null
     }
-    props = props || { build: {} }
-    defaults(props.build, {
-      _id: '012345678901234567890123',
-      hash: uuid(),
-      dockerContainer: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713'
-    })
     var data = this.cvTemplate(
-      ownerGithubId,
-      props.build
+      ownerGithubId
     )
     ContextVersion.create(data, cb)
   },
@@ -103,7 +125,13 @@ module.exports = {
       owner: {
         github: ownerGithubId
       },
-      build: assign({
+      advanced: true,
+      appCodeVersions: [],
+      __v: 0,
+      dockerHost: 'http://127.0.0.1:4242'
+    }
+    if (buildExtend) {
+      cv.build = assign({
         triggeredAction: {
           manual: true
         },
@@ -117,14 +145,10 @@ module.exports = {
           hostIp: '127.0.0.1'
         },
         dockerContainer: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713'
-      }, buildExtend),
-      advanced: true,
-      appCodeVersions: [],
-      __v: 0,
-      dockerHost: 'http://127.0.0.1:4242'
+      }, buildExtend);
+      cv.created = new Date(cv.build.started - 60 * 1000)
     }
-    cv.created = new Date(cv.build.started - 60 * 1000)
-    if (buildExtend.completed) {
+    if (buildExtend && buildExtend.completed) {
       assign(cv.build, {
         dockerTag: 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
         dockerImage: 'bbbd03498dab',
