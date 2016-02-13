@@ -12,11 +12,9 @@ var api = require('../../fixtures/api-control')
 var dock = require('../../fixtures/dock')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
-var dockerMockEvents = require('../../fixtures/docker-mock-events')
 var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 var typesTests = require('../../fixtures/types-test-util')
-var uuid = require('uuid')
 
 describe('400 POST /instances', function () {
   var ctx = {}
@@ -55,25 +53,13 @@ describe('400 POST /instances', function () {
   afterEach(mockGetUserById.stubAfter)
   describe('invalid types', function () {
     beforeEach(function (done) {
-      multi.createContextVersion(function (err, contextVersion, context, build, user) {
+      multi.createBuiltBuild(function (err, build, user, models, srcArray) {
         if (err) { return done(err) }
         ctx.build = build
         ctx.user = user
-        ctx.cv = contextVersion
+        ctx.cv = models[0]
         // mocks for build
         done()
-      })
-    })
-    beforeEach(function (done) {
-      primus.joinOrgRoom(ctx.user.json().accounts.github.id, done)
-    })
-    beforeEach(function (done) {
-      ctx.build.build({ message: uuid() }, function (err) {
-        if (err) { return done(err) }
-        primus.onceVersionComplete(ctx.cv.id(), function () {
-          done()
-        })
-        dockerMockEvents.emitBuildComplete(ctx.cv)
       })
     })
 
