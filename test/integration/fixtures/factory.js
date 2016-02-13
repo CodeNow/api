@@ -87,10 +87,10 @@ module.exports = {
       }
     }, function (err, context) {
       if (err) { return cb(err) }
-      InfraCodeVersion.create({ context: context._id}, cb)
+      InfraCodeVersion.create({ context: context._id }, cb)
     })
   },
-  createInfraCodeVersion: function ( props, cb) {
+  createInfraCodeVersion: function (props, cb) {
     if (isFunction(props)) {
       cb = props
       props = null
@@ -145,7 +145,7 @@ module.exports = {
           hostIp: '127.0.0.1'
         },
         dockerContainer: 'ab3e77401fd9d32869714235e3b4041f323437206b65da225a8605fc75ccb713'
-      }, buildExtend);
+      }, buildExtend)
       cv.created = new Date(cv.build.started - 60 * 1000)
     }
     if (buildExtend && buildExtend.completed) {

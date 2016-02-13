@@ -25,10 +25,9 @@ var messenger = require('socket/messenger')
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 var rabbitMQ = require('models/rabbitmq')
-var uuid = require('uuid');
+var uuid = require('uuid')
 var Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
-
 
 describe('Context Version: ' + moduleName, function () {
   var ctx = {}
@@ -1280,16 +1279,12 @@ describe('Context Version: ' + moduleName, function () {
   })
 
   describe('buildSelf', function () {
-    var updatedCv
     var contextVersion
     var opts
     var sessionUser
     var domain
     beforeEach(function (done) {
       ctx.c = new Context()
-      updatedCv = {
-        dockRemoved: false
-      }
       contextVersion = new ContextVersion({
         createdBy: { github: 1000 },
         owner: {
@@ -1303,7 +1298,7 @@ describe('Context Version: ' + moduleName, function () {
           tid: uuid()
         }
       }
-      sessionUser =  {}
+      sessionUser = {}
       keypather.set(sessionUser, 'accounts.github.id', 1234)
       sinon.stub(contextVersion, 'modifyAppCodeVersionWithLatestCommitAsync').resolves(contextVersion)
       sinon.stub(contextVersion, 'dedupeAsync').resolves(contextVersion)
@@ -1421,15 +1416,11 @@ describe('Context Version: ' + moduleName, function () {
   })
 
   describe('_startBuild', function () {
-    var updatedCv
     var contextVersion
     var opts
     var sessionUser
     var domain
     beforeEach(function (done) {
-      updatedCv = {
-        dockRemoved: false
-      }
       contextVersion = new ContextVersion({
         createdBy: { github: 1000 },
         owner: {
@@ -1443,7 +1434,7 @@ describe('Context Version: ' + moduleName, function () {
           tid: uuid()
         }
       }
-      sessionUser =  {}
+      sessionUser = {}
       keypather.set(sessionUser, 'accounts.github.id', 1234)
       sinon.stub(contextVersion, 'setBuildStartedAsync').resolves(contextVersion)
       sinon.stub(contextVersion, 'populateOwnerAsync').resolves(contextVersion)
