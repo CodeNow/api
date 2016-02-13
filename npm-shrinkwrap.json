@@ -2,7 +2,7 @@
   "name": "api",
   "version": "6.26.0",
   "npm-shrinkwrap-version": "5.4.1",
-  "node-version": "v0.10.38",
+  "node-version": "v0.10.28",
   "dependencies": {
     "101": {
       "version": "1.2.0",
@@ -2071,16 +2071,16 @@
       "resolved": "https://registry.npmjs.org/hashids/-/hashids-0.3.3.tgz"
     },
     "http-proxy": {
-      "version": "1.11.1",
-      "resolved": "https://registry.npmjs.org/http-proxy/-/http-proxy-1.11.1.tgz",
+      "version": "1.13.1",
+      "resolved": "https://registry.npmjs.org/http-proxy/-/http-proxy-1.13.1.tgz",
       "dependencies": {
         "eventemitter3": {
           "version": "1.1.1",
           "resolved": "https://registry.npmjs.org/eventemitter3/-/eventemitter3-1.1.1.tgz"
         },
         "requires-port": {
-          "version": "0.0.1",
-          "resolved": "https://registry.npmjs.org/requires-port/-/requires-port-0.0.1.tgz"
+          "version": "1.0.0",
+          "resolved": "https://registry.npmjs.org/requires-port/-/requires-port-1.0.0.tgz"
         }
       }
     },
@@ -3586,10 +3586,6 @@
             }
           }
         },
-        "deep-equal": {
-          "version": "1.0.1",
-          "resolved": "https://registry.npmjs.org/deep-equal/-/deep-equal-1.0.1.tgz"
-        },
         "json-stringify-safe": {
           "version": "5.0.1",
           "resolved": "https://registry.npmjs.org/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz"
@@ -5054,10 +5050,6 @@
         "debug": {
           "version": "0.8.1",
           "resolved": "https://registry.npmjs.org/debug/-/debug-0.8.1.tgz"
-        },
-        "deep-equal": {
-          "version": "1.0.1",
-          "resolved": "https://registry.npmjs.org/deep-equal/-/deep-equal-1.0.1.tgz"
         },
         "runnable-hostname": {
           "version": "1.0.4",
