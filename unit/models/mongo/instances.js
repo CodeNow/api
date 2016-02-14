@@ -631,7 +631,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  describe('findByContextVersionId', function () {
+  describe('findByContextVersionIds', function () {
     var instance = null
     var contextVersionId = newObjectId()
     beforeEach(function (done) {
@@ -650,19 +650,8 @@ describe('Instance Model Tests ' + moduleName, function () {
       var instance = createNewInstance('instance3', { contextVersion: { _id: contextVersionId } })
       instance.save(done)
     })
-    it('should pass a single contextVersion Id to find', function (done) {
-      Instance.findByContextVersionId(contextVersionId, function (err, results) {
-        expect(err).to.not.exist()
-        expect(results).to.be.an.array()
-        expect(results.length).to.equal(1)
-        expect(results[0]).to.be.an.object()
-        expect(results[0].name).to.equal('instance3')
-        expect(results[0].contextVersion._id.toString()).to.equal(contextVersionId.toString())
-        done()
-      })
-    })
     it('should pass the array of contextVersion Ids to find', function (done) {
-      Instance.findByContextVersionId([contextVersionId], function (err, results) {
+      Instance.findByContextVersionIds([contextVersionId], function (err, results) {
         expect(err).to.not.exist()
         expect(results).to.be.an.array()
         expect(results.length).to.equal(1)
@@ -673,7 +662,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
     it('should return an empty array if no contextVersions are found', function (done) {
-      Instance.findByContextVersionId([newObjectId()], function (err, results) {
+      Instance.findByContextVersionIds([newObjectId()], function (err, results) {
         expect(err).to.not.exist()
         expect(results).to.be.an.array()
         expect(results.length).to.equal(0)
