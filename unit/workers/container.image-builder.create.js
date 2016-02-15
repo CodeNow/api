@@ -55,7 +55,7 @@ describe('ContainerImageBuilderCreate', function () {
       .returns(Promise.resolve(mockUser))
     sinon.stub(Context, 'findOneAsync')
       .returns(Promise.resolve(mockContext))
-    sinon.stub(ContextVersion, 'findOneAsync')
+    sinon.stub(ContextVersion, 'findBuildStartedAsync')
       .returns(Promise.resolve(mockContextVersion))
     sinon.stub(ContextVersion, 'recoverAsync')
       .returns(Promise.resolve())
@@ -73,7 +73,7 @@ describe('ContainerImageBuilderCreate', function () {
   afterEach(function (done) {
     User.findByGithubIdAsync.restore()
     Context.findOneAsync.restore()
-    ContextVersion.findOneAsync.restore()
+    ContextVersion.findBuildStartedAsync.restore()
     ContextVersion.recoverAsync.restore()
     ContextVersion.updateContainerByBuildIdAsync.restore()
     mockContextVersion.populateAsync.restore()
@@ -254,19 +254,6 @@ describe('ContainerImageBuilderCreate', function () {
   }) // end 'validations'
 
   describe('fetchRequiredModels', function () {
-    var expectedCVQuery = {
-      '_id': validJob.contextVersionId,
-      'build.dockerContainer': {
-        $exists: false
-      },
-      'build.started': {
-        $exists: true
-      },
-      'build.finished': {
-        $exists: false
-      }
-    }
-
     describe('on success', function () {
       beforeEach(function (done) {
         ContainerImageBuilderCreate(validJob).asCallback(done)
@@ -288,8 +275,8 @@ describe('ContainerImageBuilderCreate', function () {
       })
 
       it('should use the correct query', function (done) {
-        sinon.assert.calledOnce(ContextVersion.findOneAsync)
-        sinon.assert.calledWith(ContextVersion.findOneAsync, expectedCVQuery)
+        sinon.assert.calledOnce(ContextVersion.findBuildStartedAsync)
+        sinon.assert.calledWith(ContextVersion.findBuildStartedAsync, validJob.contextVersionId)
         done()
       })
     }) // end 'on success'
@@ -372,8 +359,8 @@ describe('ContainerImageBuilderCreate', function () {
       var rejectError
 
       beforeEach(function (done) {
-        ContextVersion.findOneAsync.restore()
-        sinon.stub(ContextVersion, 'findOneAsync', function () {
+        ContextVersion.findBuildStartedAsync.restore()
+        sinon.stub(ContextVersion, 'findBuildStartedAsync', function () {
           return Promise.resolve(null)
         })
         ContainerImageBuilderCreate(validJob).asCallback(function (err) {
@@ -400,7 +387,7 @@ describe('ContainerImageBuilderCreate', function () {
       })
 
       it('should set the correct query data', function (done) {
-        expect(rejectError.data.query).to.deep.equal(expectedCVQuery)
+        expect(rejectError.data.contextVersionId).to.deep.equal(validJob.contextVersionId)
         done()
       })
     }) // end 'on context version not found'

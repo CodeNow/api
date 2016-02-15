@@ -1313,4 +1313,39 @@ describe('Context Version: ' + moduleName, function () {
       done()
     })
   }) // end setBuildStarting
+
+  describe('findBuildStarted', function () {
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'findOneAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.findOneAsync.restore()
+      done()
+    })
+
+    it('should call findOneAsync with correct params', function (done) {
+      var testContextVersionId = 54353
+      var testOut = 'Obama'
+      ContextVersion.findOneAsync.returns(testOut)
+
+      var out = ContextVersion.findBuildStarted(testContextVersionId)
+      expect(out).to.equal(testOut)
+      sinon.assert.calledOnce(ContextVersion.findOneAsync)
+      sinon.assert.calledWith(ContextVersion.findOneAsync, {
+        '_id': testContextVersionId,
+        'build.dockerContainer': {
+          $exists: false
+        },
+        'build.started': {
+          $exists: true
+        },
+        'build.finished': {
+          $exists: false
+        }
+      })
+      done()
+    })
+  }) // end findBuildStarted
 })
