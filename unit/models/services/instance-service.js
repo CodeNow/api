@@ -8,6 +8,7 @@ var sinon = require('sinon')
 var Boom = require('dat-middleware').Boom
 var Code = require('code')
 var Promise = require('bluebird')
+require('sinon-as-promised')(Promise)
 
 var cleanMongo = require('../../../test/functional/fixtures/clean-mongo.js')
 var ContextVersion = require('models/mongo/context-version')
@@ -98,7 +99,8 @@ function createNewVersion (opts) {
 function createNewInstance (name, opts) {
   opts = opts || {}
   var container = {
-    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID
+    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
+    dockerHost: 'http://10.0.0.1:4242'
   }
   return new Instance({
     name: name || 'name',
@@ -108,7 +110,7 @@ function createNewInstance (name, opts) {
     masterPod: opts.masterPod || false,
     parent: opts.parent,
     autoForked: opts.autoForked || false,
-    owner: { github: validation.VALID_GITHUB_ID },
+    owner: { github: validation.VALID_GITHUB_ID, username: 'anton' },
     createdBy: { github: validation.VALID_GITHUB_ID },
     build: validation.VALID_OBJECT_ID,
     created: Date.now(),
@@ -844,7 +846,7 @@ describe('InstanceService: ' + moduleName, function () {
       done()
     })
 
-    it('should fail if instance has not container', function (done) {
+    it('should fail if instance has no container', function (done) {
       InstanceService.startInstance({}, 21331).asCallback(function (err) {
         expect(err.message).to.equal('Instance does not have a container')
         sinon.assert.notCalled(Instance.prototype.isNotStartingOrStoppingAsync)
@@ -887,7 +889,7 @@ describe('InstanceService: ' + moduleName, function () {
       })
     })
 
-    it('should pass', function (done) {
+    it('should pass if dependant calls pass', function (done) {
       var instance = createNewInstance('testy', {})
       var sessionUserGithubId = 21331
       InstanceService.startInstance(instance, sessionUserGithubId).asCallback(function (err) {
@@ -920,6 +922,82 @@ describe('InstanceService: ' + moduleName, function () {
         sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
           instanceId: instance._id,
           sessionUserGithubId: sessionUserGithubId
+        })
+        done()
+      })
+    })
+  })
+
+  describe('stopInstance', function () {
+    beforeEach(function (done) {
+      sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').returns(Promise.resolve())
+      sinon.stub(Instance, 'markAsStoppingAsync').returns(Promise.resolve())
+      sinon.stub(rabbitMQ, 'stopInstanceContainer').returns()
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.prototype.isNotStartingOrStoppingAsync.restore()
+      Instance.markAsStoppingAsync.restore()
+      rabbitMQ.stopInstanceContainer.restore()
+      done()
+    })
+
+    it('should fail if instance has no container', function (done) {
+      InstanceService.stopInstance({}, 21331).asCallback(function (err) {
+        expect(err.message).to.equal('Instance does not have a container')
+        sinon.assert.notCalled(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.notCalled(Instance.markAsStoppingAsync)
+        sinon.assert.notCalled(rabbitMQ.stopInstanceContainer)
+        done()
+      })
+    })
+
+    it('should fail isNotStartingOrStoppingAsync failed', function (done) {
+      var testErr = new Error('Mongo error')
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      Instance.prototype.isNotStartingOrStoppingAsync.returns(rejectionPromise)
+      var instance = createNewInstance('testy', {})
+      InstanceService.stopInstance(instance, 21331).asCallback(function (err) {
+        expect(err.message).to.equal(testErr.message)
+        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.notCalled(Instance.markAsStoppingAsync)
+        sinon.assert.notCalled(rabbitMQ.stopInstanceContainer)
+        done()
+      })
+    })
+
+    it('should fail markAsStoppingAsync failed', function (done) {
+      var testErr = new Error('Mongo error')
+      var rejectionPromise = Promise.reject(testErr)
+      rejectionPromise.suppressUnhandledRejections()
+      Instance.markAsStoppingAsync.returns(rejectionPromise)
+      var instance = createNewInstance('testy', {})
+      InstanceService.stopInstance(instance, 21331).asCallback(function (err) {
+        expect(err.message).to.equal(testErr.message)
+        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.calledOnce(Instance.markAsStoppingAsync)
+        sinon.assert.notCalled(rabbitMQ.stopInstanceContainer)
+        done()
+      })
+    })
+
+    it('should pass if dependant calls pass', function (done) {
+      var instance = createNewInstance('testy', {})
+      var sessionUserGithubId = 21331
+      Instance.markAsStoppingAsync.returns(Promise.resolve(instance))
+      InstanceService.stopInstance(instance, sessionUserGithubId).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
+        sinon.assert.calledOnce(Instance.markAsStoppingAsync)
+        sinon.assert.calledWith(Instance.markAsStoppingAsync, instance._id, instance.container.dockerContainer)
+        sinon.assert.calledOnce(rabbitMQ.stopInstanceContainer)
+        sinon.assert.calledWith(rabbitMQ.stopInstanceContainer, {
+          containerId: instance.container.dockerContainer,
+          instanceId: instance._id.toString(),
+          sessionUserGithubId: sessionUserGithubId,
+          tid: null
         })
         done()
       })
