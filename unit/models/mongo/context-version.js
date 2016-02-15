@@ -1272,4 +1272,80 @@ describe('Context Version: ' + moduleName, function () {
       })
     })
   })
+
+  describe('setBuildStarting', function () {
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'updateAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.updateAsync.restore()
+      done()
+    })
+
+    it('should call updateAsync with correct params', function (done) {
+      var buildId = 54353
+      var dockerHost = 'https://10.0.0.9:4242'
+      var testOut = 'bloom'
+      ContextVersion.updateAsync.returns(testOut)
+
+      var out = ContextVersion.setBuildStarting(buildId, dockerHost)
+      expect(out).to.equal(testOut)
+      sinon.assert.calledOnce(ContextVersion.updateAsync)
+      sinon.assert.calledWith(ContextVersion.updateAsync, {
+        'build._id': buildId,
+        'build.finished': {
+          $exists: false
+        },
+        'build.started': {
+          $exists: true
+        },
+        state: { $ne: ContextVersion.buildStarted }
+      }, {
+        $set: {
+          state: ContextVersion.states.buildStarting,
+          dockerHost: dockerHost
+        }
+      }, {
+        multi: true
+      })
+      done()
+    })
+  }) // end setBuildStarting
+
+  describe('findBuildStarted', function () {
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'findOneAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.findOneAsync.restore()
+      done()
+    })
+
+    it('should call findOneAsync with correct params', function (done) {
+      var testContextVersionId = 54353
+      var testOut = 'Obama'
+      ContextVersion.findOneAsync.returns(testOut)
+
+      var out = ContextVersion.findBuildStarted(testContextVersionId)
+      expect(out).to.equal(testOut)
+      sinon.assert.calledOnce(ContextVersion.findOneAsync)
+      sinon.assert.calledWith(ContextVersion.findOneAsync, {
+        '_id': testContextVersionId,
+        'build.dockerContainer': {
+          $exists: false
+        },
+        'build.started': {
+          $exists: true
+        },
+        'build.finished': {
+          $exists: false
+        }
+      })
+      done()
+    })
+  }) // end findBuildStarted
 })
