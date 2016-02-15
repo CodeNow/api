@@ -81,7 +81,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
 
   describe('valid job', function () {
     beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'updateAsync')
+      sinon.stub(ContextVersion, 'setBuildStarting')
       sinon.stub(ContextVersion, 'findAsync')
       sinon.stub(messenger, 'emitContextVersionUpdate')
       sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync')
@@ -89,7 +89,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
     })
 
     afterEach(function (done) {
-      ContextVersion.updateAsync.restore()
+      ContextVersion.setBuildStarting.restore()
       ContextVersion.findAsync.restore()
       messenger.emitContextVersionUpdate.restore()
       Docker.prototype.startImageBuilderContainerAsync.restore()
@@ -97,34 +97,20 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
     })
 
     it('should call update correctly', function (done) {
-      ContextVersion.updateAsync.returns(1)
+      ContextVersion.setBuildStarting.returns(1)
       ContextVersion.findAsync.returns([])
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         if (err) { return done(err) }
-        sinon.assert.calledOnce(ContextVersion.updateAsync)
-        sinon.assert.calledWith(ContextVersion.updateAsync, {
-          'build._id': testCvBuildId,
-          'build.finished': {
-            $exists: false
-          },
-          'build.started': {
-            $exists: true
-          },
-          state: { $ne: ContextVersion.states.buildStarted }
-        }, {
-          $set: {
-            state: ContextVersion.states.buildStarting,
-            dockerHost: testJob.host
-          }
-        }, { multi: true })
+        sinon.assert.calledOnce(ContextVersion.setBuildStarting)
+        sinon.assert.calledWith(ContextVersion.setBuildStarting, testCvBuildId, testJob.host)
 
         done()
       })
     })
 
     it('should error if no cv updated', function (done) {
-      ContextVersion.updateAsync.returns(0)
+      ContextVersion.setBuildStarting.returns(0)
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
@@ -135,7 +121,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
     })
 
     it('should start container', function (done) {
-      ContextVersion.updateAsync.returns(1)
+      ContextVersion.setBuildStarting.returns(1)
       Docker.prototype.startImageBuilderContainerAsync.returns()
       ContextVersion.findAsync.returns([])
 
@@ -151,7 +137,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
     it('should emit build_started for each cv', function (done) {
       var cv1 = { cv: 1, toJSON: noop }
       var cv2 = { cv: 2, toJSON: noop }
-      ContextVersion.updateAsync.returns(1)
+      ContextVersion.setBuildStarting.returns(1)
       ContextVersion.findAsync.returns([cv1, cv2])
       Docker.prototype.startImageBuilderContainerAsync.returns()
       messenger.emitContextVersionUpdate.returns()
