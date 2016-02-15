@@ -1100,9 +1100,7 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should find the hash via InfraCodeVersion', function (done) {
       cv.dedupeBuild(function (err) {
-        if (err) {
-          return done(err)
-        }
+        if (err) { return done(err) }
         expect(InfraCodeVersion.findByIdAndGetHash.calledOnce).to.be.true()
         expect(InfraCodeVersion.findByIdAndGetHash.calledWith(
           cv.infraCodeVersion
@@ -1113,9 +1111,7 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should set the hash returned by InfraCodeVersion', function (done) {
       cv.dedupeBuild(function (err) {
-        if (err) {
-          return done(err)
-        }
+        if (err) { return done(err) }
         expect(cv.updateBuildHash.calledOnce).to.be.true()
         expect(cv.updateBuildHash.calledWith(hash)).to.be.true()
         done()
@@ -1124,9 +1120,7 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should find pending duplicates', function (done) {
       cv.dedupeBuild(function (err) {
-        if (err) {
-          return done(err)
-        }
+        if (err) { return done(err) }
         expect(cv.findPendingDupe.calledOnce).to.be.true()
         done()
       })
@@ -1134,9 +1128,7 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should not find completed duplicates with one pending', function (done) {
       cv.dedupeBuild(function (err) {
-        if (err) {
-          return done(err)
-        }
+        if (err) { return done(err) }
         expect(cv.findCompletedDupe.callCount).to.equal(0)
         done()
       })
@@ -1146,9 +1138,7 @@ describe('Context Version: ' + moduleName, function () {
       cv.findPendingDupe.yieldsAsync(null, null)
 
       cv.dedupeBuild(function (err) {
-        if (err) {
-          return done(err)
-        }
+        if (err) { return done(err) }
         expect(cv.findCompletedDupe.calledOnce).to.be.true()
         done()
       })
@@ -1167,9 +1157,7 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should dedupe cvs with the same owner', function (done) {
       cv.dedupeBuild(function (err, result) {
-        if (err) {
-          done(err)
-        }
+        if (err) { return done(err) }
         expect(result).to.equal(dupe)
         done()
       })
@@ -1178,9 +1166,7 @@ describe('Context Version: ' + moduleName, function () {
     it('should not dedupe a cv with a different owner', function (done) {
       dupe.owner.github = 2
       cv.dedupeBuild(function (err, result) {
-        if (err) {
-          done(err)
-        }
+        if (err) { return done(err) }
         expect(result).to.equal(cv)
         done()
       })
@@ -1188,9 +1174,7 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should replace itself if a duplicate was found', function (done) {
       cv.dedupeBuild(function (err) {
-        if (err) {
-          done(err)
-        }
+        if (err) { return done(err) }
         expect(cv.copyBuildFromContextVersion.calledOnce).to.be.true()
         expect(cv.copyBuildFromContextVersion.calledWith(dupe))
           .to.be.true()
@@ -1203,9 +1187,7 @@ describe('Context Version: ' + moduleName, function () {
       cv.findCompletedDupe.yieldsAsync(null, null)
 
       cv.dedupeBuild(function (err) {
-        if (err) {
-          done(err)
-        }
+        if (err) { return done(err) }
         expect(cv.copyBuildFromContextVersion.callCount).to.equal(0)
         expect(cv.copyBuildFromContextVersion.calledWith(dupe))
           .to.be.false()
