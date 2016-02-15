@@ -66,7 +66,7 @@ describe('Context Version: ' + moduleName, function () {
     var testCv
     beforeEach(function (done) {
       testCv = new ContextVersion({
-        appCodeVersions: [{ test: 1 }]
+        appCodeVersions: [{test: 1}]
       })
       sinon.stub(ContextVersion, 'getMainAppCodeVersion')
       done()
@@ -86,7 +86,7 @@ describe('Context Version: ' + moduleName, function () {
     })
 
     it('should get repo memory limit', function (done) {
-      ContextVersion.getMainAppCodeVersion.returns({ some: 'thing' })
+      ContextVersion.getMainAppCodeVersion.returns({some: 'thing'})
 
       var out = testCv.getUserContainerMemoryLimit()
 
@@ -133,11 +133,13 @@ describe('Context Version: ' + moduleName, function () {
     it('should update contextVersions with matching build properties', function (done) {
       var buildErr = Boom.badRequest('message', {
         docker: {
-          log: [{ some: 'object' }]
+          log: [{some: 'object'}]
         }
       })
       ContextVersion.updateBuildErrorByBuildId(ctx.buildId, buildErr, function (err, contextVersions) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(contextVersions).to.equal(ctx.mockContextVersions)
         sinon.assert.calledOnce(ContextVersion.updateBy)
         expect(ContextVersion.updateBy.firstCall.args[0]).to.equal('build._id')
@@ -187,11 +189,13 @@ describe('Context Version: ' + moduleName, function () {
     it('should update contextVersions with matching build properties', function (done) {
       var buildErr = Boom.badRequest('message', {
         docker: {
-          log: [{ some: 'object' }]
+          log: [{some: 'object'}]
         }
       })
       ContextVersion.updateBuildErrorByContainer(ctx.dockerContainer, buildErr, function (err, contextVersions) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(contextVersions).to.equal(ctx.mockContextVersions)
         sinon.assert.calledOnce(ContextVersion.updateBy)
         sinon.assert.calledWith(
@@ -242,7 +246,7 @@ describe('Context Version: ' + moduleName, function () {
         log: 'adsfasdfasdfadsfadsf',
         failed: false
       }
-      var myCv = { id: 12341 }
+      var myCv = {id: 12341}
 
       sinon.stub(messenger, 'emitContextVersionUpdate', function () {
         done()
@@ -270,7 +274,7 @@ describe('Context Version: ' + moduleName, function () {
           message: 'jksdhfalskdjfhadsf'
         }
       }
-      var myCv = { id: 12341 }
+      var myCv = {id: 12341}
       sinon.stub(messenger, 'emitContextVersionUpdate', function () {
         done()
       })
@@ -295,7 +299,7 @@ describe('Context Version: ' + moduleName, function () {
     it('should not possible to save cv without owner', function (done) {
       var c = new Context()
       var cv = new ContextVersion({
-        createdBy: { github: 1000 },
+        createdBy: {github: 1000},
         context: c._id
       })
       cv.save(function (err) {
@@ -310,23 +314,29 @@ describe('Context Version: ' + moduleName, function () {
   describe('log streams primus', function () {
     it('should be fine if we do not pass it a callback', function (done) {
       var cv = new ContextVersion({
-        build: { log: 'hello\nworld\n' }
+        build: {log: 'hello\nworld\n'}
       })
       var cache = []
       var stream = {
-        write: function (data) { cache.push(data) },
-        end: function () { done() }
+        write: function (data) {
+          cache.push(data)
+        },
+        end: function () {
+          done()
+        }
       }
       // this will call stream.end for us
       cv.writeLogsToPrimusStream(stream)
     })
     it('should write objects to primus from a string log', function (done) {
       var cv = new ContextVersion({
-        build: { log: 'hello\nworld\n' }
+        build: {log: 'hello\nworld\n'}
       })
       var cache = []
       var stream = {
-        write: function (data) { cache.push(data) },
+        write: function (data) {
+          cache.push(data)
+        },
         end: sinon.spy(function () {
           expect(cache).to.have.length(1)
           expect(cache[0]).to.deep.equal([
@@ -362,7 +372,9 @@ describe('Context Version: ' + moduleName, function () {
       })
       var cache = []
       var stream = {
-        write: function (data) { cache.push(data) },
+        write: function (data) {
+          cache.push(data)
+        },
         end: sinon.spy(function () {
           expect(cache).to.have.length(1)
           expect(cache[0]).to.deep.equal([
@@ -389,8 +401,8 @@ describe('Context Version: ' + moduleName, function () {
     beforeEach(function (done) {
       ctx.c = new Context()
       ctx.cv = new ContextVersion({
-        createdBy: { github: 1000 },
-        owner: { github: 2874589 },
+        createdBy: {github: 1000},
+        owner: {github: 2874589},
         context: ctx.c._id
       })
       ctx.cv.save(done)
@@ -398,7 +410,7 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should add a repo and save the correct default branch', function (done) {
       var user = {
-        accounts: { github: { accessToken: '00' } }
+        accounts: {github: {accessToken: '00'}}
       }
       var repoInfo = {
         repo: 'bkendall/flaming-octo-nemesis',
@@ -408,18 +420,24 @@ describe('Context Version: ' + moduleName, function () {
       sinon.stub(Github.prototype, 'getRepo').yieldsAsync(null, {
         'default_branch': 'not-master' // eslint-disable-line quote-props
       })
-      sinon.stub(Github.prototype, 'createRepoHookIfNotAlready', function (repo, cb) { cb() })
+      sinon.stub(Github.prototype, 'createRepoHookIfNotAlready', function (repo, cb) {
+        cb()
+      })
       sinon.stub(Github.prototype, 'addDeployKeyIfNotAlready', function (repo, cb) {
-        cb(null, { privateKey: 'private', publicKey: 'public' })
+        cb(null, {privateKey: 'private', publicKey: 'public'})
       })
       ContextVersion.addGithubRepoToVersion(user, ctx.cv.id, repoInfo, function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         Github.prototype.getRepo.restore()
         Github.prototype.createRepoHookIfNotAlready.restore()
         Github.prototype.addDeployKeyIfNotAlready.restore()
 
-        ContextVersion.findOne({ _id: ctx.cv._id }, function (findErr, doc) {
-          if (findErr) { return done(findErr) }
+        ContextVersion.findOne({_id: ctx.cv._id}, function (findErr, doc) {
+          if (findErr) {
+            return done(findErr)
+          }
           expect(doc.appCodeVersions[0].defaultBranch).to.equal('not-master')
           done()
         })
@@ -435,13 +453,15 @@ describe('Context Version: ' + moduleName, function () {
         branch: 'master'
       }
       var cv = new ContextVersion({
-        createdBy: { github: 1000 },
-        owner: { github: 2874589 },
+        createdBy: {github: 1000},
+        owner: {github: 2874589},
         context: c._id
       })
       cv.save(function (err) {
-        if (err) { return done(err) }
-        cv.update({ $pushAll: { appCodeVersions: [acv1] } }, { safe: true, upsert: true },
+        if (err) {
+          return done(err)
+        }
+        cv.update({$pushAll: {appCodeVersions: [acv1]}}, {safe: true, upsert: true},
           function (err) {
             if (err) {
               return done(err)
@@ -451,7 +471,7 @@ describe('Context Version: ' + moduleName, function () {
                 return done(err)
               }
               newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id,
-                { branch: 'Some-branch' },
+                {branch: 'Some-branch'},
                 function (err, updatedCv) {
                   expect(err).to.be.null()
                   expect(updatedCv.appCodeVersions[0].branch).to.equal('Some-branch')
@@ -469,13 +489,15 @@ describe('Context Version: ' + moduleName, function () {
         branch: 'master'
       }
       var cv = new ContextVersion({
-        createdBy: { github: 1000 },
-        owner: { github: 2874589 },
+        createdBy: {github: 1000},
+        owner: {github: 2874589},
         context: c._id
       })
       cv.save(function (err) {
-        if (err) { return done(err) }
-        cv.update({ $pushAll: { appCodeVersions: [acv1] } }, { safe: true, upsert: true },
+        if (err) {
+          return done(err)
+        }
+        cv.update({$pushAll: {appCodeVersions: [acv1]}}, {safe: true, upsert: true},
           function (err) {
             if (err) {
               return done(err)
@@ -486,7 +508,7 @@ describe('Context Version: ' + moduleName, function () {
               }
               newCv.modifyAppCodeVersion(
                 newCv.appCodeVersions[0]._id,
-                { commit: 'd5a527f959342c2e00151612be973c89b9fa7078' },
+                {commit: 'd5a527f959342c2e00151612be973c89b9fa7078'},
                 function (err, updatedCv) {
                   expect(err).to.be.null()
                   expect(updatedCv.appCodeVersions[0].commit).to.equal('d5a527f959342c2e00151612be973c89b9fa7078')
@@ -503,13 +525,15 @@ describe('Context Version: ' + moduleName, function () {
         branch: 'master'
       }
       var cv = new ContextVersion({
-        createdBy: { github: 1000 },
-        owner: { github: 2874589 },
+        createdBy: {github: 1000},
+        owner: {github: 2874589},
         context: c._id
       })
       cv.save(function (err) {
-        if (err) { return done(err) }
-        cv.update({ $pushAll: { appCodeVersions: [acv1] } }, { safe: true, upsert: true },
+        if (err) {
+          return done(err)
+        }
+        cv.update({$pushAll: {appCodeVersions: [acv1]}}, {safe: true, upsert: true},
           function (err) {
             if (err) {
               return done(err)
@@ -518,7 +542,7 @@ describe('Context Version: ' + moduleName, function () {
               if (err) {
                 return done(err)
               }
-              newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id, { useLatest: true }, function (err, updatedCv) {
+              newCv.modifyAppCodeVersion(newCv.appCodeVersions[0]._id, {useLatest: true}, function (err, updatedCv) {
                 expect(err).to.be.null()
                 expect(updatedCv.appCodeVersions[0].useLatest).to.be.true()
                 done()
@@ -534,13 +558,15 @@ describe('Context Version: ' + moduleName, function () {
         branch: 'master'
       }
       var cv = new ContextVersion({
-        createdBy: { github: 1000 },
-        owner: { github: 2874589 },
+        createdBy: {github: 1000},
+        owner: {github: 2874589},
         context: c._id
       })
       cv.save(function (err) {
-        if (err) { return done(err) }
-        cv.update({ $pushAll: { appCodeVersions: [acv1] } }, { safe: true, upsert: true },
+        if (err) {
+          return done(err)
+        }
+        cv.update({$pushAll: {appCodeVersions: [acv1]}}, {safe: true, upsert: true},
           function (err) {
             if (err) {
               return done(err)
@@ -554,7 +580,7 @@ describe('Context Version: ' + moduleName, function () {
               }
               newCv.modifyAppCodeVersion(
                 newCv.appCodeVersions[0]._id,
-                { transformRules: transformRules },
+                {transformRules: transformRules},
                 function (err, updatedCv) {
                   expect(err).to.be.null()
                   expect(updatedCv.appCodeVersions[0].transformRules.exclude).to.deep.equal(transformRules.exclude)
@@ -570,11 +596,11 @@ describe('Context Version: ' + moduleName, function () {
     it('should return current same cv if no acs were found', function (done) {
       var c = new Context()
       var cv = new ContextVersion({
-        createdBy: { github: 1000 },
-        owner: { github: 2874589 },
+        createdBy: {github: 1000},
+        owner: {github: 2874589},
         context: c._id
       })
-      cv.modifyAppCodeVersionWithLatestCommit({ id: 'some-id' }, function (err, updatedCv) {
+      cv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
         expect(err).to.be.null()
         expect(updatedCv).to.deep.equal(cv)
         done()
@@ -593,13 +619,15 @@ describe('Context Version: ' + moduleName, function () {
         additionalRepo: true
       }
       var cv = new ContextVersion({
-        createdBy: { github: 1000 },
-        owner: { github: 2874589 },
+        createdBy: {github: 1000},
+        owner: {github: 2874589},
         context: c._id
       })
       cv.save(function (err) {
-        if (err) { return done(err) }
-        cv.update({ $pushAll: { appCodeVersions: [ acv1, acv2 ] } }, { safe: true, upsert: true },
+        if (err) {
+          return done(err)
+        }
+        cv.update({$pushAll: {appCodeVersions: [acv1, acv2]}}, {safe: true, upsert: true},
           function (err) {
             if (err) {
               return done(err)
@@ -608,7 +636,7 @@ describe('Context Version: ' + moduleName, function () {
               if (err) {
                 return done(err)
               }
-              newCv.modifyAppCodeVersionWithLatestCommit({ id: 'some-id' }, function (err, updatedCv) {
+              newCv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
                 expect(err).to.be.null()
                 expect(updatedCv).to.deep.equal(newCv)
                 done()
@@ -642,14 +670,16 @@ describe('Context Version: ' + moduleName, function () {
         useLatest: true
       }
       var cv = new ContextVersion({
-        createdBy: { github: 1000 },
-        owner: { github: 2874589 },
+        createdBy: {github: 1000},
+        owner: {github: 2874589},
         context: c._id
       })
       cv.save(function (err) {
-        if (err) { return done(err) }
-        cv.update({ $pushAll: { appCodeVersions: [ acv1, acv2, acv3, acv4 ] } },
-          { safe: true, upsert: true },
+        if (err) {
+          return done(err)
+        }
+        cv.update({$pushAll: {appCodeVersions: [acv1, acv2, acv3, acv4]}},
+          {safe: true, upsert: true},
           function (err) {
             if (err) {
               return done(err)
@@ -659,7 +689,7 @@ describe('Context Version: ' + moduleName, function () {
                 return done(err)
               }
               require('../../../test/functional/fixtures/mocks/github/repos-username-repo-branches-branch')(newCv)
-              newCv.modifyAppCodeVersionWithLatestCommit({ id: 'some-id' }, function (err, updatedCv) {
+              newCv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
                 expect(err).to.be.null()
                 expect(updatedCv.appCodeVersions[0].commit).to.be.undefined()
                 expect(updatedCv.appCodeVersions[1].commit).to.be.undefined()
@@ -694,7 +724,9 @@ describe('Context Version: ' + moduleName, function () {
         branch,
         commit,
         function (err, doc) {
-          if (err) { return done(err) }
+          if (err) {
+            return done(err)
+          }
           expect(doc).to.deep.equal(ctx.mockContextVersion)
           sinon.assert.calledWith(
             ContextVersion.findOneAndUpdate,
@@ -732,14 +764,14 @@ describe('Context Version: ' + moduleName, function () {
     var query
     var infraCodeVersion = 'HASH'
     var appCodeVersions = [
-      { lowerRepo: 'some-repo-name', commit: 'c0ffee' },
-      { lowerRepo: 'some-other-name', commit: 'deadbeef' }
+      {lowerRepo: 'some-repo-name', commit: 'c0ffee'},
+      {lowerRepo: 'some-other-name', commit: 'deadbeef'}
     ]
 
     beforeEach(function (done) {
-      query = { infraCodeVersion: infraCodeVersion }
-      cv = new ContextVersion({ appCodeVersions: appCodeVersions })
-      cvNoAppCodeVersions = new ContextVersion({ appCodeVersions: [] })
+      query = {infraCodeVersion: infraCodeVersion}
+      cv = new ContextVersion({appCodeVersions: appCodeVersions})
+      cvNoAppCodeVersions = new ContextVersion({appCodeVersions: []})
       done()
     })
 
@@ -792,7 +824,7 @@ describe('Context Version: ' + moduleName, function () {
 
     beforeEach(function (done) {
       cv = new ContextVersion({
-        build: { hash: 'old-hash' }
+        build: {hash: 'old-hash'}
       })
       sinon.stub(cv, 'update').yieldsAsync(null)
       done()
@@ -811,7 +843,9 @@ describe('Context Version: ' + moduleName, function () {
         }
       }
       cv.updateBuildHash(hash, function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(cv.update.calledOnce).to.be.true()
         expect(cv.update.calledWith(expectedQuery)).to.be.true()
         done()
@@ -821,7 +855,9 @@ describe('Context Version: ' + moduleName, function () {
     it('should set the hash on the context version', function (done) {
       var hash = 'brand-new-hash'
       cv.updateBuildHash(hash, function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(cv.build.hash).to.equal(hash)
         done()
       })
@@ -869,14 +905,16 @@ describe('Context Version: ' + moduleName, function () {
 
     it('uses the correct ContextVersion.find query', function (done) {
       var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
-        'build.completed': { $exists: false },
+        'build.completed': {$exists: false},
         'build.hash': cv.build.hash,
-        'build._id': { $ne: cv.build._id },
+        'build._id': {$ne: cv.build._id},
         advanced: false
       })
 
       cv.findPendingDupe(function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(ContextVersion.find.calledOnce).to.be.true()
         expect(ContextVersion.find.firstCall.args[0])
           .to.deep.equal(expectedQuery)
@@ -891,7 +929,9 @@ describe('Context Version: ' + moduleName, function () {
       }
 
       cv.findPendingDupe(function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(ContextVersion.find.calledOnce).to.be.true()
         expect(ContextVersion.find.firstCall.args[2])
           .to.deep.equal(expectedOptions)
@@ -921,7 +961,9 @@ describe('Context Version: ' + moduleName, function () {
       ])
 
       cv.findPendingDupe(function (err, pendingDuplicate) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(pendingDuplicate).to.be.null()
         done()
       })
@@ -931,7 +973,9 @@ describe('Context Version: ' + moduleName, function () {
       ContextVersion.find.yieldsAsync(null, [])
 
       cv.findPendingDupe(function (err, pendingDuplicate) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(pendingDuplicate).to.not.exist()
         done()
       })
@@ -939,7 +983,9 @@ describe('Context Version: ' + moduleName, function () {
 
     it('yields the oldest pending duplicate when applicable', function (done) {
       cv.findPendingDupe(function (err, pendingDuplicate) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(pendingDuplicate).to.equal(dupe)
         done()
       })
@@ -974,14 +1020,16 @@ describe('Context Version: ' + moduleName, function () {
 
     it('uses the correct ContextVersion.find query', function (done) {
       var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
-        'build.completed': { $exists: true },
+        'build.completed': {$exists: true},
         'build.hash': cv.build.hash,
-        'build._id': { $ne: cv.build._id },
+        'build._id': {$ne: cv.build._id},
         advanced: false
       })
 
       cv.findCompletedDupe(function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(ContextVersion.find.calledOnce).to.be.true()
         expect(ContextVersion.find.firstCall.args[0])
           .to.deep.equal(expectedQuery)
@@ -996,7 +1044,9 @@ describe('Context Version: ' + moduleName, function () {
       }
 
       cv.findCompletedDupe(function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(ContextVersion.find.calledOnce).to.be.true()
         expect(ContextVersion.find.firstCall.args[2])
           .to.deep.equal(expectedOptions)
@@ -1006,7 +1056,9 @@ describe('Context Version: ' + moduleName, function () {
 
     it('yields the correct duplicate', function (done) {
       cv.findCompletedDupe(function (err, completedDupe) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(completedDupe).to.equal(dupe)
         done()
       })
@@ -1021,11 +1073,11 @@ describe('Context Version: ' + moduleName, function () {
     beforeEach(function (done) {
       cv = new ContextVersion({
         infraCodeVersion: 'infra-code-version-id',
-        owner: { github: 1 }
+        owner: {github: 1}
       })
       dupe = new ContextVersion({
         infraCodeVersion: 'infra-code-version-id',
-        owner: { github: 1 }
+        owner: {github: 1}
       })
       sinon.stub(InfraCodeVersion, 'findByIdAndGetHash')
         .yieldsAsync(null, hash)
@@ -1048,7 +1100,9 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should find the hash via InfraCodeVersion', function (done) {
       cv.dedupeBuild(function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(InfraCodeVersion.findByIdAndGetHash.calledOnce).to.be.true()
         expect(InfraCodeVersion.findByIdAndGetHash.calledWith(
           cv.infraCodeVersion
@@ -1059,7 +1113,9 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should set the hash returned by InfraCodeVersion', function (done) {
       cv.dedupeBuild(function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(cv.updateBuildHash.calledOnce).to.be.true()
         expect(cv.updateBuildHash.calledWith(hash)).to.be.true()
         done()
@@ -1068,7 +1124,9 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should find pending duplicates', function (done) {
       cv.dedupeBuild(function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(cv.findPendingDupe.calledOnce).to.be.true()
         done()
       })
@@ -1076,7 +1134,9 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should not find completed duplicates with one pending', function (done) {
       cv.dedupeBuild(function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(cv.findCompletedDupe.callCount).to.equal(0)
         done()
       })
@@ -1086,7 +1146,9 @@ describe('Context Version: ' + moduleName, function () {
       cv.findPendingDupe.yieldsAsync(null, null)
 
       cv.dedupeBuild(function (err) {
-        if (err) { return done(err) }
+        if (err) {
+          return done(err)
+        }
         expect(cv.findCompletedDupe.calledOnce).to.be.true()
         done()
       })
@@ -1105,7 +1167,9 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should dedupe cvs with the same owner', function (done) {
       cv.dedupeBuild(function (err, result) {
-        if (err) { done(err) }
+        if (err) {
+          done(err)
+        }
         expect(result).to.equal(dupe)
         done()
       })
@@ -1114,7 +1178,9 @@ describe('Context Version: ' + moduleName, function () {
     it('should not dedupe a cv with a different owner', function (done) {
       dupe.owner.github = 2
       cv.dedupeBuild(function (err, result) {
-        if (err) { done(err) }
+        if (err) {
+          done(err)
+        }
         expect(result).to.equal(cv)
         done()
       })
@@ -1122,7 +1188,9 @@ describe('Context Version: ' + moduleName, function () {
 
     it('should replace itself if a duplicate was found', function (done) {
       cv.dedupeBuild(function (err) {
-        if (err) { done(err) }
+        if (err) {
+          done(err)
+        }
         expect(cv.copyBuildFromContextVersion.calledOnce).to.be.true()
         expect(cv.copyBuildFromContextVersion.calledWith(dupe))
           .to.be.true()
@@ -1135,7 +1203,9 @@ describe('Context Version: ' + moduleName, function () {
       cv.findCompletedDupe.yieldsAsync(null, null)
 
       cv.dedupeBuild(function (err) {
-        if (err) { done(err) }
+        if (err) {
+          done(err)
+        }
         expect(cv.copyBuildFromContextVersion.callCount).to.equal(0)
         expect(cv.copyBuildFromContextVersion.calledWith(dupe))
           .to.be.false()
@@ -1148,8 +1218,8 @@ describe('Context Version: ' + moduleName, function () {
     beforeEach(function (done) {
       ctx.c = new Context()
       ctx.cv = new ContextVersion({
-        createdBy: { github: 1000 },
-        owner: { github: 2874589 },
+        createdBy: {github: 1000},
+        owner: {github: 2874589},
         context: ctx.c._id
       })
       done()
@@ -1205,9 +1275,9 @@ describe('Context Version: ' + moduleName, function () {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(ContextVersion.update)
         sinon.assert.calledWith(ContextVersion.update,
-          { dockerHost: dockerHost },
-          { $set: { dockRemoved: true } },
-          { multi: true },
+          {dockerHost: dockerHost},
+          {$set: {dockRemoved: true}},
+          {multi: true},
           sinon.match.func
         )
         done()
@@ -1241,8 +1311,8 @@ describe('Context Version: ' + moduleName, function () {
         dockRemoved: false
       }
       contextVersion = new ContextVersion({
-        createdBy: { github: 1000 },
-        owner: { github: 2874589 },
+        createdBy: {github: 1000},
+        owner: {github: 2874589},
         context: ctx.c._id
       })
       sinon.stub(ContextVersion, 'findOneAndUpdate').yieldsAsync(null, updatedCv)
@@ -1257,8 +1327,8 @@ describe('Context Version: ' + moduleName, function () {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(ContextVersion.findOneAndUpdate)
         sinon.assert.calledWith(ContextVersion.findOneAndUpdate,
-          { '_id': contextVersion._id, 'dockRemoved': true },
-          { $set: { 'dockRemoved': false } },
+          {'_id': contextVersion._id, 'dockRemoved': true},
+          {$set: {'dockRemoved': false}},
           sinon.match.func)
         done()
       })
@@ -1270,8 +1340,8 @@ describe('Context Version: ' + moduleName, function () {
         expect(err).to.equal(error)
         sinon.assert.calledOnce(ContextVersion.findOneAndUpdate)
         sinon.assert.calledWith(ContextVersion.findOneAndUpdate,
-          { '_id': contextVersion._id, 'dockRemoved': true },
-          { $set: { 'dockRemoved': false } },
+          {'_id': contextVersion._id, 'dockRemoved': true},
+          {$set: {'dockRemoved': false}},
           sinon.match.func)
         done()
       })
@@ -1286,7 +1356,7 @@ describe('Context Version: ' + moduleName, function () {
     beforeEach(function (done) {
       ctx.c = new Context()
       contextVersion = new ContextVersion({
-        createdBy: { github: 1000 },
+        createdBy: {github: 1000},
         owner: {
           github: 2874589,
           username: 'hello'
@@ -1302,18 +1372,18 @@ describe('Context Version: ' + moduleName, function () {
       keypather.set(sessionUser, 'accounts.github.id', 1234)
       sinon.stub(contextVersion, 'modifyAppCodeVersionWithLatestCommitAsync').resolves(contextVersion)
       sinon.stub(contextVersion, 'dedupeAsync').resolves(contextVersion)
-      sinon.stub(contextVersion, 'removeAsync').resolves()
+      sinon.stub(ContextVersion, 'removeByIdAsync').resolves()
       sinon.stub(ContextVersion, '_startBuild').resolves(contextVersion)
       done()
     })
     afterEach(function (done) {
       contextVersion.modifyAppCodeVersionWithLatestCommitAsync.restore()
       contextVersion.dedupeAsync.restore()
-      contextVersion.removeAsync.restore()
+      ContextVersion.removeByIdAsync.restore()
       ContextVersion._startBuild.restore()
       done()
     })
-    it('should reject when a contextVersion is already building', function (done) {
+    it('should reject when a contextVersion is already building, and not even call the first function', function (done) {
       opts = {
         triggeredAction: {
           manual: true
@@ -1324,94 +1394,102 @@ describe('Context Version: ' + moduleName, function () {
         .catch(function (err) {
           expect(err.message).to.contain('cannot build a context version that is already building or built')
           sinon.assert.notCalled(contextVersion.modifyAppCodeVersionWithLatestCommitAsync)
-          sinon.assert.notCalled(contextVersion.dedupeAsync)
-          sinon.assert.notCalled(contextVersion.removeAsync)
-          sinon.assert.notCalled(ContextVersion._startBuild)
         })
         .asCallback(done)
     })
-    it('should try to start the build of a normal build', function (done) {
-      opts = {
-        triggeredAction: {
-          manual: true
+    describe('normal build flow', function () {
+      beforeEach(function (done) {
+        opts = {
+          triggeredAction: {
+            manual: true
+          }
         }
-      }
-      ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
-        .then(function (contextVersion) {
-          sinon.assert.calledOnce(contextVersion.modifyAppCodeVersionWithLatestCommitAsync)
-          sinon.assert.calledWith(contextVersion.modifyAppCodeVersionWithLatestCommitAsync, sessionUser)
-          sinon.assert.calledOnce(contextVersion.dedupeAsync)
-          sinon.assert.notCalled(contextVersion.removeAsync)
-          sinon.assert.calledOnce(ContextVersion._startBuild)
-          sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts, domain)
-        })
-        .asCallback(done)
+        done()
+      })
+      it('should attempt to call dedupeAsync, but not remove, before starting the build', function (done) {
+        ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          .then(function (contextVersion) {
+            sinon.assert.calledOnce(contextVersion.dedupeAsync)
+            sinon.assert.notCalled(ContextVersion.removeByIdAsync)
+            sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts, domain)
+          })
+          .asCallback(done)
+      })
+      it('should try to start the build of a normal build', function (done) {
+        ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          .then(function (contextVersion) {
+            sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts, domain)
+          })
+          .asCallback(done)
+      })
     })
-    it('should create a build job for a no-cached build', function (done) {
-      opts = {
-        noCache: true
-      }
-      ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
-        .then(function (contextVersion) {
-          sinon.assert.calledOnce(contextVersion.modifyAppCodeVersionWithLatestCommitAsync)
-          sinon.assert.calledWith(contextVersion.modifyAppCodeVersionWithLatestCommitAsync, sessionUser)
-          sinon.assert.notCalled(contextVersion.dedupeAsync)
-          sinon.assert.notCalled(contextVersion.removeAsync)
-          sinon.assert.calledOnce(ContextVersion._startBuild)
-          sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts, domain)
-        })
-        .asCallback(done)
-    })
-    it('should not add job when a dedup happens', function (done) {
-      opts = {
-        triggeredAction: {
-          manual: true
+    describe('noCache build flow', function () {
+      beforeEach(function (done) {
+        opts = {
+          noCache: true
         }
-      }
-      contextVersion.dedupeAsync.restore()
-      sinon.stub(contextVersion, 'dedupeAsync', function () {
-        contextVersion._doc.build.started = new Date()
-        return Promise.resolve(contextVersion)
+        done()
       })
-      ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
-        .then(function (contextVersion) {
-          sinon.assert.calledOnce(contextVersion.modifyAppCodeVersionWithLatestCommitAsync)
-          sinon.assert.calledWith(contextVersion.modifyAppCodeVersionWithLatestCommitAsync, sessionUser)
-          sinon.assert.calledOnce(contextVersion.dedupeAsync)
-          sinon.assert.notCalled(ContextVersion._startBuild)
-        })
-        .asCallback(done)
-    })
-    it('should remove itself', function (done) {
-      opts = {
-        triggeredAction: {
-          manual: true
+      it('should skip calling dedupAsync', function (done) {
+        opts = {
+          noCache: true
         }
-      }
-      var newCv = new ContextVersion({
-        createdBy: { github: 1000 },
-        owner: {
-          github: 2874589,
-          username: 'hello'
-        },
-        build: {
-          started: new Date()
-        },
-        context: ctx.c._id
+        ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          .then(function (contextVersion) {
+            sinon.assert.notCalled(contextVersion.dedupeAsync)
+          })
+          .asCallback(done)
       })
-      contextVersion.dedupeAsync.restore()
-      sinon.stub(contextVersion, 'dedupeAsync', function () {
-        return Promise.resolve(newCv)
+      it('should attempt to start a no-cached build', function (done) {
+        opts = {
+          noCache: true
+        }
+        ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          .then(function (contextVersion) {
+            sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts, domain)
+          })
+          .asCallback(done)
       })
-      ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
-        .then(function (shouldBeNewCv) {
-          expect(shouldBeNewCv).to.equal(newCv)
-          sinon.assert.calledOnce(contextVersion.modifyAppCodeVersionWithLatestCommitAsync)
-          sinon.assert.calledWith(contextVersion.modifyAppCodeVersionWithLatestCommitAsync, sessionUser)
-          sinon.assert.calledOnce(contextVersion.dedupeAsync)
-          sinon.assert.notCalled(ContextVersion._startBuild)
+    })
+    describe('dedup build flow', function () {
+      var newCv
+      beforeEach(function (done) {
+        newCv = new ContextVersion({
+          createdBy: {github: 1000},
+          owner: {
+            github: 2874589,
+            username: 'hello'
+          },
+          build: {
+            started: new Date()
+          },
+          context: ctx.c._id
         })
-        .asCallback(done)
+        opts = {
+          triggeredAction: {
+            manual: true
+          }
+        }
+        contextVersion.dedupeAsync.restore()
+        sinon.stub(contextVersion, 'dedupeAsync').resolves(newCv)
+        done()
+      })
+      it('should not call _startBuild when a dedupe happens', function (done) {
+        ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          .then(function () {
+            sinon.assert.notCalled(ContextVersion._startBuild)
+          })
+          .asCallback(done)
+      })
+      it('should remove itself, and return the dupe cv', function (done) {
+        ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          .then(function (shouldBeNewCv) {
+            expect(shouldBeNewCv).to.equal(newCv)
+            sinon.assert.calledOnce(contextVersion.dedupeAsync)
+            sinon.assert.calledOnce(ContextVersion.removeByIdAsync)
+          })
+          .asCallback(done)
+      })
     })
   })
 
@@ -1424,7 +1502,7 @@ describe('Context Version: ' + moduleName, function () {
     beforeEach(function (done) {
       context = new Context()
       contextVersion = new ContextVersion({
-        createdBy: { github: 1000 },
+        createdBy: {github: 1000},
         owner: {
           github: 2874589,
           username: 'hello'
@@ -1453,83 +1531,109 @@ describe('Context Version: ' + moduleName, function () {
       rabbitMQ.createImageBuilderContainer.restore()
       done()
     })
-    it('should create a build job for a normal build', function (done) {
-      opts = {
-        triggeredAction: {
-          manual: true
+    describe('normal build flow', function () {
+      beforeEach(function (done) {
+        opts = {
+          triggeredAction: {
+            manual: true
+          }
         }
-      }
-      ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
-        .then(function (contextVersion) {
-          sinon.assert.calledOnce(contextVersion.setBuildStartedAsync)
-          sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
-          sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
-          sinon.assert.calledWith(contextVersion.dedupeBuildAsync)
-          sinon.assert.notCalled(contextVersion.getAndUpdateHashAsync)
-          sinon.assert.calledOnce(contextVersion.populateOwnerAsync)
-          sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
-          sinon.assert.calledOnce(rabbitMQ.createImageBuilderContainer)
-          sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
-            manualBuild: true,
-            sessionUserGithubId: 1234,
-            ownerUsername: 'hello',
-            contextId: contextVersion.context.toString(),
-            contextVersionId: contextVersion._id.toString(),
-            noCache: false,
-            tid: domain.runnableData.tid
-          }))
-        })
-        .asCallback(done)
-    })
-    it('should create a build job for a no-cached build', function (done) {
-      opts = {
-        noCache: true
-      }
-      ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
-        .then(function (contextVersion) {
-          sinon.assert.calledOnce(contextVersion.setBuildStartedAsync)
-          sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
-          sinon.assert.calledOnce(contextVersion.populateOwnerAsync)
-          sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
-          sinon.assert.calledOnce(contextVersion.getAndUpdateHashAsync)
-          sinon.assert.calledWith(contextVersion.getAndUpdateHashAsync)
-
-          sinon.assert.notCalled(contextVersion.dedupeBuildAsync)
-
-          sinon.assert.calledOnce(rabbitMQ.createImageBuilderContainer)
-          sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
-            manualBuild: false,
-            sessionUserGithubId: 1234,
-            ownerUsername: 'hello',
-            contextId: context._id.toString(),
-            contextVersionId: contextVersion._id.toString(),
-            noCache: true,
-            tid: domain.runnableData.tid
-          }))
-        })
-        .asCallback(done)
-    })
-    it('should not add job when a dedup happens', function (done) {
-      opts = {
-        triggeredAction: {
-          manual: true
-        }
-      }
-      contextVersion.dedupeBuildAsync.restore()
-      sinon.stub(contextVersion, 'dedupeBuildAsync', function () {
-        contextVersion._doc.build._id = '13245dsf'
-        return Promise.resolve(contextVersion)
+        done()
       })
-      ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
-        .then(function (contextVersion) {
-          sinon.assert.calledOnce(contextVersion.setBuildStartedAsync)
-          sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
-          sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
-          sinon.assert.calledWith(contextVersion.dedupeBuildAsync)
-          sinon.assert.notCalled(contextVersion.populateOwnerAsync)
-          sinon.assert.notCalled(rabbitMQ.createImageBuilderContainer)
+      it('should call setBuildStartedAsync, dedupeBuildAsync, and populateOwnerAsync before rabbit', function (done) {
+        ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          .then(function (contextVersion) {
+            sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
+            sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
+            sinon.assert.notCalled(contextVersion.getAndUpdateHashAsync)
+            sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
+          })
+          .asCallback(done)
+      })
+      it('should create a build job for a normal build', function (done) {
+        ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          .then(function (contextVersion) {
+            sinon.assert.calledOnce(rabbitMQ.createImageBuilderContainer)
+            sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
+              manualBuild: true,
+              sessionUserGithubId: 1234,
+              ownerUsername: 'hello',
+              contextId: contextVersion.context.toString(),
+              contextVersionId: contextVersion._id.toString(),
+              noCache: false,
+              tid: domain.runnableData.tid
+            }))
+          })
+          .asCallback(done)
+      })
+    })
+    describe('noCache build flow', function () {
+      beforeEach(function (done) {
+        opts = {
+          noCache: true
+        }
+        done()
+      })
+      it('should call setBuildStartedAsync, populateOwnerAsync, and getAndUpdateHashAsync', function (done) {
+        ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          .then(function (contextVersion) {
+            sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
+            sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
+            sinon.assert.calledOnce(contextVersion.getAndUpdateHashAsync)
+            sinon.assert.notCalled(contextVersion.dedupeBuildAsync)
+          })
+          .asCallback(done)
+      })
+      it('should create a build job for a no-cached build', function (done) {
+        ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          .then(function (contextVersion) {
+            sinon.assert.calledOnce(rabbitMQ.createImageBuilderContainer)
+            sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
+              manualBuild: false,
+              sessionUserGithubId: 1234,
+              ownerUsername: 'hello',
+              contextId: context._id.toString(),
+              contextVersionId: contextVersion._id.toString(),
+              noCache: true,
+              tid: domain.runnableData.tid
+            }))
+          })
+          .asCallback(done)
+      })
+    })
+    describe('dedup build flow', function () {
+      beforeEach(function (done) {
+        opts = {
+          triggeredAction: {
+            manual: true
+          }
+        }
+        contextVersion.dedupeBuildAsync.restore()
+        sinon.stub(contextVersion, 'dedupeBuildAsync', function () {
+          contextVersion._doc.build._id = '13245dsf'
+          // Can't use .resolves() because I need this function to wait until this is called to
+          // modify the original cv
+          return Promise.resolve(contextVersion)
         })
-        .asCallback(done)
+        done()
+      })
+      it('should flow through the normal build flow up until actually making the job', function (done) {
+        ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          .then(function (contextVersion) {
+            sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
+            sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
+            sinon.assert.notCalled(contextVersion.populateOwnerAsync)
+            sinon.assert.notCalled(rabbitMQ.createImageBuilderContainer)
+          })
+          .asCallback(done)
+      })
+      it('should not attempt to create an image-builder job', function (done) {
+        ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          .then(function () {
+            sinon.assert.notCalled(rabbitMQ.createImageBuilderContainer)
+          })
+          .asCallback(done)
+      })
     })
   })
 })
