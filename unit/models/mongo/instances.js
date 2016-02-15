@@ -313,8 +313,8 @@ describe('Instance Model Tests ' + moduleName, function () {
           }
         }, function (err) {
           if (err) { throw err }
-          instance.setContainerStateToStarting(function (err, result) {
-            expect(err.message).to.equal('instance container has changed')
+          Instance.markAsStopping(instance._id, instance.container.dockerContainer, function (err, result) {
+            expect(err.message).to.equal('Instance container has changed')
             expect(result).to.be.undefined()
             done()
           })
@@ -322,7 +322,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
 
-    it('should not set container state to Stopping if container on instance has changed', function (done) {
+    it('should not set container state to Stopping if container on instance is starting', function (done) {
       var instance = createNewInstance('container-stopping')
       instance.save(function (err) {
         if (err) { throw err }
@@ -331,15 +331,28 @@ describe('Instance Model Tests ' + moduleName, function () {
           _id: instance._id
         }, {
           $set: {
-            'container.dockerContainer': 'fooo'
+            'container.inspect.State.Starting': 'true'
           }
         }, function (err) {
           if (err) { throw err }
-          instance.setContainerStateToStopping(function (err, result) {
-            expect(err.message).to.equal('instance container has changed')
+          Instance.markAsStopping(instance._id, instance.container.dockerContainer, function (err, result) {
+            expect(err.message).to.equal('Instance container has changed')
             expect(result).to.be.undefined()
             done()
           })
+        })
+      })
+    })
+
+    it('should not set container state to Stopping', function (done) {
+      var instance = createNewInstance('container-stopping')
+      instance.save(function (err) {
+        if (err) { throw err }
+        Instance.markAsStopping(instance._id, instance.container.dockerContainer, function (err, result) {
+          expect(err).to.not.exist()
+          expect(result).to.exist()
+          expect(result.container.inspect.State.Stopping).to.equal(true)
+          done()
         })
       })
     })
@@ -613,6 +626,46 @@ describe('Instance Model Tests ' + moduleName, function () {
       Instance.findInstancesLinkedToBranch('podviaznikov/hello', 'master', function (err, insts) {
         if (err) { return done(err) }
         expect(insts.length).to.equal(0)
+        done()
+      })
+    })
+  })
+
+  describe('findByContextVersionIds', function () {
+    var instance = null
+    var contextVersionId = newObjectId()
+    beforeEach(function (done) {
+      instance = createNewInstance()
+      instance.save(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.exist()
+        done()
+      })
+    })
+    beforeEach(function (done) {
+      var instance = createNewInstance('instance2')
+      instance.save(done)
+    })
+    beforeEach(function (done) {
+      var instance = createNewInstance('instance3', { contextVersion: { _id: contextVersionId } })
+      instance.save(done)
+    })
+    it('should pass the array of contextVersion Ids to find', function (done) {
+      Instance.findByContextVersionIds([contextVersionId], function (err, results) {
+        expect(err).to.not.exist()
+        expect(results).to.be.an.array()
+        expect(results.length).to.equal(1)
+        expect(results[0]).to.be.an.object()
+        expect(results[0].name).to.equal('instance3')
+        expect(results[0].contextVersion._id.toString()).to.equal(contextVersionId.toString())
+        done()
+      })
+    })
+    it('should return an empty array if no contextVersions are found', function (done) {
+      Instance.findByContextVersionIds([newObjectId()], function (err, results) {
+        expect(err).to.not.exist()
+        expect(results).to.be.an.array()
+        expect(results.length).to.equal(0)
         done()
       })
     })
@@ -2204,6 +2257,57 @@ describe('Instance Model Tests ' + moduleName, function () {
           },
           sinon.match.func
         )
+        done()
+      })
+    })
+  })
+
+  describe('markAsStopping', function () {
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, { _id: 'some-id' })
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOneAndUpdate.restore()
+      done()
+    })
+    it('should return found instance', function (done) {
+      var query = {
+        _id: 'some-id',
+        'container.dockerContainer': 'container-id',
+        'container.inspect.State.Starting': {
+          $exists: false
+        }
+      }
+      var update = {
+        $set: {
+          'container.inspect.State.Stopping': true
+        }
+      }
+      Instance.markAsStopping('some-id', 'container-id', function (err, instance) {
+        expect(err).to.not.exist()
+        sinon.assert.calledWith(Instance.findOneAndUpdate, query, update)
+        done()
+      })
+    })
+    it('should return error if query failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOneAndUpdate.yieldsAsync(mongoError)
+      var query = {
+        _id: 'some-id',
+        'container.dockerContainer': 'container-id',
+        'container.inspect.State.Starting': {
+          $exists: false
+        }
+      }
+      var update = {
+        $set: {
+          'container.inspect.State.Stopping': true
+        }
+      }
+      Instance.markAsStopping('some-id', 'container-id', function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledWith(Instance.findOneAndUpdate, query, update)
         done()
       })
     })

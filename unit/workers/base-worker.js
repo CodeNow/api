@@ -14,7 +14,6 @@ var sinon = require('sinon')
 
 var BaseWorker = require('workers/base-worker')
 var ContextVersion = require('models/mongo/context-version')
-var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
 var User = require('models/mongo/user')
 var messenger = require('socket/messenger')
@@ -426,93 +425,6 @@ describe('BaseWorker: ' + moduleName, function () {
         }, function (err) {
           expect(err.message).to.equal('mongoose error')
           expect(ctx.worker.instance).to.be.undefined()
-          done()
-        })
-      })
-    })
-  })
-
-  describe('_baseWorkerInspectContainerAndUpdate', function () {
-    beforeEach(function (done) {
-      // normally set by _findInstance & _findUser
-      ctx.worker.instance = ctx.mockInstance
-      ctx.worker.user = ctx.mockUser
-      ctx.worker.docker = new Docker()
-      done()
-    })
-
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
-          cb(null, ctx.mockContainer)
-        })
-        done()
-      })
-
-      afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore()
-        done()
-      })
-
-      it('should inspect a container and update the database', function (done) {
-        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
-          expect(err).to.be.undefined()
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(1)
-          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1)
-          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0)
-          done()
-        })
-      })
-    })
-
-    describe('error inspect', function () {
-      beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
-          cb(new Error('docker inspect error'))
-        })
-        done()
-      })
-
-      afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore()
-        done()
-      })
-
-      it('should inspect a container and update the database', function (done) {
-        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
-          expect(err.message).to.equal('docker inspect error')
-          expect(Docker.prototype.inspectContainer.callCount)
-            .to.equal(process.env.WORKER_INSPECT_CONTAINER_NUMBER_RETRY_ATTEMPTS)
-          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(0)
-          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(1)
-          done()
-        })
-      })
-    })
-
-    describe('error update mongo', function () {
-      beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'inspectContainer', function (dockerContainerId, cb) {
-          cb(null, ctx.mockContainer)
-        })
-        ctx.modifyContainerInspectSpy = sinon.spy(function (dockerContainerId, inspect, cb) {
-          cb(new Error('mongoose error'))
-        })
-        ctx.mockInstance.modifyContainerInspect = ctx.modifyContainerInspectSpy
-        done()
-      })
-
-      afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore()
-        done()
-      })
-
-      it('should inspect a container and update the database', function (done) {
-        ctx.worker._baseWorkerInspectContainerAndUpdate(function (err) {
-          expect(err.message).to.equal('mongoose error')
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(1)
-          expect(ctx.modifyContainerInspectSpy.callCount).to.equal(1)
-          expect(ctx.modifyContainerInspectErrSpy.callCount).to.equal(0)
           done()
         })
       })
