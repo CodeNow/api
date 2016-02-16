@@ -15,6 +15,8 @@ var primus = require('../../fixtures/primus')
 var dockerMockEvents = require('../../fixtures/docker-mock-events')
 var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
+var rabbitMQ = require('models/rabbitmq')
+var sinon = require('sinon')
 var typesTests = require('../../fixtures/types-test-util')
 var uuid = require('uuid')
 
@@ -68,6 +70,7 @@ describe('400 POST /instances', function () {
       primus.joinOrgRoom(ctx.user.json().accounts.github.id, done)
     })
     beforeEach(function (done) {
+      sinon.stub(rabbitMQ, 'createInstanceContainer')
       ctx.build.build({ message: uuid() }, function (err) {
         if (err) { return done(err) }
         primus.onceVersionComplete(ctx.cv.id(), function () {
@@ -75,6 +78,10 @@ describe('400 POST /instances', function () {
         })
         dockerMockEvents.emitBuildComplete(ctx.cv)
       })
+    })
+    afterEach(function (done) {
+      rabbitMQ.createInstanceContainer.restore()
+      done()
     })
 
     var def = {

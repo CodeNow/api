@@ -254,12 +254,7 @@ describe('Instance - PATCH /instances/:id', function () {
                   }, done)
                 },
                 function (cb) {
-                  var cv = ctx.newBuild.contextVersions.models[0]
-                  primus.onceVersionComplete(cv.id(), function () {
-                    cb()
-                  })
-                  dockerMockEvents.emitBuildComplete(cv)
-                  ctx.newBuild.build({json: { message: uuid() }}, noop)
+                  multi.buildTheBuild(ctx.user, ctx.newBuild, cb)
                 }
               ], done)
             })

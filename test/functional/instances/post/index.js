@@ -8,6 +8,7 @@ var exists = require('101/exists')
 var noop = require('101/noop')
 var randStr = require('randomstring').generate
 var uuid = require('uuid')
+var sinon = require('sinon')
 
 var Build = require('models/mongo/build')
 var api = require('../../fixtures/api-control')
@@ -17,6 +18,7 @@ var expects = require('../../fixtures/expects')
 var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
+var rabbitMQ = require('models/rabbitmq')
 
 var lab = exports.lab = Lab.script()
 
@@ -100,11 +102,14 @@ describe('POST /instances', function () {
       describe('user owned', function () {
         describe('check messenger', function () {
           beforeEach(function (done) {
-            multi.buildTheBuild(ctx.user, ctx.build, ctx.user.attrs.accounts.github.id, done)
+            require('../../fixtures/mocks/github/user')(ctx.user)
+            ctx.build.build({ message: uuid() }, done)
           })
 
           it('should emit post and deploy events', function (done) {
-            var countDown = createCount(3, done)
+            var countDown = createCount(3, function () {
+              done()
+            })
             var expected = {
               shortHash: exists,
               'createdBy.github': ctx.user.attrs.accounts.github.id,

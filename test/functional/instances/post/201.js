@@ -60,15 +60,14 @@ function expectInstanceCreated (body, statusCode, user, build, cv) {
   expect(body.shortHash).to.exist()
   expect(body.name).to.exist()
   expect(body.lowerName).to.equal(body.name.toLowerCase())
-  expect(body).deep.contain({
-    build: build,
-    contextVersion: cv,
-    contextVersions: [ cv ], // legacy support for now
-    owner: owner,
-    containers: [],
-    autoForked: false,
-    masterPod: false
-  })
+
+  expect(body.build, 'body.build').deep.contain(build)
+  expect(body.contextVersion, 'body.contextVersion').deep.equals(cv)
+  expect(body.contextVersions, 'body.contextVersions').deep.equals([cv])
+  expect(body.owner, 'body.owner').deep.contain(owner)
+  expect(body.containers, 'body.containers').deep.equals([])
+  expect(body.autoForked, 'body.autoForked').deep.equals(false)
+  expect(body.autoForked, 'body.masterPod').deep.equals(false)
 }
 
 beforeEach(
@@ -120,6 +119,7 @@ describe('201 POST /instances', function () {
         primus.joinOrgRoom(ctx.user.attrs.accounts.github.id, done)
       })
       beforeEach(function (done) {
+        sinon.stub(rabbitMQ, 'createInstanceContainer')
         primus.onceVersionBuildRunning(ctx.cv.id(), function () {
           ctx.cv.fetch(done) // used in assertions
         })
@@ -128,6 +128,10 @@ describe('201 POST /instances', function () {
         })
       })
 
+      afterEach(function (done) {
+        rabbitMQ.createInstanceContainer.restore()
+        done()
+      })
       it('should create a private instance by default', function (done) {
         var name = uuid()
         var env = [

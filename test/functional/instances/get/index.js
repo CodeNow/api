@@ -126,7 +126,7 @@ describe('GET /instances', function () {
           github: ctx.user.attrs.accounts.github.id
         }
       }
-      var expected = [{
+      var expected = {
         _id: ctx.instance.json()._id,
         shortHash: ctx.instance.json().shortHash,
         'containers[0].inspect.State.Running': true,
@@ -134,15 +134,19 @@ describe('GET /instances', function () {
         'owner.username': ctx.user.json().accounts.github.login,
         'createdBy.username': ctx.user.json().accounts.github.login,
         'createdBy.gravatar': ctx.user.json().accounts.github.avatar_url
-      }]
-      ctx.user.fetchInstances(query, expects.success(200, expected, count.next))
+      }
+      ctx.user.fetchInstances(query, function (err, body, status) {
+        expect(status, 'instance status').to.equal(200)
+        expect(body, 'instance body').to.include(expected)
+        count.next()
+      })
       var query2 = {
         shortHash: ctx.instance2.json().shortHash,
         owner: {
           github: ctx.user2.attrs.accounts.github.id
         }
       }
-      var expected2 = [{
+      var expected2 = {
         _id: ctx.instance2.json()._id,
         shortHash: ctx.instance2.json().shortHash,
         'containers[0].inspect.State.Running': true,
@@ -150,8 +154,12 @@ describe('GET /instances', function () {
         'owner.username': ctx.user2.json().accounts.github.login,
         'createdBy.username': ctx.user2.json().accounts.github.login,
         'createdBy.gravatar': ctx.user2.json().accounts.github.avatar_url
-      }]
-      ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next))
+      }
+      ctx.user2.fetchInstances(query2, function (err, body, status) {
+        expect(status, 'instance 2 status').to.equal(200)
+        expect(body, 'instance 2 body').to.include(expected2)
+        count.next()
+      })
     })
     it('should get instances by username', function (done) {
       require('../../fixtures/mocks/github/user')(ctx.user)
