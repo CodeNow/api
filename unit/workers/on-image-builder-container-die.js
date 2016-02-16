@@ -87,7 +87,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
         })
         sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
           expect(data).to.be.an.object()
-          cb()
+          return Promise.resolve()
         })
         done()
       })
@@ -99,7 +99,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       })
       it('should fetch build info and update success', function (done) {
         ctx.worker._getBuildInfo(function (err) {
-          expect(err).to.be.undefined()
+          expect(err).to.not.exist()
           expect(ctx.worker._handleBuildComplete.callCount).to.equal(1)
           expect(ctx.worker._handleBuildError.callCount).to.equal(0)
           done()
@@ -115,7 +115,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
         })
         sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
           expect(data).to.be.an.object()
-          cb()
+          return Promise.resolve()
         })
         done()
       })
@@ -127,7 +127,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       })
       it('should fetch build info and update build failure', function (done) {
         ctx.worker._getBuildInfo(function (err) {
-          expect(err).to.be.undefined()
+          expect(err).to.not.exist()
           expect(ctx.worker._handleBuildComplete.callCount).to.equal(1)
           expect(ctx.worker._handleBuildError.callCount).to.equal(0)
           done()
@@ -136,26 +136,26 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     })
     describe('fetch failure', function () {
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(new Error('docker error'))
+        sinon.stub(Docker.prototype, 'getBuildInfoAsync').rejects(new Error('docker error'))
         sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
           expect(data).to.be.an.object()
           cb()
         })
         sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
           expect(data).to.be.an.object()
-          cb()
+          return Promise.resolve()
         })
         done()
       })
       afterEach(function (done) {
-        Docker.prototype.getBuildInfo.restore()
+        Docker.prototype.getBuildInfoAsync.restore()
         ctx.worker._handleBuildError.restore()
         ctx.worker._handleBuildComplete.restore()
         done()
       })
       it('should fetch build info and update fetch failure', function (done) {
         ctx.worker._getBuildInfo(function (err) {
-          expect(err).to.be.undefined()
+          expect(err).to.not.exist()
           expect(ctx.worker._handleBuildComplete.callCount).to.equal(0)
           expect(ctx.worker._handleBuildError.callCount).to.equal(1)
           done()
@@ -213,22 +213,23 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       })
 
       it('it should handle successful build', function (done) {
-        ctx.worker._handleBuildComplete(ctx.buildInfo, function () {
-          sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
-          sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-          sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
-          sinon.assert.calledWith(
-            ContextVersion.updateBuildCompletedByContainerAsync,
-            ctx.data.id,
-            ctx.buildInfo
-          )
-          sinon.assert.calledWith(
-            Build.updateCompletedByContextVersionIds,
-            [ctx.mockContextVersion._id],
-            sinon.match.func
-          )
-          done()
-        })
+        ctx.worker._handleBuildComplete(ctx.buildInfo)
+          .asCallback(function () {
+            sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
+            sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
+            sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+            sinon.assert.calledWith(
+              ContextVersion.updateBuildCompletedByContainerAsync,
+              ctx.data.id,
+              ctx.buildInfo
+            )
+            sinon.assert.calledWith(
+              Build.updateCompletedByContextVersionIds,
+              [ctx.mockContextVersion._id],
+              sinon.match.func
+            )
+            done()
+          })
       })
     })
 
@@ -245,23 +246,24 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
             done()
           })
           it('it should handle failed build', function (done) {
-            ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
-              if (err) { return done(err) }
-              sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
-              sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-              sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
-              sinon.assert.calledWith(
-                ContextVersion.updateBuildCompletedByContainerAsync,
-                ctx.data.id,
-                ctx.buildInfo
-              )
-              sinon.assert.calledWith(
-                Build.updateFailedByContextVersionIds,
-                [ctx.mockContextVersion._id],
-                sinon.match.func
-              )
-              done()
-            })
+            ctx.worker._handleBuildComplete(ctx.buildInfo)
+              .asCallback(function (err) {
+                if (err) { return done(err) }
+                sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
+                sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
+                sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+                sinon.assert.calledWith(
+                  ContextVersion.updateBuildCompletedByContainerAsync,
+                  ctx.data.id,
+                  ctx.buildInfo
+                )
+                sinon.assert.calledWith(
+                  Build.updateFailedByContextVersionIds,
+                  [ctx.mockContextVersion._id],
+                  sinon.match.func
+                )
+                done()
+              })
           })
         })
         describe('Build.updateFailedByContextVersionIds error', function () {
@@ -271,12 +273,13 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
             done()
           })
           it('should callback the error', function (done) {
-            ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
-              sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
-              sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-              sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
-              expectErr(ctx.err, done)(err)
-            })
+            ctx.worker._handleBuildComplete(ctx.buildInfo)
+              .asCallback(function (err) {
+                sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
+                sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
+                sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+                expectErr(ctx.err, done)(err)
+              })
           })
         })
       })
@@ -287,11 +290,12 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           done()
         })
         it('should callback the error', function (done) {
-          ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
-            sinon.assert.notCalled(Instance.findByContextVersionIdsAsync)
-            sinon.assert.notCalled(ctx.instanceStub.updateCvAsync)
-            expectErr(ctx.err, done)(err)
-          })
+          ctx.worker._handleBuildComplete(ctx.buildInfo)
+            .asCallback(function (err) {
+              sinon.assert.notCalled(Instance.findByContextVersionIdsAsync)
+              sinon.assert.notCalled(ctx.instanceStub.updateCvAsync)
+              expectErr(ctx.err, done)(err)
+            })
         })
       })
       describe('Build.updateCompletedByContextVersionIds error', function () {
@@ -302,12 +306,13 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           done()
         })
         it('should callback the error', function (done) {
-          ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
-            sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
-            sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-            sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
-            expectErr(ctx.err, done)(err)
-          })
+          ctx.worker._handleBuildComplete(ctx.buildInfo)
+            .asCallback(function (err) {
+              sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
+              sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
+              sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+              expectErr(ctx.err, done)(err)
+            })
         })
       })
     })
