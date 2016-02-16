@@ -44,6 +44,19 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     rabbitMQ.connect(done)
     rabbitMQ.loadWorkers()
   })
+
+  var createHandleFunc = function (testDone, cb) {
+    sinon.stub(OnImageBuilderContainerDie.prototype, 'handle', function (workerDone) {
+      function done () {
+        workerDone()
+        testDone()
+      }
+      ctx.handleFunc.call(this, function (err) {
+        cb(err, done)
+      })
+    })
+  }
+
   after(function (done) {
     dockerListenerRabbit.publish.restore()
     rabbitMQ.close(done)
@@ -147,6 +160,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         sinon.spy(Instance.prototype, 'emitInstanceUpdate')
         sinon.spy(messenger, '_emitInstanceUpdateAction')
         sinon.spy(messenger, 'emitContextVersionUpdate')
+        ctx.handleFunc = OnImageBuilderContainerDie.prototype.handle
         sinon.spy(OnImageBuilderContainerDie.prototype, '_handleBuildComplete')
         sinon.spy(OnImageBuilderContainerDie.prototype, '_handleBuildError')
         sinon.spy(Build, 'updateFailedByContextVersionIds')
@@ -166,7 +180,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         messenger.emitContextVersionUpdate.restore()
         Instance.emitInstanceUpdates.restore()
         Instance.prototype.emitInstanceUpdate.restore()
-        OnImageBuilderContainerDie.prototype._finalSeriesHandler.restore()
+        OnImageBuilderContainerDie.prototype.handle.restore()
         OnImageBuilderContainerDie.prototype._handleBuildComplete.restore()
         OnImageBuilderContainerDie.prototype._handleBuildError.restore()
         Build.updateFailedByContextVersionIds.restore()
@@ -176,9 +190,8 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         done()
       })
       describe('With a successful build', function () {
-        it('should attempt to deploy', function (done) {
-          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-            workerDone()
+        it('should attempt to deploy', function (testDone) {
+          createHandleFunc(testDone, function (err, done) {
             if (err) { return done(err) }
             try {
               sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
@@ -269,14 +282,13 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             } catch (e) {
               done(e)
             }
-          }) // stub end
+          })
           dockerMockEvents.emitBuildComplete(ctx.cv)
         })
       })
       describe('With an unsuccessful build', function () {
-        it('should update the UI with a socket event', function (done) {
-          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-            workerDone()
+        it('should update the UI with a socket event', function (testDone) {
+          createHandleFunc(testDone, function (err, done) {
             if (err) { return done(err) }
             try {
               sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
@@ -370,9 +382,8 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         })
       })
       describe('With an errored build', function () {
-        it('should still update the UI with a socket event', function (done) {
-          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-            workerDone()
+        it('should still update the UI with a socket event', function (testDone) {
+          createHandleFunc(testDone, function (err, done) {
             if (err) { return done(err) }
             try {
               sinon.assert.notCalled(OnImageBuilderContainerDie.prototype._handleBuildComplete)
@@ -495,9 +506,8 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               done(err)
             })
           })
-          it('should update the instance with the second cv, and update both cvs', function (done) {
-            sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-              workerDone()
+          it('should update the instance with the second cv, and update both cvs', function (testDone) {
+            createHandleFunc(testDone, function (err, done) {
               if (err) {
                 return done(err)
               }
