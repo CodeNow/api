@@ -73,11 +73,11 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     describe('success', function () {
       beforeEach(function (done) {
         sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(null, {})
-        sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
+        sinon.stub(OnImageBuilderContainerDie, '_handleBuildError', function (data, cb) {
           expect(data).to.be.an.object()
           return Promise.resolve()
         })
-        sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
+        sinon.stub(OnImageBuilderContainerDie, '_handleBuildComplete', function (data, cb) {
           expect(data).to.be.an.object()
           return Promise.resolve()
         })
@@ -85,15 +85,15 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       })
       afterEach(function (done) {
         Docker.prototype.getBuildInfo.restore()
-        ctx.worker._handleBuildError.restore()
-        ctx.worker._handleBuildComplete.restore()
+        OnImageBuilderContainerDie._handleBuildError.restore()
+        OnImageBuilderContainerDie._handleBuildComplete.restore()
         done()
       })
       it('should fetch build info and update success', function (done) {
-        ctx.worker._getBuildInfo(function (err) {
+        OnImageBuilderContainerDie._getBuildInfo({ id: 1 }).asCallback(function (err) {
           expect(err).to.not.exist()
-          expect(ctx.worker._handleBuildComplete.callCount).to.equal(1)
-          expect(ctx.worker._handleBuildError.callCount).to.equal(0)
+          expect(OnImageBuilderContainerDie._handleBuildComplete.callCount).to.equal(1)
+          expect(OnImageBuilderContainerDie._handleBuildError.callCount).to.equal(0)
           done()
         })
       })
@@ -101,11 +101,11 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     describe('build failure', function () {
       beforeEach(function (done) {
         sinon.stub(Docker.prototype, 'getBuildInfo').yields(null, {})
-        sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
+        sinon.stub(OnImageBuilderContainerDie, '_handleBuildError', function (data, cb) {
           expect(data).to.be.an.object()
           return Promise.resolve()
         })
-        sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
+        sinon.stub(OnImageBuilderContainerDie, '_handleBuildComplete', function (data, cb) {
           expect(data).to.be.an.object()
           return Promise.resolve()
         })
@@ -113,15 +113,15 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       })
       afterEach(function (done) {
         Docker.prototype.getBuildInfo.restore()
-        ctx.worker._handleBuildError.restore()
-        ctx.worker._handleBuildComplete.restore()
+        OnImageBuilderContainerDie._handleBuildError.restore()
+        OnImageBuilderContainerDie._handleBuildComplete.restore()
         done()
       })
       it('should fetch build info and update build failure', function (done) {
-        ctx.worker._getBuildInfo(function (err) {
+        OnImageBuilderContainerDie._getBuildInfo({ id: 2 }).asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(ctx.worker._handleBuildComplete)
-          sinon.assert.notCalled(ctx.worker._handleBuildError)
+          sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
+          sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildError)
           done()
         })
       })
@@ -129,11 +129,11 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     describe('fetch failure', function () {
       beforeEach(function (done) {
         sinon.stub(Docker.prototype, 'getBuildInfoAsync').rejects(new Error('docker error'))
-        sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
+        sinon.stub(OnImageBuilderContainerDie, '_handleBuildError', function (data, cb) {
           expect(data).to.be.an.object()
           return Promise.resolve()
         })
-        sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
+        sinon.stub(OnImageBuilderContainerDie, '_handleBuildComplete', function (data, cb) {
           expect(data).to.be.an.object()
           return Promise.resolve()
         })
@@ -141,15 +141,15 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       })
       afterEach(function (done) {
         Docker.prototype.getBuildInfoAsync.restore()
-        ctx.worker._handleBuildError.restore()
-        ctx.worker._handleBuildComplete.restore()
+        OnImageBuilderContainerDie._handleBuildError.restore()
+        OnImageBuilderContainerDie._handleBuildComplete.restore()
         done()
       })
       it('should fetch build info and update fetch failure', function (done) {
-        ctx.worker._getBuildInfo(function (err) {
+        OnImageBuilderContainerDie._getBuildInfo({ id: 3 }).asCallback(function (err) {
           expect(err).to.not.exist()
-          expect(ctx.worker._handleBuildComplete.callCount).to.equal(0)
-          expect(ctx.worker._handleBuildError.callCount).to.equal(1)
+          expect(OnImageBuilderContainerDie._handleBuildComplete.callCount).to.equal(0)
+          expect(OnImageBuilderContainerDie._handleBuildError.callCount).to.equal(1)
           done()
         })
       })
@@ -169,7 +169,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       done()
     })
     it('it should handle errored build', function (done) {
-      ctx.worker._handleBuildError({}).asCallback(function () {
+      OnImageBuilderContainerDie._handleBuildError(ctx.data, {}).asCallback(function () {
         sinon.assert.calledWith(ContextVersion.updateBuildErrorByContainerAsync, ctx.data.id)
         sinon.assert.calledWith(Build.updateFailedByContextVersionIdsAsync, [ctx.mockContextVersion._id])
         done()
@@ -184,6 +184,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       }
       ctx.worker.contextVersions = [ctx.mockContextVersion]
       ctx.buildInfo = {}
+      ctx.job = {}
       sinon.stub(ContextVersion, 'updateBuildCompletedByContainerAsync')
       sinon.stub(Build, 'updateFailedByContextVersionIdsAsync')
       sinon.stub(Build, 'updateCompletedByContextVersionIdsAsync')
@@ -205,7 +206,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       })
 
       it('it should handle successful build', function (done) {
-        ctx.worker._handleBuildComplete(ctx.buildInfo)
+        OnImageBuilderContainerDie._handleBuildComplete(ctx.data, ctx.buildInfo)
           .asCallback(function () {
             sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
             sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
@@ -237,7 +238,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
             done()
           })
           it('it should handle failed build', function (done) {
-            ctx.worker._handleBuildComplete(ctx.buildInfo)
+            OnImageBuilderContainerDie._handleBuildComplete(ctx.data, ctx.buildInfo)
               .asCallback(function (err) {
                 if (err) { return done(err) }
                 sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
@@ -263,7 +264,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
             done()
           })
           it('should callback the error', function (done) {
-            ctx.worker._handleBuildComplete(ctx.buildInfo)
+            OnImageBuilderContainerDie._handleBuildComplete(ctx.data, ctx.buildInfo)
               .asCallback(function (err) {
                 sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
                 sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
@@ -280,7 +281,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           done()
         })
         it('should callback the error', function (done) {
-          ctx.worker._handleBuildComplete(ctx.buildInfo)
+          OnImageBuilderContainerDie._handleBuildComplete(ctx.job, ctx.buildInfo)
             .asCallback(function (err) {
               sinon.assert.notCalled(Instance.findByContextVersionIdsAsync)
               sinon.assert.notCalled(ctx.instanceStub.updateCvAsync)
@@ -296,7 +297,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           done()
         })
         it('should callback the error', function (done) {
-          ctx.worker._handleBuildComplete(ctx.buildInfo)
+          OnImageBuilderContainerDie._handleBuildComplete(ctx.job, ctx.buildInfo)
             .asCallback(function (err) {
               sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
               sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
@@ -315,7 +316,6 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       sinon.stub(User, 'findByGithubId').yieldsAsync(null, ctx.mockUser)
       sinon.stub(Instance, 'emitInstanceUpdates').yieldsAsync(null, ctx.mockInstances)
       sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
-      console.log('MOCK', ctx.mockContextVersion)
       sinon.stub(messenger, 'emitInstanceUpdate')
       sinon.stub(OnImageBuilderContainerDie.prototype, '_createContainersIfSuccessful')
       done()

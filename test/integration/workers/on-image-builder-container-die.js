@@ -161,8 +161,8 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         sinon.spy(messenger, '_emitInstanceUpdateAction')
         sinon.spy(messenger, 'emitContextVersionUpdate')
         ctx.handleFunc = OnImageBuilderContainerDie.prototype.handle
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_handleBuildComplete')
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_handleBuildError')
+        sinon.spy(OnImageBuilderContainerDie, '_handleBuildComplete')
+        sinon.spy(OnImageBuilderContainerDie, '_handleBuildError')
         sinon.spy(Build, 'updateFailedByContextVersionIds')
         sinon.spy(Build, 'updateCompletedByContextVersionIds')
         sinon.spy(ContextVersion, 'updateBuildErrorByContainer')
@@ -181,8 +181,8 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         Instance.emitInstanceUpdates.restore()
         Instance.prototype.emitInstanceUpdate.restore()
         OnImageBuilderContainerDie.prototype.handle.restore()
-        OnImageBuilderContainerDie.prototype._handleBuildComplete.restore()
-        OnImageBuilderContainerDie.prototype._handleBuildError.restore()
+        OnImageBuilderContainerDie._handleBuildComplete.restore()
+        OnImageBuilderContainerDie._handleBuildError.restore()
         Build.updateFailedByContextVersionIds.restore()
         Build.updateCompletedByContextVersionIds.restore()
         ContextVersion.updateBuildErrorByContainer.restore()
@@ -194,7 +194,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
           createHandleFunc(testDone, function (err, done) {
             if (err) { return done(err) }
             try {
-              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
+              sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
               sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
               sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
 
@@ -291,7 +291,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
           createHandleFunc(testDone, function (err, done) {
             if (err) { return done(err) }
             try {
-              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
+              sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
 
               sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
               // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
@@ -386,8 +386,8 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
           createHandleFunc(testDone, function (err, done) {
             if (err) { return done(err) }
             try {
-              sinon.assert.notCalled(OnImageBuilderContainerDie.prototype._handleBuildComplete)
-              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildError)
+              sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildComplete)
+              sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildError)
               sinon.assert.calledOnce(ContextVersion.updateBuildErrorByContainer)
 
               sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
@@ -512,7 +512,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 return done(err)
               }
               try {
-                sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
+                sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
                 sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
                 sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
 
