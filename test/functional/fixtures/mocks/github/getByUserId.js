@@ -60,6 +60,9 @@ function getUserResult (userId, username) {
  */
 module.exports.stubBefore = function (getUserArrayFn) {
   return function (done) {
+    if (Github.prototype.getUserById && Github.prototype.getUserById.restore) {
+      Github.prototype.getUserById.restore()
+    }
     sinon.stub(Github.prototype, 'getUserById', function (id, cb) {
       var userArray = getUserArrayFn ? getUserArrayFn() : []
       var result = null

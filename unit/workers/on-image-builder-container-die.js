@@ -314,6 +314,8 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       ctx.mockInstances = [{}, {}, {}]
       sinon.stub(User, 'findByGithubId').yieldsAsync(null, ctx.mockUser)
       sinon.stub(Instance, 'emitInstanceUpdates').yieldsAsync(null, ctx.mockInstances)
+      sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
+      console.log('MOCK', ctx.mockContextVersion)
       sinon.stub(messenger, 'emitInstanceUpdate')
       sinon.stub(OnImageBuilderContainerDie.prototype, '_createContainersIfSuccessful')
       done()
@@ -321,6 +323,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     afterEach(function (done) {
       User.findByGithubId.restore()
       Instance.emitInstanceUpdates.restore()
+      ContextVersion.findAsync.restore()
       messenger.emitInstanceUpdate.restore()
       OnImageBuilderContainerDie.prototype._createContainersIfSuccessful.restore()
       done()
@@ -336,7 +339,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           Instance.emitInstanceUpdates,
           ctx.mockUser,
           {
-            'contextVersion.build.dockerContainer': ctx.worker.data.id
+            'contextVersion._id': { $in: [ctx.mockContextVersion._id] }
           },
           'patch',
           sinon.match.func
@@ -362,7 +365,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
             Instance.emitInstanceUpdates,
             ctx.mockUser,
             {
-              'contextVersion.build.dockerContainer': ctx.worker.data.id
+              'contextVersion._id': { $in: [ctx.mockContextVersion._id] }
             },
             'patch',
             sinon.match.func
