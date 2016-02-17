@@ -314,38 +314,38 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       ctx.mockUser = {}
       ctx.mockInstances = [{}, {}, {}]
       sinon.stub(User, 'findByGithubId').yieldsAsync(null, ctx.mockUser)
-      sinon.stub(Instance, 'emitInstanceUpdates').yieldsAsync(null, ctx.mockInstances)
+      sinon.stub(Instance, 'emitInstanceUpdatesAsync').resolves(ctx.mockInstances)
       sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
       sinon.stub(messenger, 'emitInstanceUpdate')
-      sinon.stub(OnImageBuilderContainerDie.prototype, '_createContainersIfSuccessful')
+      sinon.stub(OnImageBuilderContainerDie, '_createContainersIfSuccessful')
       done()
     })
     afterEach(function (done) {
       User.findByGithubId.restore()
-      Instance.emitInstanceUpdates.restore()
+      Instance.emitInstanceUpdatesAsync.restore()
       ContextVersion.findAsync.restore()
       messenger.emitInstanceUpdate.restore()
-      OnImageBuilderContainerDie.prototype._createContainersIfSuccessful.restore()
+      OnImageBuilderContainerDie._createContainersIfSuccessful.restore()
       done()
     })
 
     it('should emit instance update events', function (done) {
       var sessionUserGithubId = keypather.get(ctx.worker.data,
         'inspectData.Config.Labels.sessionUserGithubId')
-      ctx.worker._emitInstanceUpdateEvents(function (err) {
+      OnImageBuilderContainerDie._emitInstanceUpdateEvents(ctx.data).asCallback(function (err) {
         if (err) { return done(err) }
         sinon.assert.calledWith(User.findByGithubId, ctx.data.inspectData.Config.Labels.sessionUserGithubId)
         sinon.assert.calledWith(
-          Instance.emitInstanceUpdates,
+          Instance.emitInstanceUpdatesAsync,
           ctx.mockUser,
           {
             'contextVersion._id': { $in: [ctx.mockContextVersion._id] }
           },
-          'patch',
-          sinon.match.func
+          'patch'
         )
         sinon.assert.calledWith(
-          OnImageBuilderContainerDie.prototype._createContainersIfSuccessful,
+          OnImageBuilderContainerDie._createContainersIfSuccessful,
+          ctx.data,
           sessionUserGithubId,
           ctx.mockInstances
         )
@@ -355,22 +355,21 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
 
     describe('No Instances Found', function () {
       it('should throw an error and report to Rollbar if there are no instances to create containers for', function (done) {
-        Instance.emitInstanceUpdates.yieldsAsync(null, [])
+        Instance.emitInstanceUpdatesAsync.resolves([])
 
-        ctx.worker._emitInstanceUpdateEvents(function (err) {
+        OnImageBuilderContainerDie._emitInstanceUpdateEvents(ctx.data).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/no.*instances.*found/i)
           sinon.assert.calledWith(User.findByGithubId, ctx.data.inspectData.Config.Labels.sessionUserGithubId)
           sinon.assert.calledWith(
-            Instance.emitInstanceUpdates,
+            Instance.emitInstanceUpdatesAsync,
             ctx.mockUser,
             {
               'contextVersion._id': { $in: [ctx.mockContextVersion._id] }
             },
-            'patch',
-            sinon.match.func
+            'patch'
           )
-          sinon.assert.notCalled(OnImageBuilderContainerDie.prototype._createContainersIfSuccessful)
+          sinon.assert.notCalled(OnImageBuilderContainerDie._createContainersIfSuccessful)
           done()
         })
       })
