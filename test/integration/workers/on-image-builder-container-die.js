@@ -39,7 +39,9 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     sinon.stub(dockerListenerRabbit, 'publish', function (queue, data) {
       if (queue === 'on-image-builder-container-die') {
         OnImageBuilderContainerDie(data)
-          .asCallback(ctx.workerCallback)
+          .asCallback(function (err) {
+            ctx.workerCallback(err)
+          })
         return
       }
       if (queue !== 'on-image-builder-container-create') {
