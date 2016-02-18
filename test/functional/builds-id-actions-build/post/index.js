@@ -20,7 +20,6 @@ var primus = require('./../../fixtures/primus')
 var createCount = require('callback-count')
 var exists = require('101/exists')
 var equals = require('101/equals')
-var last = require('101/last')
 var uuid = require('uuid')
 var mockGetUserById = require('./../../fixtures/mocks/github/getByUserId')
 
@@ -74,8 +73,7 @@ describe('Build - /builds/:id/actions/build', function () {
       it('should start building the build - return in-progress build', function (done) {
         require('./../../fixtures/mocks/github/user')(ctx.user)
         primus.onceVersionBuildRunning(ctx.cv.id(), function () {
-          primus.onceVersionComplete(ctx.cv.id(), function (data) {
-
+          primus.onceVersionComplete(ctx.cv.id(), function () {
             var count = createCount(2, done)
             var buildExpected = {
               completed: exists,
