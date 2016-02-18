@@ -404,9 +404,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     })
 
     it('should publish jobs to RabbitMQ if the build was succesful', function (done) {
-      job.buildSuccessful = true
-
-      OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance])
+      OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance], { failed: false })
       sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
       sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
         contextVersionId: contextVersionId,
@@ -418,7 +416,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     })
 
     it('should not publish jobs to RabbitMQ if the build was unsuccesful', function (done) {
-      OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance])
+      OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance], { failed: true })
       sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
       done()
     })
