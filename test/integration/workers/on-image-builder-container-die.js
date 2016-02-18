@@ -34,11 +34,12 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     done()
   })
   before(dock.start.bind(ctx))
-  before(function (done) {
+  beforeEach(function (done) {
     var oldPublish = dockerListenerRabbit.publish
     sinon.stub(dockerListenerRabbit, 'publish', function (queue, data) {
       if (queue === 'on-image-builder-container-die') {
-        OnImageBuilderContainerDie.worker(data, ctx.workerCallback)
+        OnImageBuilderContainerDie(data)
+          .asCallback(ctx.workerCallback)
         return
       }
       if (queue !== 'on-image-builder-container-create') {
@@ -49,7 +50,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     rabbitMQ.loadWorkers()
   })
 
-  after(function (done) {
+  afterEach(function (done) {
     dockerListenerRabbit.publish.restore()
     rabbitMQ.close(done)
   })
