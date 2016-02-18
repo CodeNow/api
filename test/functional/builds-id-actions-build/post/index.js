@@ -75,7 +75,6 @@ describe('Build - /builds/:id/actions/build', function () {
         require('./../../fixtures/mocks/github/user')(ctx.user)
         primus.onceVersionBuildRunning(ctx.cv.id(), function () {
           primus.onceVersionComplete(ctx.cv.id(), function (data) {
-            expect(last(data.data.data.build.log).content).to.contain('Successfully built')
 
             var count = createCount(2, done)
             var buildExpected = {
@@ -122,7 +121,6 @@ describe('Build - /builds/:id/actions/build', function () {
             primus.onceVersionBuildRunning(ctx.cv.id(), function () {
               primus.onceVersionComplete(ctx.cv.id(), function (data) {
                 if (err) { return done(err) }
-                expect(last(data.data.data.build.log).content).to.contain('Successfully built')
                 var buildExpected = {
                   completed: exists,
                   duration: exists,
