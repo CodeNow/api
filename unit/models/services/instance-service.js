@@ -1008,7 +1008,6 @@ describe('InstanceService: ' + moduleName, function () {
     var instance
 
     beforeEach(function (done) {
-      sinon.stub(User, 'findByGithubIdAsync').returns(Promise.resolve())
       sinon.stub(messenger, 'emitInstanceUpdate')
       instance = {
         createdBy: {
@@ -1022,35 +1021,16 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     afterEach(function (done) {
-      User.findByGithubIdAsync.restore()
       messenger.emitInstanceUpdate.restore()
       done()
     })
 
-    it('should fail when findByGithubId fails', function (done) {
-      var testErr = 'Find By GithubID Failed'
-      var rejectionPromise = Promise.reject(testErr)
-      rejectionPromise.suppressUnhandledRejections()
-      User.findByGithubIdAsync.returns(rejectionPromise)
-
-      InstanceService.emitInstanceUpdate(instance, null)
-        .asCallback(function (err) {
-          expect(err).to.equal(testErr)
-          sinon.assert.notCalled(instance.populateModelsAsync)
-          sinon.assert.notCalled(instance.populateOwnerAndCreatedByAsync)
-          sinon.assert.notCalled(instance.updateCvAsync)
-          sinon.assert.notCalled(messenger.emitInstanceUpdate)
-          done()
-        })
-    })
 
     it('should use the passed in github user if one is provided', function (done) {
       var testUser = 1234
       InstanceService.emitInstanceUpdate(instance, testUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(User.findByGithubIdAsync)
-          sinon.assert.calledWith(User.findByGithubIdAsync, testUser)
           done()
         })
     })
@@ -1059,8 +1039,6 @@ describe('InstanceService: ' + moduleName, function () {
       InstanceService.emitInstanceUpdate(instance)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(User.findByGithubIdAsync)
-          sinon.assert.calledWith(User.findByGithubIdAsync, instance.createdBy.github)
           done()
         })
     })
@@ -1095,18 +1073,6 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.notCalled(instance.updateCvAsync)
           sinon.assert.notCalled(messenger.emitInstanceUpdate)
-          done()
-        })
-    })
-
-    it('should pass the results of findByGithubID into populateOwnerAndCreatedByAsync', function (done) {
-      var findResults = {key: 'value'}
-      User.findByGithubIdAsync.returns(Promise.resolve(findResults))
-      InstanceService.emitInstanceUpdate(instance, null)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
-          sinon.assert.calledWith(instance.populateOwnerAndCreatedByAsync, findResults)
           done()
         })
     })
@@ -1161,6 +1127,73 @@ describe('InstanceService: ' + moduleName, function () {
           sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, instance.updateCvAsync, messenger.emitInstanceUpdate)
           done()
         })
+    })
+  })
+  describe('emitInstanceUpdateByCvBuildId', function () {
+    var instance
+    var instance2
+    var cvBuildId = 'asdasd'
+
+    beforeEach(function (done) {
+      sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
+      instance = {
+        _id: 'instance',
+        createdBy: {
+          github: 123454
+        }
+      }
+      instance2 = {
+        _id: 'instance2',
+        createdBy: {
+          github: 123454
+        }
+      }
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findAsync.restore()
+      InstanceService.emitInstanceUpdate.restore()
+      done()
+    })
+
+    it('should return cleanly if no instances exist', function (done) {
+      sinon.stub(Instance, 'findAsync').resolves()
+      InstanceService.emitInstanceUpdateByCvBuildId(cvBuildId, 'build_started', false)
+        .then(function () {
+          sinon.assert.calledWith(Instance.findAsync, {
+            'contextVersion.build._id': cvBuildId
+          })
+          sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
+        })
+        .asCallback(done)
+    })
+
+    it('should call emit update for the one instance it receives', function (done) {
+      sinon.stub(Instance, 'findAsync').resolves([instance])
+      InstanceService.emitInstanceUpdateByCvBuildId(cvBuildId, 'build_started', false)
+        .then(function () {
+          sinon.assert.calledWith(Instance.findAsync, {
+            'contextVersion.build._id': cvBuildId
+          })
+          sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
+          sinon.assert.calledWith(InstanceService.emitInstanceUpdate, instance, null, 'build_started', false)
+        })
+        .asCallback(done)
+    })
+
+    it('should call emit update for the each instance it receives', function (done) {
+      sinon.stub(Instance, 'findAsync').resolves([instance, instance2])
+      InstanceService.emitInstanceUpdateByCvBuildId(cvBuildId, 'build_started', false)
+        .then(function () {
+          sinon.assert.calledWith(Instance.findAsync, {
+            'contextVersion.build._id': cvBuildId
+          })
+          sinon.assert.calledTwice(InstanceService.emitInstanceUpdate)
+          sinon.assert.calledWith(InstanceService.emitInstanceUpdate, instance, null, 'build_started', false)
+          sinon.assert.calledWith(InstanceService.emitInstanceUpdate, instance2, null, 'build_started', false)
+        })
+        .asCallback(done)
     })
   })
 

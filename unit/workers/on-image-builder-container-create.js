@@ -15,6 +15,7 @@ var TaskFatalError = require('ponos').TaskFatalError
 
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
+var InstanceService = require('models/services/instance-service')
 var messenger = require('socket/messenger')
 var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create')
 
@@ -85,6 +86,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       sinon.stub(ContextVersion, 'findAsync')
       sinon.stub(messenger, 'emitContextVersionUpdate')
       sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync')
+      sinon.stub(InstanceService, 'emitInstanceUpdateByCvBuildId')
       done()
     })
 
