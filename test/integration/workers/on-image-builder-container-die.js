@@ -37,6 +37,10 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
   before(function (done) {
     var oldPublish = dockerListenerRabbit.publish
     sinon.stub(dockerListenerRabbit, 'publish', function (queue, data) {
+      if (queue === 'on-image-builder-container-die') {
+        OnImageBuilderContainerDie.worker(data, ctx.workerCallback)
+        return
+      }
       if (queue !== 'on-image-builder-container-create') {
         oldPublish.bind(dockerListenerRabbit)(queue, data)
       }
@@ -44,18 +48,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     rabbitMQ.connect(done)
     rabbitMQ.loadWorkers()
   })
-
-  var createHandleFunc = function (testDone, cb) {
-    sinon.stub(OnImageBuilderContainerDie.prototype, 'handle', function (workerDone) {
-      function done () {
-        workerDone()
-        testDone()
-      }
-      ctx.handleFunc.call(this, function (err) {
-        cb(err, done)
-      })
-    })
-  }
 
   after(function (done) {
     dockerListenerRabbit.publish.restore()
@@ -160,7 +152,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         sinon.spy(Instance.prototype, 'emitInstanceUpdate')
         sinon.spy(messenger, '_emitInstanceUpdateAction')
         sinon.spy(messenger, 'emitContextVersionUpdate')
-        ctx.handleFunc = OnImageBuilderContainerDie.prototype.handle
         sinon.spy(OnImageBuilderContainerDie, '_handleBuildComplete')
         sinon.spy(OnImageBuilderContainerDie, '_handleBuildError')
         sinon.spy(Build, 'updateFailedByContextVersionIds')
@@ -180,7 +171,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         messenger.emitContextVersionUpdate.restore()
         Instance.emitInstanceUpdates.restore()
         Instance.prototype.emitInstanceUpdate.restore()
-        OnImageBuilderContainerDie.prototype.handle.restore()
         OnImageBuilderContainerDie._handleBuildComplete.restore()
         OnImageBuilderContainerDie._handleBuildError.restore()
         Build.updateFailedByContextVersionIds.restore()
@@ -190,8 +180,8 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         done()
       })
       describe('With a successful build', function () {
-        it('should attempt to deploy', function (testDone) {
-          createHandleFunc(testDone, function (err, done) {
+        it('should attempt to deploy', function (done) {
+          ctx.workerCallback = function (err) {
             if (err) { return done(err) }
             try {
               sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
@@ -282,13 +272,13 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             } catch (e) {
               done(e)
             }
-          })
+          }
           dockerMockEvents.emitBuildComplete(ctx.cv)
         })
       })
       describe('With an unsuccessful build', function () {
-        it('should update the UI with a socket event', function (testDone) {
-          createHandleFunc(testDone, function (err, done) {
+        it('should update the UI with a socket event', function (done) {
+          ctx.workerCallback = function (err) {
             if (err) { return done(err) }
             try {
               sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
@@ -311,7 +301,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 },
                 'patch'
               )
-              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
+              sinon.assert.calledOnce(Instance.prototype.emitInsranceUpdate)
               sinon.assert.calledTwice(messenger.messageRoom)
 
               // the first call is a build_running
@@ -377,13 +367,13 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             } catch (e) {
               done(e)
             }
-          }) // stub end
+          } // stub end
           dockerMockEvents.emitBuildComplete(ctx.cv, 'This is an error')
         })
       })
       describe('With an errored build', function () {
-        it('should still update the UI with a socket event', function (testDone) {
-          createHandleFunc(testDone, function (err, done) {
+        it('should still update the UI with a socket event', function (done) {
+          ctx.workerCallback = function (err) {
             if (err) { return done(err) }
             try {
               sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildComplete)
@@ -473,7 +463,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             } catch (e) {
               done(e)
             }
-          }) // stub end
+          } // stub end
           dockerMockEvents.emitBuildComplete(ctx.cv, false, true)
         })
       })
@@ -506,8 +496,8 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               done(err)
             })
           })
-          it('should update the instance with the second cv, and update both cvs', function (testDone) {
-            createHandleFunc(testDone, function (err, done) {
+          it('should update the instance with the second cv, and update both cvs', function (done) {
+            ctx.workerCallback = function (err) {
               if (err) {
                 return done(err)
               }
@@ -632,7 +622,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               } catch (e) {
                 done(e)
               }
-            }) // stub end
+            } // stub end
             dockerMockEvents.emitBuildComplete(ctx.cv)
           })
         })
