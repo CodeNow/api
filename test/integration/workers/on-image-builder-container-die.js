@@ -34,7 +34,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     done()
   })
   before(dock.start.bind(ctx))
-  beforeEach(function (done) {
+  before(function (done) {
     var oldPublish = dockerListenerRabbit.publish
     sinon.stub(dockerListenerRabbit, 'publish', function (queue, data) {
       if (queue === 'on-image-builder-container-die') {
@@ -52,7 +52,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     rabbitMQ.loadWorkers()
   })
 
-  afterEach(function (done) {
+  after(function (done) {
     dockerListenerRabbit.publish.restore()
     rabbitMQ.close(done)
   })
