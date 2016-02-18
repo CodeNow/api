@@ -58,17 +58,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       _id: 123,
       toJSON: function () { return {} }
     }
-    ctx.worker = new OnImageBuilderContainerDie(ctx.data)
-
-    // would normally be assigned from _baseWorkerFindContextVersion
-    ctx.worker.contextVersions = [ctx.mockContextVersion]
     done()
-  })
-
-  describe('_finalSeriesHandler', function () {
-    it('TODO', function (done) {
-      done()
-    })
   })
 
   describe('_getBuildInfo', function () {
@@ -160,7 +150,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
 
   describe('_handleBuildError', function () {
     beforeEach(function (done) {
-      ctx.worker.contextVersions = [ctx.mockContextVersion]
+      ctx.contextVersions = [ctx.mockContextVersion]
       sinon.stub(ContextVersion, 'updateBuildErrorByContainerAsync').resolves([ctx.mockContextVersion])
       sinon.stub(Build, 'updateFailedByContextVersionIdsAsync').resolves()
       done()
@@ -184,7 +174,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       ctx.instanceStub = {
         updateCvAsync: sinon.stub()
       }
-      ctx.worker.contextVersions = [ctx.mockContextVersion]
+      ctx.contextVersions = [ctx.mockContextVersion]
       ctx.buildInfo = {}
       ctx.job = {}
       sinon.stub(ContextVersion, 'updateBuildCompletedByContainerAsync')
