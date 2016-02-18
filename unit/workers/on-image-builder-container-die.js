@@ -346,12 +346,11 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     })
 
     describe('No Instances Found', function () {
-      it('should throw an error and report to Rollbar if there are no instances to create containers for', function (done) {
+      it('should report to Rollbar if there are no instances to create containers for but not throw an error', function (done) {
         Instance.emitInstanceUpdatesAsync.resolves([])
 
         OnImageBuilderContainerDie._emitInstanceUpdateEvents(ctx.data).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/no.*instances.*found/i)
+          expect(err).to.not.exist()
           sinon.assert.calledWith(User.findByGithubId, ctx.data.inspectData.Config.Labels.sessionUserGithubId)
           sinon.assert.calledWith(
             Instance.emitInstanceUpdatesAsync,
