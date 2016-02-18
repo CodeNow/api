@@ -1,7 +1,6 @@
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
-var expect = require('code').expect
 var it = lab.it
 var before = lab.before
 var after = lab.after
@@ -13,7 +12,6 @@ var rabbitMQ = require('models/rabbitmq')
 var sinon = require('sinon')
 var Docker = require('models/apis/docker')
 var dock = require('../../functional/fixtures/dock')
-var dockerMockEvents = require('../../functional/fixtures/docker-mock-events')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 var Build = require('models/mongo/build.js')
 var ContextVersion = require('models/mongo/context-version.js')
@@ -25,6 +23,9 @@ var dockerListenerRabbit = require('docker-listener/lib/hermes-client.js')
 var mockFactory = require('../fixtures/factory')
 
 var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create.js')
+var InstanceService = require('models/services/instance-service.js');
+var mongoose = require('mongoose');
+var ObjectId = mongoose.Types.ObjectId
 
 describe('OnImageBuilderContainerCreate Integration Tests', function () {
   before(mongooseControl.start)
@@ -95,7 +96,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
     })
   }
   describe('Running the Worker', function () {
-    describe('deploying a manual build', function () {
+    describe('building builds', function () {
       beforeEach(function (done) {
         ctx.githubId = 10
         var count = createCount(2, done)
@@ -103,7 +104,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
           ctx.user = user
           count.next(err)
         })
-        mockFactory.createStartedCv(ctx.githubId, function (err, cv) {
+        mockFactory.createCv(ctx.githubId, function (err, cv) {
           if (err) { return count.next(err) }
           ctx.cv = cv
           mockFactory.createBuild(ctx.githubId, cv, function (err, build) {
@@ -115,10 +116,15 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
               }
             }, {}, function (err) {
               if (err) { return count.next(err) }
-              ContextVersion.findById(ctx.cv._id, function (err, cv) {
+              ctx.cv.set({
+                build: {
+                  started: new Date(),
+                  _id: new ObjectId()
+                }
+              })
+              ctx.cv.save(function (err) {
                 if (err) { return count.next(err) }
-                ctx.cv = cv
-                mockFactory.createInstance(ctx.githubId, build, false, cv, function (err, instance) {
+                mockFactory.createInstance(ctx.githubId, build, false, ctx.cv, function (err, instance) {
                   ctx.instance = instance
                   count.next(err)
                 })
@@ -139,10 +145,14 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         sinon.spy(ContextVersion, 'findAsync')
 
         sinon.spy(Instance.prototype, 'emitInstanceUpdate')
+        sinon.spy(InstanceService, 'emitInstanceUpdateByCvBuildId')
 
         sinon.spy(messenger, 'emitContextVersionUpdate')
         sinon.spy(messenger, '_emitInstanceUpdateAction')
-
+        sinon.stub(User, 'anonymousFindGithubUserByGithubId').yieldsAsync(null, {
+          login: 'nathan219',
+          avatar_url: 'testingtesting123'
+        })
         done()
       })
       afterEach(function (done) {
@@ -156,374 +166,63 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         ContextVersion.findAsync.restore()
 
         Instance.prototype.emitInstanceUpdate.restore()
+        InstanceService.emitInstanceUpdateByCvBuildId.restore()
 
         messenger.emitContextVersionUpdate.restore()
         messenger._emitInstanceUpdateAction.restore()
+        User.anonymousFindGithubUserByGithubId.restore()
 
         done()
       })
-      describe('With a successful build', function () {
-        it('should attempt to deploy', function (done) {
+      describe('With one instance', function () {
+        it('should to update the cv and the instance with socket updates', function (done) {
           ctx.afterOnImageBuildContainerCreate = function (err) {
-            if (err) { return done(err) }
-            sinon.assert.calledOnce(ContextVersion.updateAsync)
+            if (err) {
+              return done(err)
+            }
+            sinon.assert.calledTwice(ContextVersion.updateAsync) // one extra time in the instance emitting
+            sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, ctx.usedDockerContainer.id)
+
+            sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
+            sinon.assert.calledWith(messenger.emitContextVersionUpdate, sinon.match.has('_id', ctx.cv._id), 'build_started')
+            sinon.assert.calledOnce(InstanceService.emitInstanceUpdateByCvBuildId)
+            sinon.assert.calledWith(
+              InstanceService.emitInstanceUpdateByCvBuildId,
+              ctx.cv.build._id.toString(),
+              'build_started',
+              true
+            )
+            sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
+            sinon.assert.calledWith(
+              messenger._emitInstanceUpdateAction,
+              sinon.match.has('_id', ctx.instance._id),
+              'updated'
+            )
+            sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
             done()
           }
           createImageBuilder()
         })
       })
-      describe('With an unsuccessful build', function () {
-        it('should update the UI with a socket event', function (done) {
-          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-            workerDone()
+      describe('With 2 instances', function () {
+        it('should to update the cv and the 2 instances with socket updates', function (done) {
+          ctx.afterOnImageBuildContainerCreate = function (err) {
             if (err) { return done(err) }
-            try {
-              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
+            sinon.assert.calledTwice(ContextVersion.updateAsync) // one extra time in the instance emitting
+            sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, ctx.usedDockerContainer.id)
 
-              sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
-              // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
-              sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
-              sinon.assert.calledWith(
-                messenger.emitContextVersionUpdate,
-                sinon.match({_id: ctx.cv._id}),
-                'build_completed'
-              )
-              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
-              sinon.assert.calledWith(
-                Instance.emitInstanceUpdates,
-                sinon.match({
-                  _id: ctx.user._id
-                }), {
-                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
-                },
-                'patch'
-              )
-              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
-              sinon.assert.calledTwice(messenger.messageRoom)
-
-              // the first call is a build_running
-              var cvCall = messenger.messageRoom.getCall(0)
-              sinon.assert.calledWith(
-                cvCall,
-                'org',
-                ctx.githubId,
-                sinon.match({
-                  event: 'CONTEXTVERSION_UPDATE',
-                  action: 'build_completed',
-                  data: sinon.match({_id: ctx.cv._id})
-                })
-              )
-              sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
-
-              var instanceCall = messenger.messageRoom.getCall(1)
-              sinon.assert.calledWith(
-                instanceCall,
-                'org',
-                ctx.githubId,
-                sinon.match({
-                  event: 'INSTANCE_UPDATE',
-                  action: 'patch',
-                  data: sinon.match({
-                    _id: ctx.instance._id,
-                    owner: {
-                      github: ctx.githubId,
-                      username: 'nathan219',
-                      gravatar: 'testingtesting123'
-                    },
-                    createdBy: {
-                      github: ctx.githubId,
-                      username: 'nathan219',
-                      gravatar: 'testingtesting123'
-                    },
-                    contextVersion: sinon.match({
-                      _id: ctx.cv._id,
-                      build: sinon.match({
-                        failed: sinon.match.truthy,
-                        completed: sinon.match.truthy
-                      })
-                    })
-                  })
-                })
-              )
-              sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
-
-              sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
-              ContextVersion.findOne(ctx.cv._id, function (err, cv) {
-                if (err) { return done(err) }
-                expect(cv.build.completed).to.exist()
-                expect(cv.build.failed).to.be.true()
-                Build.findBy('contextVersions', cv._id, function (err, builds) {
-                  if (err) { return done(err) }
-                  builds.forEach(function (build) {
-                    expect(build.completed).to.exist()
-                    expect(build.failed).to.be.true()
-                  })
-                  done()
-                })
-              })
-            } catch (e) {
-              done(e)
-            }
-          }) // stub end
-          dockerMockEvents.emitBuildComplete(ctx.cv, 'This is an error')
-        })
-      })
-      describe('With an errored build', function () {
-        it('should still update the UI with a socket event', function (done) {
-          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-            workerDone()
-            if (err) { return done(err) }
-            try {
-              sinon.assert.notCalled(OnImageBuilderContainerDie.prototype._handleBuildComplete)
-              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildError)
-              sinon.assert.calledOnce(ContextVersion.updateBuildErrorByContainer)
-
-              sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
-              // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
-              sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
-              sinon.assert.calledWith(
-                messenger.emitContextVersionUpdate,
-                sinon.match({_id: ctx.cv._id}),
-                'build_completed'
-              )
-              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
-              sinon.assert.calledWith(
-                Instance.emitInstanceUpdates,
-                sinon.match({
-                  _id: ctx.user._id
-                }), {
-                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
-                },
-                'patch'
-              )
-              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
-              sinon.assert.calledTwice(messenger.messageRoom)
-
-              // the first call is a build_running
-              var cvCall = messenger.messageRoom.getCall(0)
-              sinon.assert.calledWith(
-                cvCall,
-                'org',
-                ctx.githubId,
-                sinon.match({
-                  event: 'CONTEXTVERSION_UPDATE',
-                  action: 'build_completed',
-                  data: sinon.match({_id: ctx.cv._id})
-                })
-              )
-              sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
-
-              var instanceCall = messenger.messageRoom.getCall(1)
-              sinon.assert.calledWith(
-                instanceCall,
-                'org',
-                ctx.githubId,
-                sinon.match({
-                  event: 'INSTANCE_UPDATE',
-                  action: 'patch',
-                  data: sinon.match({
-                    _id: ctx.instance._id,
-                    owner: {
-                      github: ctx.githubId,
-                      username: 'nathan219',
-                      gravatar: 'testingtesting123'
-                    },
-                    createdBy: {
-                      github: ctx.githubId,
-                      username: 'nathan219',
-                      gravatar: 'testingtesting123'
-                    },
-                    contextVersion: sinon.match({
-                      _id: ctx.cv._id,
-                      build: sinon.match({
-                        completed: sinon.match.truthy
-                      })
-                    })
-                  })
-                })
-              )
-              sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
-
-              sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
-              ContextVersion.findOne(ctx.cv._id, function (err, cv) {
-                if (err) { return done(err) }
-                expect(cv.build.completed).to.exist()
-                expect(cv.build.failed).to.be.true()
-                Build.findBy('contextVersions', cv._id, function (err, builds) {
-                  if (err) { return done(err) }
-                  builds.forEach(function (build) {
-                    expect(build.completed).to.exist()
-                    expect(build.failed).to.be.true()
-                  })
-                  done()
-                })
-              })
-            } catch (e) {
-              done(e)
-            }
-          }) // stub end
-          dockerMockEvents.emitBuildComplete(ctx.cv, false, true)
-        })
-      })
-      describe('With 2 CVs, one that dedups', function () {
-        beforeEach(function (done) {
-          mockFactory.createStartedCv(ctx.githubId, ctx.cv.toJSON(), function (err, version) {
-            if (err) { return done(err) }
-            ctx.cv2 = version
-            mockFactory.createBuild(ctx.githubId, ctx.cv2, function (err, build) {
-              if (err) { return done(err) }
-              ctx.build2 = build
-              ctx.cv2.copyBuildFromContextVersion(ctx.cv, function (err) {
-                if (err) { return done(err) }
-                ContextVersion.findById(ctx.cv2._id, function (err, cv) {
-                  ctx.cv2 = cv
-                  done(err)
-                })
-              })
-            })
-          })
-        })
-        describe('both cvs are attached to the same instance, one after the other', function () {
-          beforeEach(function (done) {
-            Instance.findOneAndUpdate({
-              _id: ctx.instance._id
-            }, {
-              $set: { contextVersion: ctx.cv2.toJSON() }
-            }, function (err, instance) {
-              ctx.instance = instance
-              done(err)
-            })
-          })
-          it('should update the instance with the second cv, and update both cvs', function (done) {
-            sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-              workerDone()
-              if (err) {
-                return done(err)
-              }
-              try {
-                sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
-                sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
-                sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
-
-                sinon.assert.calledWith(
-                  messenger.emitContextVersionUpdate,
-                  sinon.match({_id: ctx.cv._id}),
-                  'build_completed'
-                )
-                sinon.assert.calledWith(
-                  messenger.emitContextVersionUpdate,
-                  sinon.match({_id: ctx.cv2._id}),
-                  'build_completed'
-                )
-                sinon.assert.calledOnce(Instance.emitInstanceUpdates)
-                sinon.assert.calledWith(
-                  Instance.emitInstanceUpdates,
-                  sinon.match({
-                    _id: ctx.user._id
-                  }), {
-                    'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
-                  },
-                  'patch'
-                )
-                sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
-                sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
-
-                sinon.assert.calledWith(messenger._emitInstanceUpdateAction, sinon.match({
-                  _id: ctx.instance._id
-                }), 'patch')
-
-                sinon.assert.calledThrice(messenger.messageRoom)
-                // Since these basically happen at the same time, I can't separate the cv calls
-                sinon.assert.calledWith(
-                  messenger.messageRoom,
-                  'org',
-                  ctx.githubId,
-                  sinon.match({
-                    event: 'CONTEXTVERSION_UPDATE',
-                    action: 'build_completed',
-                    data: sinon.match({_id: ctx.cv._id})
-                  })
-                )
-                sinon.assert.calledWith(
-                  messenger.messageRoom,
-                  'org',
-                  ctx.githubId,
-                  sinon.match({
-                    event: 'CONTEXTVERSION_UPDATE',
-                    action: 'build_completed',
-                    data: sinon.match({_id: ctx.cv2._id})
-                  })
-                )
-
-                var instanceCall = messenger.messageRoom.getCall(2)
-                sinon.assert.calledWith(
-                  instanceCall,
-                  'org',
-                  ctx.githubId,
-                  sinon.match({
-                    event: 'INSTANCE_UPDATE',
-                    action: 'patch',
-                    data: sinon.match({
-                      _id: ctx.instance._id,
-                      owner: {
-                        github: ctx.githubId,
-                        username: 'nathan219',
-                        gravatar: 'testingtesting123'
-                      },
-                      createdBy: {
-                        github: ctx.githubId,
-                        username: 'nathan219',
-                        gravatar: 'testingtesting123'
-                      },
-                      contextVersion: sinon.match({
-                        _id: ctx.cv2._id,
-                        build: sinon.match({
-                          failed: sinon.match.falsy,
-                          completed: sinon.match.truthy
-                        })
-                      })
-                    })
-                  })
-                )
-                sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
-
-                sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
-                sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
-                  contextVersionId: ctx.cv2._id.toString(),
-                  instanceId: ctx.instance._id.toString(),
-                  ownerUsername: ctx.user.accounts.github.username,
-                  sessionUserGithubId: ctx.user.accounts.github.id.toString()
-                })
-                Instance.findById(ctx.instance._id, function (err, instance) {
-                  if (err) {
-                    return done(err)
-                  }
-                  expect(instance.contextVersion.build.completed).to.exist()
-                  ContextVersion.findBy('build._id', ctx.build._id, function (err, cvs) {
-                    if (err) {
-                      return done(err)
-                    }
-                    expect(cvs.length).to.equal(2)
-                    cvs.forEach(function (cv) {
-                      expect(cv.build.completed).to.exist()
-                    })
-                    Build.findBy('contextVersions', ctx.cv2._id, function (err, builds) {
-                      if (err) {
-                        return done(err)
-                      }
-                      builds.forEach(function (build) {
-                        expect(build.completed).to.exist()
-                      })
-                      done()
-                    })
-                  })
-                })
-              } catch (e) {
-                done(e)
-              }
-            }) // stub end
-            dockerMockEvents.emitBuildComplete(ctx.cv)
-          })
+            sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
+            sinon.assert.calledWith(messenger.emitContextVersionUpdate, sinon.match.has('_id', ctx.cv._id), 'build_started')
+            sinon.assert.calledTwice(InstanceService.emitInstanceUpdateByCvBuildId)
+            sinon.assert.calledWith(
+              InstanceService.emitInstanceUpdateByCvBuildId,
+              ctx.cv.build._id.toString(),
+              'build_started',
+              true
+            )
+            done()
+          }
+          createImageBuilder()
         })
       })
     })
