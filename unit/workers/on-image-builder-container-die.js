@@ -94,8 +94,8 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       it('should fetch build info and update success', function (done) {
         OnImageBuilderContainerDie._getBuildInfo({ id: 1 }).asCallback(function (err) {
           expect(err).to.not.exist()
-          expect(OnImageBuilderContainerDie._handleBuildComplete.callCount).to.equal(1)
-          expect(OnImageBuilderContainerDie._handleBuildError.callCount).to.equal(0)
+          sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
+          sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildError)
           done()
         })
       })
@@ -150,8 +150,8 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       it('should fetch build info and update fetch failure', function (done) {
         OnImageBuilderContainerDie._getBuildInfo({ id: 3 }).asCallback(function (err) {
           expect(err).to.not.exist()
-          expect(OnImageBuilderContainerDie._handleBuildComplete.callCount).to.equal(0)
-          expect(OnImageBuilderContainerDie._handleBuildError.callCount).to.equal(1)
+          sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildComplete)
+          sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildError)
           done()
         })
       })
