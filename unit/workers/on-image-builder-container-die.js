@@ -16,7 +16,9 @@ var Instance = require('models/mongo/instance')
 var User = require('models/mongo/user')
 var Docker = require('models/apis/docker')
 var messenger = require('socket/messenger.js')
+var rabbitMQ = require('models/rabbitmq')
 var keypather = require('keypather')()
+var put = require('101/put')
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die')
 
@@ -317,7 +319,6 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       sinon.stub(Instance, 'emitInstanceUpdatesAsync').resolves(ctx.mockInstances)
       sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
       sinon.stub(messenger, 'emitInstanceUpdate')
-      sinon.stub(OnImageBuilderContainerDie, '_createContainersIfSuccessful')
       done()
     })
     afterEach(function (done) {
@@ -325,13 +326,10 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       Instance.emitInstanceUpdatesAsync.restore()
       ContextVersion.findAsync.restore()
       messenger.emitInstanceUpdate.restore()
-      OnImageBuilderContainerDie._createContainersIfSuccessful.restore()
       done()
     })
 
     it('should emit instance update events', function (done) {
-      var sessionUserGithubId = keypather.get(ctx.worker.data,
-        'inspectData.Config.Labels.sessionUserGithubId')
       OnImageBuilderContainerDie._emitInstanceUpdateEvents(ctx.data).asCallback(function (err) {
         if (err) { return done(err) }
         sinon.assert.calledWith(User.findByGithubId, ctx.data.inspectData.Config.Labels.sessionUserGithubId)
@@ -342,12 +340,6 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
             'contextVersion._id': { $in: [ctx.mockContextVersion._id] }
           },
           'patch'
-        )
-        sinon.assert.calledWith(
-          OnImageBuilderContainerDie._createContainersIfSuccessful,
-          ctx.data,
-          sessionUserGithubId,
-          ctx.mockInstances
         )
         done()
       })
@@ -369,10 +361,66 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
             },
             'patch'
           )
-          sinon.assert.notCalled(OnImageBuilderContainerDie._createContainersIfSuccessful)
           done()
         })
       })
+    })
+  })
+
+  describe('_createContainersIfSuccessful ', function () {
+    var contextVersionId = 2
+    var instanceId = 3
+    var sessionUserGithubId = '789'
+    var ownerUsername = 'thejsj'
+    var job
+    beforeEach(function (done) {
+      ctx.instance = {
+        contextVersion: {
+          _id: {
+            toString: sinon.stub().returns(contextVersionId)
+          }
+        },
+        _id: {
+          toString: sinon.stub().returns(instanceId)
+        }
+      }
+      job = put(ctx.data, {
+        inspectData: {
+          Config: {
+            Labels: {
+              sessionUserGithubId: sessionUserGithubId,
+              ownerUsername: ownerUsername
+            }
+          }
+        }
+      })
+      sinon.stub(rabbitMQ, 'createInstanceContainer')
+      done()
+    })
+
+    afterEach(function (done) {
+      rabbitMQ.createInstanceContainer.restore()
+      done()
+    })
+
+    it('should publish jobs to RabbitMQ if the build was succesful', function (done) {
+      job.buildSuccessful = true
+
+      OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance])
+      sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
+      sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
+        contextVersionId: contextVersionId,
+        instanceId: instanceId,
+        ownerUsername: ownerUsername,
+        sessionUserGithubId: sessionUserGithubId
+      })
+      done()
+    })
+
+    it('should not publish jobs to RabbitMQ if the build was unsuccesful', function (done) {
+      OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance])
+      sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+      done()
     })
   })
 })
