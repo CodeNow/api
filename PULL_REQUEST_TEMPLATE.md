@@ -1,8 +1,8 @@
 # summery of changes
-* add list of changes made
+* list changes made in this branch
 
 # dependencies
-- [ ] list all dependencies (PR from another branch, deploys)
+- [ ] list dependencies (eg, PR from another branch or repo; tags or versions required prior to deployment)
 
 # reviewers
 - [ ] person_1
