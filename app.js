@@ -25,17 +25,6 @@ var redisPubSub = require('models/redis/pubsub')
 
 var log = logger.log
 
-// Report environment here (as opposed to in loadenv)
-if (envIs('production', 'staging')) {
-  log.trace({
-    env: process.env
-  }, 'env')
-}
-
-if (!envIs('test')) {
-  console.log('ENVIRONMENT CONFIG', process.env.NODE_ENV, process.env)
-}
-
 // express server, handles web HTTP requests
 var apiServer = new ApiServer()
 
