@@ -95,6 +95,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       ContextVersion.findAsync.restore()
       messenger.emitContextVersionUpdate.restore()
       Docker.prototype.startImageBuilderContainerAsync.restore()
+      InstanceService.emitInstanceUpdateByCvBuildId.restore()
       done()
     })
 
