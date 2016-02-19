@@ -46,7 +46,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     ctx.data = keypather.expand({
       from: '34565762',
       host: 'http://runnable.io',
-      id: '3225',
+      id: '507c7f79bcf86cd7994f6c0e',
       time: 234234,
       uuid: '12343',
       dockerHost: '0.0.0.0',
@@ -264,14 +264,14 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       ctx.mockInstances = [{}, {}, {}]
       sinon.stub(User, 'findByGithubId').yieldsAsync(null, ctx.mockUser)
       sinon.stub(Instance, 'emitInstanceUpdatesAsync').resolves(ctx.mockInstances)
-      sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
+      sinon.stub(ContextVersion, 'findByBuildDockerContainerAsync').resolves([ctx.mockContextVersion])
       sinon.stub(messenger, 'emitInstanceUpdate')
       done()
     })
     afterEach(function (done) {
       User.findByGithubId.restore()
       Instance.emitInstanceUpdatesAsync.restore()
-      ContextVersion.findAsync.restore()
+      ContextVersion.findByBuildDockerContainerAsync.restore()
       messenger.emitInstanceUpdate.restore()
       done()
     })
