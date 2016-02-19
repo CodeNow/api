@@ -10,7 +10,6 @@ var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
-var Promise = require('bluebird')
 var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
@@ -63,86 +62,43 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
   })
 
   describe('_getBuildInfo', function () {
+    var buildInfoMock
+
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(null, {})
-        sinon.stub(OnImageBuilderContainerDie, '_handleBuildError', function (data, cb) {
-          expect(data).to.be.an.object()
-          return Promise.resolve()
-        })
-        sinon.stub(OnImageBuilderContainerDie, '_handleBuildComplete', function (data, cb) {
-          expect(data).to.be.an.object()
-          return Promise.resolve()
-        })
+        buildInfoMock = {}
+        sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(null, buildInfoMock)
         done()
       })
       afterEach(function (done) {
         Docker.prototype.getBuildInfo.restore()
-        OnImageBuilderContainerDie._handleBuildError.restore()
-        OnImageBuilderContainerDie._handleBuildComplete.restore()
         done()
       })
       it('should fetch build info and update success', function (done) {
-        OnImageBuilderContainerDie._getBuildInfo({ id: 1 }).asCallback(function (err) {
+        var host = 'superHost'
+        OnImageBuilderContainerDie._getBuildInfo({ id: 1, host: host }).asCallback(function (err, buildInfo) {
+          sinon.assert.calledOnce(Docker.prototype.getBuildInfo)
+          expect(buildInfo).to.equal(buildInfoMock)
+          expect(buildInfo.dockerHost).to.equal(host)
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
-          sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildError)
-          done()
-        })
-      })
-    })
-    describe('build failure', function () {
-      beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'getBuildInfo').yields(null, {})
-        sinon.stub(OnImageBuilderContainerDie, '_handleBuildError', function (data, cb) {
-          expect(data).to.be.an.object()
-          return Promise.resolve()
-        })
-        sinon.stub(OnImageBuilderContainerDie, '_handleBuildComplete', function (data, cb) {
-          expect(data).to.be.an.object()
-          return Promise.resolve()
-        })
-        done()
-      })
-      afterEach(function (done) {
-        Docker.prototype.getBuildInfo.restore()
-        OnImageBuilderContainerDie._handleBuildError.restore()
-        OnImageBuilderContainerDie._handleBuildComplete.restore()
-        done()
-      })
-      it('should fetch build info and update build failure', function (done) {
-        OnImageBuilderContainerDie._getBuildInfo({ id: 2 }).asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
-          sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildError)
           done()
         })
       })
     })
     describe('fetch failure', function () {
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'getBuildInfoAsync').rejects(new Error('docker error'))
-        sinon.stub(OnImageBuilderContainerDie, '_handleBuildError', function (data, cb) {
-          expect(data).to.be.an.object()
-          return Promise.resolve()
-        })
-        sinon.stub(OnImageBuilderContainerDie, '_handleBuildComplete', function (data, cb) {
-          expect(data).to.be.an.object()
-          return Promise.resolve()
-        })
+        sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(new Error('docker error'))
         done()
       })
       afterEach(function (done) {
-        Docker.prototype.getBuildInfoAsync.restore()
-        OnImageBuilderContainerDie._handleBuildError.restore()
-        OnImageBuilderContainerDie._handleBuildComplete.restore()
+        Docker.prototype.getBuildInfo.restore()
         done()
       })
       it('should fetch build info and update fetch failure', function (done) {
-        OnImageBuilderContainerDie._getBuildInfo({ id: 3 }).asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildComplete)
-          sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildError)
+        OnImageBuilderContainerDie._getBuildInfo({ id: 3 }).asCallback(function (err, buildInfo) {
+          sinon.assert.calledOnce(Docker.prototype.getBuildInfo)
+          expect(err).to.exist()
+          expect(buildInfo).to.not.exist()
           done()
         })
       })
