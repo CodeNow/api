@@ -10,6 +10,7 @@ var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
+var Promise = require('bluebird')
 var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
