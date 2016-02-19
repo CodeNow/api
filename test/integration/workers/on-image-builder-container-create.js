@@ -23,8 +23,8 @@ var dockerListenerRabbit = require('docker-listener/lib/hermes-client.js')
 var mockFactory = require('../fixtures/factory')
 
 var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create.js')
-var InstanceService = require('models/services/instance-service.js');
-var mongoose = require('mongoose');
+var InstanceService = require('models/services/instance-service.js')
+var mongoose = require('mongoose')
 var ObjectId = mongoose.Types.ObjectId
 
 describe('OnImageBuilderContainerCreate Integration Tests', function () {
@@ -42,11 +42,10 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
       if (queue === 'on-image-builder-container-create') {
         OnImageBuilderContainerCreate(data)
           .then(function () {
-            ctx.afterOnImageBuildContainerCreate()
+            return ctx.afterOnImageBuildContainerCreate()
           })
           .catch(function (err) {
-            ctx.afterOnImageBuildContainerCreate(err)
-
+            return ctx.afterOnImageBuildContainerCreate(err)
           })
       } else if (queue !== 'container.image-builder.started') {
         oldPublish.bind(dockerListenerRabbit)(queue, data)
@@ -93,7 +92,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
           .then(function (container) {
             ctx.usedDockerContainer = container
           })
-    })
+      })
   }
   describe('Running the Worker', function () {
     describe('building builds', function () {
@@ -138,6 +137,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         sinon.stub(rabbitMQ, 'createInstanceContainer')
         sinon.stub(rabbitMQ, 'instanceUpdated')
         sinon.stub(messenger, 'messageRoom')
+        sinon.stub(Docker.prototype, 'startContainer').yieldsAsync()
 
         sinon.spy(Docker.prototype, 'startImageBuilderContainerAsync')
 
@@ -145,6 +145,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         sinon.spy(ContextVersion, 'findAsync')
 
         sinon.spy(Instance.prototype, 'emitInstanceUpdate')
+        sinon.spy(Instance.prototype, 'updateCv')
         sinon.spy(InstanceService, 'emitInstanceUpdateByCvBuildId')
 
         sinon.spy(messenger, 'emitContextVersionUpdate')
@@ -159,6 +160,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         rabbitMQ.createInstanceContainer.restore()
         rabbitMQ.instanceUpdated.restore()
         messenger.messageRoom.restore()
+        Docker.prototype.startContainer.restore()
 
         Docker.prototype.startImageBuilderContainerAsync.restore()
 
@@ -166,6 +168,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         ContextVersion.findAsync.restore()
 
         Instance.prototype.emitInstanceUpdate.restore()
+        Instance.prototype.updateCv.restore()
         InstanceService.emitInstanceUpdateByCvBuildId.restore()
 
         messenger.emitContextVersionUpdate.restore()
@@ -180,24 +183,29 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
             if (err) {
               return done(err)
             }
-            sinon.assert.calledTwice(ContextVersion.updateAsync) // one extra time in the instance emitting
+            sinon.assert.calledOnce(ContextVersion.updateAsync)
             sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, ctx.usedDockerContainer.id)
 
             sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
-            sinon.assert.calledWith(messenger.emitContextVersionUpdate, sinon.match.has('_id', ctx.cv._id), 'build_started')
+            sinon.assert.calledWith(
+              messenger.emitContextVersionUpdate,
+              sinon.match.has('_id', ctx.cv._id),
+              'build_started'
+            )
             sinon.assert.calledOnce(InstanceService.emitInstanceUpdateByCvBuildId)
             sinon.assert.calledWith(
               InstanceService.emitInstanceUpdateByCvBuildId,
               ctx.cv.build._id.toString(),
               'build_started',
-              true
+              false
             )
             sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
             sinon.assert.calledWith(
               messenger._emitInstanceUpdateAction,
               sinon.match.has('_id', ctx.instance._id),
-              'updated'
+              'build_started'
             )
+            sinon.assert.calledOnce(Instance.prototype.updateCv)
             sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
             done()
           }
@@ -205,21 +213,46 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         })
       })
       describe('With 2 instances', function () {
+        beforeEach(function (done) {
+          mockFactory.createInstance(ctx.githubId, ctx.build, false, ctx.cv, function (err, instance) {
+            ctx.instance2 = instance
+            done(err)
+          })
+        })
         it('should to update the cv and the 2 instances with socket updates', function (done) {
           ctx.afterOnImageBuildContainerCreate = function (err) {
-            if (err) { return done(err) }
-            sinon.assert.calledTwice(ContextVersion.updateAsync) // one extra time in the instance emitting
+            if (err) {
+              return done(err)
+            }
+            sinon.assert.calledOnce(ContextVersion.updateAsync)
             sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, ctx.usedDockerContainer.id)
 
             sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
-            sinon.assert.calledWith(messenger.emitContextVersionUpdate, sinon.match.has('_id', ctx.cv._id), 'build_started')
-            sinon.assert.calledTwice(InstanceService.emitInstanceUpdateByCvBuildId)
+            sinon.assert.calledWith(
+              messenger.emitContextVersionUpdate,
+              sinon.match.has('_id', ctx.cv._id),
+              'build_started'
+            )
+            sinon.assert.calledOnce(InstanceService.emitInstanceUpdateByCvBuildId)
             sinon.assert.calledWith(
               InstanceService.emitInstanceUpdateByCvBuildId,
               ctx.cv.build._id.toString(),
               'build_started',
-              true
+              false
             )
+            sinon.assert.calledTwice(messenger._emitInstanceUpdateAction)
+            sinon.assert.calledWith(
+              messenger._emitInstanceUpdateAction,
+              sinon.match.has('_id', ctx.instance._id),
+              'build_started'
+            )
+            sinon.assert.calledWith(
+              messenger._emitInstanceUpdateAction,
+              sinon.match.has('_id', ctx.instance2._id),
+              'build_started'
+            )
+            sinon.assert.calledTwice(Instance.prototype.updateCv)
+            sinon.assert.calledTwice(rabbitMQ.instanceUpdated)
             done()
           }
           createImageBuilder()

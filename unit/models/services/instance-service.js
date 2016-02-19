@@ -22,7 +22,7 @@ var joi = require('utils/joi')
 var rabbitMQ = require('models/rabbitmq')
 var validation = require('../../fixtures/validation')(lab)
 var messenger = require('socket/messenger')
-var User = require('models/mongo/user')
+var ObjectId = require('mongoose').Types.ObjectId
 
 var afterEach = lab.afterEach
 var after = lab.after
@@ -1025,7 +1025,6 @@ describe('InstanceService: ' + moduleName, function () {
       done()
     })
 
-
     it('should use the passed in github user if one is provided', function (done) {
       var testUser = 1234
       InstanceService.emitInstanceUpdate(instance, testUser)
@@ -1132,7 +1131,7 @@ describe('InstanceService: ' + moduleName, function () {
   describe('emitInstanceUpdateByCvBuildId', function () {
     var instance
     var instance2
-    var cvBuildId = 'asdasd'
+    var cvBuildId = new ObjectId()
 
     beforeEach(function (done) {
       sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
@@ -1152,30 +1151,26 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     afterEach(function (done) {
-      Instance.findAsync.restore()
+      Instance.findByContextVersionBuildId.restore()
       InstanceService.emitInstanceUpdate.restore()
       done()
     })
 
     it('should return cleanly if no instances exist', function (done) {
-      sinon.stub(Instance, 'findAsync').resolves()
+      sinon.stub(Instance, 'findByContextVersionBuildId').resolves()
       InstanceService.emitInstanceUpdateByCvBuildId(cvBuildId, 'build_started', false)
         .then(function () {
-          sinon.assert.calledWith(Instance.findAsync, {
-            'contextVersion.build._id': cvBuildId
-          })
+          sinon.assert.calledWith(Instance.findByContextVersionBuildId, cvBuildId)
           sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
         })
         .asCallback(done)
     })
 
     it('should call emit update for the one instance it receives', function (done) {
-      sinon.stub(Instance, 'findAsync').resolves([instance])
+      sinon.stub(Instance, 'findByContextVersionBuildId').resolves([instance])
       InstanceService.emitInstanceUpdateByCvBuildId(cvBuildId, 'build_started', false)
         .then(function () {
-          sinon.assert.calledWith(Instance.findAsync, {
-            'contextVersion.build._id': cvBuildId
-          })
+          sinon.assert.calledWith(Instance.findByContextVersionBuildId, cvBuildId)
           sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
           sinon.assert.calledWith(InstanceService.emitInstanceUpdate, instance, null, 'build_started', false)
         })
@@ -1183,12 +1178,10 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     it('should call emit update for the each instance it receives', function (done) {
-      sinon.stub(Instance, 'findAsync').resolves([instance, instance2])
+      sinon.stub(Instance, 'findByContextVersionBuildId').resolves([instance, instance2])
       InstanceService.emitInstanceUpdateByCvBuildId(cvBuildId, 'build_started', false)
         .then(function () {
-          sinon.assert.calledWith(Instance.findAsync, {
-            'contextVersion.build._id': cvBuildId
-          })
+          sinon.assert.calledWith(Instance.findByContextVersionBuildId, cvBuildId)
           sinon.assert.calledTwice(InstanceService.emitInstanceUpdate)
           sinon.assert.calledWith(InstanceService.emitInstanceUpdate, instance, null, 'build_started', false)
           sinon.assert.calledWith(InstanceService.emitInstanceUpdate, instance2, null, 'build_started', false)
