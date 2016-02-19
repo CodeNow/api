@@ -1,12 +1,12 @@
 # summery of changes
-* add list of changes you did
+* add list of changes made
 
 # dependencies
-- [ ] list all dependencies needed (PR from another branch, deploys)
+- [ ] list all dependencies (PR from another branch, deploys)
 
 # reviewers
 - [ ] person_1
 - [ ] person_2
 
 # test
-- [ ] list out what you need to test
+- [ ] list required tests
