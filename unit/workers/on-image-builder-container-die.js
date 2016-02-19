@@ -105,27 +105,6 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     })
   })
 
-  describe('_handleBuildError', function () {
-    beforeEach(function (done) {
-      ctx.contextVersions = [ctx.mockContextVersion]
-      sinon.stub(ContextVersion, 'updateBuildErrorByContainerAsync').resolves([ctx.mockContextVersion])
-      sinon.stub(Build, 'updateFailedByContextVersionIdsAsync').resolves()
-      done()
-    })
-    afterEach(function (done) {
-      ContextVersion.updateBuildErrorByContainerAsync.restore()
-      Build.updateFailedByContextVersionIdsAsync.restore()
-      done()
-    })
-    it('it should handle errored build', function (done) {
-      OnImageBuilderContainerDie._handleBuildError(ctx.data, {}).asCallback(function () {
-        sinon.assert.calledWith(ContextVersion.updateBuildErrorByContainerAsync, ctx.data.id)
-        sinon.assert.calledWith(Build.updateFailedByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-        done()
-      })
-    })
-  })
-
   describe('_handleBuildComplete', function () {
     beforeEach(function (done) {
       ctx.instanceStub = {

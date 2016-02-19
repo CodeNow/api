@@ -156,7 +156,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         sinon.spy(messenger, '_emitInstanceUpdateAction')
         sinon.spy(messenger, 'emitContextVersionUpdate')
         sinon.spy(OnImageBuilderContainerDie, '_handleBuildComplete')
-        sinon.spy(OnImageBuilderContainerDie, '_handleBuildError')
         sinon.spy(Build, 'updateFailedByContextVersionIds')
         sinon.spy(Build, 'updateCompletedByContextVersionIds')
         sinon.spy(ContextVersion, 'updateBuildErrorByContainer')
@@ -175,7 +174,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         Instance.emitInstanceUpdates.restore()
         Instance.prototype.emitInstanceUpdate.restore()
         OnImageBuilderContainerDie._handleBuildComplete.restore()
-        OnImageBuilderContainerDie._handleBuildError.restore()
         Build.updateFailedByContextVersionIds.restore()
         Build.updateCompletedByContextVersionIds.restore()
         ContextVersion.updateBuildErrorByContainer.restore()
@@ -374,91 +372,32 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
           dockerMockEvents.emitBuildComplete(ctx.cv, 'This is an error')
         })
       })
-      describe('With an errored build', function () {
-        it('should still update the UI with a socket event', function (done) {
+      describe('With an error getting the build logs', function () {
+        it('should not update the UI', function (done) {
           ctx.workerCallback = function (err) {
-            if (err) { return done(err) }
+            expect(err).to.exist()
             try {
               sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildComplete)
-              sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildError)
-              sinon.assert.calledOnce(ContextVersion.updateBuildErrorByContainer)
+              sinon.assert.notCalled(ContextVersion.updateBuildErrorByContainer)
 
-              sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
+              sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
               // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
-              sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
-              sinon.assert.calledWith(
-                messenger.emitContextVersionUpdate,
-                sinon.match({_id: ctx.cv._id}),
-                'build_completed'
-              )
-              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
-              sinon.assert.calledWith(
-                Instance.emitInstanceUpdates,
-                sinon.match({
-                  _id: ctx.user._id
-                }), {
-                  'contextVersion._id': { $in: [ctx.cv._id] }
-                },
-                'patch'
-              )
-              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
-              sinon.assert.calledTwice(messenger.messageRoom)
+              sinon.assert.notCalled(Build.updateCompletedByContextVersionIds)
+              sinon.assert.notCalled(Instance.emitInstanceUpdates)
+              sinon.assert.notCalled(Instance.prototype.emitInstanceUpdate)
+              sinon.assert.notCalled(messenger.messageRoom)
 
-              // the first call is a build_running
-              var cvCall = messenger.messageRoom.getCall(0)
-              sinon.assert.calledWith(
-                cvCall,
-                'org',
-                ctx.githubId,
-                sinon.match({
-                  event: 'CONTEXTVERSION_UPDATE',
-                  action: 'build_completed',
-                  data: sinon.match({_id: ctx.cv._id})
-                })
-              )
-              sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
-
-              var instanceCall = messenger.messageRoom.getCall(1)
-              sinon.assert.calledWith(
-                instanceCall,
-                'org',
-                ctx.githubId,
-                sinon.match({
-                  event: 'INSTANCE_UPDATE',
-                  action: 'patch',
-                  data: sinon.match({
-                    _id: ctx.instance._id,
-                    owner: {
-                      github: ctx.githubId,
-                      username: 'nathan219',
-                      gravatar: 'testingtesting123'
-                    },
-                    createdBy: {
-                      github: ctx.githubId,
-                      username: 'nathan219',
-                      gravatar: 'testingtesting123'
-                    },
-                    contextVersion: sinon.match({
-                      _id: ctx.cv._id,
-                      build: sinon.match({
-                        completed: sinon.match.truthy
-                      })
-                    })
-                  })
-                })
-              )
-              sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
-
-              // sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+              sinon.assert.notCalled(rabbitMQ.instanceUpdated)
+              sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
               ContextVersion.findOne(ctx.cv._id, function (err, cv) {
                 if (err) { return done(err) }
-                expect(cv.build.completed).to.exist()
-                expect(cv.build.failed).to.be.true()
+                expect(cv.build.completed).to.not.exist()
+                expect(cv.build.failed).to.not.exist()
                 Build.findBy('contextVersions', cv._id, function (err, builds) {
                   if (err) { return done(err) }
                   builds.forEach(function (build) {
                     expect(build.completed).to.exist()
-                    expect(build.failed).to.be.true()
+                    expect(build.failed).to.exist()
                   })
                   done()
                 })
