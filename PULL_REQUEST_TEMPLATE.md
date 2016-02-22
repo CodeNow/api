@@ -1,12 +1,13 @@
-# summery of changes
-* list changes made in this branch
+## Changes
+* I removed this func
+* I introduced this bug
 
-# dependencies
+## Dependencies
 - [ ] list dependencies (eg, PR from another branch or repo; tags or versions required prior to deployment)
 
-# reviewers
+## Reviewers
 - [ ] person_1
 - [ ] person_2
 
-# test
+## Tests
 - [ ] list required tests
