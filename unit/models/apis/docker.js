@@ -4,7 +4,6 @@
 'use strict'
 require('loadenv')()
 
-var assign = require('101/assign')
 var Boom = require('dat-middleware').Boom
 var clone = require('101/clone')
 var Code = require('code')
@@ -364,7 +363,6 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          network: ctx.mockNetwork,
           noCache: false,
           tid: '000-0000-0000-0000'
         }
@@ -382,7 +380,6 @@ describe('docker: ' + moduleName, function () {
             contextVersion: opts.contextVersion,
             dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
-            network: opts.network,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
             ownerUsername: opts.ownerUsername,
@@ -416,7 +413,6 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          network: ctx.mockNetwork,
           noCache: false,
           tid: '000-0000-0000-0000'
         }
@@ -434,7 +430,6 @@ describe('docker: ' + moduleName, function () {
             contextVersion: opts.contextVersion,
             dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
-            network: opts.network,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
             ownerUsername: opts.ownerUsername,
@@ -564,52 +559,38 @@ describe('docker: ' + moduleName, function () {
         tid: 'tid'
       }
       var labels = model._createImageBuilderLabels(opts)
-      var expectedLabels = assign(
-        keypather.flatten(ctx.mockContextVersion.toJSON(), '.', 'contextVersion'),
-        {
-          dockerTag: opts.dockerTag,
-          manualBuild: opts.manualBuild,
-          noCache: opts.noCache,
-          sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
-          sessionUserGithubId: opts.sessionUser.accounts.github.id.toString(),
-          sessionUserUsername: opts.sessionUser.accounts.github.username,
-          ownerUsername: opts.ownerUsername,
-          tid: opts.tid,
-          'com.docker.swarm.constraints': '["org==owner"]',
-          type: 'image-builder-container'
-        }
-      )
+      var expectedLabels = {
+        'contextVersion.build._id': ctx.mockContextVersion.build._id,
+        'contextVersion._id': ctx.mockContextVersion._id,
+        'contextVersion.context': ctx.mockContextVersion.context,
+        dockerTag: opts.dockerTag,
+        manualBuild: opts.manualBuild,
+        noCache: opts.noCache,
+        sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
+        sessionUserGithubId: opts.sessionUser.accounts.github.id.toString(),
+        sessionUserUsername: opts.sessionUser.accounts.github.username,
+        ownerUsername: opts.ownerUsername,
+        tid: opts.tid,
+        'com.docker.swarm.constraints': '["org==owner"]',
+        type: 'image-builder-container'
+      }
       expect(labels).to.deep.equal(expectedLabels)
       // assert type casting to string for known value originally of type Number
       expect(labels.sessionUserGithubId).to.be.a.string()
       done()
     })
 
-    it('should cast all values of flattened labels object to strings', function (done) {
+    it('should cast all values of labels object to strings', function (done) {
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        noCache: false,
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
         sessionUser: ctx.mockSessionUser,
-        tid: '0000-0000-0000-0000'
+        tid: 123
       })
       expect(imageBuilderContainerLabels['contextVersion._id']).to.equal(ctx.mockContextVersion._id)
-      done()
-    })
-
-    it('should not error if value is undefined', function (done) {
-      ctx.mockContextVersion.toJSON = function () {
-        return {
-          _id: undefined,
-          owner: { github: 'owner' }
-        }
-      }
-      var imageBuilderContainerLabels = model._createImageBuilderLabels({
-        contextVersion: ctx.mockContextVersion,
-        network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser,
-        tid: '0000-0000-0000-0000'
-      })
-      expect(imageBuilderContainerLabels['contextVersion._id']).to.equal('undefined')
+      expect(imageBuilderContainerLabels.noCache).to.equal('false')
+      expect(imageBuilderContainerLabels.tid).to.equal('123')
       done()
     })
   })

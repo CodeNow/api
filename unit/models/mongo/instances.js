@@ -662,6 +662,46 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
+  describe('findByContextVersionIds', function () {
+    var instance = null
+    var contextVersionId = newObjectId()
+    beforeEach(function (done) {
+      instance = createNewInstance()
+      instance.save(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.exist()
+        done()
+      })
+    })
+    beforeEach(function (done) {
+      var instance = createNewInstance('instance2')
+      instance.save(done)
+    })
+    beforeEach(function (done) {
+      var instance = createNewInstance('instance3', { contextVersion: { _id: contextVersionId } })
+      instance.save(done)
+    })
+    it('should pass the array of contextVersion Ids to find', function (done) {
+      Instance.findByContextVersionIds([contextVersionId], function (err, results) {
+        expect(err).to.not.exist()
+        expect(results).to.be.an.array()
+        expect(results.length).to.equal(1)
+        expect(results[0]).to.be.an.object()
+        expect(results[0].name).to.equal('instance3')
+        expect(results[0].contextVersion._id.toString()).to.equal(contextVersionId.toString())
+        done()
+      })
+    })
+    it('should return an empty array if no contextVersions are found', function (done) {
+      Instance.findByContextVersionIds([newObjectId()], function (err, results) {
+        expect(err).to.not.exist()
+        expect(results).to.be.an.array()
+        expect(results.length).to.equal(0)
+        done()
+      })
+    })
+  })
+
   describe('#updateContextVersion', function () {
     var id = '1234'
     var updateObj = {
