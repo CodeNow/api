@@ -9,10 +9,7 @@ var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
 var Code = require('code')
-var noop = require('101/noop')
 var sinon = require('sinon')
-
-var rabbitMQ = require('models/rabbitmq')
 
 var ContextVersion = require('models/mongo/context-version')
 var InstanceContainerCreated = require('workers/instance.container.created')
@@ -62,14 +59,14 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
     ctx.cv = new ContextVersion({ _id: '123' })
     sinon.stub(ContextVersion, 'recoverAsync').returns(Promise.resolve(ctx.cv))
     sinon.stub(InstanceService, 'updateContainerInspect').yieldsAsync(null, ctx.mockInstance)
-    sinon.stub(rabbitMQ, 'startInstanceContainer', noop)
+    sinon.stub(InstanceService, 'startInstance').returns(Promise.resolve(ctx.mockInstance))
     done()
   })
 
   afterEach(function (done) {
     ContextVersion.recoverAsync.restore()
     InstanceService.updateContainerInspect.restore()
-    rabbitMQ.startInstanceContainer.restore()
+    InstanceService.startInstance.restore()
     done()
   })
 
@@ -97,15 +94,16 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         sinon.assert.calledOnce(InstanceService.updateContainerInspect)
         sinon.assert.calledWith(InstanceService.updateContainerInspect,
           query, updateData)
-        sinon.assert.calledOnce(rabbitMQ.startInstanceContainer)
-        var payload = {
-          containerId: ctx.data.id,
-          instanceId: ctx.data.inspectData.Config.Labels.instanceId,
-          sessionUserGithubId: ctx.data.inspectData.Config.Labels.sessionUserGithubId,
-          tid: ctx.data.inspectData.Config.Labels.tid,
-          deploymentUuid: ctx.data.inspectData.Config.Labels.deploymentUuid
-        }
-        sinon.assert.calledWith(rabbitMQ.startInstanceContainer, payload)
+        sinon.assert.calledOnce(InstanceService.startInstance)
+        // var payload = {
+        //   containerId: ctx.data.id,
+        //   instanceId: ctx.data.inspectData.Config.Labels.instanceId,
+        //   sessionUserGithubId: ctx.data.inspectData.Config.Labels.sessionUserGithubId,
+        //   tid: ctx.data.inspectData.Config.Labels.tid,
+        //   deploymentUuid: ctx.data.inspectData.Config.Labels.deploymentUuid
+        // }
+        sinon.assert.calledWith(InstanceService.startInstance, ctx.mockInstance,
+          ctx.data.inspectData.Config.Labels.sessionUserGithubId, ctx.data.inspectData.Config.Labels.tid)
         done()
       })
     })
@@ -118,7 +116,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         expect(err.message).to.equal('instance.container.created: Invalid Job')
         sinon.assert.notCalled(ContextVersion.recoverAsync)
         sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
+        sinon.assert.notCalled(InstanceService.startInstance)
         done()
       })
     })
@@ -129,7 +127,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         expect(err.message).to.equal('instance.container.created: Invalid Job')
         sinon.assert.notCalled(ContextVersion.recoverAsync)
         sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
+        sinon.assert.notCalled(InstanceService.startInstance)
         done()
       })
     })
@@ -142,7 +140,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         expect(err.message).to.equal('instance.container.created: Invalid Job')
         sinon.assert.notCalled(ContextVersion.recoverAsync)
         sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
+        sinon.assert.notCalled(InstanceService.startInstance)
         done()
       })
     })
@@ -157,7 +155,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         sinon.assert.calledOnce(ContextVersion.recoverAsync)
         sinon.assert.calledWith(ContextVersion.recoverAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
         sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
+        sinon.assert.notCalled(InstanceService.startInstance)
         done()
       })
     })
@@ -187,7 +185,21 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         sinon.assert.calledOnce(InstanceService.updateContainerInspect)
         sinon.assert.calledWith(InstanceService.updateContainerInspect,
           query, updateData)
-        sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
+        sinon.assert.notCalled(InstanceService.startInstance)
+        done()
+      })
+    })
+    it('should callback with error if start instance failed failed', function (done) {
+      var startInstanceError = new Error('Start instance error')
+      var rejectionPromise = Promise.reject(startInstanceError)
+      rejectionPromise.suppressUnhandledRejections()
+      InstanceService.startInstance.returns(rejectionPromise)
+      InstanceContainerCreated(ctx.data).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.message).to.equal(startInstanceError.message)
+        sinon.assert.calledOnce(ContextVersion.recoverAsync)
+        sinon.assert.calledOnce(InstanceService.updateContainerInspect)
+        sinon.assert.calledOnce(InstanceService.startInstance)
         done()
       })
     })
