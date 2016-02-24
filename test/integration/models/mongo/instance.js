@@ -35,6 +35,98 @@ describe('Instance Model Integration Tests', function () {
   })
   after(mongooseControl.stop)
 
+  describe('markAsStopping', function () {
+    it('should not set container state to Stopping if container on instance has changed', function (done) {
+      var instance = mongoFactory.createNewInstance('container-stopping')
+      instance.save(function (err) {
+        if (err) { throw err }
+        // change model data in DB without going through model
+        Instance.findOneAndUpdate({
+          _id: instance._id
+        }, {
+          $set: {
+            'container.dockerContainer': 'fooo'
+          }
+        }, function (err) {
+          if (err) { throw err }
+          Instance.markAsStopping(instance._id, instance.container.dockerContainer, function (err, result) {
+            expect(err.message).to.equal('Instance container has changed')
+            expect(result).to.be.undefined()
+            done()
+          })
+        })
+      })
+    })
+
+    it('should not set container state to Stopping if container on instance is starting', function (done) {
+      var instance = mongoFactory.createNewInstance('container-stopping')
+      instance.save(function (err) {
+        if (err) { throw err }
+        // change model data in DB without going through model
+        Instance.findOneAndUpdate({
+          _id: instance._id
+        }, {
+          $set: {
+            'container.inspect.State.Starting': 'true'
+          }
+        }, function (err) {
+          if (err) { throw err }
+          Instance.markAsStopping(instance._id, instance.container.dockerContainer, function (err, result) {
+            expect(err.message).to.equal('Instance container has changed')
+            expect(result).to.be.undefined()
+            done()
+          })
+        })
+      })
+    })
+  })
+
+  describe('markAsStarting', function () {
+    it('should not set container state to Starting if container on instance has changed', function (done) {
+      var instance = mongoFactory.createNewInstance('container-stopping')
+      instance.save(function (err) {
+        if (err) { throw err }
+        // change model data in DB without going through model
+        Instance.findOneAndUpdate({
+          _id: instance._id
+        }, {
+          $set: {
+            'container.dockerContainer': 'fooo'
+          }
+        }, function (err) {
+          if (err) { throw err }
+          Instance.markAsStarting(instance._id, instance.container.dockerContainer, function (err, result) {
+            expect(err.message).to.equal('Instance container has changed')
+            expect(result).to.be.undefined()
+            done()
+          })
+        })
+      })
+    })
+
+    it('should not set container state to Starting if container on instance is starting', function (done) {
+      var instance = mongoFactory.createNewInstance('container-stopping')
+      instance.save(function (err) {
+        if (err) { throw err }
+        // change model data in DB without going through model
+        Instance.findOneAndUpdate({
+          _id: instance._id
+        }, {
+          $set: {
+            'container.inspect.State.Stopping': 'true'
+          }
+        }, function (err) {
+          if (err) { throw err }
+          Instance.markAsStarting(instance._id, instance.container.dockerContainer, function (err, result) {
+            expect(err.message).to.equal('Instance container has changed')
+            expect(result).to.be.undefined()
+            done()
+          })
+        })
+      })
+    })
+  })
+
   describe('PopulateModels', function () {
     beforeEach(function (done) {
       ctx.mockSessionUser = {
