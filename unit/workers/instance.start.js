@@ -32,7 +32,8 @@ describe('Workers: Instance Start', function () {
   var testData = {
     instanceId: testInstanceId,
     containerId: dockerContainer,
-    sessionUserGithubId: testSessionUserGithubId
+    sessionUserGithubId: testSessionUserGithubId,
+    tid: 'some-tid-id'
   }
   var testCV = new ContextVersion({
     _id: testCvId
