@@ -15,10 +15,8 @@ var Instance = require('models/mongo/instance.js')
 var ObjectId = mongoose.Types.ObjectId
 var User = require('models/mongo/user.js')
 
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var validation = require('../../../unit/fixtures/validation')(lab)
-
+var VALID_GITHUB_ID = 1
+var VALID_OBJECT_ID = '507c7f79bcf86cd7994f6c0e'
 var id = 0
 
 var factory = module.exports = {
@@ -215,21 +213,18 @@ var factory = module.exports = {
     var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH)
     return hashids.encrypt(factory.getNextId()).toLowerCase()
   },
-  newObjectId: function () {
-    return new mongoose.Types.ObjectId()
-  },
   createNewVersion: function (opts) {
     return new ContextVersion({
       message: 'test',
-      owner: { github: validation.VALID_GITHUB_ID },
-      createdBy: { github: validation.VALID_GITHUB_ID },
-      config: validation.VALID_OBJECT_ID,
+      owner: { github: VALID_GITHUB_ID },
+      createdBy: { github: VALID_GITHUB_ID },
+      config: VALID_OBJECT_ID,
       created: Date.now(),
-      context: validation.VALID_OBJECT_ID,
+      context: VALID_OBJECT_ID,
       files: [{
         Key: 'test',
         ETag: 'test',
-        VersionId: validation.VALID_OBJECT_ID
+        VersionId: VALID_OBJECT_ID
       }],
       build: {
         dockerImage: 'testing',
@@ -265,7 +260,7 @@ var factory = module.exports = {
     // jshint maxcomplexity:10
     opts = opts || {}
     var container = {
-      dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
+      dockerContainer: opts.containerId || VALID_OBJECT_ID,
       dockerHost: opts.dockerHost || 'http://localhost:4243',
       inspect: {
         State: {
@@ -290,9 +285,9 @@ var factory = module.exports = {
       masterPod: opts.masterPod || false,
       parent: opts.parent,
       autoForked: opts.autoForked || false,
-      owner: { github: validation.VALID_GITHUB_ID },
-      createdBy: { github: validation.VALID_GITHUB_ID },
-      build: opts.build || validation.VALID_OBJECT_ID,
+      owner: { github: VALID_GITHUB_ID },
+      createdBy: { github: VALID_GITHUB_ID },
+      build: opts.build || VALID_OBJECT_ID,
       created: Date.now(),
       contextVersion: opts.contextVersion || factory.createNewVersion(opts),
       container: container,
