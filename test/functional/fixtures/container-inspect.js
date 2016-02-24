@@ -60,7 +60,8 @@ module.exports.getContainerInspect = function (instance) {
           instanceShortHash: instance.attrs.shortHash,
           ownerUsername: 'cflynn07',
           type: 'user-container',
-          userGithubId: instance.json().owner.github
+          userGithubId: instance.json().owner.github,
+          tid: 'e5e14545-0d40-45bb-90fd-0128cbc6fbaa'
         },
         Volumes: {
           '/cache': '/git-cache',
