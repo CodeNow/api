@@ -17,6 +17,7 @@ var createCount = require('callback-count')
 var error = require('error')
 
 var Instance = require('models/mongo/instance')
+var ContextVersion = require('models/mongo/context-version')
 var mongoFactory = require('../../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 
@@ -32,6 +33,12 @@ describe('Instance Model Integration Tests', function () {
   })
   after(function (done) {
     Instance.remove({}, done)
+  })
+  afterEach(function (done) {
+    ContextVersion.remove({}, done)
+  })
+  after(function (done) {
+    ContextVersion.remove({}, done)
   })
   after(mongooseControl.stop)
 
