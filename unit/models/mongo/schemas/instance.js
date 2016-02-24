@@ -9,12 +9,8 @@ var afterEach = lab.afterEach
 
 var validation = require('../../../fixtures/validation')(lab)
 var schemaValidators = require('models/mongo/schemas/schema-validators')
-var Hashids = require('hashids')
 
-var Instance = require('models/mongo/instance')
-var Version = require('models/mongo/context-version')
 var mongoFactory = require('../../../factories/mongo')
-
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
