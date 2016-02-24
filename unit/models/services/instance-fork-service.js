@@ -403,6 +403,186 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
   })
 
+  describe('#forkRepoInstance', function () {
+    var mockInstance
+    var mockOpts
+    var mockSessionUser = {
+      accounts: {
+        github: {
+          id: 'mockGithubId'
+        }
+      }
+    }
+    var mockNewInstance
+    var mockNewContextVersion = {
+      _id: 'newContextVersionId'
+    }
+    var mockNewBuild = {
+      _id: 'newBuildId'
+    }
+    var mockClient
+
+    beforeEach(function (done) {
+      mockInstance = {
+        name: 'mockInstanceName',
+        shortHash: 'mockInstanceShortHash',
+        env: ['env'],
+        owner: { github: 'instanceOwnerId' }
+      }
+      mockOpts = {
+        repo: 'mockRepo',
+        branch: 'mockBranch',
+        commit: 'mockCommit',
+        user: { id: 'mockGithubId' },
+        isolated: 'mockIsolationId'
+      }
+      mockClient = {}
+      mockClient.createAndBuildBuild = sinon.stub().yieldsAsync(null, mockNewBuild)
+      mockClient.createInstance = sinon.stub().yieldsAsync(null, mockNewInstance)
+      sinon.stub(InstanceForkService, '_createNewContextVersion').resolves(mockNewContextVersion)
+      sinon.stub(Runnable, 'createClient').returns(mockClient)
+      done()
+    })
+
+    afterEach(function (done) {
+      InstanceForkService._createNewContextVersion.restore()
+      Runnable.createClient.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      it('should require an instance', function (done) {
+        InstanceForkService.forkRepoInstance()
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/instance.+required/i)
+            done()
+          }
+        )
+      })
+
+      it('should require new instance options', function (done) {
+        InstanceForkService.forkRepoInstance(mockInstance)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/opts.+required/i)
+            done()
+          }
+        )
+      })
+
+      // I hate this type of test generation, but it's quicker.
+      ;[ 'repo', 'branch', 'commit', 'user', 'isolated' ].forEach(function (key) {
+        it('should require options to contain ' + key, function (done) {
+          var opts = omit(mockOpts, key)
+          InstanceForkService.forkRepoInstance(mockInstance, opts, mockSessionUser)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(new RegExp(key + '.+required'))
+              done()
+            }
+          )
+        })
+      })
+
+      it('should require a session user', function (done) {
+        InstanceForkService.forkRepoInstance(mockInstance, mockOpts)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/sessionuser.+required/i)
+            done()
+          }
+        )
+      })
+    })
+
+    it('should create a new context version', function (done) {
+      InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(InstanceForkService._createNewContextVersion)
+          sinon.assert.calledWithExactly(
+            InstanceForkService._createNewContextVersion,
+            mockInstance,
+            {
+              repo: 'mockRepo',
+              branch: 'mockBranch',
+              commit: 'mockCommit',
+              user: { id: 'mockGithubId' }
+            }
+          )
+          done()
+        }
+      )
+    })
+
+    it('should create a runnable client', function (done) {
+      InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Runnable.createClient)
+          sinon.assert.calledWithExactly(
+            Runnable.createClient,
+            {},
+            mockSessionUser
+          )
+          done()
+        }
+      )
+    })
+
+    it('should create and build a new build', function (done) {
+      InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockClient.createAndBuildBuild)
+          sinon.assert.calledWithExactly(
+            mockClient.createAndBuildBuild,
+            'newContextVersionId',
+            'mockGithubId',
+            'mockRepo',
+            'mockCommit',
+            sinon.match.func
+          )
+          done()
+        }
+      )
+    })
+
+    it('should create a new instance', function (done) {
+      InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockClient.createInstance)
+          sinon.assert.calledWithExactly(
+            mockClient.createInstance,
+            {
+              build: 'newBuildId',
+              name: 'mockInstanceShortHash--mockInstanceName',
+              env: ['env'],
+              owner: { github: 'instanceOwnerId' },
+              masterPod: false,
+              isolated: 'mockIsolationId',
+              isIsolationGroupMaster: false
+            },
+            sinon.match.func
+          )
+          done()
+        }
+      )
+    })
+
+    it('should return the new instance', function (done) {
+      InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
+        .asCallback(function (err, instance) {
+          expect(err).to.not.exist()
+          expect(instance).to.deep.equal(mockNewInstance)
+          done()
+        }
+      )
+    })
+  })
+
   describe('#_forkOne', function () {
     var instance
     var pushInfo
