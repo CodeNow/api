@@ -95,13 +95,6 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         sinon.assert.calledWith(InstanceService.updateContainerInspect,
           query, updateData)
         sinon.assert.calledOnce(InstanceService.startInstance)
-        // var payload = {
-        //   containerId: ctx.data.id,
-        //   instanceId: ctx.data.inspectData.Config.Labels.instanceId,
-        //   sessionUserGithubId: ctx.data.inspectData.Config.Labels.sessionUserGithubId,
-        //   tid: ctx.data.inspectData.Config.Labels.tid,
-        //   deploymentUuid: ctx.data.inspectData.Config.Labels.deploymentUuid
-        // }
         sinon.assert.calledWith(InstanceService.startInstance, ctx.mockInstance,
           ctx.data.inspectData.Config.Labels.sessionUserGithubId, ctx.data.inspectData.Config.Labels.tid)
         done()
