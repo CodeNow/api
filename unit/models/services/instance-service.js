@@ -24,6 +24,8 @@ var validation = require('../../fixtures/validation')(lab)
 var messenger = require('socket/messenger')
 var User = require('models/mongo/user')
 
+var mongoFactory = require('../../factories/mongo')
+
 var afterEach = lab.afterEach
 var after = lab.after
 var beforeEach = lab.beforeEach
@@ -41,87 +43,6 @@ var expectErr = function (expectedErr, done) {
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
-
-var id = 0
-function getNextId () {
-  id++
-  return id
-}
-function getNextHash () {
-  var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH)
-  return hashids.encrypt(getNextId())
-}
-
-function createNewVersion (opts) {
-  return new ContextVersion({
-    message: 'test',
-    owner: { github: validation.VALID_GITHUB_ID },
-    createdBy: { github: validation.VALID_GITHUB_ID },
-    config: validation.VALID_OBJECT_ID,
-    created: Date.now(),
-    context: validation.VALID_OBJECT_ID,
-    dockRemoved: opts.dockRemoved,
-    files: [{
-      Key: 'test',
-      ETag: 'test',
-      VersionId: validation.VALID_OBJECT_ID
-    }],
-    build: {
-      dockerImage: 'testing',
-      dockerTag: 'adsgasdfgasdf'
-    },
-    appCodeVersions: [
-      {
-        additionalRepo: false,
-        repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        branch: opts.branch || 'master',
-        defaultBranch: opts.defaultBranch || 'master',
-        commit: 'deadbeef'
-      },
-      {
-        additionalRepo: true,
-        commit: '4dd22d12b4b3b846c2e2bbe454b89cb5be68f71d',
-        branch: 'master',
-        lowerBranch: 'master',
-        repo: 'Nathan219/yash-node',
-        lowerRepo: 'nathan219/yash-node',
-        _id: '5575f6c43074151a000e8e27',
-        privateKey: 'Nathan219/yash-node.key',
-        publicKey: 'Nathan219/yash-node.key.pub',
-        defaultBranch: 'master',
-        transformRules: { rename: [], replace: [], exclude: [] }
-      }
-    ]
-  })
-}
-
-function createNewInstance (name, opts) {
-  opts = opts || {}
-  var container = {
-    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
-    dockerHost: 'http://10.0.0.1:4242'
-  }
-  return new Instance({
-    name: name || 'name',
-    shortHash: getNextHash(),
-    locked: opts.locked || false,
-    'public': false,
-    masterPod: opts.masterPod || false,
-    parent: opts.parent,
-    autoForked: opts.autoForked || false,
-    owner: { github: validation.VALID_GITHUB_ID, username: 'anton' },
-    createdBy: { github: validation.VALID_GITHUB_ID },
-    build: validation.VALID_OBJECT_ID,
-    created: Date.now(),
-    contextVersion: createNewVersion(opts),
-    container: container,
-    containers: [],
-    network: {
-      hostIp: '1.1.1.100'
-    }
-  })
-}
 
 describe('InstanceService: ' + moduleName, function () {
   var ctx
@@ -217,7 +138,7 @@ describe('InstanceService: ' + moduleName, function () {
     var ctx = {}
 
     beforeEach(function (done) {
-      ctx.instance = createNewInstance('testy', {})
+      ctx.instance = mongoFactory.createNewInstance('testy', {})
       ctx.inspect = {
         Config: {
           Labels: {
@@ -862,7 +783,7 @@ describe('InstanceService: ' + moduleName, function () {
       var rejectionPromise = Promise.reject(testErr)
       rejectionPromise.suppressUnhandledRejections()
       Instance.prototype.isNotStartingOrStoppingAsync.returns(rejectionPromise)
-      var instance = createNewInstance('testy', {})
+      var instance = mongoFactory.createNewInstance('testy', {})
       InstanceService.startInstance(instance, 21331).asCallback(function (err) {
         expect(err.message).to.equal(testErr.message)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
@@ -878,7 +799,7 @@ describe('InstanceService: ' + moduleName, function () {
       var rejectionPromise = Promise.reject(testErr)
       rejectionPromise.suppressUnhandledRejections()
       Instance.markAsStartingAsync.returns(rejectionPromise)
-      var instance = createNewInstance('testy', {})
+      var instance = mongoFactory.createNewInstance('testy', {})
       InstanceService.startInstance(instance, 21331).asCallback(function (err) {
         expect(err.message).to.equal(testErr.message)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
@@ -890,7 +811,7 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     it('should pass if dependant calls pass', function (done) {
-      var instance = createNewInstance('testy', {})
+      var instance = mongoFactory.createNewInstance('testy', {})
       var sessionUserGithubId = 21331
       Instance.markAsStartingAsync.returns(Promise.resolve(instance))
       InstanceService.startInstance(instance, sessionUserGithubId).asCallback(function (err) {
@@ -911,7 +832,7 @@ describe('InstanceService: ' + moduleName, function () {
 
     it('should call redeploy', function (done) {
       var sessionUserGithubId = 21331
-      var instance = createNewInstance('testy', { dockRemoved: true })
+      var instance = mongoFactory.createNewInstance('testy', { dockRemoved: true })
       Instance.markAsStartingAsync.returns(Promise.resolve(instance))
       InstanceService.startInstance(instance, sessionUserGithubId).asCallback(function (err) {
         expect(err).to.not.exist()
@@ -958,7 +879,7 @@ describe('InstanceService: ' + moduleName, function () {
       var rejectionPromise = Promise.reject(testErr)
       rejectionPromise.suppressUnhandledRejections()
       Instance.prototype.isNotStartingOrStoppingAsync.returns(rejectionPromise)
-      var instance = createNewInstance('testy', {})
+      var instance = mongoFactory.createNewInstance('testy', {})
       InstanceService.stopInstance(instance, 21331).asCallback(function (err) {
         expect(err.message).to.equal(testErr.message)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
@@ -973,7 +894,7 @@ describe('InstanceService: ' + moduleName, function () {
       var rejectionPromise = Promise.reject(testErr)
       rejectionPromise.suppressUnhandledRejections()
       Instance.markAsStoppingAsync.returns(rejectionPromise)
-      var instance = createNewInstance('testy', {})
+      var instance = mongoFactory.createNewInstance('testy', {})
       InstanceService.stopInstance(instance, 21331).asCallback(function (err) {
         expect(err.message).to.equal(testErr.message)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
@@ -984,7 +905,7 @@ describe('InstanceService: ' + moduleName, function () {
     })
 
     it('should pass if dependant calls pass', function (done) {
-      var instance = createNewInstance('testy', {})
+      var instance = mongoFactory.createNewInstance('testy', {})
       var sessionUserGithubId = 21331
       Instance.markAsStoppingAsync.returns(Promise.resolve(instance))
       InstanceService.stopInstance(instance, sessionUserGithubId).asCallback(function (err) {

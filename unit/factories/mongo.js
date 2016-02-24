@@ -27,6 +27,7 @@ var factory = module.exports = {
       config: VALID_OBJECT_ID,
       created: Date.now(),
       context: VALID_OBJECT_ID,
+      dockRemoved: opts.dockRemoved,
       files: [{
         Key: 'test',
         ETag: 'test',
