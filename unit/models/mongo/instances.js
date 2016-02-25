@@ -97,6 +97,204 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
+  describe('findOneStarting', function () {
+    var mockInstance = {
+      _id: '507f1f77bcf86cd799439011'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOne.restore()
+      done()
+    })
+    it('should find starting instance', function (done) {
+      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.be.null()
+        expect(instance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.findOne)
+        var query = {
+          _id: mockInstance._id,
+          'container.dockerContainer': 'container-id',
+          'container.inspect.State.Starting': {
+            $exists: true
+          }
+        }
+        sinon.assert.calledWith(Instance.findOne, query)
+        done()
+      })
+    })
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOne.yieldsAsync(mongoError)
+      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(Instance.findOne)
+        done()
+      })
+    })
+    it('should return an error if instance was not found', function (done) {
+      Instance.findOne.yieldsAsync(null, null)
+      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err.message).to.equal('Instance container has changed')
+        sinon.assert.calledOnce(Instance.findOne)
+        done()
+      })
+    })
+  })
+
+  describe('markAsStarting', function () {
+    var mockInstance = {
+      _id: '507f1f77bcf86cd799439011'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOneAndUpdate.restore()
+      done()
+    })
+    it('should mark instance as starting', function (done) {
+      Instance.markAsStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.be.null()
+        expect(instance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        var query = {
+          _id: mockInstance._id,
+          'container.dockerContainer': 'container-id',
+          'container.inspect.State.Stopping': {
+            $exists: false
+          }
+        }
+        var $set = {
+          $set: {
+            'container.inspect.State.Starting': true
+          }
+        }
+        sinon.assert.calledWith(Instance.findOneAndUpdate, query, $set)
+        done()
+      })
+    })
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOneAndUpdate.yieldsAsync(mongoError)
+      Instance.markAsStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        done()
+      })
+    })
+    it('should return an error if instance was not found', function (done) {
+      Instance.findOneAndUpdate.yieldsAsync(null, null)
+      Instance.markAsStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err.message).to.equal('Instance container has changed')
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        done()
+      })
+    })
+  })
+
+  describe('findOneStopping', function () {
+    var mockInstance = {
+      _id: '507f1f77bcf86cd799439011'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOne.restore()
+      done()
+    })
+    it('should find stopping instance', function (done) {
+      Instance.findOneStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.be.null()
+        expect(instance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.findOne)
+        var query = {
+          _id: mockInstance._id,
+          'container.dockerContainer': 'container-id',
+          'container.inspect.State.Stopping': {
+            $exists: true
+          }
+        }
+        sinon.assert.calledWith(Instance.findOne, query)
+        done()
+      })
+    })
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOne.yieldsAsync(mongoError)
+      Instance.findOneStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(Instance.findOne)
+        done()
+      })
+    })
+    it('should return an error if instance was not found', function (done) {
+      Instance.findOne.yieldsAsync(null, null)
+      Instance.findOneStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err.message).to.equal('Instance container has changed')
+        sinon.assert.calledOnce(Instance.findOne)
+        done()
+      })
+    })
+  })
+
+  describe('markAsStopping', function () {
+    var mockInstance = {
+      _id: '507f1f77bcf86cd799439011'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOneAndUpdate.restore()
+      done()
+    })
+    it('should mark instance as stopping', function (done) {
+      Instance.markAsStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.be.null()
+        expect(instance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        var query = {
+          _id: mockInstance._id,
+          'container.dockerContainer': 'container-id',
+          'container.inspect.State.Starting': {
+            $exists: false
+          }
+        }
+        var $set = {
+          $set: {
+            'container.inspect.State.Stopping': true
+          }
+        }
+        sinon.assert.calledWith(Instance.findOneAndUpdate, query, $set)
+        done()
+      })
+    })
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOneAndUpdate.yieldsAsync(mongoError)
+      Instance.markAsStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        done()
+      })
+    })
+    it('should return an error if instance was not found', function (done) {
+      Instance.findOneAndUpdate.yieldsAsync(null, null)
+      Instance.markAsStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err.message).to.equal('Instance container has changed')
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        done()
+      })
+    })
+  })
+
   describe('#findInstancesBuiltButNotStoppedOrCrashedByDockerHost', function () {
     var testHost = 'http://10.0.0.1:4242'
     var instances = [
