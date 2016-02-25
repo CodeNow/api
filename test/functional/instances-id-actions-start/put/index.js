@@ -27,12 +27,10 @@ var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 var rabbitMQ = require('models/rabbitmq/index')
-var redisCleaner = require('../../fixtures/redis-cleaner')
 
 describe('PUT /instances/:id/actions/start', function () {
   var ctx = {}
 
-  beforeEach(redisCleaner.clean(process.env.WEAVE_NETWORKS + '*'))
   before(api.start.bind(ctx))
   before(dock.start.bind(ctx))
   before(require('../../fixtures/mocks/api-client').setup)
@@ -99,51 +97,14 @@ describe('PUT /instances/:id/actions/start', function () {
     })
   })
 
-  it('should error if instance does not have a container', function (done) {
-    Instance.findOneAndUpdate({
-      '_id': ctx.instance.attrs._id
-    }, {
-      '$unset': {
-        container: 1
-      }
-    }, function (err) {
-      if (err) { throw err }
-      ctx.instance.start(function (err) {
-        expect(err.message).to.equal('Instance does not have a container')
-        expect(err.output.statusCode).to.equal(400)
-        done()
-      })
-    })
-  })
-
-  it('should return error if container is already starting and NOT place task in queue', function (done) {
-    Instance.findOneAndUpdate({
-      '_id': ctx.instance.attrs._id
-    }, {
-      '$set': {
-        'container.inspect.State.Starting': true
-      }
-    }, function (err) {
-      if (err) { throw err }
-      ctx.instance.start(function (err) {
-        expect(err.message).to.equal('Instance is already starting')
-        expect(err.output.statusCode).to.equal(400)
-        expect(rabbitMQ.hermesClient.publish.callCount).to.equal(0)
-        done()
-      })
-    })
-  })
-
   it('should place a task in the "start-instance-container" queue', function (done) {
     ctx.instance.start(function (err) {
       expect(err).to.be.null()
       expect(rabbitMQ.hermesClient.publish.callCount).to.equal(1)
       expect(rabbitMQ.hermesClient.publish.args[0][0]).to.equal('start-instance-container')
       expect(rabbitMQ.hermesClient.publish.args[0][1]).to.include({
-        dockerContainer: ctx.instance.attrs.container.dockerContainer,
-        dockerHost: ctx.instance.attrs.container.dockerHost,
+        containerId: ctx.instance.attrs.container.dockerContainer,
         instanceId: ctx.instance.attrs._id,
-        ownerUsername: ctx.instance.user.attrs.accounts.github.login,
         sessionUserGithubId: ctx.instance.user.attrs.accounts.github.id
       })
       // tix uuid set server side
