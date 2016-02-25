@@ -21,6 +21,143 @@ var rabbitMQ = require('models/rabbitmq')
 var IsolationService = require('models/services/isolation-service')
 
 describe('Isolation Services Model', function () {
+  describe('#forkRepoChild', function () {
+    var mockInstance
+    var mockMasterShortHash = 'deadbeef'
+    var mockIsolationId = 'deadbeefdeadbeefdeadbeef'
+    var mockSessionUser = { accounts: { github: { id: 4 } } }
+    var mockNewInstance = { _id: 'new' }
+
+    beforeEach(function (done) {
+      mockInstance = {
+        _id: 'beef',
+        name: 'instanceName',
+        env: [ 'foo=bar' ]
+      }
+      sinon.stub(Instance, 'findById').yieldsAsync(null, mockInstance)
+      sinon.stub(InstanceForkService, 'forkRepoInstance').resolves(mockNewInstance)
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findById.restore()
+      InstanceForkService.forkRepoInstance.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      it('should require an instance id', function (done) {
+        IsolationService.forkRepoChild()
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/instanceid.+required/i)
+            done()
+          }
+        )
+      })
+
+      it('should require a short hash', function (done) {
+        IsolationService.forkRepoChild(mockInstance._id)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/masterinstanceshorthash.+required/i)
+            done()
+          }
+        )
+      })
+
+      it('should require an isolation id', function (done) {
+        IsolationService.forkRepoChild(mockInstance._id, mockMasterShortHash)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/isolationid.+required/i)
+            done()
+          }
+        )
+      })
+
+      it('should require a session user', function (done) {
+        IsolationService.forkRepoChild(mockInstance._id, mockMasterShortHash, mockIsolationId)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/sessionuser.+required/i)
+            done()
+          }
+        )
+      })
+
+      it('should reject with any findById error', function (done) {
+        var error = new Error('pugsly')
+        Instance.findById.yieldsAsync(error)
+        IsolationService.forkRepoChild(mockInstance._id, mockMasterShortHash, mockIsolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          }
+        )
+      })
+
+      it('should reject with any forkRepoInstance error', function (done) {
+        var error = new Error('pugsly')
+        InstanceForkService.forkRepoInstance.rejects(error)
+        IsolationService.forkRepoChild(mockInstance._id, mockMasterShortHash, mockIsolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          }
+        )
+      })
+    })
+
+    it('should find our instance by id', function (done) {
+      IsolationService.forkRepoChild(mockInstance._id, mockMasterShortHash, mockIsolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findById)
+          sinon.assert.calledWithExactly(
+            Instance.findById,
+            mockInstance._id,
+            sinon.match.func
+          )
+          done()
+        }
+      )
+    })
+
+    it('should fork said instance using the forkRepoInstance', function (done) {
+      IsolationService.forkRepoChild(mockInstance._id, mockMasterShortHash, mockIsolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(InstanceForkService.forkRepoInstance)
+          sinon.assert.calledWithExactly(
+            InstanceForkService.forkRepoInstance,
+            mockInstance,
+            {
+              name: 'deadbeef--instanceName',
+              env: [ 'foo=bar' ],
+              isolated: mockIsolationId,
+              isIsolationGroupMaster: false
+            },
+            mockSessionUser
+          )
+          done()
+        }
+      )
+    })
+
+    it('should resolve with the newly forked instance', function (done) {
+      IsolationService.forkRepoChild(mockInstance._id, mockMasterShortHash, mockIsolationId, mockSessionUser)
+        .asCallback(function (err, newInstance) {
+          expect(err).to.not.exist()
+          expect(newInstance).to.equal(mockNewInstance)
+          done()
+        }
+      )
+    })
+  })
+
   describe('#forkNonRepoChild', function () {
     var mockInstanceId = 'mockInstanceId'
     var mockIsolationId = 'mockIsolationId'
