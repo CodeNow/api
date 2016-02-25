@@ -1515,8 +1515,8 @@
     },
     "docker-modem": {
       "version": "0.3.0",
-      "from": "docker-modem@git+ssh://git@github.com/Myztiq/docker-modem.git#816da19d86055acdf450db9604f87d70666e27e0",
-      "resolved": "git+ssh://git@github.com/Myztiq/docker-modem.git#816da19d86055acdf450db9604f87d70666e27e0",
+      "from": "docker-modem@git+ssh://git@github.com/Myztiq/docker-modem.git#0353288f810e64dd88a6a7fc1ce4c07c865f655b",
+      "resolved": "git+ssh://git@github.com/Myztiq/docker-modem.git#0353288f810e64dd88a6a7fc1ce4c07c865f655b",
       "dependencies": {
         "debug": {
           "version": "0.7.4",
