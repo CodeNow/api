@@ -216,20 +216,14 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         publish: noop
       }
       ctx.validJobData = {
-        dockerContainer: '123',
-        dockerHost: 'http://0.0.0.0',
-        hostIp: '0.0.0.0',
+        containerId: '123',
         instanceId: '55555',
-        ownerUsername: 'test1',
         sessionUserGithubId: '9494949',
         tid: '000000'
       }
-      // missing dockerContainer
+      // missing containerId
       ctx.invalidJobData = {
-        dockerHost: 'http://0.0.0.0',
-        hostIp: '0.0.0.0',
         instanceId: '55555',
-        ownerUsername: 'test1',
         sessionUserGithubId: '9494949',
         tid: '000000'
       }
