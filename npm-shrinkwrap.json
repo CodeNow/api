@@ -1513,61 +1513,60 @@
         }
       }
     },
+    "docker-modem": {
+      "version": "0.3.0",
+      "from": "docker-modem@git+ssh://git@github.com/Myztiq/docker-modem.git#0353288f810e64dd88a6a7fc1ce4c07c865f655b",
+      "resolved": "git+ssh://git@github.com/Myztiq/docker-modem.git#0353288f810e64dd88a6a7fc1ce4c07c865f655b",
+      "dependencies": {
+        "debug": {
+          "version": "0.7.4",
+          "resolved": "https://registry.npmjs.org/debug/-/debug-0.7.4.tgz"
+        },
+        "follow-redirects": {
+          "version": "0.0.3",
+          "resolved": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-0.0.3.tgz",
+          "dependencies": {
+            "underscore": {
+              "version": "1.8.3",
+              "resolved": "https://registry.npmjs.org/underscore/-/underscore-1.8.3.tgz"
+            }
+          }
+        },
+        "readable-stream": {
+          "version": "1.0.33",
+          "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-1.0.33.tgz",
+          "dependencies": {
+            "core-util-is": {
+              "version": "1.0.2",
+              "resolved": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.2.tgz"
+            },
+            "inherits": {
+              "version": "2.0.1",
+              "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz"
+            },
+            "isarray": {
+              "version": "0.0.1",
+              "resolved": "https://registry.npmjs.org/isarray/-/isarray-0.0.1.tgz"
+            },
+            "string_decoder": {
+              "version": "0.10.31",
+              "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-0.10.31.tgz"
+            }
+          }
+        },
+        "split-ca": {
+          "version": "1.0.0",
+          "resolved": "https://registry.npmjs.org/split-ca/-/split-ca-1.0.0.tgz"
+        }
+      }
+    },
     "docker-stream-cleanser": {
       "version": "0.2.0",
       "resolved": "https://registry.npmjs.org/docker-stream-cleanser/-/docker-stream-cleanser-0.2.0.tgz"
     },
     "dockerode": {
       "version": "2.2.8",
-      "resolved": "https://registry.npmjs.org/dockerode/-/dockerode-2.2.8.tgz",
-      "dependencies": {
-        "docker-modem": {
-          "version": "0.3.0",
-          "resolved": "https://registry.npmjs.org/docker-modem/-/docker-modem-0.3.0.tgz",
-          "dependencies": {
-            "debug": {
-              "version": "0.7.4",
-              "resolved": "https://registry.npmjs.org/debug/-/debug-0.7.4.tgz"
-            },
-            "follow-redirects": {
-              "version": "0.0.3",
-              "resolved": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-0.0.3.tgz",
-              "dependencies": {
-                "underscore": {
-                  "version": "1.8.3",
-                  "resolved": "https://registry.npmjs.org/underscore/-/underscore-1.8.3.tgz"
-                }
-              }
-            },
-            "readable-stream": {
-              "version": "1.0.33",
-              "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-1.0.33.tgz",
-              "dependencies": {
-                "core-util-is": {
-                  "version": "1.0.2",
-                  "resolved": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.2.tgz"
-                },
-                "inherits": {
-                  "version": "2.0.1",
-                  "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz"
-                },
-                "isarray": {
-                  "version": "0.0.1",
-                  "resolved": "https://registry.npmjs.org/isarray/-/isarray-0.0.1.tgz"
-                },
-                "string_decoder": {
-                  "version": "0.10.31",
-                  "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-0.10.31.tgz"
-                }
-              }
-            },
-            "split-ca": {
-              "version": "1.0.0",
-              "resolved": "https://registry.npmjs.org/split-ca/-/split-ca-1.0.0.tgz"
-            }
-          }
-        }
-      }
+      "resolved": "https://registry.npmjs.org/dockerode/-/dockerode-2.2.8.tgz"
     },
     "doctoc": {
       "version": "0.15.0",
@@ -3586,10 +3585,6 @@
             }
           }
         },
-        "deep-equal": {
-          "version": "1.0.1",
-          "resolved": "https://registry.npmjs.org/deep-equal/-/deep-equal-1.0.1.tgz"
-        },
         "json-stringify-safe": {
           "version": "5.0.1",
           "resolved": "https://registry.npmjs.org/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz"
@@ -5054,10 +5049,6 @@
         "debug": {
           "version": "0.8.1",
           "resolved": "https://registry.npmjs.org/debug/-/debug-0.8.1.tgz"
-        },
-        "deep-equal": {
-          "version": "1.0.1",
-          "resolved": "https://registry.npmjs.org/deep-equal/-/deep-equal-1.0.1.tgz"
         },
         "runnable-hostname": {
           "version": "1.0.4",
