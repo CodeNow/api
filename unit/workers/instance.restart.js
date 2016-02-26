@@ -181,7 +181,7 @@ describe('Workers: Instance Restart', function () {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
-      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'restarting', true)
+      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'restart', true)
       done()
     })
   })
@@ -190,8 +190,8 @@ describe('Workers: Instance Restart', function () {
       expect(err).to.not.exist()
       sinon.assert.callOrder(
         Instance.findOneStartingAsync,
-        InstanceService.emitInstanceUpdate,
-        Docker.prototype.restartContainerAsync)
+        Docker.prototype.restartContainerAsync,
+        InstanceService.emitInstanceUpdate)
       done()
     })
   })
