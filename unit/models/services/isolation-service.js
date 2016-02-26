@@ -526,9 +526,11 @@ describe('Isolation Services Model', function () {
   })
 
   describe('#createIsolationAndEmitInstanceUpdates', function () {
+    var mockRepoInstance = { org: 'Runnable', repo: 'someRepo', branch: 'someBranch' }
     var mockNonRepoInstance = { instance: 'childNonRepo' }
     var mockInstance = { _id: 'deadbeef', shortHash: 'shorthash' }
     var mockNewChildInstance = { _id: 'newChildInstanceId' }
+    var mockNewChildRepoInstance = { _id: 'newChildRepoInstanceId' }
     var mockNewIsolation = { _id: 'newIsolationId' }
     var mockSessionUser = { accounts: { github: { id: 44 } } }
     var isolationConfig
@@ -542,6 +544,7 @@ describe('Isolation Services Model', function () {
       sinon.stub(Isolation, '_validateMasterNotIsolated').resolves(mockInstance)
       sinon.stub(Isolation, '_validateCreateData').resolves()
       sinon.stub(Isolation, 'createIsolation').resolves(mockNewIsolation)
+      sinon.stub(IsolationService, 'forkRepoChild').resolves(mockNewChildRepoInstance)
       sinon.stub(IsolationService, 'forkNonRepoChild').resolves(mockNewChildInstance)
       sinon.stub(IsolationService, '_updateMasterEnv').resolves(mockInstance)
       sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
@@ -553,6 +556,7 @@ describe('Isolation Services Model', function () {
       Isolation._validateMasterNotIsolated.restore()
       Isolation._validateCreateData.restore()
       Isolation.createIsolation.restore()
+      IsolationService.forkRepoChild.restore()
       IsolationService.forkNonRepoChild.restore()
       IsolationService._updateMasterEnv.restore()
       IsolationService._emitUpdateForInstances.restore()
@@ -624,6 +628,18 @@ describe('Isolation Services Model', function () {
       it('should reject with any _updateMasterEnv error', function (done) {
         var error = new Error('pugsly')
         IsolationService._updateMasterEnv.rejects(error)
+        IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
+      })
+
+      it('should reject with any forkRepoChild error', function (done) {
+        var error = new Error('pugsly')
+        IsolationService.forkRepoChild.rejects(error)
+        isolationConfig.children.push(mockRepoInstance)
         IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -732,6 +748,24 @@ describe('Isolation Services Model', function () {
         })
     })
 
+    it('should fork any repo child instance provided', function (done) {
+      isolationConfig.children.push(mockRepoInstance)
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(IsolationService.forkRepoChild)
+          // FIXME: this isn't going to be right
+          sinon.assert.calledWithExactly(
+            IsolationService.forkRepoChild,
+            mockRepoInstance,
+            mockInstance.shortHash,
+            mockNewIsolation._id,
+            mockSessionUser
+          )
+          done()
+        })
+    })
+
     it('should fork any non-repo child instances provided', function (done) {
       isolationConfig.children.push(mockNonRepoInstance)
       IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
@@ -772,6 +806,21 @@ describe('Isolation Services Model', function () {
           sinon.assert.calledWithExactly(
             IsolationService._emitUpdateForInstances,
             [ mockNewChildInstance ],
+            mockSessionUser
+          )
+          done()
+        })
+    })
+
+    it('should emit events for the repo children instance', function (done) {
+      isolationConfig.children.push(mockRepoInstance)
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.called(IsolationService._emitUpdateForInstances)
+          sinon.assert.calledWithExactly(
+            IsolationService._emitUpdateForInstances,
+            [ mockNewChildRepoInstance ],
             mockSessionUser
           )
           done()
