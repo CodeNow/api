@@ -1,13 +1,14 @@
-## Changes
-* I removed this func
-* I introduced this bug
+[//]: # (Let's get your best description here about what's happend! Here's a list as well, if you like:)
 
-## Dependencies
+* I removed this func
+* I fixed all these things
+
+### Dependencies
 - [ ] list dependencies (eg, PR from another branch or repo; tags or versions required prior to deployment)
 
-## Reviewers
+### Reviewers
 - [ ] person_1
 - [ ] person_2
 
-## Tests
+### Tests
 - [ ] list required tests
