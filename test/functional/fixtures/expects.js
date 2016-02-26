@@ -11,7 +11,6 @@ var isString = require('101/is-string')
 var isObject = require('101/is-object')
 var keypather = require('keypather')()
 var exists = require('101/exists')
-var Docker = require('models/apis/docker')
 var NaviEntry = require('navi-entry')
 NaviEntry.setRedisClient(require('models/redis'))
 
@@ -248,27 +247,6 @@ expects.deletedNaviEntries = function (username, instance, container, cb) {
     })
   })
   cb(retErr)
-}
-
-/**
- * assert container was deleted from docker
- * @param  {Object}   container instance container json
- * @param  {Function} cb        callback
- */
-expects.deletedContainer = function (container, cb) {
-  container = container && container.toJSON ? container.toJSON() : container
-  if (!container.dockerHost) {
-    throw new Error('container must have dockerHost')
-  }
-  if (!container.dockerContainer) {
-    throw new Error('container must have dockerContainer')
-  }
-  var docker = new Docker()
-  docker.inspectContainer(container, function (err) {
-    expect(err, 'deleted container ' + container.dockerContainer).to.exist()
-    expect(err.output.statusCode, 'deleted container ' + container.dockerContainer).to.equal(404)
-    cb()
-  })
 }
 
 // bc chai is not asserting eql for nested objects if the key order is diff...
