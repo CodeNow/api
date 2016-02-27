@@ -71,9 +71,37 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     done()
   })
 
-  describe('_finalSeriesHandler', function () {
-    it('TODO', function (done) {
+  describe('_removeContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(Docker.prototype, 'removeContainer')
       done()
+    })
+
+    afterEach(function (done) {
+      Docker.prototype.removeContainer.restore()
+      done()
+    })
+
+    it('should call remove container if error passed', function (done) {
+      Docker.prototype.removeContainer.yieldsAsync()
+
+      ctx.worker._removeContainer('err', function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(Docker.prototype.removeContainer)
+        sinon.assert.calledWith(Docker.prototype.removeContainer, ctx.worker.data.id)
+        done()
+      })
+    })
+
+    it('should not error if removeContainer had error', function (done) {
+      Docker.prototype.removeContainer.yieldsAsync('error')
+
+      ctx.worker._removeContainer('err', function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(Docker.prototype.removeContainer)
+        sinon.assert.calledWith(Docker.prototype.removeContainer, ctx.worker.data.id)
+        done()
+      })
     })
   })
 
