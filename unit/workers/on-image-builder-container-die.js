@@ -77,10 +77,10 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       it('should fetch build info and update success', function (done) {
         var host = 'superHost'
         OnImageBuilderContainerDie._getBuildInfo({ id: 1, host: host }).asCallback(function (err, buildInfo) {
+          if (err) { return done(err) }
           sinon.assert.calledOnce(Docker.prototype.getBuildInfo)
           expect(buildInfo).to.equal(buildInfoMock)
           expect(buildInfo.dockerHost).to.equal(host)
-          expect(err).to.not.exist()
           done()
         })
       })
@@ -135,7 +135,8 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
 
       it('it should handle successful build', function (done) {
         OnImageBuilderContainerDie._handleBuildComplete(ctx.data, ctx.buildInfo)
-          .asCallback(function () {
+          .asCallback(function (err) {
+            if (err) { return done(err) }
             sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
             sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
             sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
@@ -276,7 +277,7 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
         Instance.emitInstanceUpdatesAsync.resolves([])
 
         OnImageBuilderContainerDie._emitInstanceUpdateEvents(ctx.data).asCallback(function (err) {
-          expect(err).to.not.exist()
+          if (err) { return done(err) }
           sinon.assert.calledWith(User.findByGithubId, ctx.data.inspectData.Config.Labels.sessionUserGithubId)
           sinon.assert.calledWith(
             Instance.emitInstanceUpdatesAsync,
