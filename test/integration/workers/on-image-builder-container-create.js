@@ -1,5 +1,6 @@
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
+var Code = require('code')
 var describe = lab.describe
 var it = lab.it
 var before = lab.before
@@ -24,8 +25,10 @@ var toObjectId = require('utils/to-object-id')
 var mockFactory = require('../fixtures/factory')
 var mockOnBuilderCreateMessage = require('../fixtures/dockerListenerEvents/on-image-builder-container-create')
 
+var expect = Code.expect
 var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create.js')
 var InstanceService = require('models/services/instance-service.js')
+var Promise = require('bluebird')
 var mongoose = require('mongoose')
 var ObjectId = mongoose.Types.ObjectId
 
@@ -141,25 +144,15 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         done()
       })
       describe('With one instance', function () {
-        it('should to update the cv and the instance with socket updates', function (done) {
+        it('should emit the single CV and instance events', function (done) {
           var job = mockOnBuilderCreateMessage(ctx.cv)
           OnImageBuilderContainerCreate(job)
             .then(function () {
-              sinon.assert.calledOnce(ContextVersion.updateAsync)
-              sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, job.id)
-
               sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
               sinon.assert.calledWith(
                 messenger.emitContextVersionUpdate,
                 sinon.match.has('_id', ctx.cv._id),
                 'build_started'
-              )
-              sinon.assert.calledOnce(InstanceService.emitInstanceUpdateByCvBuildId)
-              sinon.assert.calledWith(
-                InstanceService.emitInstanceUpdateByCvBuildId,
-                ctx.cv.build._id.toString(),
-                'build_started',
-                false
               )
               sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
               sinon.assert.calledWith(
@@ -167,8 +160,28 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
                 sinon.match.has('_id', ctx.instance._id),
                 'build_started'
               )
+            })
+            .asCallback(done)
+        })
+        it('should update the contextVersion and the instance with the new Docker info', function (done) {
+          var job = mockOnBuilderCreateMessage(ctx.cv)
+          OnImageBuilderContainerCreate(job)
+            .then(function () {
+              sinon.assert.calledOnce(ContextVersion.updateAsync)
+              sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, job.id)
+
               sinon.assert.calledOnce(Instance.prototype.updateCv)
               sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
+              return ContextVersion.findByIdAsync(ctx.cv._id)
+            })
+            .then(function (cv) {
+              // ensure the cv was updated
+              expect(cv.dockerHost).to.equal(job.host)
+              return Instance.findByIdAsync(ctx.instance._id)
+            })
+            .then(function (instance) {
+              // ensure the instance was updated
+              expect(instance.contextVersion.dockerHost).to.equal(job.host)
             })
             .asCallback(done)
         })
@@ -180,25 +193,15 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
             done(err)
           })
         })
-        it('should to update the cv and the 2 instances with socket updates', function (done) {
+        it('should emit the single CV and 2 instance events', function (done) {
           var job = mockOnBuilderCreateMessage(ctx.cv)
           OnImageBuilderContainerCreate(job)
             .then(function () {
-              sinon.assert.calledOnce(ContextVersion.updateAsync)
-              sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, job.id)
-
               sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
               sinon.assert.calledWith(
                 messenger.emitContextVersionUpdate,
                 sinon.match.has('_id', ctx.cv._id),
                 'build_started'
-              )
-              sinon.assert.calledOnce(InstanceService.emitInstanceUpdateByCvBuildId)
-              sinon.assert.calledWith(
-                InstanceService.emitInstanceUpdateByCvBuildId,
-                ctx.cv.build._id.toString(),
-                'build_started',
-                false
               )
               sinon.assert.calledTwice(messenger._emitInstanceUpdateAction)
               sinon.assert.calledWith(
@@ -211,8 +214,31 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
                 sinon.match.has('_id', ctx.instance2._id),
                 'build_started'
               )
+            })
+            .asCallback(done)
+        })
+        it('should update the cv and the 2 instances with new Docker info', function (done) {
+          var job = mockOnBuilderCreateMessage(ctx.cv)
+          OnImageBuilderContainerCreate(job)
+            .then(function () {
+              sinon.assert.calledOnce(ContextVersion.updateAsync)
+              sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, job.id)
               sinon.assert.calledTwice(Instance.prototype.updateCv)
               sinon.assert.calledTwice(rabbitMQ.instanceUpdated)
+              return ContextVersion.findByIdAsync(ctx.cv._id)
+            })
+            .then(function (cv) {
+              // ensure the cv was updated
+              expect(cv.dockerHost).to.equal(job.host)
+              return Promise.props({
+                instance: Instance.findByIdAsync(ctx.instance._id),
+                instance2: Instance.findByIdAsync(ctx.instance2._id)
+              })
+            })
+            .then(function (data) {
+              // ensure the instances were updated
+              expect(data.instance.contextVersion.dockerHost).to.equal(job.host)
+              expect(data.instance2.contextVersion.dockerHost).to.equal(job.host)
             })
             .asCallback(done)
         })
