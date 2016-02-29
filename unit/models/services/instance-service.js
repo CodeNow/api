@@ -8,7 +8,6 @@ var sinon = require('sinon')
 var Boom = require('dat-middleware').Boom
 var Code = require('code')
 var Promise = require('bluebird')
-var User = require('models/mongo/user')
 require('sinon-as-promised')(Promise)
 
 var cleanMongo = require('../../../test/functional/fixtures/clean-mongo.js')
