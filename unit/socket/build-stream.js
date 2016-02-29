@@ -171,7 +171,6 @@ describe('build stream: ' + moduleName, function () {
         return new ClientStream()
       })
       sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
-      sinon.stub(dogstatsd, 'captureSteamData').returns()
       ctx.buildStream.handleStream()
         .then(function () {
           sinon.assert.calledOnce(ctx.buildStream.socket.substream)
