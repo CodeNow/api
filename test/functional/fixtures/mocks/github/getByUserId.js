@@ -1,7 +1,8 @@
 'use strict'
 
-var sinon = require('sinon')
 var Github = require('models/apis/github')
+var isFunction = require('101/is-function')
+var sinon = require('sinon')
 var User = require('models/mongo/user.js')
 
 function getUserResult (userId, username) {
@@ -60,7 +61,7 @@ function getUserResult (userId, username) {
  */
 module.exports.stubBefore = function (getUserArrayFn) {
   return function (done) {
-    if (Github.prototype.getUserById && Github.prototype.getUserById.restore) {
+    if (isFunction(Github.prototype.getUserById.restore)) {
       Github.prototype.getUserById.restore()
     }
     sinon.stub(Github.prototype, 'getUserById', function (id, cb) {
