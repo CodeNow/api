@@ -1821,10 +1821,6 @@ describe('Instance Model Tests ' + moduleName, function () {
           }
         }
       }
-      sinon.stub(User, 'anonymousFindGithubUserByGithubId').yieldsAsync(null, {
-        login: 'TEST-login',
-        avatar_url: 'TEST-avatar_url'
-      })
       ctx.cvAttrs = {
         name: 'name1',
         owner: {
@@ -1852,6 +1848,13 @@ describe('Instance Model Tests ' + moduleName, function () {
       ctx.mockInstance = createNewInstance('hello', {
         contextVersion: ctx.mockContextVersion,
         build: ctx.mockBuild._id
+      })
+      done()
+    })
+    beforeEach(function (done) {
+      sinon.stub(User, 'anonymousFindGithubUserByGithubId').yieldsAsync(null, {
+        login: 'TEST-login',
+        avatar_url: 'TEST-avatar_url'
       })
       done()
     })

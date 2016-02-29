@@ -8,6 +8,7 @@ var sinon = require('sinon')
 var Boom = require('dat-middleware').Boom
 var Code = require('code')
 var Promise = require('bluebird')
+var User = require('models/mongo/user')
 require('sinon-as-promised')(Promise)
 
 var cleanMongo = require('../../../test/functional/fixtures/clean-mongo.js')
@@ -1025,23 +1026,6 @@ describe('InstanceService: ' + moduleName, function () {
       done()
     })
 
-    it('should use the passed in github user if one is provided', function (done) {
-      var testUser = 1234
-      InstanceService.emitInstanceUpdate(instance, testUser)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          done()
-        })
-    })
-
-    it('should use the created by github userId if one is not passed', function (done) {
-      InstanceService.emitInstanceUpdate(instance)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          done()
-        })
-    })
-
     it('should fail when populateModels fails', function (done) {
       var testErr = 'Populate Models Failed'
       var rejectionPromise = Promise.reject(testErr)
@@ -1156,7 +1140,7 @@ describe('InstanceService: ' + moduleName, function () {
       done()
     })
 
-    it('should return cleanly if no instances exist', function (done) {
+    it('should not emit anything when no instances are found', function (done) {
       sinon.stub(Instance, 'findByContextVersionBuildId').resolves()
       InstanceService.emitInstanceUpdateByCvBuildId(cvBuildId, 'build_started', false)
         .then(function () {
