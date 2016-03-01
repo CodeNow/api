@@ -18,6 +18,8 @@ var it = lab.it
 var expect = Code.expect
 var Faker = require('faker')
 var nock = require('nock')
+var sinon = require('sinon')
+var Github = require('models/apis/github')
 
 var User = require('models/mongo/user')
 var githubAPIUsernameQueryMock = require('../../../test/functional/fixtures/mocks/github/users-username')
@@ -106,6 +108,40 @@ describe('User ' + moduleName, function () {
     })
   })
 
+  describe('anonymousFindGithubUserByGithubId', function () {
+    var mockResponse = {
+      login: 'nathan219',
+      avatar_url: 'testingtesting123'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Github.prototype, 'getUserById').yieldsAsync(null, mockResponse)
+      done()
+    })
+    afterEach(function (done) {
+      Github.prototype.getUserById.restore()
+      done()
+    })
+    it('should just fetch the user from the database', function (done) {
+      var userJson = user.toJSON()
+      delete userJson.password
+      User.anonymousFindGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
+        if (err) { done(err) }
+        sinon.assert.notCalled(Github.prototype.getUserById)
+        expect(userFromDb).to.deep.equal(userJson)
+        done()
+      })
+    })
+    it('should fetch from github when the result isn\'t in the database', function (done) {
+      var userJson = user.toJSON()
+      delete userJson.password
+      User.anonymousFindGithubUserByGithubId('123123123', function (err, userFromMock) {
+        if (err) { done(err) }
+        sinon.assert.calledOnce(Github.prototype.getUserById)
+        expect(userFromMock).to.deep.equal(mockResponse)
+        done()
+      })
+    })
+  })
   describe('findGithubOrgMembersByOrgName', function () {
     it('should have a `findByGithubOrgMembersByOrgName` method', function (done) {
       expect(user.findGithubOrgMembersByOrgName).to.be.a.function()
