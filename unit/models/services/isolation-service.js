@@ -40,13 +40,13 @@ describe('Isolation Services Model', function () {
         branch: 'someBranch',
         org: 'someOrg'
       }
-      sinon.stub(Instance, 'findForkableMasterInstances').yieldsAsync(null, [ mockInstance ])
+      sinon.stub(Instance, 'findMasterInstancesForRepo').yieldsAsync(null, [ mockInstance ])
       sinon.stub(InstanceForkService, 'forkRepoInstance').resolves(mockNewInstance)
       done()
     })
 
     afterEach(function (done) {
-      Instance.findForkableMasterInstances.restore()
+      Instance.findMasterInstancesForRepo.restore()
       InstanceForkService.forkRepoInstance.restore()
       done()
     })
@@ -105,9 +105,9 @@ describe('Isolation Services Model', function () {
         )
       })
 
-      it('should reject with any findForkableMasterInstances error', function (done) {
+      it('should reject with any findMasterInstancesForRepo error', function (done) {
         var error = new Error('pugsly')
-        Instance.findForkableMasterInstances.yieldsAsync(error)
+        Instance.findMasterInstancesForRepo.yieldsAsync(error)
         IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -117,8 +117,8 @@ describe('Isolation Services Model', function () {
         )
       })
 
-      it('should reject if findForkable returns not an array', function (done) {
-        Instance.findForkableMasterInstances.yieldsAsync(null, '')
+      it('should reject if findMasterInstancesForRepo returns not an array', function (done) {
+        Instance.findMasterInstancesForRepo.yieldsAsync(null, '')
         IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -128,8 +128,8 @@ describe('Isolation Services Model', function () {
         )
       })
 
-      it('should reject if findForkable returns an empty array', function (done) {
-        Instance.findForkableMasterInstances.yieldsAsync(null, [])
+      it('should reject if findMasterInstancesForRepo returns an empty array', function (done) {
+        Instance.findMasterInstancesForRepo.yieldsAsync(null, [])
         IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -156,11 +156,10 @@ describe('Isolation Services Model', function () {
       IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.findForkableMasterInstances)
+          sinon.assert.calledOnce(Instance.findMasterInstancesForRepo)
           sinon.assert.calledWithExactly(
-            Instance.findForkableMasterInstances,
+            Instance.findMasterInstancesForRepo,
             'someOrg/someRepo',
-            'someBranch',
             sinon.match.func
           )
           done()
