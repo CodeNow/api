@@ -1,6 +1,6 @@
 'use strict'
 
-var stream = require('stream')
+var through2 = require('through2')
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
@@ -40,6 +40,7 @@ var moduleName = path.relative(process.cwd(), __filename)
 var error
 var rejectionPromise
 
+
 describe('terminal stream: ' + moduleName, function () {
   beforeEach(function (done) {
     error = new Error('not owner')
@@ -48,8 +49,10 @@ describe('terminal stream: ' + moduleName, function () {
     done()
   })
 
+
   beforeEach(function (done) {
-    sinon.stub(Docker.prototype, 'execContainer').yieldsAsync(null, new stream.Readable())
+    var stream = through2()
+    sinon.stub(Docker.prototype, 'execContainer').yieldsAsync(null, stream)
     done()
   })
 
@@ -231,7 +234,7 @@ describe('terminal stream: ' + moduleName, function () {
     })
     describe('Success', function () {
       beforeEach(function (done) {
-        sinon.stub(Instance, 'findOne').yields(null, ctx.instance)
+        sinon.stub(Instance, 'findOneAsync').returns(Promise.resolve(ctx.instance))
         sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
         sinon.stub(Primus, 'createSocket').returns(function () {
           this.substream = sinon.stub().returns({
@@ -243,7 +246,7 @@ describe('terminal stream: ' + moduleName, function () {
         done()
       })
       afterEach(function (done) {
-        Instance.findOne.restore()
+        Instance.findOneAsync.restore()
         done()
       })
       it('should allow logs when check ownership passes', function (done) {
