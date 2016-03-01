@@ -351,7 +351,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               )
               sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
 
-              // sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+              sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
               ContextVersion.findOne(ctx.cv._id, function (err, cv) {
                 if (err) { return done(err) }
                 expect(cv.build.completed).to.exist()
