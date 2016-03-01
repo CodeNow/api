@@ -164,6 +164,9 @@ describe('Build Stream', function () {
         var objectBuffer = []
         buildStream.on('data', function (d) {
           objectBuffer = objectBuffer.concat(d)
+          setTimeout(function () {
+            buildStream.end()
+          })
         })
         buildStream.on('end', function () {
           client.end()

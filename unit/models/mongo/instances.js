@@ -14,7 +14,6 @@ var sinon = require('sinon')
 var keypather = require('keypather')()
 
 var Graph = require('models/apis/graph')
-var Hashids = require('hashids')
 var Neo4j = require('runna4j')
 var async = require('async')
 var createCount = require('callback-count')
@@ -33,7 +32,8 @@ var Instance = require('models/mongo/instance')
 var Version = require('models/mongo/context-version')
 var pubsub = require('models/redis/pubsub')
 var Promise = require('bluebird')
-var validation = require('../../fixtures/validation')(lab)
+
+var mongoFactory = require('../../factories/mongo')
 require('sinon-as-promised')(Promise)
 
 var expectErr = function (expectedErr, done) {
@@ -43,103 +43,8 @@ var expectErr = function (expectedErr, done) {
   }
 }
 
-var id = 0
-function getNextId () {
-  id++
-  return id
-}
-function getNextHash () {
-  var hashids = new Hashids(process.env.HASHIDS_SALT, process.env.HASHIDS_LENGTH)
-  return hashids.encrypt(getNextId()).toLowerCase()
-}
 function newObjectId () {
   return new mongoose.Types.ObjectId()
-}
-
-function createNewVersion (opts) {
-  return new Version({
-    message: 'test',
-    owner: { github: validation.VALID_GITHUB_ID },
-    createdBy: { github: validation.VALID_GITHUB_ID },
-    config: validation.VALID_OBJECT_ID,
-    created: Date.now(),
-    context: validation.VALID_OBJECT_ID,
-    files: [{
-      Key: 'test',
-      ETag: 'test',
-      VersionId: validation.VALID_OBJECT_ID
-    }],
-    build: {
-      dockerImage: 'testing',
-      dockerTag: 'adsgasdfgasdf'
-    },
-    appCodeVersions: [
-      {
-        additionalRepo: false,
-        repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        lowerRepo: opts.repo || 'bkendall/flaming-octo-nemisis._',
-        branch: opts.branch || 'master',
-        defaultBranch: opts.defaultBranch || 'master',
-        commit: 'deadbeef'
-      },
-      {
-        additionalRepo: true,
-        commit: '4dd22d12b4b3b846c2e2bbe454b89cb5be68f71d',
-        branch: 'master',
-        lowerBranch: 'master',
-        repo: 'Nathan219/yash-node',
-        lowerRepo: 'nathan219/yash-node',
-        _id: '5575f6c43074151a000e8e27',
-        privateKey: 'Nathan219/yash-node.key',
-        publicKey: 'Nathan219/yash-node.key.pub',
-        defaultBranch: 'master',
-        transformRules: { rename: [], replace: [], exclude: [] }
-      }
-    ]
-  })
-}
-
-function createNewInstance (name, opts) {
-  // jshint maxcomplexity:10
-  opts = opts || {}
-  var container = {
-    dockerContainer: opts.containerId || validation.VALID_OBJECT_ID,
-    dockerHost: opts.dockerHost || 'http://localhost:4243',
-    inspect: {
-      State: {
-        ExitCode: 0,
-        FinishedAt: '0001-01-01T00:00:00Z',
-        Paused: false,
-        Pid: 889,
-        Restarting: false,
-        Running: true,
-        StartedAt: '2014-11-25T22:29:50.23925175Z'
-      },
-      NetworkSettings: {
-        IPAddress: opts.IPAddress || '172.17.14.2'
-      }
-    }
-  }
-  return new Instance({
-    name: name || 'name',
-    shortHash: getNextHash(),
-    locked: opts.locked || false,
-    'public': false,
-    masterPod: opts.masterPod || false,
-    parent: opts.parent,
-    autoForked: opts.autoForked || false,
-    owner: { github: validation.VALID_GITHUB_ID },
-    createdBy: { github: validation.VALID_GITHUB_ID },
-    build: opts.build || validation.VALID_OBJECT_ID,
-    created: Date.now(),
-    contextVersion: opts.contextVersion || createNewVersion(opts),
-    container: container,
-    containers: [],
-    network: {
-      hostIp: '1.1.1.100'
-    },
-    imagePull: opts.imagePull || null
-  })
 }
 
 var path = require('path')
@@ -160,14 +65,14 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('starting or stopping state detection', function () {
     it('should not error if container is not starting or stopping', function (done) {
-      var instance = createNewInstance('container-not-starting-or-stopping')
+      var instance = mongoFactory.createNewInstance('container-not-starting-or-stopping')
       instance.isNotStartingOrStopping(function (err) {
         expect(err).to.be.null()
         done()
       })
     })
     it('should error if no container', function (done) {
-      var instance = createNewInstance('no-container')
+      var instance = mongoFactory.createNewInstance('no-container')
       instance.container = {}
       instance.isNotStartingOrStopping(function (err) {
         expect(err.message).to.equal('Instance does not have a container')
@@ -175,7 +80,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
     it('should error if container starting', function (done) {
-      var instance = createNewInstance('container-starting')
+      var instance = mongoFactory.createNewInstance('container-starting')
       instance.container.inspect.State.Starting = true
       instance.isNotStartingOrStopping(function (err) {
         expect(err.message).to.equal('Instance is already starting')
@@ -183,10 +88,208 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
     it('should error if container stopping', function (done) {
-      var instance = createNewInstance('container-stopping')
+      var instance = mongoFactory.createNewInstance('container-stopping')
       instance.container.inspect.State.Stopping = true
       instance.isNotStartingOrStopping(function (err) {
         expect(err.message).to.equal('Instance is already stopping')
+        done()
+      })
+    })
+  })
+
+  describe('findOneStarting', function () {
+    var mockInstance = {
+      _id: '507f1f77bcf86cd799439011'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOne.restore()
+      done()
+    })
+    it('should find starting instance', function (done) {
+      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.be.null()
+        expect(instance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.findOne)
+        var query = {
+          _id: mockInstance._id,
+          'container.dockerContainer': 'container-id',
+          'container.inspect.State.Starting': {
+            $exists: true
+          }
+        }
+        sinon.assert.calledWith(Instance.findOne, query)
+        done()
+      })
+    })
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOne.yieldsAsync(mongoError)
+      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(Instance.findOne)
+        done()
+      })
+    })
+    it('should return an error if instance was not found', function (done) {
+      Instance.findOne.yieldsAsync(null, null)
+      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err.message).to.equal('Instance container has changed')
+        sinon.assert.calledOnce(Instance.findOne)
+        done()
+      })
+    })
+  })
+
+  describe('markAsStarting', function () {
+    var mockInstance = {
+      _id: '507f1f77bcf86cd799439011'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOneAndUpdate.restore()
+      done()
+    })
+    it('should mark instance as starting', function (done) {
+      Instance.markAsStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.be.null()
+        expect(instance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        var query = {
+          _id: mockInstance._id,
+          'container.dockerContainer': 'container-id',
+          'container.inspect.State.Stopping': {
+            $exists: false
+          }
+        }
+        var $set = {
+          $set: {
+            'container.inspect.State.Starting': true
+          }
+        }
+        sinon.assert.calledWith(Instance.findOneAndUpdate, query, $set)
+        done()
+      })
+    })
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOneAndUpdate.yieldsAsync(mongoError)
+      Instance.markAsStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        done()
+      })
+    })
+    it('should return an error if instance was not found', function (done) {
+      Instance.findOneAndUpdate.yieldsAsync(null, null)
+      Instance.markAsStarting(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err.message).to.equal('Instance container has changed')
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        done()
+      })
+    })
+  })
+
+  describe('findOneStopping', function () {
+    var mockInstance = {
+      _id: '507f1f77bcf86cd799439011'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOne.restore()
+      done()
+    })
+    it('should find stopping instance', function (done) {
+      Instance.findOneStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.be.null()
+        expect(instance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.findOne)
+        var query = {
+          _id: mockInstance._id,
+          'container.dockerContainer': 'container-id',
+          'container.inspect.State.Stopping': {
+            $exists: true
+          }
+        }
+        sinon.assert.calledWith(Instance.findOne, query)
+        done()
+      })
+    })
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOne.yieldsAsync(mongoError)
+      Instance.findOneStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(Instance.findOne)
+        done()
+      })
+    })
+    it('should return an error if instance was not found', function (done) {
+      Instance.findOne.yieldsAsync(null, null)
+      Instance.findOneStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err.message).to.equal('Instance container has changed')
+        sinon.assert.calledOnce(Instance.findOne)
+        done()
+      })
+    })
+  })
+
+  describe('markAsStopping', function () {
+    var mockInstance = {
+      _id: '507f1f77bcf86cd799439011'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOneAndUpdate.restore()
+      done()
+    })
+    it('should mark instance as stopping', function (done) {
+      Instance.markAsStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.be.null()
+        expect(instance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        var query = {
+          _id: mockInstance._id,
+          'container.dockerContainer': 'container-id',
+          'container.inspect.State.Starting': {
+            $exists: false
+          }
+        }
+        var $set = {
+          $set: {
+            'container.inspect.State.Stopping': true
+          }
+        }
+        sinon.assert.calledWith(Instance.findOneAndUpdate, query, $set)
+        done()
+      })
+    })
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOneAndUpdate.yieldsAsync(mongoError)
+      Instance.markAsStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        done()
+      })
+    })
+    it('should return an error if instance was not found', function (done) {
+      Instance.findOneAndUpdate.yieldsAsync(null, null)
+      Instance.markAsStopping(mockInstance._id, 'container-id', function (err, instance) {
+        expect(err.message).to.equal('Instance container has changed')
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
         done()
       })
     })
@@ -299,72 +402,13 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  describe('atomic set container state', function () {
-    it('should not set container state to Starting if container on instance has changed', function (done) {
-      var instance = createNewInstance('container-stopping')
-      instance.save(function (err) {
-        if (err) { throw err }
-        // change model data in DB without going through model
-        Instance.findOneAndUpdate({
-          _id: instance._id
-        }, {
-          $set: {
-            'container.dockerContainer': 'fooo'
-          }
-        }, function (err) {
-          if (err) { throw err }
-          Instance.markAsStopping(instance._id, instance.container.dockerContainer, function (err, result) {
-            expect(err.message).to.equal('Instance container has changed')
-            expect(result).to.be.undefined()
-            done()
-          })
-        })
-      })
-    })
-
-    it('should not set container state to Stopping if container on instance is starting', function (done) {
-      var instance = createNewInstance('container-stopping')
-      instance.save(function (err) {
-        if (err) { throw err }
-        // change model data in DB without going through model
-        Instance.findOneAndUpdate({
-          _id: instance._id
-        }, {
-          $set: {
-            'container.inspect.State.Starting': 'true'
-          }
-        }, function (err) {
-          if (err) { throw err }
-          Instance.markAsStopping(instance._id, instance.container.dockerContainer, function (err, result) {
-            expect(err.message).to.equal('Instance container has changed')
-            expect(result).to.be.undefined()
-            done()
-          })
-        })
-      })
-    })
-
-    it('should not set container state to Stopping', function (done) {
-      var instance = createNewInstance('container-stopping')
-      instance.save(function (err) {
-        if (err) { throw err }
-        Instance.markAsStopping(instance._id, instance.container.dockerContainer, function (err, result) {
-          expect(err).to.not.exist()
-          expect(result).to.exist()
-          expect(result.container.inspect.State.Stopping).to.equal(true)
-          done()
-        })
-      })
-    })
-  })
-
   describe('save', function () {
     it('should not save an instance with the same (lower) name and owner', function (done) {
-      var instance = createNewInstance('hello')
+      var instance = mongoFactory.createNewInstance('hello')
       instance.save(function (err, instance) {
         if (err) { return done(err) }
         expect(instance).to.exist()
-        var newInstance = createNewInstance('Hello')
+        var newInstance = mongoFactory.createNewInstance('Hello')
         newInstance.save(function (err, instance) {
           expect(instance).to.not.exist()
           expect(err).to.exist()
@@ -377,7 +421,7 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('getMainBranchName', function () {
     it('should return null when there is no main AppCodeVersion', function (done) {
-      var instance = createNewInstance('no-main-app-code-version')
+      var instance = mongoFactory.createNewInstance('no-main-app-code-version')
       instance.contextVersion.appCodeVersions[0].additionalRepo = true
       expect(Instance.getMainBranchName(instance)).to.be.null()
       done()
@@ -385,7 +429,7 @@ describe('Instance Model Tests ' + moduleName, function () {
 
     it('should return the main AppCodeVersion', function (done) {
       var expectedBranchName = 'somebranchomg'
-      var instance = createNewInstance('no-main-app-code-version', {
+      var instance = mongoFactory.createNewInstance('no-main-app-code-version', {
         branch: expectedBranchName
       })
       expect(Instance.getMainBranchName(instance)).to.equal(expectedBranchName)
@@ -398,7 +442,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     var instance = null
     beforeEach(function (done) {
       sinon.spy(error, 'log')
-      instance = createNewInstance()
+      instance = mongoFactory.createNewInstance()
       instance.save(function (err, instance) {
         if (err) { return done(err) }
         expect(instance).to.exist()
@@ -491,7 +535,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     var instance
 
     beforeEach(function (done) {
-      instance = createNewInstance('testy', {})
+      instance = mongoFactory.createNewInstance('testy', {})
       sinon.spy(instance, 'invalidateContainerDNS')
       sinon.stub(Instance, 'findOneAndUpdate')
       done()
@@ -514,7 +558,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     var savedInstance = null
     var instance = null
     before(function (done) {
-      instance = createNewInstance()
+      instance = mongoFactory.createNewInstance()
       instance.save(function (err, instance) {
         if (err) { return done(err) }
         expect(instance).to.exist()
@@ -574,7 +618,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     var savedInstance = null
     var instance = null
     before(function (done) {
-      instance = createNewInstance()
+      instance = mongoFactory.createNewInstance()
       instance.save(function (err, instance) {
         if (err) { return done(err) }
         expect(instance).to.exist()
@@ -599,15 +643,15 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('find by repo and branch', function () {
     before(function (done) {
-      var instance = createNewInstance('instance1')
+      var instance = mongoFactory.createNewInstance('instance1')
       instance.save(done)
     })
     before(function (done) {
-      var instance = createNewInstance('instance2', { locked: false })
+      var instance = mongoFactory.createNewInstance('instance2', { locked: false })
       instance.save(done)
     })
     before(function (done) {
-      var instance = createNewInstance('instance3', { locked: true, repo: 'podviaznikov/hello' })
+      var instance = mongoFactory.createNewInstance('instance3', { locked: true, repo: 'podviaznikov/hello' })
       instance.save(done)
     })
 
@@ -635,7 +679,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     var instance = null
     var contextVersionId = newObjectId()
     beforeEach(function (done) {
-      instance = createNewInstance()
+      instance = mongoFactory.createNewInstance()
       instance.save(function (err, instance) {
         if (err) { return done(err) }
         expect(instance).to.exist()
@@ -643,11 +687,11 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
     beforeEach(function (done) {
-      var instance = createNewInstance('instance2')
+      var instance = mongoFactory.createNewInstance('instance2')
       instance.save(done)
     })
     beforeEach(function (done) {
-      var instance = createNewInstance('instance3', { contextVersion: { _id: contextVersionId } })
+      var instance = mongoFactory.createNewInstance('instance3', { contextVersion: { _id: contextVersionId } })
       instance.save(done)
     })
     it('should pass the array of contextVersion Ids to find', function (done) {
@@ -733,7 +777,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         repo: repo,
         parent: 'a1b2c4'
       }
-      var instance = createNewInstance('instance-name-325', opts)
+      var instance = mongoFactory.createNewInstance('instance-name-325', opts)
       instance.save(function (err) {
         if (err) { return done(err) }
         Instance.findInstancesByParent('a1b2c4', function (err, instances) {
@@ -752,7 +796,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         repo: repo,
         parent: 'a1b2c3'
       }
-      var instance = createNewInstance('instance-name-324', opts)
+      var instance = mongoFactory.createNewInstance('instance-name-324', opts)
       instance.save(function (err) {
         if (err) { return done(err) }
         Instance.findInstancesByParent('a1b2c3', function (err, instances) {
@@ -776,7 +820,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     describe('non-masterPod instances', function () {
       var ctx = {}
       before(function (done) {
-        var instance = createNewInstance('instance-name', { locked: true, repo: 'podviaznikov/hello' })
+        var instance = mongoFactory.createNewInstance('instance-name', { locked: true, repo: 'podviaznikov/hello' })
         instance.save(function (err, instance) {
           if (err) { return done(err) }
           expect(instance).to.exist()
@@ -804,7 +848,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           branch: 'master',
           defaultBranch: 'master'
         }
-        var instance = createNewInstance('instance-name-2', opts)
+        var instance = mongoFactory.createNewInstance('instance-name-2', opts)
         instance.save(function (err, instance) {
           if (err) { return done(err) }
           expect(instance).to.exist()
@@ -836,7 +880,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           masterPod: true,
           repo: repo
         }
-        var instance2 = createNewInstance('instance-name-3', opts)
+        var instance2 = mongoFactory.createNewInstance('instance-name-3', opts)
         instance2.save(function (err, instance) {
           if (err) { return done(err) }
           Instance.findForkableMasterInstances(repo, 'feature1', function (err, instances) {
@@ -858,7 +902,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     beforeEach(function (done) {
       var names = [ 'A', 'B', 'C' ]
       while (instances.length < names.length) {
-        instances.push(createNewInstance(names[instances.length]))
+        instances.push(mongoFactory.createNewInstance(names[instances.length]))
       }
       done()
     })
@@ -1211,7 +1255,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     var instance
 
     beforeEach(function (done) {
-      instance = createNewInstance('a', {})
+      instance = mongoFactory.createNewInstance('a', {})
       sinon.stub(pubsub, 'publish')
       done()
     })
@@ -1245,7 +1289,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     it('should publish the correct invalidation event via redis', function (done) {
       var hostIp = '10.20.128.1'
       var localIp = '172.17.14.55'
-      var instance = createNewInstance('b', {
+      var instance = mongoFactory.createNewInstance('b', {
         dockerHost: 'http://' + hostIp + ':4242',
         IPAddress: localIp
       })
@@ -1264,7 +1308,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     var instance
 
     beforeEach(function (done) {
-      instance = createNewInstance('wooosh')
+      instance = mongoFactory.createNewInstance('wooosh')
       sinon.spy(instance, 'invalidateContainerDNS')
       done()
     })
@@ -1298,8 +1342,8 @@ describe('Instance Model Tests ' + moduleName, function () {
       var masterInstances
       beforeEach(function (done) {
         masterInstances = [
-          createNewInstance('hello', {masterPod: true}),
-          createNewInstance('adelle', {masterPod: true})
+          mongoFactory.createNewInstance('hello', {masterPod: true}),
+          mongoFactory.createNewInstance('adelle', {masterPod: true})
         ]
         sinon.stub(Instance, 'find').yieldsAsync(null, masterInstances)
         sinon.stub(instance, 'addDependency').yieldsAsync()
@@ -1422,10 +1466,10 @@ describe('Instance Model Tests ' + moduleName, function () {
         })
       })
       it('should remove the existing one, and add the new one', function (done) {
-        masterInstances.push(createNewInstance('cheese', {masterPod: true}))   // 2
-        masterInstances.push(createNewInstance('chicken', {masterPod: true}))  // 3
-        masterInstances.push(createNewInstance('beef', {masterPod: true}))     // 4
-        masterInstances.push(createNewInstance('potatoes', {masterPod: true})) // 5
+        masterInstances.push(mongoFactory.createNewInstance('cheese', {masterPod: true}))   // 2
+        masterInstances.push(mongoFactory.createNewInstance('chicken', {masterPod: true}))  // 3
+        masterInstances.push(mongoFactory.createNewInstance('beef', {masterPod: true}))     // 4
+        masterInstances.push(mongoFactory.createNewInstance('potatoes', {masterPod: true})) // 5
         sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
         instance.env = [
           'df=hello-staging-' + ownerName + '.runnableapp.com', // keep masterInstance[0]
@@ -1464,8 +1508,8 @@ describe('Instance Model Tests ' + moduleName, function () {
   })
 
   describe('addDependency', function () {
-    var instance = createNewInstance('goooush')
-    var dependant = createNewInstance('splooosh')
+    var instance = mongoFactory.createNewInstance('goooush')
+    var dependant = mongoFactory.createNewInstance('splooosh')
 
     beforeEach(function (done) {
       sinon.spy(instance, 'invalidateContainerDNS')
@@ -1489,8 +1533,8 @@ describe('Instance Model Tests ' + moduleName, function () {
   })
 
   describe('removeDependency', function () {
-    var instance = createNewInstance('boooush')
-    var dependant = createNewInstance('mighty')
+    var instance = mongoFactory.createNewInstance('boooush')
+    var dependant = mongoFactory.createNewInstance('mighty')
 
     beforeEach(function (done) {
       sinon.spy(instance, 'invalidateContainerDNS')
@@ -1515,7 +1559,7 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('remove', function () {
     it('should not throw error if instance does not exist in db', function (done) {
-      var inst = createNewInstance('api-anton-1')
+      var inst = mongoFactory.createNewInstance('api-anton-1')
       inst.remove(function (err) {
         expect(err).to.be.null()
         done()
@@ -1656,7 +1700,7 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('populateOwnerAndCreatedBy', function () {
     beforeEach(function (done) {
-      ctx.instance = createNewInstance()
+      ctx.instance = mongoFactory.createNewInstance()
       sinon.stub(ctx.instance, 'update').yieldsAsync(null)
       ctx.mockSessionUser = {
         findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
@@ -1725,8 +1769,8 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('#populateOwnerAndCreatedByForInstances', function () {
     beforeEach(function (done) {
-      ctx.instance1 = createNewInstance()
-      ctx.instance2 = createNewInstance()
+      ctx.instance1 = mongoFactory.createNewInstance()
+      ctx.instance2 = mongoFactory.createNewInstance()
       ctx.instances = [ctx.instance1, ctx.instance2]
       ctx.mockSessionUser = {
         findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
@@ -1838,7 +1882,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           completed: true
         }
       }
-      ctx.mockContextVersion = createNewVersion(ctx.cvAttrs)
+      ctx.mockContextVersion = mongoFactory.createNewVersion(ctx.cvAttrs)
       ctx.buildAttrs = {
         name: 'name1',
         owner: {
@@ -1849,7 +1893,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         }
       }
       ctx.mockBuild = new Build(ctx.buildAttrs)
-      ctx.mockInstance = createNewInstance('hello', {
+      ctx.mockInstance = mongoFactory.createNewInstance('hello', {
         contextVersion: ctx.mockContextVersion,
         build: ctx.mockBuild._id
       })
@@ -1895,7 +1939,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         })
       })
       it('should handle when 2 instances share a cv', function (done) {
-        ctx.mockInstance2 = createNewInstance('hello2', {
+        ctx.mockInstance2 = mongoFactory.createNewInstance('hello2', {
           contextVersion: ctx.mockContextVersion,
           build: ctx.mockBuild._id
         })
@@ -1958,7 +2002,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           done()
         })
         it('should log the bad instance and keep going', function (done) {
-          ctx.mockInstance2 = createNewInstance('hello2', {
+          ctx.mockInstance2 = mongoFactory.createNewInstance('hello2', {
             contextVersion: ctx.mockContextVersion,
             build: ctx.mockBuild._id
           })
@@ -2063,8 +2107,8 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('updateCv', function () {
     beforeEach(function (done) {
-      ctx.instance = createNewInstance()
-      ctx.mockCv = createNewVersion({})
+      ctx.instance = mongoFactory.createNewInstance()
+      ctx.mockCv = mongoFactory.createNewVersion({})
       sinon.stub(Version, 'findById').yieldsAsync(null, ctx.mockCv)
       sinon.stub(ctx.instance, 'update').yieldsAsync(null)
       done()
@@ -2129,7 +2173,7 @@ describe('Instance Model Tests ' + moduleName, function () {
 
     beforeEach(function (done) {
       sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
-      instance = createNewInstance('sample')
+      instance = mongoFactory.createNewInstance('sample')
       done()
     })
 
@@ -2233,7 +2277,7 @@ describe('Instance Model Tests ' + moduleName, function () {
 
     beforeEach(function (done) {
       sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
-      instance = createNewInstance('sample')
+      instance = mongoFactory.createNewInstance('sample')
       instance.isolated = 'deadbeefdeadbeefdeadbeef'
       instance.isIsolationGroupMaster = true
       done()
