@@ -272,25 +272,27 @@ describe('Context Version: ' + moduleName, function () {
         failed: true,
         error: {
           message: 'jksdhfalskdjfhadsf'
-        }
+        },
+        'dockerHost': 'http://10.0.0.1:4242'
       }
       var myCv = {id: 12341}
       sinon.stub(messenger, 'emitContextVersionUpdate', function () {
         done()
       })
       ContextVersion.updateBuildCompletedByContainer(myCv, opts, function () {
-        expect(ContextVersion.updateBy.calledOnce).to.be.true()
-        expect(ContextVersion.findBy.calledOnce).to.be.true()
-
-        var args = ContextVersion.updateBy.getCall(0).args
-        expect(args[0]).to.equal('build.dockerContainer')
-        expect(args[1]).to.equal(myCv)
-        expect(args[2].$set).to.contains({
-          'build.log': opts.log,
-          'build.failed': opts.failed,
-          'error.message': opts.error.message
-        })
-        expect(args[2].$set['build.completed']).to.exist()
+        sinon.assert.calledOnce(ContextVersion.findBy)
+        sinon.assert.calledOnce(ContextVersion.updateBy)
+        sinon.assert.calledWith(ContextVersion.updateBy,
+          'build.dockerContainer',
+          myCv, {
+            $set: {
+              'build.log': opts.log,
+              'build.failed': opts.failed,
+              'build.error.message': opts.error.message,
+              'build.completed': sinon.match.number,
+              'dockerHost': opts.dockerHost
+            }
+          }, { multi: true })
       })
     })
   })

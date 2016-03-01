@@ -633,13 +633,14 @@ describe('docker: ' + moduleName, function () {
         var expectedEnvs = [
           'RUNNABLE_AWS_ACCESS_KEY=' + process.env.AWS_ACCESS_KEY_ID,
           'RUNNABLE_AWS_SECRET_KEY=' + process.env.AWS_SECRET_ACCESS_KEY,
-          'RUNNABLE_FILES_BUCKET=' + cv.infraCodeVersion.bucket().bucket,
-          'RUNNABLE_PREFIX=' + path.join(cv.infraCodeVersion.bucket().sourcePath, '/'),
-          'RUNNABLE_FILES=' + JSON.stringify(indexBy(cv.infraCodeVersion.files, 'Key')),
+          'RUNNABLE_BUILD_LINE_TIMEOUT_MS=' + process.env.DOCKER_BUILD_LINE_TIMEOUT_MS,
           'RUNNABLE_DOCKER=' + 'unix:///var/run/docker.sock',
           'RUNNABLE_DOCKERTAG=' + opts.dockerTag,
+          'RUNNABLE_FILES=' + JSON.stringify(indexBy(cv.infraCodeVersion.files, 'Key')),
+          'RUNNABLE_FILES_BUCKET=' + cv.infraCodeVersion.bucket().bucket,
           'RUNNABLE_IMAGE_BUILDER_NAME=' + process.env.DOCKER_IMAGE_BUILDER_NAME,
           'RUNNABLE_IMAGE_BUILDER_TAG=' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
+          'RUNNABLE_PREFIX=' + path.join(cv.infraCodeVersion.bucket().sourcePath, '/'),
           // acv envs
           'RUNNABLE_REPO=' + 'git@github.com:' + appCodeVersions.map(pluck('repo')).join(';git@github.com:'),
           'RUNNABLE_COMMITISH=' + [ appCodeVersions[0].commit, appCodeVersions[1].branch, 'master' ].join(';'),
@@ -1186,95 +1187,6 @@ describe('docker: ' + moduleName, function () {
             expect(err.message).to.match(new RegExp(keypath))
             count.next()
           })
-        })
-      })
-    })
-  })
-
-  describe('with retries', function () {
-    describe('and no errors', function () {
-      beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
-          cb(undefined, { dockerContainer: container })
-        })
-        done()
-      })
-      afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore()
-        done()
-      })
-
-      it('should return callback with', function (done) {
-        var docker = new Docker()
-        docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err, result) {
-          expect(err).to.be.undefined()
-          expect(result.dockerContainer).to.equal('some-container-id')
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(1)
-          done()
-        })
-      })
-    })
-
-    describe('and errors', function () {
-      beforeEach(function (done) {
-        var dockerErr = Boom.notFound('Docker error')
-        sinon.stub(Docker.prototype, 'inspectContainer').yieldsAsync(dockerErr)
-        done()
-      })
-
-      afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore()
-        done()
-      })
-
-      it('should call original docker method 5 times and return error', function (done) {
-        var docker = new Docker()
-        docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err) {
-          expect(err.output.statusCode).to.equal(404)
-          expect(err.output.payload.message).to.equal('Docker error')
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(5)
-          done()
-        })
-      })
-
-      it('should not retry if ignoreStatusCode was specified', function (done) {
-        var docker = new Docker()
-        docker.inspectContainerWithRetry({ times: 6, ignoreStatusCode: 404 }, 'some-container-id', function (err) {
-          expect(err).to.be.null()
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(1)
-          done()
-        })
-      })
-    })
-
-    describe('with 4 errors and success', function () {
-      beforeEach(function (done) {
-        var dockerErr = Boom.notFound('Docker error')
-        var attemts = 0
-        sinon.stub(Docker.prototype, 'inspectContainer', function (container, cb) {
-          attemts++
-          if (attemts < 4) {
-            cb(dockerErr)
-          } else {
-            cb(undefined, { dockerContainer: container })
-          }
-        })
-        done()
-      })
-
-      afterEach(function (done) {
-        Docker.prototype.inspectContainer.restore()
-        done()
-      })
-
-      it('should call original docker method with retries on error and final success', function (done) {
-        var docker = new Docker()
-
-        docker.inspectContainerWithRetry({ times: 6 }, 'some-container-id', function (err, result) {
-          expect(err).to.be.undefined()
-          expect(result.dockerContainer).to.equal('some-container-id')
-          expect(Docker.prototype.inspectContainer.callCount).to.equal(4)
-          done()
         })
       })
     })
