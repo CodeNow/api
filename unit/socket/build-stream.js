@@ -17,7 +17,7 @@ var createCount = require('callback-count')
 var createFrame = require('docker-frame')
 var EventEmitter = require('events').EventEmitter
 var util = require('util')
-var dogstatsd = require('models/datadog')
+var monitorDog = require('monitor-dog')
 
 var BuildStream = require('socket/build-stream').BuildStream
 var ContextVersion = require('models/mongo/context-version')
@@ -43,6 +43,14 @@ var error
 var rejectionPromise
 
 describe('build stream: ' + moduleName, function () {
+  beforeEach(function (done) {
+    sinon.stub(monitorDog, 'captureStreamEvents').yieldsAsync()
+    done()
+  })
+  afterEach(function (done) {
+    monitorDog.captureStreamEvents.restore()
+    done()
+  })
   beforeEach(function (done) {
     var socket = {}
     var id = 4

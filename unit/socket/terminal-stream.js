@@ -1,11 +1,11 @@
 'use strict'
 
+var stream = require('stream')
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
 var beforeEach = lab.beforeEach
-// var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
@@ -14,6 +14,7 @@ var sinon = require('sinon')
 var EventEmitter = require('events').EventEmitter
 var util = require('util')
 
+var Docker = require('models/apis/docker')
 var terminalStream = require('socket/terminal-stream')
 var Instance = require('models/mongo/instance')
 var DebugContainer = require('models/mongo/debug-container')
@@ -44,6 +45,16 @@ describe('terminal stream: ' + moduleName, function () {
     error = new Error('not owner')
     rejectionPromise = Promise.reject(error)
     rejectionPromise.suppressUnhandledRejections()
+    done()
+  })
+
+  beforeEach(function (done) {
+    sinon.stub(Docker.prototype, 'execContainer').yieldsAsync(null, new stream.Readable())
+    done()
+  })
+
+  afterEach(function (done) {
+    Docker.prototype.execContainer.restore()
     done()
   })
 
@@ -241,10 +252,8 @@ describe('terminal stream: ' + moduleName, function () {
             sinon.assert.calledOnce(commonStream.checkOwnership)
             sinon.assert.calledWith(commonStream.checkOwnership, ctx.sessionUser, ctx.instance)
 
-            sinon.assert.calledTwice(ctx.socket.substream)
+            sinon.assert.calledOnce(ctx.socket.substream)
             sinon.assert.calledWith(ctx.socket.substream, ctx.data.terminalStreamId)
-            sinon.assert.calledWith(ctx.socket.substream, ctx.data.eventStreamId)
-
             done()
           })
           .catch(done)
