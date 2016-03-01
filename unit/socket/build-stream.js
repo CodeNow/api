@@ -44,7 +44,7 @@ var rejectionPromise
 
 describe('build stream: ' + moduleName, function () {
   beforeEach(function (done) {
-    sinon.stub(monitorDog, 'captureStreamEvents').yieldsAsync()
+    sinon.stub(monitorDog, 'captureStreamEvents').returns()
     done()
   })
   afterEach(function (done) {

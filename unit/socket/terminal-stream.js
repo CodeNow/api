@@ -40,7 +40,6 @@ var moduleName = path.relative(process.cwd(), __filename)
 var error
 var rejectionPromise
 
-
 describe('terminal stream: ' + moduleName, function () {
   beforeEach(function (done) {
     error = new Error('not owner')
@@ -48,7 +47,6 @@ describe('terminal stream: ' + moduleName, function () {
     rejectionPromise.suppressUnhandledRejections()
     done()
   })
-
 
   beforeEach(function (done) {
     var stream = through2()
