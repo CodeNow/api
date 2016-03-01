@@ -122,18 +122,15 @@ describe('User ' + moduleName, function () {
       done()
     })
     it('should just fetch the user from the database', function (done) {
-      var userJson = user.toJSON()
-      delete userJson.password
+      var userGithub = user.accounts.github
       User.anonymousFindGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
         if (err) { done(err) }
         sinon.assert.notCalled(Github.prototype.getUserById)
-        expect(userFromDb).to.deep.equal(userJson)
+        expect(userFromDb).to.deep.equal(userGithub)
         done()
       })
     })
     it('should fetch from github when the result isn\'t in the database', function (done) {
-      var userJson = user.toJSON()
-      delete userJson.password
       User.anonymousFindGithubUserByGithubId('123123123', function (err, userFromMock) {
         if (err) { done(err) }
         sinon.assert.calledOnce(Github.prototype.getUserById)
