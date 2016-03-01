@@ -20,6 +20,7 @@ var Faker = require('faker')
 var nock = require('nock')
 var sinon = require('sinon')
 var Github = require('models/apis/github')
+require('sinon-as-promised')(require('bluebird'))
 
 var User = require('models/mongo/user')
 var githubAPIUsernameQueryMock = require('../../../test/functional/fixtures/mocks/github/users-username')
@@ -119,20 +120,35 @@ describe('User ' + moduleName, function () {
     })
     afterEach(function (done) {
       Github.prototype.getUserById.restore()
+      User.findOneAsync.restore()
       done()
     })
     it('should just fetch the user from the database', function (done) {
       var userGithub = user.accounts.github
+      sinon.stub(User, 'findOneAsync').resolves(user)
       User.anonymousFindGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
         if (err) { done(err) }
+        sinon.assert.calledOnce(User.findOneAsync)
         sinon.assert.notCalled(Github.prototype.getUserById)
         expect(userFromDb).to.deep.equal(userGithub)
         done()
       })
     })
     it('should fetch from github when the result isn\'t in the database', function (done) {
+      sinon.stub(User, 'findOneAsync').resolves()
       User.anonymousFindGithubUserByGithubId('123123123', function (err, userFromMock) {
         if (err) { done(err) }
+        sinon.assert.calledOnce(User.findOneAsync)
+        sinon.assert.calledOnce(Github.prototype.getUserById)
+        expect(userFromMock).to.deep.equal(mockResponse)
+        done()
+      })
+    })
+    it('should fetch from github when the database query fails', function (done) {
+      sinon.stub(User, 'findOneAsync').rejects(new Error('hello'))
+      User.anonymousFindGithubUserByGithubId('123123123', function (err, userFromMock) {
+        if (err) { done(err) }
+        sinon.assert.calledOnce(User.findOneAsync)
         sinon.assert.calledOnce(Github.prototype.getUserById)
         expect(userFromMock).to.deep.equal(mockResponse)
         done()
