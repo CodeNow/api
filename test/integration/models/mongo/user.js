@@ -82,7 +82,7 @@ describe('User ' + moduleName, function () {
     })
     it('should just fetch the user from the database', function (done) {
       User.anonymousFindGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
-        if (err) { done(err) }
+        if (err) { return done(err) }
         sinon.assert.notCalled(Github.prototype.getUserById)
         expect(userFromDb.login, 'login').to.exist()
         expect(userFromDb.login, 'login').to.equal(username)
@@ -93,7 +93,7 @@ describe('User ' + moduleName, function () {
     })
     it('should fetch from github when the result isn\'t in the database', function (done) {
       User.anonymousFindGithubUserByGithubId('123123123', function (err, userFromMock) {
-        if (err) { done(err) }
+        if (err) { return done(err) }
         sinon.assert.calledOnce(Github.prototype.getUserById)
         expect(userFromMock).to.deep.equal(mockResponse)
         done()
