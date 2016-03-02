@@ -14,6 +14,7 @@ var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
 var Bunyan = require('bunyan')
+var Github = require('models/apis/github')
 var Instance = require('models/mongo/instance')
 var InstanceForkService = require('models/services/instance-fork-service')
 var Isolation = require('models/mongo/isolation')
@@ -29,6 +30,11 @@ describe('Isolation Services Model', function () {
       name: 'instanceName',
       env: [ 'foo=bar' ]
     }
+    var mockBranchInfo = {
+      commit: {
+        sha: 'beefisgood'
+      }
+    }
     var mockMasterShortHash = 'deadbeef'
     var mockIsolationId = 'deadbeefdeadbeefdeadbeef'
     var mockSessionUser = { accounts: { github: { id: 4 } } }
@@ -42,12 +48,14 @@ describe('Isolation Services Model', function () {
       }
       sinon.stub(Instance, 'findMasterInstancesForRepo').yieldsAsync(null, [ mockInstance ])
       sinon.stub(InstanceForkService, 'forkRepoInstance').resolves(mockNewInstance)
+      sinon.stub(Github.prototype, 'getBranch').yieldsAsync(null, mockBranchInfo)
       done()
     })
 
     afterEach(function (done) {
       Instance.findMasterInstancesForRepo.restore()
       InstanceForkService.forkRepoInstance.restore()
+      Github.prototype.getBranch.restore()
       done()
     })
 
@@ -139,6 +147,17 @@ describe('Isolation Services Model', function () {
         )
       })
 
+      it('should reject with any github error', function (done) {
+        Github.prototype.getBranch.yieldsAsync(new Error('robot'))
+        IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash, mockIsolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/robot/i)
+            done()
+          }
+        )
+      })
+
       it('should reject with any forkRepoInstance error', function (done) {
         var error = new Error('pugsly')
         InstanceForkService.forkRepoInstance.rejects(error)
@@ -167,6 +186,22 @@ describe('Isolation Services Model', function () {
       )
     })
 
+    it('should fetch the latest commit for the branch', function (done) {
+      IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash, mockIsolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Github.prototype.getBranch)
+          sinon.assert.calledWithExactly(
+            Github.prototype.getBranch,
+            'someOrg/someRepo',
+            'someBranch',
+            sinon.match.func
+          )
+          done()
+        }
+      )
+    })
+
     it('should fork said instance using the forkRepoInstance', function (done) {
       IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
@@ -182,8 +217,7 @@ describe('Isolation Services Model', function () {
               isIsolationGroupMaster: false,
               repo: 'someOrg/someRepo',
               branch: 'someBranch',
-              // FIXME(bkendall): this isn't valid
-              commit: sinon.match.string,
+              commit: 'beefisgood',
               user: { id: mockSessionUser.accounts.github.id }
             },
             mockSessionUser
