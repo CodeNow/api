@@ -116,7 +116,7 @@ describe('terminal stream: ' + moduleName, function () {
       done()
     })
 
-    describe('Faliures', function () {
+    describe('Failures', function () {
       describe('model fetch failures', function () {
         beforeEach(function (done) {
           sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
