@@ -179,7 +179,12 @@ describe('Isolation Services Model', function () {
               name: 'deadbeef--instanceName',
               env: [ 'foo=bar' ],
               isolated: mockIsolationId,
-              isIsolationGroupMaster: false
+              isIsolationGroupMaster: false,
+              repo: 'someOrg/someRepo',
+              branch: 'someBranch',
+              // FIXME(bkendall): this isn't valid
+              commit: sinon.match.string,
+              user: { id: mockSessionUser.accounts.github.id }
             },
             mockSessionUser
           )

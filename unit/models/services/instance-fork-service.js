@@ -413,7 +413,9 @@ describe('InstanceForkService: ' + moduleName, function () {
         }
       }
     }
-    var mockNewInstance
+    var mockNewInstance = {
+      _id: 'mockNewInstanceId'
+    }
     var mockNewContextVersion = {
       _id: 'newContextVersionId'
     }
@@ -441,12 +443,15 @@ describe('InstanceForkService: ' + moduleName, function () {
       mockClient.createInstance = sinon.stub().yieldsAsync(null, mockNewInstance)
       sinon.stub(InstanceForkService, '_createNewContextVersion').resolves(mockNewContextVersion)
       sinon.stub(Runnable, 'createClient').returns(mockClient)
+      sinon.stub(Instance, 'findById')
+        .withArgs('mockNewInstanceId', sinon.match.func).yieldsAsync(null, mockNewInstance)
       done()
     })
 
     afterEach(function (done) {
       InstanceForkService._createNewContextVersion.restore()
       Runnable.createClient.restore()
+      Instance.findById.restore()
       done()
     })
 
@@ -539,7 +544,7 @@ describe('InstanceForkService: ' + moduleName, function () {
           sinon.assert.calledWithExactly(
             mockClient.createAndBuildBuild,
             'newContextVersionId',
-            'mockGithubId',
+            'instanceOwnerId',
             'mockRepo',
             'mockCommit',
             sinon.match.func
@@ -565,6 +570,21 @@ describe('InstanceForkService: ' + moduleName, function () {
               isolated: 'mockIsolationId',
               isIsolationGroupMaster: false
             },
+            sinon.match.func
+          )
+          done()
+        }
+      )
+    })
+
+    it('should fetch the instance from the database', function (done) {
+      InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
+        .asCallback(function (err, instance) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findById)
+          sinon.assert.calledWithExactly(
+            Instance.findById,
+            'mockNewInstanceId',
             sinon.match.func
           )
           done()
