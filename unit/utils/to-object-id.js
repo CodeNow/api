@@ -8,7 +8,7 @@ var Code = require('code')
 var expect = Code.expect
 
 var ObjectId = require('mongoose').Types.ObjectId
-var toObjectId = require('utils/to-object-id')
+var toObjectId = require('objectid')
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
