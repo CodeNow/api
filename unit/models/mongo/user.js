@@ -60,7 +60,7 @@ describe('User ' + moduleName, function () {
             username: username,
             emails: Faker.Internet.email(),
             avatar_url: 'fasdfasdfadsfadsfadsf',
-            login: 'asdasda'
+            login: username
           }
         }
       })
@@ -126,15 +126,15 @@ describe('User ' + moduleName, function () {
       done()
     })
     it('should just fetch the user from the database', function (done) {
-      var userGithub = user.toJSON().accounts.github
       sinon.stub(User, 'findOneAsync').resolves(user)
       User.anonymousFindGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
         if (err) { done(err) }
         sinon.assert.calledOnce(User.findOneAsync)
         sinon.assert.notCalled(Github.prototype.getUserById)
-        expect(userFromDb).to.deep.equal(userGithub)
-        expect(userFromDb.login).to.exist()
-        expect(userFromDb.avatar_url).to.exist()
+        expect(userFromDb.login, 'login').to.exist()
+        expect(userFromDb.login, 'login').to.equal(username)
+        expect(userFromDb.avatar_url, 'avatar_url').to.exist()
+        expect(userFromDb.avatar_url, 'avatar_url').to.equal('fasdfasdfadsfadsfadsf')
         done()
       })
     })
