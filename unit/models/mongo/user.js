@@ -58,7 +58,9 @@ describe('User ' + moduleName, function () {
             accessToken: randomInt() + '',
             refreshToken: randomInt() + '',
             username: username,
-            emails: Faker.Internet.email()
+            emails: Faker.Internet.email(),
+            avatar_url: 'fasdfasdfadsfadsfadsf',
+            login: 'asdasda'
           }
         }
       })
@@ -124,13 +126,15 @@ describe('User ' + moduleName, function () {
       done()
     })
     it('should just fetch the user from the database', function (done) {
-      var userGithub = user.accounts.github
+      var userGithub = user.toJSON().accounts.github
       sinon.stub(User, 'findOneAsync').resolves(user)
       User.anonymousFindGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
         if (err) { done(err) }
         sinon.assert.calledOnce(User.findOneAsync)
         sinon.assert.notCalled(Github.prototype.getUserById)
         expect(userFromDb).to.deep.equal(userGithub)
+        expect(userFromDb.login).to.exist()
+        expect(userFromDb.avatar_url).to.exist()
         done()
       })
     })
