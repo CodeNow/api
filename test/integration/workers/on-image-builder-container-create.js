@@ -133,6 +133,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
       })
       describe('With one instance', function () {
         it('should emit the single CV and instance events', function (done) {
+          require('./mocks/docker/build-logs.js')(null, null)
           var job = mockOnBuilderCreateMessage(ctx.cv)
           OnImageBuilderContainerCreate(job)
             .then(function () {

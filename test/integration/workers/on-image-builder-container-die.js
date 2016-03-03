@@ -8,23 +8,24 @@ var after = lab.after
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 
+var Build = require('models/mongo/build.js')
 var createCount = require('callback-count')
+var ContextVersion = require('models/mongo/context-version.js')
+var Docker = require('models/apis/docker')
+var Dockerode = require('dockerode')
+var dock = require('../../functional/fixtures/dock')
+var Instance = require('models/mongo/instance.js')
+var keypather = require('keypather')()
+var messenger = require('socket/messenger')
+var mongooseControl = require('models/mongo/mongoose-control.js')
+var mockFactory = require('../fixtures/factory')
+var mockOnBuilderDieMessage = require('../fixtures/dockerListenerEvents/on-image-builder-container-die')
+var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js')
 var rabbitMQ = require('models/rabbitmq')
 var sinon = require('sinon')
-var Docker = require('models/apis/docker')
-var dock = require('../../functional/fixtures/dock')
-var dockerMockEvents = require('../../functional/fixtures/docker-mock-events')
-var mongooseControl = require('models/mongo/mongoose-control.js')
-var Build = require('models/mongo/build.js')
-var ContextVersion = require('models/mongo/context-version.js')
-var Instance = require('models/mongo/instance.js')
-var User = require('models/mongo/user.js')
-var messenger = require('socket/messenger')
+var stream = require('stream')
 var toObjectId = require('utils/to-object-id')
-var dockerListenerRabbit = require('docker-listener/lib/hermes-client.js')
-var mockFactory = require('../fixtures/factory')
-
-var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js')
+var User = require('models/mongo/user.js')
 
 describe('OnImageBuilderContainerDie Integration Tests', function () {
   before(mongooseControl.start)
@@ -34,28 +35,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     done()
   })
   before(dock.start.bind(ctx))
-  before(function (done) {
-    var oldPublish = dockerListenerRabbit.publish
-    sinon.stub(dockerListenerRabbit, 'publish', function (queue, data) {
-      if (queue === 'on-image-builder-container-die') {
-        OnImageBuilderContainerDie(data)
-          .asCallback(function (err) {
-            ctx.workerCallback(err)
-          })
-        return
-      }
-      if (queue !== 'on-image-builder-container-create') {
-        oldPublish.bind(dockerListenerRabbit)(queue, data)
-      }
-    })
-    rabbitMQ.connect(done)
-    rabbitMQ.loadWorkers()
-  })
-
-  after(function (done) {
-    dockerListenerRabbit.publish.restore()
-    rabbitMQ.close(done)
-  })
   after(dock.stop.bind(ctx))
   beforeEach(deleteMongoDocs)
   afterEach(deleteMongoDocs)
@@ -65,6 +44,38 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     Instance.remove({}, count.next)
     Build.remove({}, count.next)
     User.remove({}, count.next)
+  }
+  function createStreamFunction (failed, errored) {
+    var originalGetContainer = Dockerode.prototype.getContainer
+    return function (done) {
+      sinon.stub(Dockerode.prototype, 'getContainer', function () {
+        var container = originalGetContainer.apply(this, arguments)
+        var containerId = keypather.get(ctx, 'usedDockerContainer.id')
+        var Readable = stream.Readable
+        var buffStream = new Readable()
+        if (containerId) {
+          var header = new Buffer(8)
+          header.fill(1)
+          var body
+          if (!failed) {
+            body = new Buffer('{"type":"log","content":"Successfully built ' + containerId + '"}')
+          } else {
+            body = new Buffer('{"type":"log","content":"failfailfai fail fail fail"}')
+          }
+          var buff
+          if (errored) {
+            buff = Buffer.concat([body]) // will trigger error
+          } else {
+            buff = Buffer.concat([header, body])
+          }
+          buffStream.push(buff)
+        }
+        buffStream.push(null)
+        container.logs = sinon.stub().yieldsAsync(null, buffStream)
+        return container
+      })
+      done()
+    }
   }
   after(mongooseControl.stop)
 
@@ -181,10 +192,17 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         done()
       })
       describe('With a successful build', function () {
+        beforeEach(createStreamFunction())
+        afterEach(function (done) {
+          Dockerode.prototype.getContainer.restore()
+          done()
+        })
+
         it('should attempt to deploy', function (done) {
-          ctx.workerCallback = function (err) {
-            if (err) { return done(err) }
-            try {
+          var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user)
+          OnImageBuilderContainerDie(job)
+            .asCallback(function (err) {
+              if (err) { done(err) }
               sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
               sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
               sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
@@ -270,18 +288,21 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                   done()
                 })
               })
-            } catch (e) {
-              done(e)
-            }
-          }
-          dockerMockEvents.emitBuildComplete(ctx.cv)
+            })
         })
       })
       describe('With an unsuccessful build', function () {
+        beforeEach(createStreamFunction(true))
+        afterEach(function (done) {
+          Dockerode.prototype.getContainer.restore()
+          done()
+        })
+
         it('should update the UI with a socket event', function (done) {
-          ctx.workerCallback = function (err) {
-            if (err) { return done(err) }
-            try {
+          var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user, 1)
+          OnImageBuilderContainerDie(job)
+            .asCallback(function (err) {
+              if (err) { return done(err) }
               sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
 
               sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
@@ -365,18 +386,21 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                   done()
                 })
               })
-            } catch (e) {
-              done(e)
-            }
-          } // stub end
-          dockerMockEvents.emitBuildComplete(ctx.cv, 'This is an error')
+            })
         })
       })
       describe('With an error getting the build logs', function () {
+        beforeEach(createStreamFunction(false, true))
+        afterEach(function (done) {
+          Dockerode.prototype.getContainer.restore()
+          done()
+        })
+
         it('should not update the UI', function (done) {
-          ctx.workerCallback = function (err) {
-            expect(err).to.exist()
-            try {
+          var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user, 1)
+          OnImageBuilderContainerDie(job)
+            .asCallback(function (err) {
+              expect(err).to.exist()
               sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildComplete)
               sinon.assert.notCalled(ContextVersion.updateBuildErrorByContainer)
 
@@ -402,11 +426,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                   done()
                 })
               })
-            } catch (e) {
-              done(e)
-            }
-          } // stub end
-          dockerMockEvents.emitBuildComplete(ctx.cv, false, true)
+            })
         })
       })
       describe('With 2 CVs, one that dedups', function () {
@@ -438,12 +458,17 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               done(err)
             })
           })
+          beforeEach(createStreamFunction())
+          afterEach(function (done) {
+            Dockerode.prototype.getContainer.restore()
+            done()
+          })
+
           it('should update the instance with the second cv, and update both cvs', function (done) {
-            ctx.workerCallback = function (err) {
-              if (err) {
-                return done(err)
-              }
-              try {
+            var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user)
+            OnImageBuilderContainerDie(job)
+              .asCallback(function (err) {
+                if (err) { return done(err) }
                 sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
                 sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
                 sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
@@ -561,11 +586,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                     })
                   })
                 })
-              } catch (e) {
-                done(e)
-              }
-            } // stub end
-            dockerMockEvents.emitBuildComplete(ctx.cv)
+              })
           })
         })
       })
