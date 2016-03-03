@@ -4,7 +4,6 @@
 'use strict'
 require('loadenv')()
 
-var Boom = require('dat-middleware').Boom
 var clone = require('101/clone')
 var Code = require('code')
 var Container = require('dockerode/lib/container')
@@ -814,50 +813,6 @@ describe('docker: ' + moduleName, function () {
         model.handleErr.restore()
         done()
       })
-    })
-  })
-
-  describe('isImageNotFoundForCreateErr', function () {
-    it('should return true if it is', function (done) {
-      var err = new Error('no such container')
-      err.reason = err.message
-      err.statusCode = 404
-      var boomErr = Boom.notFound(
-        'Create container failed: ' + 'no such container', { err: err })
-      expect(Docker.isImageNotFoundForCreateErr(boomErr)).to.be.true()
-      expect(Docker.isImageNotFoundForCreateErr(boomErr.data.err)).to.be.true()
-      done()
-    })
-    it('should return false if not', function (done) {
-      expect(Docker.isImageNotFoundForCreateErr(null))
-        .to.be.false()
-      expect(Docker.isImageNotFoundForCreateErr({ statusCode: 500 }))
-        .to.be.false()
-      expect(Docker.isImageNotFoundForCreateErr({ statusCode: 404 }))
-        .to.be.false()
-      expect(Docker.isImageNotFoundForCreateErr({ statusCode: 404, reason: 'blah' }))
-        .to.be.false()
-      done()
-    })
-  })
-
-  describe('isImageNotFoundForPullErr', function () {
-    it('should return true if it is', function (done) {
-      var boomErr = Boom.notFound(
-        'Create container failed: ' + 'image: dockerTag not found')
-      expect(Docker.isImageNotFoundForPullErr(boomErr)).to.be.true()
-      done()
-    })
-    it('should return false if not', function (done) {
-      expect(Docker.isImageNotFoundForPullErr(new Error()))
-        .to.be.false()
-      var boomErr = Boom.conflict('foo')
-      expect(Docker.isImageNotFoundForPullErr(boomErr))
-        .to.be.false()
-      boomErr = Boom.notFound('bar')
-      expect(Docker.isImageNotFoundForPullErr(boomErr))
-        .to.be.false()
-      done()
     })
   })
 
