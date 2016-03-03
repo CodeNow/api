@@ -212,17 +212,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 sinon.match({_id: ctx.cv._id}),
                 'build_completed'
               )
-              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
-              sinon.assert.calledWith(
-                Instance.emitInstanceUpdates,
-                sinon.match({
-                  _id: ctx.user._id
-                }), {
-                  'contextVersion._id': { $in: [ctx.cv._id] }
-                },
-                'patch'
-              )
-              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
               sinon.assert.calledTwice(messenger.messageRoom)
 
               var cvCall = messenger.messageRoom.getCall(0)
@@ -313,17 +302,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 sinon.match({_id: ctx.cv._id}),
                 'build_completed'
               )
-              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
-              sinon.assert.calledWith(
-                Instance.emitInstanceUpdates,
-                sinon.match({
-                  _id: ctx.user._id
-                }), {
-                  'contextVersion._id': { $in: [ctx.cv._id] }
-                },
-                'patch'
-              )
-              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
               sinon.assert.calledTwice(messenger.messageRoom)
 
               // the first call is a build_running
@@ -483,17 +461,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                   sinon.match({_id: ctx.cv2._id}),
                   'build_completed'
                 )
-                sinon.assert.calledOnce(Instance.emitInstanceUpdates)
-                sinon.assert.calledWith(
-                  Instance.emitInstanceUpdates,
-                  sinon.match({
-                    _id: ctx.user._id
-                  }), {
-                    'contextVersion._id': { $in: sinon.match.array }
-                  },
-                  'patch'
-                )
-                sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
                 sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
 
                 sinon.assert.calledWith(messenger._emitInstanceUpdateAction, sinon.match({

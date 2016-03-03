@@ -238,61 +238,6 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     })
   })
 
-  describe('_emitInstanceUpdateEvents', function () {
-    beforeEach(function (done) {
-      ctx.mockUser = {}
-      ctx.mockInstances = [{}, {}, {}]
-      sinon.stub(User, 'findByGithubId').yieldsAsync(null, ctx.mockUser)
-      sinon.stub(Instance, 'emitInstanceUpdatesAsync').resolves(ctx.mockInstances)
-      sinon.stub(ContextVersion, 'findByBuildDockerContainerAsync').resolves([ctx.mockContextVersion])
-      sinon.stub(messenger, 'emitInstanceUpdate')
-      done()
-    })
-    afterEach(function (done) {
-      User.findByGithubId.restore()
-      Instance.emitInstanceUpdatesAsync.restore()
-      ContextVersion.findByBuildDockerContainerAsync.restore()
-      messenger.emitInstanceUpdate.restore()
-      done()
-    })
-
-    it('should emit instance update events', function (done) {
-      OnImageBuilderContainerDie._emitInstanceUpdateEvents(ctx.data).asCallback(function (err) {
-        if (err) { return done(err) }
-        sinon.assert.calledWith(User.findByGithubId, ctx.data.inspectData.Config.Labels.sessionUserGithubId)
-        sinon.assert.calledWith(
-          Instance.emitInstanceUpdatesAsync,
-          ctx.mockUser,
-          {
-            'contextVersion._id': { $in: [ctx.mockContextVersion._id] }
-          },
-          'patch'
-        )
-        done()
-      })
-    })
-
-    describe('No Instances Found', function () {
-      it('should report to Rollbar if there are no instances to create containers for but not throw an error', function (done) {
-        Instance.emitInstanceUpdatesAsync.resolves([])
-
-        OnImageBuilderContainerDie._emitInstanceUpdateEvents(ctx.data).asCallback(function (err) {
-          if (err) { return done(err) }
-          sinon.assert.calledWith(User.findByGithubId, ctx.data.inspectData.Config.Labels.sessionUserGithubId)
-          sinon.assert.calledWith(
-            Instance.emitInstanceUpdatesAsync,
-            ctx.mockUser,
-            {
-              'contextVersion._id': { $in: [ctx.mockContextVersion._id] }
-            },
-            'patch'
-          )
-          done()
-        })
-      })
-    })
-  })
-
   describe('_createContainersIfSuccessful ', function () {
     var contextVersionId = 2
     var instanceId = 3
