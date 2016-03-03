@@ -14,4 +14,7 @@
 - [ ] Additional test...
 
 ### Integration Test
+Please follow the guidelines presented in the [How to Test an API PR](https://github.com/CodeNow/devops-scripts/wiki/How-to-Test-an-API-PR)
+article when setting-up and performing tests.
+
 - [ ] Integration Tested @ commitsh by person_3 on (gamma|epsilon|staging)
