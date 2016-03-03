@@ -312,8 +312,8 @@ function itShouldBuildTheBuild (ctx) {
             docker.docker.getContainer(cv.build.dockerContainer).inspect(function (err, data) {
               if (err) { return done(err) }
 
-              var expectedBindsLength = 0
-              var expectedBindsValues = []
+              var expectedBindsLength = 1
+              var expectedBindsValues = [new RegExp('/var/run/docker.sock:/var/run/docker.sock')]
               if (process.env.DOCKER_IMAGE_BUILDER_CACHE) {
                 expectedBindsLength++
                 expectedBindsValues.push(new RegExp(process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw'))
