@@ -211,7 +211,7 @@ describe('Isolation Services Model', function () {
             InstanceForkService.forkRepoInstance,
             mockInstance,
             {
-              name: 'deadbeef--instanceName',
+              name: 'deadbeef--someRepo',
               env: [ 'foo=bar' ],
               isolated: mockIsolationId,
               isIsolationGroupMaster: false,

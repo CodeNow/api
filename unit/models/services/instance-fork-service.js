@@ -432,11 +432,14 @@ describe('InstanceForkService: ' + moduleName, function () {
         owner: { github: 'instanceOwnerId' }
       }
       mockOpts = {
+        name: 'mockInstanceShortHash--mockInstanceRepo',
+        env: mockInstance.env,
         repo: 'mockRepo',
         branch: 'mockBranch',
         commit: 'mockCommit',
         user: { id: 'mockGithubId' },
-        isolated: 'mockIsolationId'
+        isolated: 'mockIsolationId',
+        isIsolationGroupMaster: false
       }
       mockClient = {}
       mockClient.createAndBuildBuild = sinon.stub().yieldsAsync(null, mockNewBuild)
@@ -563,7 +566,7 @@ describe('InstanceForkService: ' + moduleName, function () {
             mockClient.createInstance,
             {
               build: 'newBuildId',
-              name: 'mockInstanceShortHash--mockInstanceName',
+              name: 'mockInstanceShortHash--mockInstanceRepo',
               env: ['env'],
               owner: { github: 'instanceOwnerId' },
               masterPod: false,
