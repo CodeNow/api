@@ -135,10 +135,11 @@ describe('Instance Model Tests ' + moduleName, function () {
         done()
       })
     })
-    it('should return an error if instance was not found', function (done) {
+    it('should return null if instance was not found', function (done) {
       Instance.findOne.yieldsAsync(null, null)
       Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
-        expect(err.message).to.equal('Instance container has changed')
+        expect(err).to.not.exist()
+        expect(instance).to.be.null()
         sinon.assert.calledOnce(Instance.findOne)
         done()
       })
@@ -234,10 +235,11 @@ describe('Instance Model Tests ' + moduleName, function () {
         done()
       })
     })
-    it('should return an error if instance was not found', function (done) {
+    it('should return null if instance was not found', function (done) {
       Instance.findOne.yieldsAsync(null, null)
       Instance.findOneStopping(mockInstance._id, 'container-id', function (err, instance) {
-        expect(err.message).to.equal('Instance container has changed')
+        expect(err).to.not.exist()
+        expect(instance).to.be.null()
         sinon.assert.calledOnce(Instance.findOne)
         done()
       })
