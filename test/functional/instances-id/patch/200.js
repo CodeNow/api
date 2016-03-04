@@ -178,7 +178,6 @@ describe('200 PATCH /instances/:id', function () {
           env: ['ENV=OLD'],
           build: ctx.build.id()
         }, function (err, body, statusCode) {
-          console.log('xxxxx', err)
           if (err) { return done(err) }
           expectInstanceUpdated(body, statusCode, ctx.user, ctx.build, ctx.cv)
           // wait until build is ready to finish the test

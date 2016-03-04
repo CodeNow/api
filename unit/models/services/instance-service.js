@@ -2,6 +2,7 @@
  * @module unit/models/services/instance-service
  */
 var clone = require('101/clone')
+var keypather = require('keypather')()
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var sinon = require('sinon')
@@ -11,6 +12,7 @@ var Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
 
 var cleanMongo = require('../../../test/functional/fixtures/clean-mongo.js')
+var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var dock = require('../../../test/functional/fixtures/dock')
@@ -39,10 +41,7 @@ var expectErr = function (expectedErr, done) {
   }
 }
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('InstanceService: ' + moduleName, function () {
+describe('InstanceService', function () {
   var ctx
   before(dock.start)
   before(mongo.connect)
@@ -51,6 +50,182 @@ describe('InstanceService: ' + moduleName, function () {
   beforeEach(function (done) {
     ctx = {}
     done()
+  })
+
+  describe('updateInstanceBuild', function () {
+    beforeEach(function (done) {
+      var instance = {
+        _id: 'instance_id_1',
+        shortHash: 'abc1',
+        name: 'hellonode',
+        masterPod: false,
+        owner: {
+          github: 4,
+          username: 'anton'
+        },
+        contextVersion: {
+          appCodeVersions: [
+            {
+              lowerBranch: 'master',
+              additionalRepo: false
+            }
+          ]
+        }
+      }
+      var build = {
+        _id: 'build_id_1',
+        successful: true,
+        contextVersions: [
+          'cv_id'
+        ]
+      }
+      sinon.stub(Instance, 'findByIdAndUpdateAsync').resolves(instance)
+      sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
+      sinon.stub(Build, 'findByIdAsync').resolves(build)
+      sinon.stub(rabbitMQ, 'createInstanceContainer').returns()
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findByIdAndUpdateAsync.restore()
+      rabbitMQ.deleteInstanceContainer.restore()
+      Build.findByIdAsync.restore()
+      rabbitMQ.createInstanceContainer.restore()
+      done()
+    })
+    it('should return an error if instance update failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findByIdAndUpdateAsync.rejects(mongoError)
+      var updates = {
+        build: 'build_id'
+      }
+      InstanceService.updateInstanceBuild({ _id: 'instance_id_1' }, updates, 12345)
+        .asCallback(function (err) {
+          expect(err).to.equal(mongoError)
+          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
+          sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+          sinon.assert.notCalled(Build.findByIdAsync)
+          sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+          done()
+        })
+    })
+    it('should not publish jobs if instance was not found', function (done) {
+      Instance.findByIdAndUpdateAsync.resolves(null)
+      var updates = {
+        build: 'build_id'
+      }
+      InstanceService.updateInstanceBuild({ _id: 'instance_id_1' }, updates, 12345)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
+          sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+          sinon.assert.calledOnce(Build.findByIdAsync)
+          sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+          done()
+        })
+    })
+    it('should return an error if build find failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Build.findByIdAsync.rejects(mongoError)
+      var updates = {
+        build: 'build_id'
+      }
+      InstanceService.updateInstanceBuild({ _id: 'instance_id_1' }, updates, 12345)
+        .asCallback(function (err) {
+          expect(err).to.equal(mongoError)
+          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
+          sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+          sinon.assert.calledOnce(Build.findByIdAsync)
+          sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+          done()
+        })
+    })
+    it('should not publish create instance job if build was not found', function (done) {
+      Build.findByIdAsync.resolves(null)
+      var updates = {
+        build: 'build_id'
+      }
+      InstanceService.updateInstanceBuild({ _id: 'instance_id_1' }, updates, 12345)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
+          sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+          sinon.assert.calledOnce(Build.findByIdAsync)
+          sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+          done()
+        })
+    })
+    it('should not publish create instance job if build was not successully', function (done) {
+      Build.findByIdAsync.resolves({ _id: 'build_id', successful: false })
+      var updates = {
+        build: 'build_id'
+      }
+      InstanceService.updateInstanceBuild({ _id: 'instance_id_1' }, updates, 12345)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
+          sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+          sinon.assert.calledOnce(Build.findByIdAsync)
+          sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+          done()
+        })
+    })
+    it('should call 4 functions in the order', function (done) {
+      var updates = {
+        build: 'build_id'
+      }
+      var instance = {
+        _id: 'instance_id_1',
+        shortHash: 'abc1',
+        name: 'hellonode',
+        masterPod: false,
+        owner: {
+          github: 4,
+          username: 'anton'
+        },
+        contextVersion: {
+          appCodeVersions: [
+            {
+              lowerBranch: 'master',
+              additionalRepo: false
+            }
+          ]
+        },
+        container: {
+          dockerContainer: 'somecontainerid'
+        }
+      }
+      InstanceService.updateInstanceBuild(instance, updates, 12345)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
+          sinon.assert.calledWith(Instance.findByIdAndUpdateAsync, 'instance_id_1', {
+            $set: updates, $unset: { container: 1 } })
+          sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
+          sinon.assert.calledWith(rabbitMQ.deleteInstanceContainer, {
+            instanceShortHash: instance.shortHash,
+            instanceName: instance.name,
+            instanceMasterPod: instance.masterPod,
+            instanceMasterBranch: 'master',
+            container: instance.container,
+            ownerGithubId: keypather.get(instance, 'owner.github'),
+            ownerGithubUsername: keypather.get(instance, 'owner.username')
+          })
+          sinon.assert.calledOnce(Build.findByIdAsync)
+          sinon.assert.calledWith(Build.findByIdAsync, 'build_id')
+          sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
+          sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
+            instanceId: 'instance_id_1',
+            contextVersionId: 'cv_id',
+            sessionUserGithubId: 12345,
+            ownerUsername: keypather.get(instance, 'owner.username')
+          })
+          sinon.assert.callOrder(Instance.findByIdAndUpdateAsync,
+            rabbitMQ.deleteInstanceContainer,
+            Build.findByIdAsync,
+            rabbitMQ.createInstanceContainer)
+          done()
+        })
+    })
   })
 
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
