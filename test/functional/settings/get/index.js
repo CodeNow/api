@@ -45,10 +45,6 @@ describe('GET /settings', function () {
           githubUsernameToSlackIdMap: {
             'cheese': 'U023BECGF'
           }
-        },
-        hipchat: {
-          authToken: 'some-hipchat-token',
-          roomId: 123123
         }
       }
     }
@@ -103,12 +99,6 @@ describe('GET /settings', function () {
           expect(returnedSettings.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
             settings.notifications.slack.githubUsernameToSlackIdMap
           )
-          expect(returnedSettings.notifications.hipchat.authToken).to.equal(
-            settings.notifications.hipchat.authToken
-          )
-          expect(returnedSettings.notifications.hipchat.roomId).to.equal(
-            settings.notifications.hipchat.roomId
-          )
           done()
         })
       })
@@ -130,12 +120,6 @@ describe('GET /settings', function () {
           )
           expect(settings.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
             settings.notifications.slack.githubUsernameToSlackIdMap
-          )
-          expect(settings.notifications.hipchat.authToken).to.equal(
-            settings.notifications.hipchat.authToken
-          )
-          expect(settings.notifications.hipchat.roomId).to.equal(
-            settings.notifications.hipchat.roomId
           )
           done()
         })
@@ -176,12 +160,6 @@ describe('GET /settings', function () {
           )
           expect(body.notifications.slack.authToken).to.equal(
             settings.notifications.slack.authToken
-          )
-          expect(body.notifications.hipchat.authToken).to.equal(
-            settings.notifications.hipchat.authToken
-          )
-          expect(body.notifications.hipchat.roomId).to.equal(
-            settings.notifications.hipchat.roomId
           )
           expect(body.ignoredHelpCards).to.only.include(
             settings.ignoredHelpCards
