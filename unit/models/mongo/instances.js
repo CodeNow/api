@@ -24,7 +24,7 @@ var mongoose = require('mongoose')
 var noop = require('101/noop')
 var pick = require('101/pick')
 var pluck = require('101/pluck')
-var toObjectId = require('utils/to-object-id')
+var objectId = require('objectid')
 
 var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
@@ -482,7 +482,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         stack: 'random stack',
         field: 'random field'
       }
-      var cvId = toObjectId(savedInstance.contextVersion._id)
+      var cvId = objectId(savedInstance.contextVersion._id)
       savedInstance.modifyContainerCreateErr(cvId, appError, function (err, newInst) {
         if (err) { return done(err) }
         expect(newInst.container.error.message).to.equal(appError.message)
