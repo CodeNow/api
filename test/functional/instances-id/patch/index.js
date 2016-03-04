@@ -250,7 +250,7 @@ describe('Instance - PATCH /instances/:id', function () {
                 function (done) {
                   // this has to be it's own function since models[0] doesn't exist when the series is created
                   ctx.newCV.appCodeVersions.models[0].update({
-                    branch: randStr(5)
+                    commit: randStr(5)
                   }, done)
                 },
                 function (cb) {
