@@ -20,11 +20,11 @@ var messenger = require('socket/messenger')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 var mockFactory = require('../fixtures/factory')
 var mockOnBuilderDieMessage = require('../fixtures/dockerListenerEvents/on-image-builder-container-die')
+var objectId = require('objectid')
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js')
 var rabbitMQ = require('models/rabbitmq')
 var sinon = require('sinon')
 var stream = require('stream')
-var toObjectId = require('utils/to-object-id')
 var User = require('models/mongo/user.js')
 
 describe('OnImageBuilderContainerDie Integration Tests', function () {
@@ -96,7 +96,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             ctx.build = build
             ContextVersion.updateById(ctx.cv._id, {
               $set: {
-                'build._id': toObjectId(ctx.build._id)
+                'build._id': objectId(ctx.build._id)
               }
             }, {}, function (err) {
               if (err) { return count.next(err) }
