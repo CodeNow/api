@@ -20,7 +20,7 @@ var ContextVersion = require('models/mongo/context-version.js')
 var Instance = require('models/mongo/instance.js')
 var User = require('models/mongo/user.js')
 var messenger = require('socket/messenger')
-var toObjectId = require('utils/to-object-id')
+var objectId = require('objectid')
 var dockerListenerRabbit = require('docker-listener/lib/hermes-client.js')
 var mockFactory = require('../fixtures/factory')
 
@@ -77,7 +77,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             ctx.build = build
             ContextVersion.updateById(ctx.cv._id, {
               $set: {
-                'build._id': toObjectId(ctx.build._id)
+                'build._id': objectId(ctx.build._id)
               }
             }, {}, function (err) {
               if (err) { return count.next(err) }
