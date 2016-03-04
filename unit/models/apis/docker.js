@@ -395,13 +395,13 @@ describe('docker: ' + moduleName, function () {
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
             HostConfig: {
-              Binds: []
+              Binds: ['/var/run/docker.sock:/var/run/docker.sock']
             },
             Labels: ctx.mockLabels
           }
 
-          expect(Docker.prototype.createContainer.firstCall.args[0])
-            .to.deep.equal(expected)
+          sinon.assert.calledOnce(Docker.prototype.createContainer)
+          sinon.assert.calledWith(Docker.prototype.createContainer, expected)
           done()
         })
       })
@@ -445,7 +445,7 @@ describe('docker: ' + moduleName, function () {
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
             HostConfig: {
-              Binds: []
+              Binds: ['/var/run/docker.sock:/var/run/docker.sock']
             },
             Labels: ctx.mockLabels
           }
@@ -484,11 +484,14 @@ describe('docker: ' + moduleName, function () {
           }
           model.createImageBuilder(opts, function (err) {
             if (err) { return done(err) }
-            expect(Docker.prototype.createContainer.firstCall.args[0]).to.deep.equal({
+
+            sinon.assert.calledOnce(Docker.prototype.createContainer)
+            sinon.assert.calledWith(Docker.prototype.createContainer, {
               Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
               Env: ctx.mockEnv,
               HostConfig: {
                 Binds: [
+                  '/var/run/docker.sock:/var/run/docker.sock',
                   process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
                   process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
                 ]
