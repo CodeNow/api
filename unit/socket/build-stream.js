@@ -191,7 +191,7 @@ describe('build stream: ' + moduleName, function () {
         sinon.assert.calledOnce(ContextVersion.findOneAsync)
         var cvQuery = ContextVersion.findOneAsync.firstCall.args[0]
         expect(cvQuery._id).to.exist()
-        expect(objectId.isValid(cvQuery._id))
+        expect(objectId.isValid(cvQuery._id)).to.be.true()
         expect(cvQuery._id).to.be.an.object()
         expect(cvQuery._id.toString()).to.equal(ctx.buildStream.data.id)
         done()
