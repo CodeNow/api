@@ -61,7 +61,10 @@ module.exports = function (contextVersion) {
         WorkingDir: ''
       },
       HostConfig: {
-        Binds: ['/git-cache:/cache:rw']
+        Binds: [
+          '/var/run/docker.sock:/var/run/docker.sock',
+          '/git-cache:/cache:rw'
+        ]
       },
       Volumes: {},
       State: {
