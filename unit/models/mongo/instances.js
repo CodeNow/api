@@ -6,7 +6,6 @@ var describe = lab.describe
 var it = lab.it
 var before = lab.before
 var beforeEach = lab.beforeEach
-var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
@@ -21,7 +20,6 @@ var error = require('error')
 var find = require('101/find')
 var hasProps = require('101/has-properties')
 var mongoose = require('mongoose')
-var noop = require('101/noop')
 var pick = require('101/pick')
 var pluck = require('101/pluck')
 var objectId = require('objectid')
@@ -530,89 +528,6 @@ describe('Instance Model Tests ' + moduleName, function () {
         var errArg = error.log.getCall(0).args[0]
         expect(errArg.output.statusCode).to.equal(409)
         done()
-      })
-    })
-  })
-
-  describe('modifyContainerInspect', function () {
-    var instance
-
-    beforeEach(function (done) {
-      instance = mongoFactory.createNewInstance('testy', {})
-      sinon.spy(instance, 'invalidateContainerDNS')
-      sinon.stub(Instance, 'findOneAndUpdate')
-      done()
-    })
-
-    afterEach(function (done) {
-      instance.invalidateContainerDNS.restore()
-      Instance.findOneAndUpdate.restore()
-      done()
-    })
-
-    it('should invalidate the instance container DNS', function (done) {
-      instance.modifyContainerInspect('some-id', {}, noop)
-      expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
-      done()
-    })
-  })
-
-  describe('modifyContainerInspectErr', function () {
-    var savedInstance = null
-    var instance = null
-    before(function (done) {
-      instance = mongoFactory.createNewInstance()
-      instance.save(function (err, instance) {
-        if (err) { return done(err) }
-        expect(instance).to.exist()
-        savedInstance = instance
-        done()
-      })
-    })
-
-    it('should pick message, stack and data fields', function (done) {
-      var fakeError = {
-        message: 'random message',
-        data: 'random data',
-        stack: 'random stack',
-        field: 'random field'
-      }
-      var dockerContainer = savedInstance.container.dockerContainer
-      savedInstance.modifyContainerInspectErr(dockerContainer, fakeError, function (err, newInst) {
-        if (err) { return done(err) }
-        expect(newInst.container.inspect.error.message).to.equal(fakeError.message)
-        expect(newInst.container.inspect.error.data).to.equal(fakeError.data)
-        expect(newInst.container.inspect.error.stack).to.equal(fakeError.stack)
-        expect(newInst.container.inspect.error.field).to.not.exist()
-        done()
-      })
-    })
-
-    describe('conflict error', function () {
-      var origErrorLog = error.log
-      after(function (done) {
-        error.log = origErrorLog
-        done()
-      })
-
-      it('should conflict if the container has changed', function (done) {
-        var fakeError = {
-          message: 'random message',
-          data: 'random data',
-          stack: 'random stack',
-          field: 'random field'
-        }
-        var count = createCount(3, done)
-        error.log = function (err) {
-          // first call
-          if (err === fakeError) { return count.next() }
-          // second call
-          expect(err).to.exist()
-          expect(err.output.statusCode).to.equal(409)
-          count.next()
-        }
-        var dockerContainer = 'fac985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452'
-        savedInstance.modifyContainerInspectErr(dockerContainer, fakeError, count.next)
       })
     })
   })
