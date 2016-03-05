@@ -35,10 +35,6 @@ describe('PATCH /settings/:id', function () {
           githubUsernameToSlackIdMap: {
             'cheese': 'U023BECGF'
           }
-        },
-        hipchat: {
-          authToken: 'some-hipchat-token',
-          roomId: 123123
         }
       }
     }
@@ -80,12 +76,6 @@ describe('PATCH /settings/:id', function () {
         expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
           newSettings.notifications.slack.githubUsernameToSlackIdMap
         )
-        expect(body.notifications.hipchat.authToken).to.equal(
-          settings.notifications.hipchat.authToken
-        )
-        expect(body.notifications.hipchat.roomId).to.equal(
-          settings.notifications.hipchat.roomId
-        )
         done()
       })
     })
@@ -98,10 +88,6 @@ describe('PATCH /settings/:id', function () {
             githubUsernameToSlackIdMap: {
               'hello': 'operator'
             }
-          },
-          hipchat: {
-            authToken: 'new-hipchat-token',
-            roomId: 1231231
           }
         },
         ignoredHelpCards: ['test2']
@@ -116,12 +102,6 @@ describe('PATCH /settings/:id', function () {
         )
         expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
           newSettings.notifications.slack.githubUsernameToSlackIdMap
-        )
-        expect(body.notifications.hipchat.authToken).to.equal(
-          newSettings.notifications.hipchat.authToken
-        )
-        expect(body.notifications.hipchat.roomId).to.equal(
-          newSettings.notifications.hipchat.roomId
         )
         expect(body.ignoredHelpCards.length).to.equal(1)
         expect(body.ignoredHelpCards[0]).to.equal('test2')
@@ -150,10 +130,6 @@ describe('PATCH /settings/:id', function () {
             apiToken: '',
             githubUsernameToSlackIdMap: {}
 
-          },
-          hipchat: {
-            authToken: 'new-hipchat-token',
-            roomId: 1231231
           }
         }
       }
@@ -166,12 +142,6 @@ describe('PATCH /settings/:id', function () {
           newSettings.notifications.slack.apiToken
         )
         expect(body.notifications.slack.githubUsernameToSlackIdMap).to.be.undefined()
-        expect(body.notifications.hipchat.authToken).to.equal(
-          newSettings.notifications.hipchat.authToken
-        )
-        expect(body.notifications.hipchat.roomId).to.equal(
-          newSettings.notifications.hipchat.roomId
-        )
         done()
       })
     })
@@ -183,10 +153,6 @@ describe('PATCH /settings/:id', function () {
           notifications: {
             slack: {
               apiToken: 'xoxo-dasjdkasjdk243248392482394'
-            },
-            hipchat: {
-              authToken: 'new-hipchat-token',
-              roomId: 1231231
             }
           }
         }

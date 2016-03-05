@@ -905,21 +905,6 @@ describe('InstanceService', function () {
           })
         })
       })
-
-      describe('"image not found" for create err', function () {
-        beforeEach(function (done) {
-          ctx.err = Boom.notFound('Image not found')
-          ctx.opts.instance = new Instance()
-          Docker.prototype.createUserContainer.yieldsAsync(ctx.err, ctx.mockContainer)
-          sinon.stub(Docker, 'isImageNotFoundForCreateErr').returns(true)
-          done()
-        })
-
-        afterEach(function (done) {
-          Docker.isImageNotFoundForCreateErr.restore()
-          done()
-        })
-      })
     })
   })
 
