@@ -887,6 +887,7 @@ describe('docker: ' + moduleName, function () {
             ]),
             Image: ctx.mockContextVersion.build.dockerTag,
             HostConfig: {
+              PublishAllPorts: true,
               Memory: 1234
             }
           }
