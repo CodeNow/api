@@ -7,18 +7,16 @@ var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
 var Code = require('code')
-var async = require('async')
-var noop = require('101/noop')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
 var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
-var User = require('models/mongo/user')
 var Docker = require('models/apis/docker')
-var messenger = require('socket/messenger.js')
+var rabbitMQ = require('models/rabbitmq')
 var keypather = require('keypather')()
+var put = require('101/put')
 
 var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die')
 
@@ -45,91 +43,42 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     ctx = {}
     ctx.data = keypather.expand({
       from: '34565762',
-      host: '5476',
-      id: '3225',
-      time: '234234',
+      host: 'http://runnable.io',
+      id: '507c7f79bcf86cd7994f6c0e',
+      time: 234234,
       uuid: '12343',
       dockerHost: '0.0.0.0',
       'inspectData.Name': '/123456789012345678901111',
-      'inspectData.Config.Labels.sessionUserGithubId': 1
+      'inspectData.Config.Labels.sessionUserGithubId': 1,
+      'inspectData.Config.Labels.ownerUsername': 'thejsj'
     })
     ctx.mockContextVersion = {
       _id: 123,
       toJSON: function () { return {} }
     }
-    sinon.stub(async, 'series', noop)
-    ctx.worker = new OnImageBuilderContainerDie(ctx.data)
-
-    // would normally be assigned from _baseWorkerFindContextVersion
-    ctx.worker.contextVersions = [ctx.mockContextVersion]
-    ctx.worker.handle()
     done()
-  })
-
-  afterEach(function (done) {
-    async.series.restore()
-    done()
-  })
-
-  describe('_finalSeriesHandler', function () {
-    it('TODO', function (done) {
-      done()
-    })
   })
 
   describe('_getBuildInfo', function () {
+    var buildInfoMock
+
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(null, {})
-        sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
-          expect(data).to.be.an.object()
-          cb()
-        })
-        sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
-          expect(data).to.be.an.object()
-          cb()
-        })
+        buildInfoMock = {}
+        sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(null, buildInfoMock)
         done()
       })
       afterEach(function (done) {
         Docker.prototype.getBuildInfo.restore()
-        ctx.worker._handleBuildError.restore()
-        ctx.worker._handleBuildComplete.restore()
         done()
       })
       it('should fetch build info and update success', function (done) {
-        ctx.worker._getBuildInfo(function (err) {
-          expect(err).to.be.undefined()
-          expect(ctx.worker._handleBuildComplete.callCount).to.equal(1)
-          expect(ctx.worker._handleBuildError.callCount).to.equal(0)
-          done()
-        })
-      })
-    })
-    describe('build failure', function () {
-      beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(null, { failed: true })
-        sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
-          expect(data).to.be.an.object()
-          cb()
-        })
-        sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
-          expect(data).to.be.an.object()
-          cb()
-        })
-        done()
-      })
-      afterEach(function (done) {
-        Docker.prototype.getBuildInfo.restore()
-        ctx.worker._handleBuildError.restore()
-        ctx.worker._handleBuildComplete.restore()
-        done()
-      })
-      it('should fetch build info and update build failure', function (done) {
-        ctx.worker._getBuildInfo(function (err) {
-          expect(err).to.be.undefined()
-          expect(ctx.worker._handleBuildComplete.callCount).to.equal(1)
-          expect(ctx.worker._handleBuildError.callCount).to.equal(0)
+        var host = 'superHost'
+        OnImageBuilderContainerDie._getBuildInfo({ id: 1, host: host }).asCallback(function (err, buildInfo) {
+          if (err) { return done(err) }
+          sinon.assert.calledOnce(Docker.prototype.getBuildInfo)
+          expect(buildInfo).to.equal(buildInfoMock)
+          expect(buildInfo.dockerHost).to.equal(host)
           done()
         })
       })
@@ -137,50 +86,19 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     describe('fetch failure', function () {
       beforeEach(function (done) {
         sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(new Error('docker error'))
-        sinon.stub(ctx.worker, '_handleBuildError', function (data, cb) {
-          expect(data).to.be.an.object()
-          cb()
-        })
-        sinon.stub(ctx.worker, '_handleBuildComplete', function (data, cb) {
-          expect(data).to.be.an.object()
-          cb()
-        })
         done()
       })
       afterEach(function (done) {
         Docker.prototype.getBuildInfo.restore()
-        ctx.worker._handleBuildError.restore()
-        ctx.worker._handleBuildComplete.restore()
         done()
       })
       it('should fetch build info and update fetch failure', function (done) {
-        ctx.worker._getBuildInfo(function (err) {
-          expect(err).to.be.undefined()
-          expect(ctx.worker._handleBuildComplete.callCount).to.equal(0)
-          expect(ctx.worker._handleBuildError.callCount).to.equal(1)
+        OnImageBuilderContainerDie._getBuildInfo({ id: 3 }).asCallback(function (err, buildInfo) {
+          sinon.assert.calledOnce(Docker.prototype.getBuildInfo)
+          expect(err).to.exist()
+          expect(buildInfo).to.not.exist()
           done()
         })
-      })
-    })
-  })
-
-  describe('_handleBuildError', function () {
-    beforeEach(function (done) {
-      ctx.worker.contextVersions = [ctx.mockContextVersion]
-      sinon.stub(ContextVersion, 'updateBuildErrorByContainer').yieldsAsync(null, [ctx.mockContextVersion])
-      sinon.stub(Build, 'updateFailedByContextVersionIds').yieldsAsync()
-      done()
-    })
-    afterEach(function (done) {
-      ContextVersion.updateBuildErrorByContainer.restore()
-      Build.updateFailedByContextVersionIds.restore()
-      done()
-    })
-    it('it should handle errored build', function (done) {
-      ctx.worker._handleBuildError({}, function () {
-        sinon.assert.calledWith(ContextVersion.updateBuildErrorByContainer, ctx.data.id)
-        sinon.assert.calledWith(Build.updateFailedByContextVersionIds, [ctx.mockContextVersion._id])
-        done()
       })
     })
   })
@@ -190,45 +108,47 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       ctx.instanceStub = {
         updateCvAsync: sinon.stub()
       }
-      ctx.worker.contextVersions = [ctx.mockContextVersion]
+      ctx.contextVersions = [ctx.mockContextVersion]
       ctx.buildInfo = {}
+      ctx.job = {}
       sinon.stub(ContextVersion, 'updateBuildCompletedByContainerAsync')
-      sinon.stub(Build, 'updateFailedByContextVersionIds')
-      sinon.stub(Build, 'updateCompletedByContextVersionIds')
+      sinon.stub(Build, 'updateFailedByContextVersionIdsAsync')
+      sinon.stub(Build, 'updateCompletedByContextVersionIdsAsync')
       sinon.stub(Instance, 'findByContextVersionIdsAsync').resolves([ctx.instanceStub])
       done()
     })
     afterEach(function (done) {
       ContextVersion.updateBuildCompletedByContainerAsync.restore()
-      Build.updateFailedByContextVersionIds.restore()
-      Build.updateCompletedByContextVersionIds.restore()
+      Build.updateFailedByContextVersionIdsAsync.restore()
+      Build.updateCompletedByContextVersionIdsAsync.restore()
       Instance.findByContextVersionIdsAsync.restore()
       done()
     })
     describe('success', function () {
       beforeEach(function (done) {
         ContextVersion.updateBuildCompletedByContainerAsync.resolves([ctx.mockContextVersion])
-        Build.updateCompletedByContextVersionIds.yieldsAsync()
+        Build.updateCompletedByContextVersionIdsAsync.resolves()
         done()
       })
 
       it('it should handle successful build', function (done) {
-        ctx.worker._handleBuildComplete(ctx.buildInfo, function () {
-          sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
-          sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-          sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
-          sinon.assert.calledWith(
-            ContextVersion.updateBuildCompletedByContainerAsync,
-            ctx.data.id,
-            ctx.buildInfo
-          )
-          sinon.assert.calledWith(
-            Build.updateCompletedByContextVersionIds,
-            [ctx.mockContextVersion._id],
-            sinon.match.func
-          )
-          done()
-        })
+        OnImageBuilderContainerDie._handleBuildComplete(ctx.data, ctx.buildInfo)
+          .asCallback(function (err) {
+            if (err) { return done(err) }
+            sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
+            sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
+            sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+            sinon.assert.calledWith(
+              ContextVersion.updateBuildCompletedByContainerAsync,
+              ctx.data.id,
+              ctx.buildInfo
+            )
+            sinon.assert.calledWith(
+              Build.updateCompletedByContextVersionIdsAsync,
+              [ctx.mockContextVersion._id]
+            )
+            done()
+          })
       })
     })
 
@@ -241,42 +161,43 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
         })
         describe('Build.updateFailedByContextVersionIds success', function () {
           beforeEach(function (done) {
-            Build.updateFailedByContextVersionIds.yieldsAsync()
+            Build.updateFailedByContextVersionIdsAsync.resolves()
             done()
           })
           it('it should handle failed build', function (done) {
-            ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
-              if (err) { return done(err) }
-              sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
-              sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-              sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
-              sinon.assert.calledWith(
-                ContextVersion.updateBuildCompletedByContainerAsync,
-                ctx.data.id,
-                ctx.buildInfo
-              )
-              sinon.assert.calledWith(
-                Build.updateFailedByContextVersionIds,
-                [ctx.mockContextVersion._id],
-                sinon.match.func
-              )
-              done()
-            })
+            OnImageBuilderContainerDie._handleBuildComplete(ctx.data, ctx.buildInfo)
+              .asCallback(function (err) {
+                if (err) { return done(err) }
+                sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
+                sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
+                sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+                sinon.assert.calledWith(
+                  ContextVersion.updateBuildCompletedByContainerAsync,
+                  ctx.data.id,
+                  ctx.buildInfo
+                )
+                sinon.assert.calledWith(
+                  Build.updateFailedByContextVersionIdsAsync,
+                  [ctx.mockContextVersion._id]
+                )
+                done()
+              })
           })
         })
         describe('Build.updateFailedByContextVersionIds error', function () {
           beforeEach(function (done) {
             ctx.err = new Error('boom0')
-            Build.updateFailedByContextVersionIds.yieldsAsync(ctx.err)
+            Build.updateFailedByContextVersionIdsAsync.rejects(ctx.err)
             done()
           })
           it('should callback the error', function (done) {
-            ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
-              sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
-              sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-              sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
-              expectErr(ctx.err, done)(err)
-            })
+            OnImageBuilderContainerDie._handleBuildComplete(ctx.data, ctx.buildInfo)
+              .asCallback(function (err) {
+                sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
+                sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
+                sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+                expectErr(ctx.err, done)(err)
+              })
           })
         })
       })
@@ -287,95 +208,86 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
           done()
         })
         it('should callback the error', function (done) {
-          ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
-            sinon.assert.notCalled(Instance.findByContextVersionIdsAsync)
-            sinon.assert.notCalled(ctx.instanceStub.updateCvAsync)
-            expectErr(ctx.err, done)(err)
-          })
+          OnImageBuilderContainerDie._handleBuildComplete(ctx.job, ctx.buildInfo)
+            .asCallback(function (err) {
+              sinon.assert.notCalled(Instance.findByContextVersionIdsAsync)
+              sinon.assert.notCalled(ctx.instanceStub.updateCvAsync)
+              expectErr(ctx.err, done)(err)
+            })
         })
       })
       describe('Build.updateCompletedByContextVersionIds error', function () {
         beforeEach(function (done) {
           ctx.err = new Error('boom2')
           ContextVersion.updateBuildCompletedByContainerAsync.resolves([ctx.mockContextVersion])
-          Build.updateCompletedByContextVersionIds.yieldsAsync(ctx.err)
+          Build.updateCompletedByContextVersionIdsAsync.rejects(ctx.err)
           done()
         })
         it('should callback the error', function (done) {
-          ctx.worker._handleBuildComplete(ctx.buildInfo, function (err) {
-            sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
-            sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-            sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
-            expectErr(ctx.err, done)(err)
-          })
+          OnImageBuilderContainerDie._handleBuildComplete(ctx.job, ctx.buildInfo)
+            .asCallback(function (err) {
+              sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
+              sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
+              sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+              expectErr(ctx.err, done)(err)
+            })
         })
       })
     })
   })
 
-  describe('_emitInstanceUpdateEvents', function () {
+  describe('_createContainersIfSuccessful ', function () {
+    var contextVersionId = 2
+    var instanceId = 3
+    var sessionUserGithubId = '789'
+    var ownerUsername = 'thejsj'
+    var job
     beforeEach(function (done) {
-      ctx.mockUser = {}
-      ctx.mockInstances = [{}, {}, {}]
-      sinon.stub(User, 'findByGithubId').yieldsAsync(null, ctx.mockUser)
-      sinon.stub(Instance, 'emitInstanceUpdates').yieldsAsync(null, ctx.mockInstances)
-      sinon.stub(messenger, 'emitInstanceUpdate')
-      sinon.stub(OnImageBuilderContainerDie.prototype, '_createContainersIfSuccessful')
+      ctx.instance = {
+        contextVersion: {
+          _id: {
+            toString: sinon.stub().returns(contextVersionId)
+          }
+        },
+        _id: {
+          toString: sinon.stub().returns(instanceId)
+        }
+      }
+      job = put(ctx.data, {
+        inspectData: {
+          Config: {
+            Labels: {
+              sessionUserGithubId: sessionUserGithubId,
+              ownerUsername: ownerUsername
+            }
+          }
+        }
+      })
+      sinon.stub(rabbitMQ, 'createInstanceContainer')
       done()
     })
+
     afterEach(function (done) {
-      User.findByGithubId.restore()
-      Instance.emitInstanceUpdates.restore()
-      messenger.emitInstanceUpdate.restore()
-      OnImageBuilderContainerDie.prototype._createContainersIfSuccessful.restore()
+      rabbitMQ.createInstanceContainer.restore()
       done()
     })
 
-    it('should emit instance update events', function (done) {
-      var sessionUserGithubId = keypather.get(ctx.worker.data,
-        'inspectData.Config.Labels.sessionUserGithubId')
-      ctx.worker._emitInstanceUpdateEvents(function (err) {
-        if (err) { return done(err) }
-        sinon.assert.calledWith(User.findByGithubId, ctx.data.inspectData.Config.Labels.sessionUserGithubId)
-        sinon.assert.calledWith(
-          Instance.emitInstanceUpdates,
-          ctx.mockUser,
-          {
-            'contextVersion.build.dockerContainer': ctx.worker.data.id
-          },
-          'patch',
-          sinon.match.func
-        )
-        sinon.assert.calledWith(
-          OnImageBuilderContainerDie.prototype._createContainersIfSuccessful,
-          sessionUserGithubId,
-          ctx.mockInstances
-        )
-        done()
+    it('should publish jobs to RabbitMQ if the build was succesful', function (done) {
+      OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance], { failed: false })
+      sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
+      sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
+        contextVersionId: contextVersionId,
+        instanceId: instanceId,
+        ownerUsername: ownerUsername,
+        sessionUserGithubId: sessionUserGithubId
       })
+      done()
     })
 
-    describe('No Instances Found', function () {
-      it('should throw an error and report to Rollbar if there are no instances to create containers for', function (done) {
-        Instance.emitInstanceUpdates.yieldsAsync(null, [])
-
-        ctx.worker._emitInstanceUpdateEvents(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/no.*instances.*found/i)
-          sinon.assert.calledWith(User.findByGithubId, ctx.data.inspectData.Config.Labels.sessionUserGithubId)
-          sinon.assert.calledWith(
-            Instance.emitInstanceUpdates,
-            ctx.mockUser,
-            {
-              'contextVersion.build.dockerContainer': ctx.worker.data.id
-            },
-            'patch',
-            sinon.match.func
-          )
-          sinon.assert.notCalled(OnImageBuilderContainerDie.prototype._createContainersIfSuccessful)
-          done()
-        })
-      })
+    it('should not publish jobs to RabbitMQ if the build was unsuccesful', function (done) {
+      OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance], { failed: true })
+      sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+      done()
     })
   })
 })
