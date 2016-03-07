@@ -102,9 +102,19 @@ describe('UserWhitelist: ' + moduleName, function () {
     })
 
     it('should throw an error if it cant get the authorized orgs from GH', function (done) {
-      Github.prototype.getUserAuthorizedOrgs.yieldsAsync(new Error(), null)
+      Github.prototype.getUserAuthorizedOrgs.yieldsAsync(new Error('could not fetch github error'), null)
       UserWhitelist.getUserWhitelistedOrgs(accessToken, function (err, orgs) {
         expect(err).to.exist()
+        expect(err.message).to.match(/github.*error/i)
+        expect(orgs).to.not.exist()
+        done()
+      })
+    })
+
+    it('should throw an error if no acess token is provided', function (done) {
+      UserWhitelist.getUserWhitelistedOrgs(null, function (err, orgs) {
+        expect(err).to.exist()
+        expect(err.message).to.match(/access.*token.*provided/i)
         expect(orgs).to.not.exist()
         done()
       })
