@@ -17,7 +17,7 @@ var createCount = require('callback-count')
 var createFrame = require('docker-frame')
 var EventEmitter = require('events').EventEmitter
 var util = require('util')
-var dogstatsd = require('models/datadog')
+var monitorDog = require('monitor-dog')
 
 var BuildStream = require('socket/build-stream').BuildStream
 var ContextVersion = require('models/mongo/context-version')
@@ -43,6 +43,14 @@ var error
 var rejectionPromise
 
 describe('build stream: ' + moduleName, function () {
+  beforeEach(function (done) {
+    sinon.stub(monitorDog, 'captureStreamEvents').returns()
+    done()
+  })
+  afterEach(function (done) {
+    monitorDog.captureStreamEvents.restore()
+    done()
+  })
   beforeEach(function (done) {
     var socket = {}
     var id = 4
@@ -171,7 +179,6 @@ describe('build stream: ' + moduleName, function () {
         return new ClientStream()
       })
       sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
-      sinon.stub(dogstatsd, 'captureSteamData').returns()
       ctx.buildStream.handleStream()
         .then(function () {
           sinon.assert.calledOnce(ctx.buildStream.socket.substream)

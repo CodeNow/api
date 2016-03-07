@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "6.29.7",
+  "version": "6.30.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -108,7 +108,6 @@
     "xtend": "3.0.0"
   },
   "devDependencies": {
-    "Filibuster": "git://github.com/Runnable/Filibuster.git#v0.1.6",
     "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v1.0.0",
     "docker-mock": "^5.1.0",
     "doctoc": "^0.15.0",
