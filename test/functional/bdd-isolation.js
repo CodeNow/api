@@ -144,6 +144,25 @@ describe('BDD - Isolation', function () {
       })
     })
 
+    it('should let us make an isolation referencing the repo', function (done) {
+      var count = createCount(2, done)
+      primus.expectAction('redeploy', count.next)
+      var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
+      var opts = {
+        master: ctx.webInstance.attrs._id.toString(),
+        children: [{
+          repo: appCodeVersion.repo.split('/').pop(),
+          org: appCodeVersion.repo.split('/').shift(),
+          branch: appCodeVersion.branch
+        }]
+      }
+      ctx.user.createIsolation(opts, function (err, isolation) {
+        if (err) { return count.next(err) }
+        expect(isolation).to.exist()
+        count.next()
+      })
+    })
+
     it('should message us about the child post', function (done) {
       var socketIsolationId
       var createdIsolationId
