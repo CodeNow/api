@@ -184,6 +184,7 @@ describe('build stream: ' + moduleName, function () {
       })
       sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
       ctx.buildStream.handleStream().asCallback(function (err) {
+        expect(err).to.not.exist()
         sinon.assert.calledOnce(ctx.buildStream.socket.substream)
         sinon.assert.calledOnce(ctx.cv.writeLogsToPrimusStream)
         sinon.assert.calledOnce(commonStream.checkOwnership)
