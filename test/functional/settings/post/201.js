@@ -21,7 +21,7 @@ describe('201 POST /settings', function () {
   after(require('../../fixtures/mocks/api-client').clean)
 
   describe('create new settings', function () {
-    it('should be possible to create settings with slack & hipchat', function (done) {
+    it('should be possible to create settings with slack', function (done) {
       multi.createUser(function (err, runnable) {
         if (err) { return done(err) }
         var settings = {
@@ -34,10 +34,6 @@ describe('201 POST /settings', function () {
               githubUsernameToSlackIdMap: {
                 'cheese': 'U023BECGF'
               }
-            },
-            hipchat: {
-              authToken: 'some-hipchat-token',
-              roomId: 123123
             }
           }
         }
@@ -51,12 +47,6 @@ describe('201 POST /settings', function () {
           )
           expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
             settings.notifications.slack.githubUsernameToSlackIdMap
-          )
-          expect(body.notifications.hipchat.authToken).to.equal(
-            settings.notifications.hipchat.authToken
-          )
-          expect(body.notifications.hipchat.roomId).to.equal(
-            settings.notifications.hipchat.roomId
           )
           done()
         })

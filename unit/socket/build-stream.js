@@ -17,8 +17,8 @@ var createCount = require('callback-count')
 var createFrame = require('docker-frame')
 var EventEmitter = require('events').EventEmitter
 var util = require('util')
-var dogstatsd = require('models/datadog')
 var objectId = require('objectid')
+var monitorDog = require('monitor-dog')
 
 var BuildStream = require('socket/build-stream').BuildStream
 var ContextVersion = require('models/mongo/context-version')
@@ -51,7 +51,21 @@ var data = {
 
 describe('build stream: ' + moduleName, function () {
   beforeEach(function (done) {
-    ctx.buildStream = new BuildStream({}, id, data)
+    sinon.stub(monitorDog, 'captureStreamEvents').returns()
+    done()
+  })
+  afterEach(function (done) {
+    monitorDog.captureStreamEvents.restore()
+    done()
+  })
+  beforeEach(function (done) {
+    var socket = {}
+    var id = 4
+    var data = {
+      id: 4,
+      streamId: 17
+    }
+    ctx.buildStream = new BuildStream(socket, id, data)
     done()
   })
 
@@ -134,7 +148,6 @@ describe('build stream: ' + moduleName, function () {
       sinon.stub(commonStream, 'onValidateFailure').returns(ctx.commonStreamValidateStub)
       sinon.stub(ContextVersion, 'findOneAsync').returns(Promise.resolve(ctx.cv))
       sinon.stub(ctx.buildStream, '_pipeBuildLogsToClient').returns()
-      sinon.stub(dogstatsd, 'captureSteamData').returns()
       done()
     })
 
@@ -142,7 +155,6 @@ describe('build stream: ' + moduleName, function () {
       ContextVersion.findOneAsync.restore()
       commonStream.checkOwnership.restore()
       commonStream.onValidateFailure.restore()
-      dogstatsd.captureSteamData.restore()
       done()
     })
 
@@ -172,7 +184,6 @@ describe('build stream: ' + moduleName, function () {
       })
       sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
       ctx.buildStream.handleStream().asCallback(function (err) {
-        expect(err).to.not.exist()
         sinon.assert.calledOnce(ctx.buildStream.socket.substream)
         sinon.assert.calledOnce(ctx.cv.writeLogsToPrimusStream)
         sinon.assert.calledOnce(commonStream.checkOwnership)

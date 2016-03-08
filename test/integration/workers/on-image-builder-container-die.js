@@ -8,23 +8,24 @@ var after = lab.after
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 
+var Build = require('models/mongo/build.js')
 var createCount = require('callback-count')
+var ContextVersion = require('models/mongo/context-version.js')
+var Docker = require('models/apis/docker')
+var Dockerode = require('dockerode')
+var dock = require('../../functional/fixtures/dock')
+var Instance = require('models/mongo/instance.js')
+var keypather = require('keypather')()
+var messenger = require('socket/messenger')
+var mongooseControl = require('models/mongo/mongoose-control.js')
+var mockFactory = require('../fixtures/factory')
+var mockOnBuilderDieMessage = require('../fixtures/dockerListenerEvents/on-image-builder-container-die')
+var objectId = require('objectid')
+var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js')
 var rabbitMQ = require('models/rabbitmq')
 var sinon = require('sinon')
-var Docker = require('models/apis/docker')
-var dock = require('../../functional/fixtures/dock')
-var dockerMockEvents = require('../../functional/fixtures/docker-mock-events')
-var mongooseControl = require('models/mongo/mongoose-control.js')
-var Build = require('models/mongo/build.js')
-var ContextVersion = require('models/mongo/context-version.js')
-var Instance = require('models/mongo/instance.js')
+var stream = require('stream')
 var User = require('models/mongo/user.js')
-var messenger = require('socket/messenger')
-var objectId = require('objectid')
-var dockerListenerRabbit = require('docker-listener/lib/hermes-client.js')
-var mockFactory = require('../fixtures/factory')
-
-var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die.js')
 
 describe('OnImageBuilderContainerDie Integration Tests', function () {
   before(mongooseControl.start)
@@ -34,20 +35,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     done()
   })
   before(dock.start.bind(ctx))
-  before(function (done) {
-    var oldPublish = dockerListenerRabbit.publish
-    sinon.stub(dockerListenerRabbit, 'publish', function (queue, data) {
-      if (queue !== 'on-image-builder-container-create') {
-        oldPublish.bind(dockerListenerRabbit)(queue, data)
-      }
-    })
-    rabbitMQ.connect(done)
-    rabbitMQ.loadWorkers()
-  })
-  after(function (done) {
-    dockerListenerRabbit.publish.restore()
-    rabbitMQ.close(done)
-  })
   after(dock.stop.bind(ctx))
   beforeEach(deleteMongoDocs)
   afterEach(deleteMongoDocs)
@@ -57,6 +44,38 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
     Instance.remove({}, count.next)
     Build.remove({}, count.next)
     User.remove({}, count.next)
+  }
+  function createStreamFunction (failed, errored) {
+    var originalGetContainer = Dockerode.prototype.getContainer
+    return function (done) {
+      sinon.stub(Dockerode.prototype, 'getContainer', function () {
+        var container = originalGetContainer.apply(this, arguments)
+        var containerId = keypather.get(ctx, 'usedDockerContainer.id')
+        var Readable = stream.Readable
+        var buffStream = new Readable()
+        if (containerId) {
+          var header = new Buffer(8)
+          header.fill(1)
+          var body
+          if (!failed) {
+            body = new Buffer('{"type":"log","content":"Successfully built ' + containerId + '"}')
+          } else {
+            body = new Buffer('{"type":"log","content":"failfailfai fail fail fail"}')
+          }
+          var buff
+          if (errored) {
+            buff = Buffer.concat([body]) // will trigger error
+          } else {
+            buff = Buffer.concat([header, body])
+          }
+          buffStream.push(buff)
+        }
+        buffStream.push(null)
+        container.logs = sinon.stub().yieldsAsync(null, buffStream)
+        return container
+      })
+      done()
+    }
   }
   after(mongooseControl.stop)
 
@@ -147,8 +166,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         sinon.spy(Instance.prototype, 'emitInstanceUpdate')
         sinon.spy(messenger, '_emitInstanceUpdateAction')
         sinon.spy(messenger, 'emitContextVersionUpdate')
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_handleBuildComplete')
-        sinon.spy(OnImageBuilderContainerDie.prototype, '_handleBuildError')
+        sinon.spy(OnImageBuilderContainerDie, '_handleBuildComplete')
         sinon.spy(Build, 'updateFailedByContextVersionIds')
         sinon.spy(Build, 'updateCompletedByContextVersionIds')
         sinon.spy(ContextVersion, 'updateBuildErrorByContainer')
@@ -166,9 +184,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         messenger.emitContextVersionUpdate.restore()
         Instance.emitInstanceUpdates.restore()
         Instance.prototype.emitInstanceUpdate.restore()
-        OnImageBuilderContainerDie.prototype._finalSeriesHandler.restore()
-        OnImageBuilderContainerDie.prototype._handleBuildComplete.restore()
-        OnImageBuilderContainerDie.prototype._handleBuildError.restore()
+        OnImageBuilderContainerDie._handleBuildComplete.restore()
         Build.updateFailedByContextVersionIds.restore()
         Build.updateCompletedByContextVersionIds.restore()
         ContextVersion.updateBuildErrorByContainer.restore()
@@ -176,12 +192,18 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         done()
       })
       describe('With a successful build', function () {
+        beforeEach(createStreamFunction())
+        afterEach(function (done) {
+          Dockerode.prototype.getContainer.restore()
+          done()
+        })
+
         it('should attempt to deploy', function (done) {
-          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-            workerDone()
-            if (err) { return done(err) }
-            try {
-              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
+          var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user)
+          OnImageBuilderContainerDie(job)
+            .asCallback(function (err) {
+              if (err) { done(err) }
+              sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
               sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
               sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
 
@@ -190,17 +212,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 sinon.match({_id: ctx.cv._id}),
                 'build_completed'
               )
-              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
-              sinon.assert.calledWith(
-                Instance.emitInstanceUpdates,
-                sinon.match({
-                  _id: ctx.user._id
-                }), {
-                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
-                },
-                'patch'
-              )
-              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
               sinon.assert.calledTwice(messenger.messageRoom)
 
               var cvCall = messenger.messageRoom.getCall(0)
@@ -266,20 +277,22 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                   done()
                 })
               })
-            } catch (e) {
-              done(e)
-            }
-          }) // stub end
-          dockerMockEvents.emitBuildComplete(ctx.cv)
+            })
         })
       })
       describe('With an unsuccessful build', function () {
+        beforeEach(createStreamFunction(true))
+        afterEach(function (done) {
+          Dockerode.prototype.getContainer.restore()
+          done()
+        })
+
         it('should update the UI with a socket event', function (done) {
-          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-            workerDone()
-            if (err) { return done(err) }
-            try {
-              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
+          var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user, 1)
+          OnImageBuilderContainerDie(job)
+            .asCallback(function (err) {
+              if (err) { return done(err) }
+              sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
 
               sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
               // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
@@ -289,17 +302,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                 sinon.match({_id: ctx.cv._id}),
                 'build_completed'
               )
-              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
-              sinon.assert.calledWith(
-                Instance.emitInstanceUpdates,
-                sinon.match({
-                  _id: ctx.user._id
-                }), {
-                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
-                },
-                'patch'
-              )
-              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
               sinon.assert.calledTwice(messenger.messageRoom)
 
               // the first call is a build_running
@@ -362,108 +364,47 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                   done()
                 })
               })
-            } catch (e) {
-              done(e)
-            }
-          }) // stub end
-          dockerMockEvents.emitBuildComplete(ctx.cv, 'This is an error')
+            })
         })
       })
-      describe('With an errored build', function () {
-        it('should still update the UI with a socket event', function (done) {
-          sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-            workerDone()
-            if (err) { return done(err) }
-            try {
-              sinon.assert.notCalled(OnImageBuilderContainerDie.prototype._handleBuildComplete)
-              sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildError)
-              sinon.assert.calledOnce(ContextVersion.updateBuildErrorByContainer)
+      describe('With an error getting the build logs', function () {
+        beforeEach(createStreamFunction(false, true))
+        afterEach(function (done) {
+          Dockerode.prototype.getContainer.restore()
+          done()
+        })
 
-              sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
+        it('should not update the UI', function (done) {
+          var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user, 1)
+          OnImageBuilderContainerDie(job)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildComplete)
+              sinon.assert.notCalled(ContextVersion.updateBuildErrorByContainer)
+
+              sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
               // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
-              sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
-              sinon.assert.calledWith(
-                messenger.emitContextVersionUpdate,
-                sinon.match({_id: ctx.cv._id}),
-                'build_completed'
-              )
-              sinon.assert.calledOnce(Instance.emitInstanceUpdates)
-              sinon.assert.calledWith(
-                Instance.emitInstanceUpdates,
-                sinon.match({
-                  _id: ctx.user._id
-                }), {
-                  'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
-                },
-                'patch'
-              )
-              sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
-              sinon.assert.calledTwice(messenger.messageRoom)
+              sinon.assert.notCalled(Build.updateCompletedByContextVersionIds)
+              sinon.assert.notCalled(Instance.emitInstanceUpdates)
+              sinon.assert.notCalled(Instance.prototype.emitInstanceUpdate)
+              sinon.assert.notCalled(messenger.messageRoom)
 
-              // the first call is a build_running
-              var cvCall = messenger.messageRoom.getCall(0)
-              sinon.assert.calledWith(
-                cvCall,
-                'org',
-                ctx.githubId,
-                sinon.match({
-                  event: 'CONTEXTVERSION_UPDATE',
-                  action: 'build_completed',
-                  data: sinon.match({_id: ctx.cv._id})
-                })
-              )
-              sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
-
-              var instanceCall = messenger.messageRoom.getCall(1)
-              sinon.assert.calledWith(
-                instanceCall,
-                'org',
-                ctx.githubId,
-                sinon.match({
-                  event: 'INSTANCE_UPDATE',
-                  action: 'patch',
-                  data: sinon.match({
-                    _id: ctx.instance._id,
-                    owner: {
-                      github: ctx.githubId,
-                      username: 'nathan219',
-                      gravatar: 'testingtesting123'
-                    },
-                    createdBy: {
-                      github: ctx.githubId,
-                      username: 'nathan219',
-                      gravatar: 'testingtesting123'
-                    },
-                    contextVersion: sinon.match({
-                      _id: ctx.cv._id,
-                      build: sinon.match({
-                        completed: sinon.match.truthy
-                      })
-                    })
-                  })
-                })
-              )
-              sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
-
+              sinon.assert.notCalled(rabbitMQ.instanceUpdated)
               sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
               ContextVersion.findOne(ctx.cv._id, function (err, cv) {
                 if (err) { return done(err) }
-                expect(cv.build.completed).to.exist()
-                expect(cv.build.failed).to.be.true()
+                expect(cv.build.completed).to.not.exist()
+                expect(cv.build.failed).to.not.exist()
                 Build.findBy('contextVersions', cv._id, function (err, builds) {
                   if (err) { return done(err) }
                   builds.forEach(function (build) {
                     expect(build.completed).to.exist()
-                    expect(build.failed).to.be.true()
+                    expect(build.failed).to.exist()
                   })
                   done()
                 })
               })
-            } catch (e) {
-              done(e)
-            }
-          }) // stub end
-          dockerMockEvents.emitBuildComplete(ctx.cv, false, true)
+            })
         })
       })
       describe('With 2 CVs, one that dedups', function () {
@@ -495,14 +436,18 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               done(err)
             })
           })
+          beforeEach(createStreamFunction())
+          afterEach(function (done) {
+            Dockerode.prototype.getContainer.restore()
+            done()
+          })
+
           it('should update the instance with the second cv, and update both cvs', function (done) {
-            sinon.stub(OnImageBuilderContainerDie.prototype, '_finalSeriesHandler', function (err, workerDone) {
-              workerDone()
-              if (err) {
-                return done(err)
-              }
-              try {
-                sinon.assert.calledOnce(OnImageBuilderContainerDie.prototype._handleBuildComplete)
+            var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user)
+            OnImageBuilderContainerDie(job)
+              .asCallback(function (err) {
+                if (err) { return done(err) }
+                sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
                 sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
                 sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
 
@@ -516,17 +461,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                   sinon.match({_id: ctx.cv2._id}),
                   'build_completed'
                 )
-                sinon.assert.calledOnce(Instance.emitInstanceUpdates)
-                sinon.assert.calledWith(
-                  Instance.emitInstanceUpdates,
-                  sinon.match({
-                    _id: ctx.user._id
-                  }), {
-                    'contextVersion.build.dockerContainer': ctx.usedDockerContainer.id
-                  },
-                  'patch'
-                )
-                sinon.assert.calledOnce(Instance.prototype.emitInstanceUpdate)
                 sinon.assert.calledOnce(messenger._emitInstanceUpdateAction)
 
                 sinon.assert.calledWith(messenger._emitInstanceUpdateAction, sinon.match({
@@ -619,11 +553,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                     })
                   })
                 })
-              } catch (e) {
-                done(e)
-              }
-            }) // stub end
-            dockerMockEvents.emitBuildComplete(ctx.cv)
+              })
           })
         })
       })

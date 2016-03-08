@@ -32,10 +32,6 @@ describe('400 POST /settings', function () {
               githubUsernameToSlackIdMap: {
                 'cheese': 'U023BECGF'
               }
-            },
-            hipchat: {
-              authToken: 'some-hipchat-token',
-              roomId: 123123
             }
           }
         }
@@ -60,10 +56,6 @@ describe('400 POST /settings', function () {
               githubUsernameToSlackIdMap: {
                 'cheese': 'U023BECGF'
               }
-            },
-            hipchat: {
-              authToken: 'some-hipchat-token',
-              roomId: 123123
             }
           }
         }
@@ -76,12 +68,6 @@ describe('400 POST /settings', function () {
           )
           expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
             settings.notifications.slack.githubUsernameToSlackIdMap
-          )
-          expect(body.notifications.hipchat.authToken).to.equal(
-            settings.notifications.hipchat.authToken
-          )
-          expect(body.notifications.hipchat.roomId).to.equal(
-            settings.notifications.hipchat.roomId
           )
           runnable.createSetting({json: settings}, function (err) {
             expect(err.data.statusCode).to.equal(409)
