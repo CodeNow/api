@@ -40,15 +40,18 @@ describe('UserWhitelist: ' + moduleName, function () {
         id: 2828362
       }
     ]
-    var whitelistedUsers = [
+    var whitelistedOrgsCollection = [
       {
         name: 'Runnable',
         lowerName: 'runnable',
-        allowed: true
+        allowed: true,
+        toObject: function () {
+          return this
+        }
       }
     ]
     sinon.stub(Github.prototype, 'getUserAuthorizedOrgs').yieldsAsync(null, githubOrgs)
-    sinon.stub(UserWhitelist, 'find').yieldsAsync(null, whitelistedUsers)
+    sinon.stub(UserWhitelist, 'find').yieldsAsync(null, whitelistedOrgsCollection)
     done()
   })
   afterEach(function (done) {
