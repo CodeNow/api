@@ -23,12 +23,13 @@ var UserWhitelist = require('models/mongo/user-whitelist')
 var moduleName = path.relative(process.cwd(), __filename)
 describe('UserWhitelist: ' + moduleName, function () {
   var accessToken = '123'
+  var githubOrgs
 
   before(require('../../fixtures/mongo').connect)
   afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
 
   beforeEach(function (done) {
-    var orgs = [
+    githubOrgs = [
       {
         login: 'Runnable',
         id: 2828361,
@@ -46,7 +47,7 @@ describe('UserWhitelist: ' + moduleName, function () {
         allowed: true
       }
     ]
-    sinon.stub(Github.prototype, 'getUserAuthorizedOrgs').yieldsAsync(null, orgs)
+    sinon.stub(Github.prototype, 'getUserAuthorizedOrgs').yieldsAsync(null, githubOrgs)
     sinon.stub(UserWhitelist, 'find').yieldsAsync(null, whitelistedUsers)
     done()
   })
@@ -73,6 +74,18 @@ describe('UserWhitelist: ' + moduleName, function () {
         expect(orgs).to.be.an.array()
         expect(orgs.length).to.equal(1)
         expect(orgs[0].name).to.equal('Runnable')
+        done()
+      })
+    })
+
+    it('should get return the github orgs as part of the object', function (done) {
+      UserWhitelist.getUserWhitelistedOrgs(accessToken, function (err, orgs) {
+        if (err) done(err)
+        expect(err).to.not.exist()
+        expect(orgs).to.be.an.array()
+        expect(orgs.length).to.equal(1)
+        expect(orgs[0].name).to.equal('Runnable')
+        expect(orgs[0].org).to.equal(githubOrgs[0])
         done()
       })
     })
