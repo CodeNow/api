@@ -277,8 +277,7 @@ describe('GitHub Actions: ' + moduleName, function () {
       var callback = function (code, message) {
         expect(code).to.equal(403)
         expect(message).to.match(/Commit author\/committer username is empty/i)
-        sinon.assert.calledOnce(User.findOneByGithubUsername)
-        sinon.assert.calledWith(User.findOneByGithubUsername, username)
+        sinon.assert.notCalled(User.findOneByGithubUsername)
         done()
       }
       var res = {
