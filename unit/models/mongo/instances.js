@@ -2158,6 +2158,21 @@ describe('Instance Model Tests ' + moduleName, function () {
         })
       })
     })
+
+    describe('when there are not found context versions', function () {
+      beforeEach(function (done) {
+        Version.findById.yieldsAsync(null, null)
+        done()
+      })
+      it('should throw the error', function (done) {
+        ctx.instance.updateCv(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/no.context.version.found/i)
+          sinon.assert.notCalled(ctx.instance.update)
+          done()
+        })
+      })
+    })
   })
 
   describe('.isolate', function () {

@@ -98,7 +98,7 @@ describe('PullRequest: ' + moduleName, function () {
         expect(repo).to.equal(gitInfo.repo)
         expect(payload.id).to.equal('deployment-id')
         expect(payload.state).to.equal('success')
-        expect(payload.target_url).to.equal('https://' + process.env.DOMAIN + '/codenow/inst-1')
+        expect(payload.target_url).to.equal(process.env.WEB_URL + '/codenow/inst-1')
         expect(payload.description).to.equal('Deployed to inst-1 on Runnable.')
         GitHub.prototype.createDeploymentStatus.restore()
         PullRequest.prototype.createDeployment.restore()
