@@ -58,9 +58,9 @@ describe('UserWhitelist: ' + moduleName, function () {
     done()
   })
 
-  describe('getUserWhitelistedOrgs', function () {
+  describe('getWhitelistedUsersForGithubUser', function () {
     it('should get all orgs that GH authorizes the user to see', function (done) {
-      UserWhitelist.getUserWhitelistedOrgs(accessToken, function (err, orgs) {
+      UserWhitelist.getWhitelistedUsersForGithubUser(accessToken, function (err, orgs) {
         if (err) done(err)
         sinon.assert.calledOnce(Github.prototype.getUserAuthorizedOrgs)
         sinon.assert.calledOnce(UserWhitelist.find)
@@ -80,7 +80,7 @@ describe('UserWhitelist: ' + moduleName, function () {
     })
 
     it('should get return the github orgs as part of the object', function (done) {
-      UserWhitelist.getUserWhitelistedOrgs(accessToken, function (err, orgs) {
+      UserWhitelist.getWhitelistedUsersForGithubUser(accessToken, function (err, orgs) {
         if (err) done(err)
         expect(err).to.not.exist()
         expect(orgs).to.be.an.array()
@@ -97,7 +97,7 @@ describe('UserWhitelist: ' + moduleName, function () {
       }])
       UserWhitelist.find.yieldsAsync(null, [])
 
-      UserWhitelist.getUserWhitelistedOrgs(accessToken, function (err, orgs) {
+      UserWhitelist.getWhitelistedUsersForGithubUser(accessToken, function (err, orgs) {
         if (err) done(err)
         sinon.assert.calledOnce(Github.prototype.getUserAuthorizedOrgs)
         sinon.assert.calledOnce(UserWhitelist.find)
@@ -117,7 +117,7 @@ describe('UserWhitelist: ' + moduleName, function () {
 
     it('should throw an error if it cant get the authorized orgs from GH', function (done) {
       Github.prototype.getUserAuthorizedOrgs.yieldsAsync(new Error('could not fetch github error'), null)
-      UserWhitelist.getUserWhitelistedOrgs(accessToken, function (err, orgs) {
+      UserWhitelist.getWhitelistedUsersForGithubUser(accessToken, function (err, orgs) {
         expect(err).to.exist()
         expect(err.message).to.match(/github.*error/i)
         expect(orgs).to.not.exist()
@@ -126,7 +126,7 @@ describe('UserWhitelist: ' + moduleName, function () {
     })
 
     it('should throw an error if no acess token is provided', function (done) {
-      UserWhitelist.getUserWhitelistedOrgs(null, function (err, orgs) {
+      UserWhitelist.getWhitelistedUsersForGithubUser(null, function (err, orgs) {
         expect(err).to.exist()
         expect(err.message).to.match(/access.*token.*provided/i)
         expect(orgs).to.not.exist()
