@@ -45,9 +45,7 @@ describe('UserWhitelist: ' + moduleName, function () {
         name: 'Runnable',
         lowerName: 'runnable',
         allowed: true,
-        toObject: function () {
-          return this
-        }
+        _doc: {}
       }
     ]
     sinon.stub(Github.prototype, 'getUserAuthorizedOrgs').yieldsAsync(null, githubOrgs)
@@ -88,7 +86,7 @@ describe('UserWhitelist: ' + moduleName, function () {
         expect(orgs).to.be.an.array()
         expect(orgs.length).to.equal(1)
         expect(orgs[0].name).to.equal('Runnable')
-        expect(orgs[0].org).to.equal(githubOrgs[0])
+        expect(orgs[0]._doc.org).to.equal(githubOrgs[0])
         done()
       })
     })
