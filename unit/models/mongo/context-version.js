@@ -108,62 +108,6 @@ describe('Context Version: ' + moduleName, function () {
     })
   }) // end getUserContainerMemoryLimit
 
-  describe('updateBuildErrorByBuildId', function () {
-    beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'updateBy').yields()
-      ctx.mockContextVersions = [
-        {
-          _id: '098765432109876543214321',
-          build: {
-            completed: Date.now()
-          }
-        }
-      ]
-      ctx.buildId = '123456789012345678901234'
-      sinon.stub(ContextVersion, 'findBy').yields(null, ctx.mockContextVersions)
-      sinon.stub(messenger, 'emitContextVersionUpdate')
-      done()
-    })
-    afterEach(function (done) {
-      ContextVersion.updateBy.restore()
-      ContextVersion.findBy.restore()
-      messenger.emitContextVersionUpdate.restore()
-      done()
-    })
-    it('should update contextVersions with matching build properties', function (done) {
-      var buildErr = Boom.badRequest('message', {
-        docker: {
-          log: [{some: 'object'}]
-        }
-      })
-      ContextVersion.updateBuildErrorByBuildId(ctx.buildId, buildErr, function (err, contextVersions) {
-        if (err) {
-          return done(err)
-        }
-        expect(contextVersions).to.equal(ctx.mockContextVersions)
-        sinon.assert.calledOnce(ContextVersion.updateBy)
-        expect(ContextVersion.updateBy.firstCall.args[0]).to.equal('build._id')
-        expect(ContextVersion.updateBy.firstCall.args[1].toString()).to.equal(ctx.buildId)
-        var update = ContextVersion.updateBy.firstCall.args[2]
-        expect(update).to.exist()
-        expect(update.$set).to.deep.contain({
-          'build.error.message': buildErr.message,
-          'build.error.stack': buildErr.stack,
-          'build.log': buildErr.data.docker.log,
-          'build.failed': true
-        })
-        expect(update.$set['build.completed']).to.exist()
-        expect(ContextVersion.findBy.firstCall.args[0]).to.equal('build._id')
-        expect(ContextVersion.findBy.firstCall.args[1].toString()).to.equal(ctx.buildId)
-        sinon.assert.calledWith(
-          messenger.emitContextVersionUpdate,
-          ctx.mockContextVersions[0]
-        )
-        done()
-      })
-    })
-  })
-
   describe('updateBuildErrorByContainer', function () {
     beforeEach(function (done) {
       sinon.stub(ContextVersion, 'updateBy').yields()
