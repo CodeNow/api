@@ -32,13 +32,6 @@ describe('BaseWorker: ' + moduleName, function () {
 
   beforeEach(function (done) {
     ctx = {}
-    ctx.modifyContainerInspectSpy =
-      sinon.spy(function (dockerContainerId, inspect, cb) {
-        cb(null, ctx.mockContainer)
-      })
-    ctx.modifyContainerInspectErrSpy = sinon.spy(function (dockerContainerId, error, cb) {
-      cb(null)
-    })
     ctx.populateModelsSpy = sinon.spy(function (cb) {
       cb(null)
     })
@@ -77,10 +70,7 @@ describe('BaseWorker: ' + moduleName, function () {
       name: 'name1',
       populateModels: function () {},
       populateOwnerAndCreatedBy: function () {},
-      container: ctx.mockContainer,
-      removeStartingStoppingStates: ctx.removeStartingStoppingStatesSpy,
-      modifyContainerInspect: ctx.modifyContainerInspectSpy,
-      modifyContainerInspectErr: ctx.modifyContainerInspectErrSpy
+      container: ctx.mockContainer
     }
     ctx.mockInstance = put({
       owner: {
