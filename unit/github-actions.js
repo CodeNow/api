@@ -272,5 +272,25 @@ describe('GitHub Actions: ' + moduleName, function () {
       }
       githubActions.checkCommitterIsRunnableUser(req, res, errStub)
     })
+    it('should respond with 403 if username wa not specified', function (done) {
+      var errStub = sinon.stub()
+      var callback = function (code, message) {
+        expect(code).to.equal(403)
+        expect(message).to.match(/Commit author\/committer username is empty/i)
+        sinon.assert.notCalled(User.findOneByGithubUsername)
+        done()
+      }
+      var res = {
+        status: function (code) {
+          return { send: callback.bind(callback, code) }
+        }
+      }
+      var req = {
+        githubPushInfo: {
+          committer: null
+        }
+      }
+      githubActions.checkCommitterIsRunnableUser(req, res, errStub)
+    })
   })
 })
