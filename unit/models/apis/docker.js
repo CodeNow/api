@@ -393,6 +393,7 @@ describe('docker: ' + moduleName, function () {
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
             HostConfig: {
+              CapDrop: process.env.CAP_DROP.split(','),
               Binds: ['/var/run/docker.sock:/var/run/docker.sock']
             },
             Labels: ctx.mockLabels
@@ -443,6 +444,7 @@ describe('docker: ' + moduleName, function () {
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
             HostConfig: {
+              CapDrop: process.env.CAP_DROP.split(','),
               Binds: ['/var/run/docker.sock:/var/run/docker.sock']
             },
             Labels: ctx.mockLabels
@@ -488,6 +490,7 @@ describe('docker: ' + moduleName, function () {
               Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
               Env: ctx.mockEnv,
               HostConfig: {
+                CapDrop: process.env.CAP_DROP.split(','),
                 Binds: [
                   '/var/run/docker.sock:/var/run/docker.sock',
                   process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
@@ -1104,6 +1107,7 @@ describe('docker: ' + moduleName, function () {
             ]),
             Image: ctx.mockContextVersion.build.dockerTag,
             HostConfig: {
+              CapDrop: process.env.CAP_DROP.split(','),
               PublishAllPorts: true,
               Memory: 1234
             }
@@ -1227,6 +1231,7 @@ describe('docker: ' + moduleName, function () {
         sinon.assert.calledWith(model.startContainer,
           testId, {
             HostConfig: {
+              CapDrop: process.env.CAP_DROP.split(','),
               PublishAllPorts: true,
               Memory: 1234
             }
@@ -1250,6 +1255,7 @@ describe('docker: ' + moduleName, function () {
         sinon.assert.calledWith(model.startContainer,
           testId, {
             HostConfig: {
+              CapDrop: process.env.CAP_DROP.split(','),
               PublishAllPorts: true,
               Memory: 1234
             }
@@ -1274,6 +1280,7 @@ describe('docker: ' + moduleName, function () {
         sinon.assert.calledWith(model.startContainer,
           testId, {
             HostConfig: {
+              CapDrop: process.env.CAP_DROP.split(','),
               PublishAllPorts: true,
               Memory: 1234
             }
