@@ -88,6 +88,7 @@
     "redis-types": "^0.2.3",
     "regexp-quote": "0.0.0",
     "request": "2.42.0",
+    "retry": "^0.9.0",
     "rollbar": "0.5.4",
     "runna4j": "^0.1.0",
     "runnable": "git+ssh://git@github.com:CodeNow/runnable-api-client#v4.11.3",
