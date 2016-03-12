@@ -722,7 +722,7 @@ describe('docker: ' + moduleName, function () {
         model._containerAction.yieldsAsync(dockerErr)
         model.getBuildInfo('containerId', 0, function (err) {
           expect(err).to.exist()
-          expect(err.output.payload.message).to.equal('docker logs call failed: Docker error')
+          expect(err).to.equal(dockerErr)
           done()
         })
       })
