@@ -40,7 +40,7 @@
     "docker-modem": "git+ssh://git@github.com/Myztiq/docker-modem.git#demux-fix",
     "docker-stream-cleanser": "^0.2.0",
     "dockerode": "^2.2.8",
-    "dogerode": "git://github.com/Runnable/dogerode#v0.1.0",
+    "dogerode": "git://github.com/Runnable/dogerode#v0.1.1",
     "dotenv": "^0.4.0",
     "eson": "^0.5.0",
     "express": "^4.8.3",
