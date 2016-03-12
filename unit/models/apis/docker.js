@@ -6,7 +6,6 @@ require('loadenv')()
 
 var clone = require('101/clone')
 var Code = require('code')
-var Container = require('dockerode/lib/container')
 var createCount = require('callback-count')
 var dockerFrame = require('docker-frame')
 var Dockerode = require('dockerode')
@@ -690,17 +689,17 @@ describe('docker: ' + moduleName, function () {
 
   describe('getBuildInfo', function () {
     beforeEach(function (done) {
-      sinon.stub(Container.prototype, 'logs')
+      sinon.stub(model, '_containerAction')
       done()
     })
     afterEach(function (done) {
-      Container.prototype.logs.restore()
+      model._containerAction.restore()
       done()
     })
 
     it('should cleanse and parse logs', function (done) {
       var stream = through2()
-      Container.prototype.logs.yieldsAsync(null, stream)
+      model._containerAction.yieldsAsync(null, stream)
       var exitCode = 0
       model.getBuildInfo('containerId', exitCode, function (err, buildInfo) {
         if (err) { return done(err) }
@@ -720,7 +719,7 @@ describe('docker: ' + moduleName, function () {
     describe('errors', function () {
       it('should handle docker log stream err', function (done) {
         var stream = through2()
-        Container.prototype.logs.yieldsAsync(null, stream)
+        model._containerAction.yieldsAsync(null, stream)
         var streamOn = stream.on
         var emitErr = new Error('boom')
         sinon.stub(stream, 'on', streamErrHandlerAttached)
@@ -739,7 +738,7 @@ describe('docker: ' + moduleName, function () {
       })
       it('should handle parse err', function (done) {
         var stream = through2()
-        Container.prototype.logs.yieldsAsync(null, stream)
+        model._containerAction.yieldsAsync(null, stream)
         model.getBuildInfo('containerId', 1, function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/json parse/)
@@ -750,7 +749,7 @@ describe('docker: ' + moduleName, function () {
       })
       it('should handle streamCleanser err', function (done) {
         var stream = through2()
-        Container.prototype.logs.yieldsAsync(null, stream)
+        model._containerAction.yieldsAsync(null, stream)
         var emitErr = new Error('boom')
         var streamPipe = stream.pipe
         sinon.stub(stream, 'pipe', handlePipe)
@@ -859,6 +858,60 @@ describe('docker: ' + moduleName, function () {
       model.startContainer('some-container-id', function (err, resp) {
         expect(err).to.equal(dockerErr)
         expect(resp).to.not.exist()
+        sinon.assert.calledOnce(model._containerAction)
+        done()
+      })
+    })
+  })
+
+  describe('stopContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(model, '_containerAction').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      model._containerAction.restore()
+      done()
+    })
+    it('should call _containerAction with correct options', function (done) {
+      model.stopContainer('some-container-id', function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(model._containerAction)
+        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'stop', { t: process.env.CONTAINER_STOP_LIMIT })
+        done()
+      })
+    })
+    it('should ignore 304 if force=true', function (done) {
+      var dockerErr = new Error('Docker error')
+      dockerErr.output = {
+        statusCode: 304
+      }
+      model._containerAction.yieldsAsync(dockerErr)
+      model.stopContainer('some-container-id', true, function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(model._containerAction)
+        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'stop', { t: process.env.CONTAINER_STOP_LIMIT })
+        done()
+      })
+    })
+    it('should not ignore 304 if force=false', function (done) {
+      var dockerErr = new Error('Docker error')
+      dockerErr.output = {
+        statusCode: 404
+      }
+      model._containerAction.yieldsAsync(dockerErr)
+      model.stopContainer('some-container-id', false, function (err) {
+        expect(err).to.equal(dockerErr)
+        sinon.assert.calledOnce(model._containerAction)
+        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'stop', { t: process.env.CONTAINER_STOP_LIMIT })
+        done()
+      })
+    })
+    it('should call _containerAction and callback with an error', function (done) {
+      var dockerErr = new Error('Docker error')
+      model._containerAction.yieldsAsync(dockerErr)
+      model.stopContainer('some-container-id', function (err) {
+        expect(err).to.equal(dockerErr)
         sinon.assert.calledOnce(model._containerAction)
         done()
       })
