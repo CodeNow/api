@@ -1294,15 +1294,7 @@ describe('docker: ' + moduleName, function () {
     beforeEach(function (done) {
       sinon.stub(Dockerode.prototype, 'getContainer')
       sinon.stub(monitor, 'increment')
-      sinon.stub(monitor, 'timer')
       sinon.spy(model, 'handleErr')
-      ctx.timer = {
-        stop: function () {
-          return
-        }
-      }
-      monitor.timer.returns(ctx.timer)
-      sinon.spy(ctx.timer, 'stop')
       done()
     })
 
@@ -1310,8 +1302,6 @@ describe('docker: ' + moduleName, function () {
       Dockerode.prototype.getContainer.restore()
       model.handleErr.restore()
       monitor.increment.restore()
-      monitor.timer.restore()
-      ctx.timer.stop.restore()
       done()
     })
 
@@ -1346,18 +1336,6 @@ describe('docker: ' + moduleName, function () {
           expect(resp).to.equal(ctx.opResp)
           sinon.assert.calledOnce(monitor.increment)
           sinon.assert.calledWith(monitor.increment, 'api.docker.call.exec')
-          done()
-        })
-      })
-
-      it('should time action using monitor', function (done) {
-        model._containerAction('_container_id_', 'exec', ctx.opOpts, function (err, resp) {
-          if (err) { return done(err) }
-          expect(resp).to.equal(ctx.opResp)
-          sinon.assert.calledTwice(monitor.timer)
-          sinon.assert.calledWith(monitor.timer, 'api.docker.container.exec', true)
-          sinon.assert.calledWith(monitor.timer, 'api.docker.container.failed.exec', true)
-          sinon.assert.calledOnce(ctx.timer.stop)
           done()
         })
       })
@@ -1398,18 +1376,6 @@ describe('docker: ' + moduleName, function () {
           sinon.assert.calledTwice(monitor.increment)
           sinon.assert.calledWith(monitor.increment, 'api.docker.call.exec')
           sinon.assert.calledWith(monitor.increment, 'api.docker.call.failure.exec', 1)
-          done()
-        })
-      })
-
-      it('should time action using monitor', function (done) {
-        model._containerAction('_container_id_', 'exec', ctx.opOpts, function (err, resp) {
-          expect(err).to.exist()
-          expect(resp).to.equal(ctx.opResp)
-          sinon.assert.calledTwice(monitor.timer)
-          sinon.assert.calledWith(monitor.timer, 'api.docker.container.exec', true)
-          sinon.assert.calledWith(monitor.timer, 'api.docker.container.failed.exec', true)
-          sinon.assert.calledTwice(ctx.timer.stop)
           done()
         })
       })
