@@ -15,6 +15,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
+var Runnable = require('models/apis/runnable')
 var ContextVersion = require('models/mongo/context-version')
 var Mixpanel = require('models/apis/mixpanel')
 var PullRequest = require('models/apis/pullrequest')
@@ -555,11 +556,13 @@ describe('Github - /actions/github', function () {
         ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH
         process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true'
         successStub = sinon.stub(PullRequest.prototype, 'deploymentSucceeded')
+        sinon.spy(Runnable.prototype, 'updateInstance')
         slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoDeploy')
         done()
       })
       afterEach(function (done) {
         process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking
+        Runnable.prototype.updateInstance.restore()
         slackStub.restore()
         successStub.restore()
         done()
@@ -583,6 +586,32 @@ describe('Github - /actions/github', function () {
             ctx.settingsId = body._id
             done()
           })
+        })
+      })
+
+      it('should redeploy the instance and update the instance', function (done) {
+        var acv = ctx.contextVersion.attrs.appCodeVersions[0]
+        var user = ctx.user.attrs.accounts.github
+        var data = {
+          branch: 'master',
+          repo: acv.repo,
+          ownerId: user.id,
+          owner: user.login
+        }
+        var options = hooks(data).push
+        options.json.created = false
+        var username = user.login
+
+        require('./fixtures/mocks/github/users-username')(user.id, username)
+        require('./fixtures/mocks/github/user')(username)
+        request.post(options, function (err, res, body) {
+          if (err) { return done(err) }
+          expect(res.statusCode).to.equal(200)
+          expect(body).to.be.an.array()
+          expect(body).to.have.length(1)
+          sinon.assert.calledOnce(Runnable.prototype.updateInstance)
+          sinon.assert.calledWith(Runnable.prototype.updateInstance, ctx.instance.attrs.shortHash)
+          done()
         })
       })
 
