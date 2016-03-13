@@ -785,6 +785,56 @@ describe('docker: ' + moduleName, function () {
     })
   })
 
+  describe('getLogsAndRetryOnTimeout', function () {
+    beforeEach(function (done) {
+      sinon.stub(model, 'getLogs').yieldsAsync(null, { stream: true })
+      done()
+    })
+    afterEach(function (done) {
+      model.getLogs.restore()
+      done()
+    })
+    it('should callback without error if getLogs was successful', function (done) {
+      model.getLogsAndRetryOnTimeout('some-id', 'all', function (err, resp) {
+        if (err) { return done(err) }
+        expect(resp.stream).to.equal(true)
+        sinon.assert.calledOnce(model.getLogs)
+        sinon.assert.calledWith(model.getLogs, 'some-id', 'all')
+        done()
+      })
+    })
+    it('should callback with error if getLogs errored with some error', function (done) {
+      var dockerError = new Error('Docker error')
+      model.getLogs.yieldsAsync(dockerError)
+      model.getLogsAndRetryOnTimeout('some-id', 'all', function (err, resp) {
+        expect(err).to.equal(dockerError)
+        expect(resp).to.not.exist()
+        sinon.assert.calledOnce(model.getLogs)
+        sinon.assert.calledWith(model.getLogs, 'some-id', 'all')
+        done()
+      })
+    })
+    it('should retry TIMEOUT error', { timeout: 4000 }, function (done) {
+      var timeoutError = new Error('Docker error')
+      timeoutError.custom = {
+        err: {
+          code: 'TIMEOUT'
+        }
+      }
+      model.getLogs.onCall(0).yieldsAsync(timeoutError)
+      model.getLogs.onCall(1).yieldsAsync(timeoutError)
+      model.getLogs.onCall(2).yieldsAsync(null, { stream: true })
+
+      model.getLogsAndRetryOnTimeout('some-id', 'all', function (err, resp) {
+        if (err) { return done(err) }
+        expect(resp.stream).to.equal(true)
+        sinon.assert.callCount(model.getLogs, 3)
+        sinon.assert.calledWith(model.getLogs, 'some-id', 'all')
+        done()
+      })
+    })
+  })
+
   describe('getLogs', function () {
     beforeEach(function (done) {
       ctx.resp = { stream: 'logs' }
@@ -988,6 +1038,56 @@ describe('docker: ' + moduleName, function () {
         expect(err).to.equal(dockerErr)
         expect(resp).to.not.exist()
         sinon.assert.calledOnce(model._containerAction)
+        done()
+      })
+    })
+  })
+
+  describe('execContainerAndRetryOnTimeout', function () {
+    beforeEach(function (done) {
+      sinon.stub(model, 'execContainer').yieldsAsync(null, { stream: true })
+      done()
+    })
+    afterEach(function (done) {
+      model.execContainer.restore()
+      done()
+    })
+    it('should callback without error if execContainer was successful', function (done) {
+      model.execContainerAndRetryOnTimeout('some-id', function (err, resp) {
+        if (err) { return done(err) }
+        expect(resp.stream).to.equal(true)
+        sinon.assert.calledOnce(model.execContainer)
+        sinon.assert.calledWith(model.execContainer, 'some-id')
+        done()
+      })
+    })
+    it('should callback with error if execContainer errored with some error', function (done) {
+      var dockerError = new Error('Docker error')
+      model.execContainer.yieldsAsync(dockerError)
+      model.execContainerAndRetryOnTimeout('some-id', function (err, resp) {
+        expect(err).to.equal(dockerError)
+        expect(resp).to.not.exist()
+        sinon.assert.calledOnce(model.execContainer)
+        sinon.assert.calledWith(model.execContainer, 'some-id')
+        done()
+      })
+    })
+    it('should retry TIMEOUT error', { timeout: 4000 }, function (done) {
+      var timeoutError = new Error('Docker error')
+      timeoutError.custom = {
+        err: {
+          code: 'TIMEOUT'
+        }
+      }
+      model.execContainer.onCall(0).yieldsAsync(timeoutError)
+      model.execContainer.onCall(1).yieldsAsync(timeoutError)
+      model.execContainer.onCall(2).yieldsAsync(null, { stream: true })
+
+      model.execContainerAndRetryOnTimeout('some-id', function (err, resp) {
+        if (err) { return done(err) }
+        expect(resp.stream).to.equal(true)
+        sinon.assert.callCount(model.execContainer, 3)
+        sinon.assert.calledWith(model.execContainer, 'some-id')
         done()
       })
     })
