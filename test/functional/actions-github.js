@@ -15,6 +15,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
+var Runnable = require('models/apis/runnable')
 var ContextVersion = require('models/mongo/context-version')
 var Mixpanel = require('models/apis/mixpanel')
 var PullRequest = require('models/apis/pullrequest')
@@ -555,11 +556,13 @@ describe('Github - /actions/github', function () {
         ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH
         process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true'
         successStub = sinon.stub(PullRequest.prototype, 'deploymentSucceeded')
+        sinon.spy(Runnable.prototype, 'updateInstance')
         slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoDeploy')
         done()
       })
       afterEach(function (done) {
         process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking
+        Runnable.prototype.updateInstance.restore()
         slackStub.restore()
         successStub.restore()
         done()
@@ -609,16 +612,30 @@ describe('Github - /actions/github', function () {
             expect(body).to.equal('No instances should be deployed')
             sinon.assert.calledOnce(UserWhitelist.findOne)
             sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: sinon.match.string })
+            sinon.assert.notCalled(Runnable.prototype.updateInstance)
             done()
           })
         })
       })
 
       describe('with two instances', function () {
+        var stopListeningToBuildRunning
         beforeEach(function (done) {
           var count = createCount(2, done)
           ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, count.next)
           primus.expectActionCount('start', 1, count.next)
+        })
+        beforeEach(function (done) {
+          // Emit build complete for all `build_running` containers
+          stopListeningToBuildRunning = primus.listenToAction('build_running', function (err, actionData) {
+            if (err) return err
+            dockerMockEvents.emitBuildComplete(actionData.data.data)
+          })
+          done()
+        })
+        afterEach(function (done) {
+          stopListeningToBuildRunning()
+          done()
         })
 
         it('should redeploy two instances with new build', function (done) {
@@ -634,7 +651,6 @@ describe('Github - /actions/github', function () {
           var options = hooks(data).push
           options.json.created = false
           var username = user.login
-
           require('./fixtures/mocks/github/users-username')(user.id, username)
           require('./fixtures/mocks/github/user')(username)
 
@@ -654,9 +670,9 @@ describe('Github - /actions/github', function () {
               'contextVersion.build.triggeredAction.appCodeVersion.repo': options.json.repository.full_name,
               'contextVersion.build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id
             }
-            expect(successStub.calledTwice).to.equal(true)
-            expect(slackStub.calledOnce).to.equal(true)
-            expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true)
+            sinon.assert.calledTwice(successStub)
+            sinon.assert.calledOnce(slackStub)
+            sinon.assert.calledWith(slackStub, sinon.match.object, sinon.match.array)
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err) }
               ctx.instance2.fetch(expects.success(200, expected, function () {
@@ -672,7 +688,7 @@ describe('Github - /actions/github', function () {
             expect(cvIds).to.exist()
             expect(cvIds).to.be.an.array()
             expect(cvIds).to.have.length(2)
-            finishAllIncompleteVersions()
+            sinon.assert.calledTwice(Runnable.prototype.updateInstance)
           })
         })
       })
