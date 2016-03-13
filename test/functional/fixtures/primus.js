@@ -77,6 +77,23 @@ module.exports = {
       }
     })
   },
+  listenToAction: function (action, cb) {
+    log.trace({expectedAction: action}, 'listenToAction')
+    function listenToAction (data) {
+      log.trace('primus expect:',
+        'ROOM_MESSAGE', action,
+        data.event, data.data.action)
+      if (data.event === 'ROOM_MESSAGE' && data.data.action === action) {
+        log.trace('primus expected data:', data.data.data)
+        cb(null, data)
+      }
+    }
+    if (!ctx.primus) { return cb(new Error('can not primus.expectAction if not connected')) }
+    ctx.primus.on('data', listenToAction)
+    return function () {
+      ctx.primus.removeListener('data', listenToAction)
+    }
+  },
   expectAction: function (action, expected, cb) {
     log.trace({expectedAction: action}, 'expectAction')
     if (isFunction(expected)) {
