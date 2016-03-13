@@ -589,32 +589,6 @@ describe('Github - /actions/github', function () {
         })
       })
 
-      it('should redeploy the instance and update the instance', function (done) {
-        var acv = ctx.contextVersion.attrs.appCodeVersions[0]
-        var user = ctx.user.attrs.accounts.github
-        var data = {
-          branch: 'master',
-          repo: acv.repo,
-          ownerId: user.id,
-          owner: user.login
-        }
-        var options = hooks(data).push
-        options.json.created = false
-        var username = user.login
-
-        require('./fixtures/mocks/github/users-username')(user.id, username)
-        require('./fixtures/mocks/github/user')(username)
-        request.post(options, function (err, res, body) {
-          if (err) { return done(err) }
-          expect(res.statusCode).to.equal(200)
-          expect(body).to.be.an.array()
-          expect(body).to.have.length(1)
-          sinon.assert.calledOnce(Runnable.prototype.updateInstance)
-          sinon.assert.calledWith(Runnable.prototype.updateInstance, ctx.instance.attrs.shortHash)
-          done()
-        })
-      })
-
       it('should not redeploy locked instance', function (done) {
         ctx.instance.update({ locked: true }, function (err) {
           if (err) { return done(err) }
