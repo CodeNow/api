@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "6.32.3",
+  "version": "6.32.5",
   "npm-shrinkwrap-version": "5.4.1",
   "node-version": "v0.10.38",
   "dependencies": {
@@ -1338,8 +1338,9 @@
       }
     },
     "dogerode": {
-      "version": "0.0.3",
-      "resolved": "https://registry.npmjs.org/dogerode/-/dogerode-0.0.3.tgz",
+      "version": "0.1.1",
+      "from": "dogerode@git://github.com/Runnable/dogerode#9625c8398ebc9578dd1452c2eeee7f25bb0bd50a",
+      "resolved": "git://github.com/Runnable/dogerode#9625c8398ebc9578dd1452c2eeee7f25bb0bd50a",
       "dependencies": {
         "dogstatsy": {
           "version": "0.0.1",
