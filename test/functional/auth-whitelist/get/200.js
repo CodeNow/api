@@ -13,6 +13,7 @@ var expect = Code.expect
 
 var api = require('../../fixtures/api-control')
 
+var Promise = require('bluebird')
 var request = require('request')
 var randStr = require('randomstring').generate
 
@@ -20,6 +21,23 @@ var ctx = {}
 describe('GET /auth/whitelist/', function () {
   before(api.start.bind(ctx))
   after(api.stop.bind(ctx))
+
+  var whitelistOrgs = function (orgNames) {
+    var getOpts = function (name) {
+      return {
+        method: 'POST',
+        url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
+        json: true,
+        body: { name: name },
+        jar: ctx.j
+      }
+    }
+    return Promise.all(orgNames.map(function (orgName) {
+      return Promise.fromCallback(function (cb) {
+        return request(getOpts(orgName), cb)
+      })
+    }))
+  }
 
   beforeEach(function (done) {
     ctx.j = request.jar()
@@ -30,41 +48,83 @@ describe('GET /auth/whitelist/', function () {
       done(err)
     })
   })
-  beforeEach(function (done) {
-    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
-    ctx.name = randStr(5)
-    var getOpts = function (name) {
-      return {
-        method: 'POST',
-        url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
+
+  afterEach(require('../../fixtures/clean-mongo').removeEverything)
+
+  describe('User with whitelisted orgs', function () {
+    beforeEach(function (done) {
+      require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
+      require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
+      ctx.name = randStr(5)
+      return whitelistOrgs([ctx.name, 'Runnable'])
+        .asCallback(done)
+    })
+
+    it('should return an array of all the whitelisted orgs', function (done) {
+      var opts = {
+        method: 'GET',
+        url: process.env.FULL_API_DOMAIN + '/auth/whitelist/',
         json: true,
-        body: { name: name },
         jar: ctx.j
       }
-    }
-    request(getOpts(ctx.name), function (err, res) {
-      if (err) done(err)
-      request(getOpts('Runnable'), function (err, res) {
-        if (err) done(err)
+      request(opts, function (err, res, body) {
+        expect(err).to.be.null()
+        expect(res).to.exist()
+        expect(res.statusCode).to.equal(200)
+        require('../../fixtures/check-whitelist')([ctx.name, 'Runnable'], done)
+      })
+    })
+  })
+
+  describe('User with no whitelisted orgs', function () {
+    beforeEach(function (done) {
+      ctx.name = randStr(5)
+      return whitelistOrgs([ctx.name])
+        .asCallback(done)
+    })
+
+    it('should return an array of all the whitelisted orgs', function (done) {
+      require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
+      var opts = {
+        method: 'GET',
+        url: process.env.FULL_API_DOMAIN + '/auth/whitelist/',
+        json: true,
+        jar: ctx.j
+      }
+      request(opts, function (err, res, body) {
+        expect(err).to.be.null()
+        expect(res).to.exist()
+        expect(res.statusCode).to.equal(200)
+        expect(body).to.be.an.array()
+        expect(body.length).to.equal(0)
         done()
       })
     })
   })
-  afterEach(require('../../fixtures/clean-mongo').removeEverything)
 
-  it('should return an array of all the whitelisted orgs', function (done) {
-    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
-    var opts = {
-      method: 'GET',
-      url: process.env.FULL_API_DOMAIN + '/auth/whitelist/',
-      json: true,
-      jar: ctx.j
-    }
-    request(opts, function (err, res, body) {
-      expect(err).to.be.null()
-      expect(res).to.exist()
-      expect(res.statusCode).to.equal(200)
-      require('../../fixtures/check-whitelist')([ctx.name, 'Runnable'], done)
+  describe('Non-Runnable user', function () {
+    beforeEach(function (done) {
+      ctx.name = randStr(5)
+      return whitelistOrgs([ctx.name])
+        .asCallback(done)
+    })
+
+    it('should return an array of all the whitelisted orgs', function (done) {
+      require('../../fixtures/mocks/github/user-orgs')(123, 'Wow')
+      var opts = {
+        method: 'GET',
+        url: process.env.FULL_API_DOMAIN + '/auth/whitelist/',
+        json: true,
+        jar: ctx.j
+      }
+      request(opts, function (err, res, body) {
+        expect(err).to.be.null()
+        expect(res).to.exist()
+        expect(res.statusCode).to.equal(200)
+        expect(body).to.be.an.array()
+        expect(body.length).to.equal(0)
+        done()
+      })
     })
   })
 })

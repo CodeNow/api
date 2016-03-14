@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "6.32.1",
+  "version": "6.32.6",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -40,7 +40,7 @@
     "docker-modem": "git+ssh://git@github.com/Myztiq/docker-modem.git#demux-fix",
     "docker-stream-cleanser": "^0.2.0",
     "dockerode": "^2.2.8",
-    "dogerode": "0.0.3",
+    "dogerode": "git://github.com/Runnable/dogerode#v0.1.1",
     "dotenv": "^0.4.0",
     "error-cat": "^1.4.2",
     "eson": "^0.5.0",
