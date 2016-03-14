@@ -6,6 +6,8 @@ var isFunction = require('101/is-function')
 var mongoose = require('mongoose')
 var uuid = require('uuid')
 var Hashids = require('hashids')
+var createCount = require('callback-count')
+var isObject = require('101/is-object')
 
 var Build = require('models/mongo/build.js')
 var Context = require('models/mongo/context.js')
@@ -35,13 +37,58 @@ var factory = module.exports = {
       }
     }, cb)
   },
+  createInstanceWithProps: function (ownerGithubId, props, cb) {
+    if (isFunction(props)) {
+      cb = props
+      props = null
+    }
+    var count = createCount(1, function () {
+      var data = factory.instanceTemplate(ownerGithubId, props)
+      Instance.create(data, function (err, instance) {
+        if (err) { return cb(err) }
+        cb(null, instance, props.build, props.cv)
+      })
+    })
+    if (!props.build) {
+      count.inc()
+      factory.createBuild(ownerGithubId, function (err, build, cv) {
+        if (err) { return count.next(err) }
+        props.build = build
+        props.cv = cv
+        count.next()
+      })
+    }
+    count.next()
+  },
   createInstance: function (ownerGithubId, build, locked, cv, cb) {
-    var data = this.instanceTemplate(ownerGithubId, build, locked, cv)
+    var data = this.instanceTemplate(ownerGithubId, {
+      build: build,
+      cv: cv,
+      locked: locked
+    })
     Instance.create(data, cb)
   },
   createBuild: function (ownerGithubId, cv, cb) {
-    var data = this.buildTemplate(ownerGithubId, cv)
-    Build.create(data, cb)
+    if (isFunction(cv)) {
+      cb = cv
+      cv = null
+    }
+    var count = createCount(1, function () {
+      var data = factory.buildTemplate(ownerGithubId, cv)
+      Build.create(data, function (err, build) {
+        if (err) { return cb(err) }
+        cb(null, build, cv)
+      })
+    })
+    if (!cv) {
+      count.inc()
+      factory.createStartedCv(ownerGithubId, function (err, newCv) {
+        if (err) { return count.next(err) }
+        cv = newCv
+        count.next()
+      })
+    }
+    count.next()
   },
   createCompletedCv: function (ownerGithubId, props, cb) {
     if (isFunction(props)) {
@@ -182,22 +229,29 @@ var factory = module.exports = {
       }
     }
   },
-  instanceTemplate: function (ownerGithubId, build, locked, cv) {
-    var name = uuid()
+  instanceTemplate: function (ownerGithubId, props) {
+    var name = props.name || uuid()
+    var shortHash = uuid();
+    if (props.isolated && !isObject(props.isolated)) {
+      props.isolated = VALID_OBJECT_ID
+    }
     return {
-      shortHash: uuid(),
+      shortHash: shortHash.slice(0, shortHash.indexOf('-')),
       name: name,
       lowerName: name.toLowerCase(),
       owner: {
-        github: ownerGithubId
+        github: ownerGithubId,
+        username: props.username || ownerGithubId.toString()
       },
       createdBy: {
-        github: ownerGithubId
+        github: ownerGithubId,
+        username: props.username || ownerGithubId.toString()
       },
+      isolated: props.isolated,
       parent: 'sdf',
-      build: build._id,
-      contextVersion: cv,
-      locked: locked,
+      build: props.build._id,
+      contextVersion: props.cv,
+      locked: props.locked,
       created: new Date(),
       env: [],
       network: {
@@ -214,6 +268,17 @@ var factory = module.exports = {
     return hashids.encrypt(factory.getNextId()).toLowerCase()
   },
   createNewVersion: function (opts) {
+    opts = opts || {}
+    if (!opts.context) {
+      var context = Context.create({
+        name: 'asdasd',
+        owner: {
+          github: process.env.HELLO_RUNNABLE_GITHUB_ID,
+          isSource: true
+        }
+      })
+      opts.context = context._id;
+    }
     return new ContextVersion({
       message: 'test',
       owner: { github: VALID_GITHUB_ID },
@@ -257,7 +322,7 @@ var factory = module.exports = {
   },
 
   createNewInstance: function (name, opts) {
-    // jshint maxcomplexity:10
+    // jshint maxcomplexity:12
     opts = opts || {}
     var container = {
       dockerContainer: opts.containerId || VALID_OBJECT_ID,
