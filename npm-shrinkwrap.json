@@ -4621,6 +4621,10 @@
         }
       }
     },
+    "retry": {
+      "version": "0.9.0",
+      "resolved": "https://registry.npmjs.org/retry/-/retry-0.9.0.tgz"
+    },
     "rewire": {
       "version": "2.5.1",
       "resolved": "https://registry.npmjs.org/rewire/-/rewire-2.5.1.tgz"
