@@ -100,7 +100,6 @@
     "slack-client": "~1.4.0",
     "strim": "^0.2.2",
     "substream": "0.2.0",
-    "substream-pump": "^1.0.1",
     "sync-exec": "^0.6.1",
     "tailable-capped-array": "^0.1.0",
     "through2": "^2.0.0",
