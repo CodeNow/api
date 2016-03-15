@@ -282,6 +282,20 @@ describe('Versions - /contexts/:contextid/versions', function () {
         })
       })
     })
+    describe('via branch and repo', function () {
+      it('should return us our version', function (done) {
+        var expected = [{
+          owner: exists,
+          _id: ctx.contextVersion.id()
+        }]
+        var acv = ctx.contextVersion.json().appCodeVersions[0]
+        var query = {
+          branch: acv.branch,
+          repo: acv.repo
+        }
+        ctx.context.fetchVersions(query, expects.success(200, expected, done))
+      })
+    })
     describe('via infraCodeVersion', function () {
       it('should return us our version', function (done) {
         var expected = [{
@@ -290,6 +304,29 @@ describe('Versions - /contexts/:contextid/versions', function () {
         }]
         var query = {
           infraCodeVersion: ctx.contextVersion.json().infraCodeVersion
+        }
+        ctx.context.fetchVersions(query, expects.success(200, expected, done))
+      })
+    })
+    describe('via buildCompleted', function () {
+      it('should not return us our version', function (done) {
+        var expected = []
+        var query = {
+          build: {
+            completed: false
+          }
+        }
+        ctx.context.fetchVersions(query, expects.success(200, expected, done))
+      })
+      it('should return us our version', function (done) {
+        var expected = [{
+          owner: exists,
+          _id: ctx.contextVersion.id()
+        }]
+        var query = {
+          build: {
+            completed: true
+          }
         }
         ctx.context.fetchVersions(query, expects.success(200, expected, done))
       })
