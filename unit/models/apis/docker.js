@@ -816,11 +816,7 @@ describe('docker: ' + moduleName, function () {
     })
     it('should retry ETIMEDOUT error', { timeout: 4000 }, function (done) {
       var timeoutError = new Error('Docker error')
-      timeoutError.custom = {
-        err: {
-          code: 'ETIMEDOUT'
-        }
-      }
+      timeoutError.code = 'ETIMEDOUT'
       model.getLogs.onCall(0).yieldsAsync(timeoutError)
       model.getLogs.onCall(1).yieldsAsync(timeoutError)
       model.getLogs.onCall(2).yieldsAsync(null, { stream: true })
@@ -1074,11 +1070,7 @@ describe('docker: ' + moduleName, function () {
     })
     it('should retry ETIMEDOUT error', { timeout: 4000 }, function (done) {
       var timeoutError = new Error('Docker error')
-      timeoutError.custom = {
-        err: {
-          code: 'ETIMEDOUT'
-        }
-      }
+      timeoutError.code = 'ETIMEDOUT'
       model.execContainer.onCall(0).yieldsAsync(timeoutError)
       model.execContainer.onCall(1).yieldsAsync(timeoutError)
       model.execContainer.onCall(2).yieldsAsync(null, { stream: true })
