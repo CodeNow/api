@@ -282,39 +282,6 @@ describe('Versions - /contexts/:contextid/versions', function () {
         })
       })
     })
-    describe('via appCodeVersions.commit and .branch', function () {
-      it('should tell us repo is required', function (done) {
-        var query = {
-          appCodeVersions: [{
-            commit: ctx.contextVersion.json().appCodeVersions[0].commit,
-            branch: ctx.contextVersion.json().appCodeVersions[0].branch
-          }]
-        }
-        ctx.context.fetchVersions(query, expects.error(400, /repo.+required/, done))
-      })
-    })
-    describe('via appCodeVersions.commit and .repo', function () {
-      it('should tell us branch is required', function (done) {
-        var query = {
-          appCodeVersions: [{
-            commit: ctx.contextVersion.json().appCodeVersions[0].commit,
-            repo: ctx.contextVersion.json().appCodeVersions[0].repo
-          }]
-        }
-        ctx.context.fetchVersions(query, expects.error(400, /branch.+required/, done))
-      })
-    })
-    describe('via appCodeVersions.branch and .repo', function () {
-      it('should tell us commit is required', function (done) {
-        var query = {
-          appCodeVersions: [{
-            branch: ctx.contextVersion.json().appCodeVersions[0].branch,
-            repo: ctx.contextVersion.json().appCodeVersions[0].repo
-          }]
-        }
-        ctx.context.fetchVersions(query, expects.error(400, /commit.+required/, done))
-      })
-    })
     describe('via infraCodeVersion', function () {
       it('should return us our version', function (done) {
         var expected = [{

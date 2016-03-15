@@ -1564,4 +1564,89 @@ describe('Context Version: ' + moduleName, function () {
       })
     })
   })
+
+  describe('generateQueryForAppCodeVersions', function () {
+    beforeEach(function (done) {
+      sinon.spy(ContextVersion, 'generateQueryForAppCodeVersions')
+      done()
+    })
+    afterEach(function (done) {
+      ContextVersion.generateQueryForAppCodeVersions.restore()
+      done()
+    })
+
+    describe('Validations', function () {
+      it('should tell us an arrya is required', function (done) {
+        var query = {}
+        expect(ContextVersion.generateQueryForAppCodeVersions.bind(ContextVersion, query)).to.throw(Error, /array/)
+        done()
+      })
+      it('should tell us repo is required', function (done) {
+        var query = [{
+          commit: 'ecf59dadf7296405101e284a1bb9251b178f48f9',
+          branch: 'super-branch'
+        }]
+        expect(ContextVersion.generateQueryForAppCodeVersions.bind(ContextVersion, query)).to.throw(Error, /repo.*branch.*commit.*string/)
+        done()
+      })
+      it('should tell us branch is required', function (done) {
+        var query = [{
+          commit: 'ecf59dadf7296405101e284a1bb9251b178f48f9',
+          repo: 'wow/hello-world'
+        }, {
+          commit: 'ecf59dadf7296405101e284a1bb9251b178f48f9',
+          branch: 'hello',
+          repo: 'wow/hello-world'
+        }]
+        expect(ContextVersion.generateQueryForAppCodeVersions.bind(ContextVersion, query)).to.throw(Error, /repo.*branch.*commit.*string/)
+        done()
+      })
+      it('should tell us commit is required', function (done) {
+        var query = [{
+          commit: 'ecf59dadf7296405101e284a1bb9251b178f48f9',
+          branch: 'super-branch',
+          repo: 'wow/hello-world'
+        }, {
+          branch: 'hello',
+          repo: 'wow/hello-world'
+        }]
+        expect(ContextVersion.generateQueryForAppCodeVersions.bind(ContextVersion, query)).to.throw(Error, /repo.*branch.*commit.*string/)
+        done()
+      })
+    })
+    describe('Queries', function () {
+      it('should return an empty array if one is passed', function (done) {
+        var query = ContextVersion.generateQueryForAppCodeVersions([])
+        expect(query).to.be.an.object()
+        expect(query.$size).to.be.a.number()
+        expect(query.$size).to.equal(0)
+        expect(query.$all).to.be.an.array()
+        expect(query.$all).to.be.empty(0)
+        done()
+      })
+      it('should map the properties accordingly', function (done) {
+        var repoName = 'wow/Hello-World'
+        var appCodeVersionQuery = [{
+          commit: 'ecf59dadf7296405101e284a1bb9251b178f48f9',
+          branch: 'super-branch',
+          repo: repoName
+        }, {
+          commit: 'ecf59dadf7296405101e284a1bb9251b178f48f9',
+          branch: 'hello',
+          repo: repoName
+        }]
+        var query = ContextVersion.generateQueryForAppCodeVersions(appCodeVersionQuery)
+        expect(query).to.be.an.object()
+        expect(query.$size).to.be.a.number()
+        expect(query.$size).to.equal(2)
+        expect(query.$all).to.be.an.array()
+        expect(query.$all.length).to.be.equal(2)
+        expect(query.$all[0]).to.be.an.object()
+        expect(query.$all[0].$elemMatch).to.be.an.object()
+        expect(query.$all[0].$elemMatch).to.include(['lowerRepo', 'lowerBranch', 'commit'])
+        expect(query.$all[0].$elemMatch.lowerRepo).to.equal(repoName.toLowerCase())
+        done()
+      })
+    })
+  })
 })
