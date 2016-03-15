@@ -1566,15 +1566,6 @@ describe('Context Version: ' + moduleName, function () {
   })
 
   describe('generateQueryForAppCodeVersions', function () {
-    beforeEach(function (done) {
-      sinon.spy(ContextVersion, 'generateQueryForAppCodeVersions')
-      done()
-    })
-    afterEach(function (done) {
-      ContextVersion.generateQueryForAppCodeVersions.restore()
-      done()
-    })
-
     describe('Validations', function () {
       it('should tell us an arrya is required', function (done) {
         var query = {}
@@ -1645,6 +1636,77 @@ describe('Context Version: ' + moduleName, function () {
         expect(query.$all[0].$elemMatch).to.be.an.object()
         expect(query.$all[0].$elemMatch).to.include(['lowerRepo', 'lowerBranch', 'commit'])
         expect(query.$all[0].$elemMatch.lowerRepo).to.equal(repoName.toLowerCase())
+        done()
+      })
+    })
+  })
+
+  describe('generateQueryForBranchAndRepo', function () {
+    describe('Validations', function () {
+      it('should throw an error if the is no branch passed', function (done) {
+        expect(ContextVersion.generateQueryForBranchAndRepo.bind(ContextVersion, 'repo')).to.throw(Error, /branch.*string/)
+        done()
+      })
+      it('should throw an error if the branch is not a string', function (done) {
+        expect(ContextVersion.generateQueryForBranchAndRepo.bind(ContextVersion, 'repo', 123)).to.throw(Error, /branch.*string/)
+        done()
+      })
+      it('should throw an error if the is no repo passed', function (done) {
+        expect(ContextVersion.generateQueryForBranchAndRepo.bind(ContextVersion, undefined, 123)).to.throw(Error, /repo.*string/)
+        done()
+      })
+      it('should throw an error if the repo is not a string', function (done) {
+        expect(ContextVersion.generateQueryForBranchAndRepo.bind(ContextVersion, {}, 123)).to.throw(Error, /repo.*string/)
+        done()
+      })
+    })
+    describe('Queries', function () {
+      it('should generate the appropriate query', function (done) {
+        var branchName = 'helloWorld'
+        var repoName = 'CodeNow/wow'
+        var query = ContextVersion.generateQueryForBranchAndRepo(repoName, branchName)
+        expect(query).to.be.an.object()
+        expect(query.appCodeVersions).to.be.an.object()
+        expect(query.appCodeVersions.$elemMatch).to.be.an.object()
+        expect(query.appCodeVersions.$elemMatch).to.be.an.object()
+        expect(query.appCodeVersions.$elemMatch.lowerBranch).to.be.a.string()
+        expect(query.appCodeVersions.$elemMatch.lowerBranch).to.equal(branchName.toLowerCase())
+        expect(query.appCodeVersions.$elemMatch.lowerRepo).to.be.a.string()
+        expect(query.appCodeVersions.$elemMatch.lowerRepo).to.equal(repoName.toLowerCase())
+        expect(query.appCodeVersions.$elemMatch.additionalRepo).to.equal(null)
+        done()
+      })
+    })
+  })
+
+  describe('generateQueryForBuildCompleted', function () {
+    describe('Validations', function () {
+      it('should throw an error if the is no buildCompleted passed', function (done) {
+        expect(ContextVersion.generateQueryForBuildCompleted.bind(ContextVersion)).to.throw(Error, /buildCompleted.*boolean/)
+        done()
+      })
+      it('should throw an error if the buildCompleted is not a boolean', function (done) {
+        expect(ContextVersion.generateQueryForBuildCompleted.bind(ContextVersion, 'notABool')).to.throw(Error, /buildCompleted.*boolean/)
+        done()
+      })
+    })
+    describe('Queries', function () {
+      it('should generate the appropriate query for true', function (done) {
+        var query = ContextVersion.generateQueryForBuildCompleted(true)
+        expect(query).to.be.an.object()
+        expect(query.build).to.be.an.object()
+        expect(query.build.completed).to.be.an.object()
+        expect(query.build.completed.$exists).to.be.an.boolean()
+        expect(query.build.completed.$exists).to.equal(true)
+        done()
+      })
+      it('should generate the appropriate query for false', function (done) {
+        var query = ContextVersion.generateQueryForBuildCompleted(false)
+        expect(query).to.be.an.object()
+        expect(query.build).to.be.an.object()
+        expect(query.build.completed).to.be.an.object()
+        expect(query.build.completed.$exists).to.be.an.boolean()
+        expect(query.build.completed.$exists).to.equal(false)
         done()
       })
     })
