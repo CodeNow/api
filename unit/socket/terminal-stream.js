@@ -50,12 +50,12 @@ describe('terminal stream: ' + moduleName, function () {
 
   beforeEach(function (done) {
     var stream = through2()
-    sinon.stub(Docker.prototype, 'execContainer').yieldsAsync(null, stream)
+    sinon.stub(Docker.prototype, 'execContainerAndRetryOnTimeout').yieldsAsync(null, stream)
     done()
   })
 
   afterEach(function (done) {
-    Docker.prototype.execContainer.restore()
+    Docker.prototype.execContainerAndRetryOnTimeout.restore()
     done()
   })
 
@@ -255,6 +255,8 @@ describe('terminal stream: ' + moduleName, function () {
 
             sinon.assert.calledOnce(ctx.socket.substream)
             sinon.assert.calledWith(ctx.socket.substream, ctx.data.terminalStreamId)
+            sinon.assert.calledOnce(Docker.prototype.execContainerAndRetryOnTimeout)
+            sinon.assert.calledWith(Docker.prototype.execContainerAndRetryOnTimeout, ctx.data.containerId)
             done()
           })
           .catch(done)
