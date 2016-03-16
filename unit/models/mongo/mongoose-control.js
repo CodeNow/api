@@ -70,7 +70,7 @@ describe('mongoose-control', function () {
               server: {
                 ssl: true,
                 sslValidate: true,
-                sslCA: 'cacert',
+                sslCA: [ 'cacert' ],
                 sslCert: 'cert',
                 sslKey: 'key'
               }
