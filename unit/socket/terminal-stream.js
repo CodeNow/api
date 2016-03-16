@@ -22,6 +22,7 @@ var DebugContainer = require('models/mongo/debug-container')
 var Primus = require('primus')
 var Promise = require('bluebird')
 var commonStream = require('socket/common-stream')
+var monitorDog = require('monitor-dog')
 
 function ClientStream () {
   EventEmitter.call(this)
@@ -232,6 +233,12 @@ describe('terminal stream: ' + moduleName, function () {
     })
     describe('Success', function () {
       beforeEach(function (done) {
+        sinon.stub(monitorDog, 'captureStreamEvents')
+        var streamObj = {};
+        streamObj.pipe = sinon.stub().returns(streamObj)
+        streamObj.on = sinon.stub()
+
+        Docker.prototype.execContainerAndRetryOnTimeout.yieldsAsync(null, streamObj)
         sinon.stub(Instance, 'findOneAsync').returns(Promise.resolve(ctx.instance))
         sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
         sinon.stub(Primus, 'createSocket').returns(function () {
@@ -245,6 +252,7 @@ describe('terminal stream: ' + moduleName, function () {
       })
       afterEach(function (done) {
         Instance.findOneAsync.restore()
+        monitorDog.captureStreamEvents.restore()
         done()
       })
       it('should allow logs when check ownership passes', function (done) {
