@@ -295,6 +295,15 @@ describe('Versions - /contexts/:contextid/versions', function () {
         }
         ctx.context.fetchVersions(query, expects.success(200, expected, done))
       })
+      it('should not return us our version', function (done) {
+        var expected = []
+        var acv = ctx.contextVersion.json().appCodeVersions[0]
+        var query = {
+          branch: 'some-other-branch-that-doesnt-exist',
+          repo: acv.repo
+        }
+        ctx.context.fetchVersions(query, expects.success(200, expected, done))
+      })
     })
     describe('via infraCodeVersion', function () {
       it('should return us our version', function (done) {
