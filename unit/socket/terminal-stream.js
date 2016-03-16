@@ -180,7 +180,7 @@ describe('terminal stream: ' + moduleName, function () {
 
   describe('setupStream', function () {
     function generateTestStream () {
-      var generatedStream =  {
+      var generatedStream = {
         write: sinon.stub(),
         end: sinon.stub(),
         on: sinon.stub(),
@@ -206,7 +206,7 @@ describe('terminal stream: ' + moduleName, function () {
         terminalStreamId: 'terminalStreamId',
         containerId: 'containerId'
       }
-      done();
+      done()
     })
     beforeEach(function (done) {
       // Cleanup all existing "connections"
@@ -244,7 +244,7 @@ describe('terminal stream: ' + moduleName, function () {
           })
         })
         .catch(function (err) {
-          console.log(err);
+          console.log(err)
           throw err
         })
         .asCallback(done)
@@ -330,7 +330,7 @@ describe('terminal stream: ' + moduleName, function () {
               expect(mockConnectionData.lastMessage).to.equal('test data')
             })
             .asCallback(done)
-        });
+        })
         it('should pass data through to the client', function (done) {
           terminalStream._setupStream(mockSocket, mockData)
             .then(function () {
@@ -338,7 +338,7 @@ describe('terminal stream: ' + moduleName, function () {
               sinon.assert.calledWith(mockConnectionData.cleanedExecStream.pipe, mockSubstream)
             })
             .asCallback(done)
-        });
+        })
       })
       describe('when writing to a stream', function () {
         it('should pass through the data to the raw stream', function (done) {
