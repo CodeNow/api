@@ -37,7 +37,7 @@ describe('terminal stream: ' + moduleName, function () {
     describe('cache cleanup loop', function () {
       it('should find all terminals that have not interacted in a while and kill them', function (done) {
         var connectionResults = {
-          rawStream: {
+          execStream: {
             end: sinon.stub()
           }
         }
@@ -58,7 +58,7 @@ describe('terminal stream: ' + moduleName, function () {
         terminalStream._terminalConnections[connection1.id] = connection1
         terminalStream._handleCleanup()
           .then(function () {
-            sinon.assert.calledOnce(connectionResults.rawStream.end)
+            sinon.assert.calledOnce(connectionResults.execStream.end)
             expect(Object.keys(terminalStream._terminalConnections).length).to.equal(1)
             done()
           })
@@ -213,19 +213,19 @@ describe('terminal stream: ' + moduleName, function () {
       Object.keys(terminalStream._terminalConnections).forEach(function (key) {
         delete terminalStream._terminalConnections[key]
       })
-      sinon.stub(Docker.prototype, 'execContainerAndRetryOnTimeout').yieldsAsync(null, mockExecStream)
+      sinon.stub(Docker.prototype, 'execContainerAndRetryOnTimeoutAsync').returns(Promise.resolve(mockExecStream))
       sinon.stub(monitorDog, 'captureStreamEvents')
       done()
     })
     afterEach(function (done) {
-      Docker.prototype.execContainerAndRetryOnTimeout.restore()
+      Docker.prototype.execContainerAndRetryOnTimeoutAsync.restore()
       monitorDog.captureStreamEvents.restore()
       done()
     })
     it('should setup a new stream', function (done) {
       terminalStream._setupStream(mockSocket, mockData)
         .then(function () {
-          sinon.assert.calledWith(Docker.prototype.execContainerAndRetryOnTimeout, mockData.containerId, sinon.match.func)
+          sinon.assert.calledWith(Docker.prototype.execContainerAndRetryOnTimeoutAsync, mockData.containerId)
           expect(Object.keys(terminalStream._terminalConnections).length).to.equal(1)
         })
         .asCallback(done)
@@ -256,8 +256,8 @@ describe('terminal stream: ' + moduleName, function () {
         mockData.terminalId = '1234'
         mockConnectionData = {
           containerId: mockData.containerId,
-          cleanedStream: generateTestStream(),
-          rawStream: generateTestStream(),
+          cleanedExecStream: generateTestStream(),
+          execStream: generateTestStream(),
           lastMessage: 'This is the last message'
         }
         existingConnection = {
@@ -271,7 +271,7 @@ describe('terminal stream: ' + moduleName, function () {
         it('should re-use the stream connection', function (done) {
           terminalStream._setupStream(mockSocket, mockData)
             .then(function () {
-              sinon.assert.notCalled(Docker.prototype.execContainerAndRetryOnTimeout)
+              sinon.assert.notCalled(Docker.prototype.execContainerAndRetryOnTimeoutAsync)
             })
             .asCallback(done)
         })
@@ -314,7 +314,7 @@ describe('terminal stream: ' + moduleName, function () {
           mockData.terminalId = 'fooo'
           terminalStream._setupStream(mockSocket, mockData)
             .then(function () {
-              sinon.assert.calledOnce(Docker.prototype.execContainerAndRetryOnTimeout)
+              sinon.assert.calledOnce(Docker.prototype.execContainerAndRetryOnTimeoutAsync)
             })
             .asCallback(done)
         })
@@ -324,9 +324,9 @@ describe('terminal stream: ' + moduleName, function () {
         it('should store the last message in memory', function (done) {
           terminalStream._setupStream(mockSocket, mockData)
             .then(function () {
-              sinon.assert.calledOnce(mockConnectionData.cleanedStream.on)
-              sinon.assert.calledWith(mockConnectionData.cleanedStream.on, 'data', sinon.match.func)
-              mockConnectionData.cleanedStream.on.lastCall.args[1]('test data')
+              sinon.assert.calledOnce(mockConnectionData.cleanedExecStream.on)
+              sinon.assert.calledWith(mockConnectionData.cleanedExecStream.on, 'data', sinon.match.func)
+              mockConnectionData.cleanedExecStream.on.lastCall.args[1]('test data')
               expect(mockConnectionData.lastMessage).to.equal('test data')
             })
             .asCallback(done)
@@ -334,8 +334,8 @@ describe('terminal stream: ' + moduleName, function () {
         it('should pass data through to the client', function (done) {
           terminalStream._setupStream(mockSocket, mockData)
             .then(function () {
-              sinon.assert.calledOnce(mockConnectionData.cleanedStream.pipe)
-              sinon.assert.calledWith(mockConnectionData.cleanedStream.pipe, mockSubstream)
+              sinon.assert.calledOnce(mockConnectionData.cleanedExecStream.pipe)
+              sinon.assert.calledWith(mockConnectionData.cleanedExecStream.pipe, mockSubstream)
             })
             .asCallback(done)
         });
@@ -349,7 +349,7 @@ describe('terminal stream: ' + moduleName, function () {
               mockSubstream.on.lastCall.args[1]('Custom data')
 
               expect(existingConnection.lastInteracted).to.be.a.date()
-              sinon.assert.calledWith(mockConnectionData.rawStream.write, 'Custom data')
+              sinon.assert.calledWith(mockConnectionData.execStream.write, 'Custom data')
             })
             .asCallback(done)
         })
