@@ -243,10 +243,6 @@ describe('terminal stream: ' + moduleName, function () {
             }
           })
         })
-        .catch(function (err) {
-          console.log(err)
-          throw err
-        })
         .asCallback(done)
     })
     describe('when connecting to a stream again', function () {
