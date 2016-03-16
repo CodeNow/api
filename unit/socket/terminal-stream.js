@@ -234,7 +234,7 @@ describe('terminal stream: ' + moduleName, function () {
     describe('Success', function () {
       beforeEach(function (done) {
         sinon.stub(monitorDog, 'captureStreamEvents')
-        var streamObj = {};
+        var streamObj = {}
         streamObj.pipe = sinon.stub().returns(streamObj)
         streamObj.on = sinon.stub()
 
