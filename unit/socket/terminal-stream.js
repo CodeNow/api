@@ -1,6 +1,5 @@
 'use strict'
 
-var through2 = require('through2')
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
@@ -11,7 +10,6 @@ var Code = require('code')
 var expect = Code.expect
 var moment = require('moment')
 var sinon = require('sinon')
-var util = require('util')
 
 var terminalStream = require('socket/terminal-stream')
 var Instance = require('models/mongo/instance')
@@ -45,12 +43,12 @@ describe('terminal stream: ' + moduleName, function () {
           id: 'ID' + Math.random(),
           lastInteracted: moment().subtract(2, 'days').toDate(),
           connection: Promise.resolve(connectionResults)
-        };
+        }
         var connection1 = {
           id: 'ID' + Math.random(),
           lastInteracted: moment().toDate(),
           connection: Promise.resolve()
-        };
+        }
         Object.keys(terminalStream._terminalConnections).forEach(function (key) {
           delete terminalStream._terminalConnections[key]
         })
@@ -58,11 +56,11 @@ describe('terminal stream: ' + moduleName, function () {
         terminalStream._terminalConnections[connection1.id] = connection1
         terminalStream._handleCleanup()
           .then(function () {
-            sinon.assert.calledOnce(connectionResults.rawStream.end);
-            expect(Object.keys(terminalStream._terminalConnections).length).to.equal(1);
-            done();
+            sinon.assert.calledOnce(connectionResults.rawStream.end)
+            expect(Object.keys(terminalStream._terminalConnections).length).to.equal(1)
+            done()
           })
-      });
+      })
     })
   })
 
@@ -177,7 +175,6 @@ describe('terminal stream: ' + moduleName, function () {
         .asCallback(done)
     })
   })
-
 
   describe('setupStream', function () {
     it('should setup a new stream', function (done) {
