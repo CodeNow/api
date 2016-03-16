@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "6.33.5",
+  "version": "6.33.6",
   "npm-shrinkwrap-version": "5.4.1",
   "node-version": "v0.10.38",
   "dependencies": {
