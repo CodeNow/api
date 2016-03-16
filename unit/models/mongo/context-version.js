@@ -1673,7 +1673,7 @@ describe('Context Version: ' + moduleName, function () {
         expect(query.appCodeVersions.$elemMatch.lowerBranch).to.equal(branchName.toLowerCase())
         expect(query.appCodeVersions.$elemMatch.lowerRepo).to.be.a.string()
         expect(query.appCodeVersions.$elemMatch.lowerRepo).to.equal(repoName.toLowerCase())
-        expect(query.appCodeVersions.$elemMatch.additionalRepo).to.equal(null)
+        expect(query.appCodeVersions.$elemMatch.additionalRepo).to.be.an.object()
         done()
       })
     })
