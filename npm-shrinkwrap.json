@@ -1622,32 +1622,6 @@
       "from": "dotenv@https://registry.npmjs.org/dotenv/-/dotenv-0.4.0.tgz",
       "resolved": "https://registry.npmjs.org/dotenv/-/dotenv-0.4.0.tgz"
     },
-    "error-cat": {
-      "version": "2.0.4",
-      "resolved": "https://registry.npmjs.org/error-cat/-/error-cat-2.0.4.tgz",
-      "dependencies": {
-        "101": {
-          "version": "1.5.0",
-          "resolved": "https://registry.npmjs.org/101/-/101-1.5.0.tgz"
-        },
-        "async": {
-          "version": "1.2.1",
-          "resolved": "https://registry.npmjs.org/async/-/async-1.2.1.tgz"
-        },
-        "clone": {
-          "version": "1.0.2",
-          "resolved": "https://registry.npmjs.org/clone/-/clone-1.0.2.tgz"
-        },
-        "keypather": {
-          "version": "1.10.2",
-          "resolved": "https://registry.npmjs.org/keypather/-/keypather-1.10.2.tgz"
-        },
-        "rollbar": {
-          "version": "0.5.16",
-          "resolved": "https://registry.npmjs.org/rollbar/-/rollbar-0.5.16.tgz"
-        }
-      }
-    },
     "es6-error": {
       "version": "2.1.0",
       "resolved": "https://registry.npmjs.org/es6-error/-/es6-error-2.1.0.tgz"
