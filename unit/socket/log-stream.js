@@ -166,14 +166,14 @@ describe('log stream: ' + moduleName, function () {
       beforeEach(function (done) {
         sinon.stub(Instance, 'findOne').yields(null, ctx.instance)
         sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
-        sinon.stub(Docker.prototype, 'getLogs').yields(null, {
+        sinon.stub(Docker.prototype, 'getLogsAndRetryOnTimeout').yields(null, {
           on: sinon.spy(),
           setEncoding: sinon.spy()
         })
         done()
       })
       afterEach(function (done) {
-        Docker.prototype.getLogs.restore()
+        Docker.prototype.getLogsAndRetryOnTimeout.restore()
         done()
       })
       it('should allow logs when check ownership passes', function (done) {
@@ -183,9 +183,9 @@ describe('log stream: ' + moduleName, function () {
             sinon.assert.calledWith(commonStream.checkOwnership, ctx.sessionUser, ctx.instance)
             sinon.assert.calledOnce(ctx.socket.substream)
             sinon.assert.calledWith(ctx.socket.substream, ctx.data.containerId)
-            sinon.assert.calledOnce(Docker.prototype.getLogs)
+            sinon.assert.calledOnce(Docker.prototype.getLogsAndRetryOnTimeout)
             sinon.assert.calledWith(
-              Docker.prototype.getLogs,
+              Docker.prototype.getLogsAndRetryOnTimeout,
               ctx.data.containerId,
               sinon.match.any,
               sinon.match.func
