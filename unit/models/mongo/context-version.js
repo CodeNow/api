@@ -1682,17 +1682,20 @@ describe('Context Version: ' + moduleName, function () {
   describe('generateQueryForBuildCompleted', function () {
     describe('Validations', function () {
       it('should throw an error if the is no buildCompleted passed', function (done) {
-        expect(ContextVersion.generateQueryForBuildCompleted.bind(ContextVersion)).to.throw(Error, /buildCompleted.*boolean/)
+        var reqQuery = { build: { completed: 'abc' } }
+        expect(ContextVersion.generateExistsQuery.bind(ContextVersion, reqQuery)).to.throw(Error, /array/)
         done()
       })
       it('should throw an error if the buildCompleted is not a boolean', function (done) {
-        expect(ContextVersion.generateQueryForBuildCompleted.bind(ContextVersion, 'notABool')).to.throw(Error, /buildCompleted.*boolean/)
+        var reqQuery = { build: { completed: 'abc' } }
+        expect(ContextVersion.generateExistsQuery.bind(ContextVersion, reqQuery, ['build.completed'])).to.throw(Error, /bool/)
         done()
       })
     })
     describe('Queries', function () {
       it('should generate the appropriate query for true', function (done) {
-        var query = ContextVersion.generateQueryForBuildCompleted(true)
+        var reqQuery = { build: { completed: true } }
+        var query = ContextVersion.generateExistsQuery(reqQuery, ['build.completed'])
         expect(query).to.be.an.object()
         expect(query['build.completed']).to.be.an.object()
         expect(query['build.completed'].$exists).to.be.an.boolean()
@@ -1700,11 +1703,34 @@ describe('Context Version: ' + moduleName, function () {
         done()
       })
       it('should generate the appropriate query for false', function (done) {
-        var query = ContextVersion.generateQueryForBuildCompleted(false)
+        var reqQuery = { build: { completed: false } }
+        var query = ContextVersion.generateExistsQuery(reqQuery, ['build.completed'])
         expect(query).to.be.an.object()
         expect(query['build.completed']).to.be.an.object()
         expect(query['build.completed'].$exists).to.be.an.boolean()
         expect(query['build.completed'].$exists).to.equal(false)
+        done()
+      })
+      it('should generate the appropriate query for buildCompleted and buildStarted', function (done) {
+        var reqQuery = { build: { completed: false, started: true } }
+        var query = ContextVersion.generateExistsQuery(reqQuery, ['build.completed', 'build.started'])
+        expect(query).to.be.an.object()
+        expect(query['build.completed']).to.be.an.object()
+        expect(query['build.completed'].$exists).to.be.an.boolean()
+        expect(query['build.completed'].$exists).to.equal(false)
+        expect(query['build.started']).to.be.an.object()
+        expect(query['build.started'].$exists).to.be.an.boolean()
+        expect(query['build.started'].$exists).to.equal(true)
+        done()
+      })
+      it('should generate the appropriate query for buildCompleted and buildStarted', function (done) {
+        var reqQuery = { build: { started: true } }
+        var query = ContextVersion.generateExistsQuery(reqQuery, ['build.completed', 'build.started'])
+        expect(query).to.be.an.object()
+        expect(query['build.completed']).to.not.be.an.object()
+        expect(query['build.started']).to.be.an.object()
+        expect(query['build.started'].$exists).to.be.an.boolean()
+        expect(query['build.started'].$exists).to.equal(true)
         done()
       })
     })
