@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "6.33.3",
+  "version": "6.34.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -100,7 +100,6 @@
     "slack-client": "~1.4.0",
     "strim": "^0.2.2",
     "substream": "0.2.0",
-    "substream-pump": "^1.0.1",
     "sync-exec": "^0.6.1",
     "tailable-capped-array": "^0.1.0",
     "through2": "^2.0.0",

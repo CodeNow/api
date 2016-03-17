@@ -1,6 +1,5 @@
 'use strict'
 
-var through2 = require('through2')
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
@@ -9,32 +8,18 @@ var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
-
+var moment = require('moment')
 var sinon = require('sinon')
-var EventEmitter = require('events').EventEmitter
-var util = require('util')
 
 var Docker = require('models/apis/docker')
 var terminalStream = require('socket/terminal-stream')
 var Instance = require('models/mongo/instance')
 var DebugContainer = require('models/mongo/debug-container')
+var monitorDog = require('monitor-dog')
 
-var Primus = require('primus')
 var Promise = require('bluebird')
 var commonStream = require('socket/common-stream')
 
-function ClientStream () {
-  EventEmitter.call(this)
-  this.jsonBuffer = []
-  this.stream = true
-}
-util.inherits(ClientStream, EventEmitter)
-ClientStream.prototype.write = function (data) {
-  this.jsonBuffer.push(data)
-}
-ClientStream.prototype.end = function () { this.emit('end') }
-
-var ctx = {}
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 var error
@@ -42,224 +27,340 @@ var rejectionPromise
 
 describe('terminal stream: ' + moduleName, function () {
   beforeEach(function (done) {
-    error = new Error('not owner')
+    error = new Error('doobie')
     rejectionPromise = Promise.reject(error)
     rejectionPromise.suppressUnhandledRejections()
     done()
   })
 
-  beforeEach(function (done) {
-    var stream = through2()
-    sinon.stub(Docker.prototype, 'execContainerAndRetryOnTimeout').yieldsAsync(null, stream)
-    done()
+  describe('terminal caching', function () {
+    describe('cache cleanup loop', function () {
+      it('should find all terminals that have not interacted in a while and kill them', function (done) {
+        var connectionResults = {
+          execStream: {
+            end: sinon.stub()
+          }
+        }
+        var connection = {
+          id: 'ID' + Math.random(),
+          lastInteracted: moment().subtract(2, 'days').toDate(),
+          connection: Promise.resolve(connectionResults)
+        }
+        var connection1 = {
+          id: 'ID' + Math.random(),
+          lastInteracted: moment().toDate(),
+          connection: Promise.resolve()
+        }
+        Object.keys(terminalStream._terminalConnections).forEach(function (key) {
+          delete terminalStream._terminalConnections[key]
+        })
+        terminalStream._terminalConnections[connection.id] = connection
+        terminalStream._terminalConnections[connection1.id] = connection1
+        terminalStream._handleCleanup()
+          .then(function () {
+            sinon.assert.calledOnce(connectionResults.execStream.end)
+            expect(Object.keys(terminalStream._terminalConnections).length).to.equal(1)
+            done()
+          })
+      })
+    })
   })
 
-  afterEach(function (done) {
-    Docker.prototype.execContainerAndRetryOnTimeout.restore()
-    done()
-  })
-
-  describe('Check verification flow', function () {
+  describe('proxyStreamHandler', function () {
+    var mockInstance
+    var mockDebugContainer
+    var mockData
+    var mockSocket
+    var mockId
     beforeEach(function (done) {
-      ctx.sessionUser = {
-        github: 123
+      mockId = '1234'
+      mockInstance = {
+        id: 'mockInstance'
       }
-      ctx.socket = {
-        id: 4,
+      mockDebugContainer = {
+        id: 'mockDebugContainer'
+      }
+      mockData = {
+        isDebugContainer: false,
+        containerId: 'containerId',
+        terminalStreamId: 'terminalStreamId',
+        eventStreamId: 'eventStreamId',
+        sessionUser: 'sessionUser',
+        terminalId: 'terminalId'
+      }
+      mockSocket = {
         request: {
-          sessionUser: ctx.sessionUser
-        },
-        addListener: sinon.spy(),
-        write: sinon.spy(),
-        substream: sinon.stub().returns({
-          on: sinon.spy(),
-          addListener: sinon.spy(),
-          setEncoding: sinon.spy()
+          sessionUser: 'Myztiq'
+        }
+      }
+      done()
+    })
+
+    beforeEach(function (done) {
+      sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve())
+      sinon.stub(commonStream, 'validateDataArgs').returns(Promise.resolve())
+      sinon.stub(commonStream, 'onValidateFailure').returnsArg(0)
+      sinon.stub(terminalStream, '_setupStream').returns(Promise.resolve())
+      sinon.stub(Instance, 'findOneAsync').returns(Promise.resolve(mockInstance))
+      sinon.stub(DebugContainer, 'findOneAsync').returns(Promise.resolve(mockDebugContainer))
+      done()
+    })
+
+    afterEach(function (done) {
+      commonStream.checkOwnership.restore()
+      commonStream.validateDataArgs.restore()
+      commonStream.onValidateFailure.restore()
+      terminalStream._setupStream.restore()
+      Instance.findOneAsync.restore()
+      DebugContainer.findOneAsync.restore()
+      done()
+    })
+
+    describe('debug container', function () {
+      beforeEach(function (done) {
+        mockData.isDebugContainer = true
+        done()
+      })
+      it('should fetch debug container', function (done) {
+        terminalStream.proxyStreamHandler(mockSocket, mockId, mockData)
+          .then(function () {
+            sinon.assert.calledOnce(DebugContainer.findOneAsync)
+            sinon.assert.calledWith(DebugContainer.findOneAsync, {
+              'inspect.dockerContainer': mockData.containerId
+            })
+          })
+          .asCallback(done)
+      })
+    })
+    describe('instance container', function () {
+      it('should fetch instance container', function (done) {
+        terminalStream.proxyStreamHandler(mockSocket, mockId, mockData)
+          .then(function () {
+            sinon.assert.calledOnce(Instance.findOneAsync)
+            sinon.assert.calledWith(Instance.findOneAsync, {
+              'container.dockerContainer': mockData.containerId
+            })
+          })
+          .asCallback(done)
+      })
+    })
+
+    describe('model not found', function () {
+      beforeEach(function (done) {
+        Instance.findOneAsync.returns(Promise.resolve(null))
+        done()
+      })
+      it('should throw a missing model error', function (done) {
+        terminalStream.proxyStreamHandler(mockSocket, mockId, mockData)
+          .catch(function (err) {
+            expect(err.message).to.equal('Missing model')
+          })
+          .asCallback(done)
+      })
+    })
+
+    it('should check ownership validation', function (done) {
+      terminalStream.proxyStreamHandler(mockSocket, mockId, mockData)
+        .then(function () {
+          sinon.assert.calledOnce(commonStream.checkOwnership)
+          sinon.assert.calledWith(commonStream.checkOwnership, mockSocket.request.sessionUser, mockInstance)
+        })
+        .asCallback(done)
+    })
+
+    it('should call setup stream with the right parameters', function (done) {
+      terminalStream.proxyStreamHandler(mockSocket, mockId, mockData)
+        .then(function () {
+          sinon.assert.calledOnce(terminalStream._setupStream)
+          sinon.assert.calledWith(terminalStream._setupStream, mockSocket, mockData)
+        })
+        .asCallback(done)
+    })
+  })
+
+  describe('setupStream', function () {
+    function generateTestStream () {
+      var generatedStream = {
+        write: sinon.stub(),
+        end: sinon.stub(),
+        on: sinon.stub(),
+        pipe: sinon.spy(function () {
+          return generatedStream
         })
       }
-      ctx.id = 4
-      ctx.data = {
-        id: 4,
-        type: 'hello',
-        dockHost: '127.0.0.1',
-        containerId: 1231231232,
-        eventStreamId: 23413,
-        terminalStreamId: 2341324
-      }
+      return generatedStream
+    }
 
-      ctx.instance = {
-        createdBy: {
-          github: 123
-        },
-        owner: {
-          github: 123
-        },
-        container: {
-          dockerContainer: ctx.data.containerId
-        }
+    var mockSocket
+    var mockData
+    var mockSubstream
+    var mockExecStream
+    beforeEach(function (done) {
+      mockExecStream = generateTestStream()
+      mockSubstream = generateTestStream()
+      mockSocket = {
+        substream: sinon.stub().returns(mockSubstream),
+        write: sinon.stub()
       }
-      ctx.debugContainer = {
-        createdBy: {
-          github: 123
-        },
-        owner: {
-          github: 123
-        },
-        inspect: {
-          dockerContainer: ctx.data.containerId
-        }
+      mockData = {
+        terminalStreamId: 'terminalStreamId',
+        containerId: 'containerId'
       }
+      done()
+    })
+    beforeEach(function (done) {
+      // Cleanup all existing "connections"
+      Object.keys(terminalStream._terminalConnections).forEach(function (key) {
+        delete terminalStream._terminalConnections[key]
+      })
+      sinon.stub(Docker.prototype, 'execContainerAndRetryOnTimeoutAsync').returns(Promise.resolve(mockExecStream))
+      sinon.stub(monitorDog, 'captureStreamEvents')
       done()
     })
     afterEach(function (done) {
-      commonStream.checkOwnership.restore()
+      Docker.prototype.execContainerAndRetryOnTimeoutAsync.restore()
+      monitorDog.captureStreamEvents.restore()
       done()
     })
-
-    describe('Failures', function () {
-      describe('model fetch failures', function () {
-        beforeEach(function (done) {
-          sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
-          done()
+    it('should setup a new stream', function (done) {
+      terminalStream._setupStream(mockSocket, mockData)
+        .then(function () {
+          sinon.assert.calledWith(Docker.prototype.execContainerAndRetryOnTimeoutAsync, mockData.containerId)
+          expect(Object.keys(terminalStream._terminalConnections).length).to.equal(1)
         })
-        describe('DebugContainer', function () {
-          beforeEach(function (done) {
-            ctx.data.isDebugContainer = true
-            done()
-          })
-          afterEach(function (done) {
-            DebugContainer.findOne.restore()
-            done()
-          })
-
-          it('should do nothing if the DebugContainer fetch returns nothing', function (done) {
-            sinon.stub(DebugContainer, 'findOne').yields()
-            terminalStream.proxyStreamHandler(ctx.socket, ctx.id, ctx.data)
-              .catch(function (err) {
-                expect(err.message).to.equal('Missing model')
-                sinon.assert.calledOnce(ctx.socket.write)
-                sinon.assert.calledWith(ctx.socket.write, {
-                  id: ctx.socket.id,
-                  error: 'You don\'t have access to this stream',
-                  message: 'Missing model'
-                })
-                done()
-              })
-              .catch(done)
-          })
-        })
-
-        describe('Instance', function () {
-          afterEach(function (done) {
-            Instance.findOne.restore()
-            done()
-          })
-          it('should do nothing if the instance fetch returns nothing', function (done) {
-            sinon.stub(Instance, 'findOne').yields()
-            terminalStream.proxyStreamHandler(ctx.socket, ctx.id, ctx.data)
-              .catch(function (err) {
-                expect(err.message).to.equal('Missing model')
-                sinon.assert.calledOnce(ctx.socket.write)
-                sinon.assert.calledWith(ctx.socket.write, {
-                  id: ctx.socket.id,
-                  error: 'You don\'t have access to this stream',
-                  message: 'Missing model'
-                })
-                done()
-              })
-              .catch(done)
-          })
-          it('should do nothing if the model fetch returns an error', function (done) {
-            sinon.stub(Instance, 'findOne').yields(error)
-            terminalStream.proxyStreamHandler(ctx.socket, ctx.id, ctx.data)
-              .catch(function (err) {
-                expect(err.message).to.equal(error.message)
-                sinon.assert.calledOnce(ctx.socket.write)
-                sinon.assert.calledWith(ctx.socket.write, {
-                  id: ctx.socket.id,
-                  error: 'You don\'t have access to this stream',
-                  message: error.message
-                })
-                done()
-              })
-              .catch(done)
-          })
-        })
-      })
-
-      describe('Other failures', function () {
-        beforeEach(function (done) {
-          sinon.stub(Instance, 'findOne').yields(null, ctx.instance)
-          done()
-        })
-        afterEach(function (done) {
-          Instance.findOne.restore()
-          done()
-        })
-        it('should do nothing if the args are invalid', function (done) {
-          var errorMessage = 'dockHost and type and containerId and ' +
-            'terminalStreamId and eventStreamId are required'
-          sinon.stub(commonStream, 'checkOwnership').returns(rejectionPromise)
-          terminalStream.proxyStreamHandler(ctx.socket, ctx.id, {})
-            .catch(function (err) {
-              expect(err.message).to.equal(errorMessage)
-              sinon.assert.calledOnce(ctx.socket.write)
-              sinon.assert.calledWith(ctx.socket.write, {
-                id: ctx.id,
-                error: 'You don\'t have access to this stream',
-                message: errorMessage
-              })
-              done()
-            })
-            .catch(done)
-        })
-        it('should do nothing if the ownership check fails', function (done) {
-          sinon.stub(commonStream, 'checkOwnership').returns(rejectionPromise)
-          terminalStream.proxyStreamHandler(ctx.socket, ctx.id, ctx.data)
-            .catch(function (err) {
-              expect(err).to.equal(error)
-              sinon.assert.calledOnce(ctx.socket.write)
-              sinon.assert.calledWith(ctx.socket.write, {
-                id: ctx.socket.id,
-                error: 'You don\'t have access to this stream',
-                message: 'not owner'
-              })
-              done()
-            })
-            .catch(done)
-        })
-      })
+        .asCallback(done)
     })
-    describe('Success', function () {
-      beforeEach(function (done) {
-        sinon.stub(Instance, 'findOneAsync').returns(Promise.resolve(ctx.instance))
-        sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
-        sinon.stub(Primus, 'createSocket').returns(function () {
-          this.substream = sinon.stub().returns({
-            on: sinon.spy(),
-            addListener: sinon.spy(),
-            setEncoding: sinon.spy()
+    it('should notify a terminal stream created', function (done) {
+      terminalStream._setupStream(mockSocket, mockData)
+        .then(function () {
+          sinon.assert.calledOnce(mockSocket.write)
+          sinon.assert.calledWith(mockSocket.write, {
+            id: 1,
+            event: 'TERMINAL_STREAM_CREATED',
+            data: {
+              terminalId: sinon.match.string,
+              substreamId: mockData.terminalStreamId
+            }
           })
         })
+        .asCallback(done)
+    })
+    describe('when connecting to a stream again', function () {
+      var existingConnection
+      var mockConnectionData
+      beforeEach(function (done) {
+        mockData.terminalId = '1234'
+        mockConnectionData = {
+          containerId: mockData.containerId,
+          cleanedExecStream: generateTestStream(),
+          execStream: generateTestStream(),
+          lastMessage: 'This is the last message'
+        }
+        existingConnection = {
+          connection: Promise.resolve(mockConnectionData),
+          lastInteracted: 'last-interacted'
+        }
+        terminalStream._terminalConnections[mockData.terminalId] = existingConnection
         done()
       })
-      afterEach(function (done) {
-        Instance.findOneAsync.restore()
-        done()
-      })
-      it('should allow logs when check ownership passes', function (done) {
-        terminalStream.proxyStreamHandler(ctx.socket, ctx.id, ctx.data)
-          .then(function () {
-            sinon.assert.calledOnce(commonStream.checkOwnership)
-            sinon.assert.calledWith(commonStream.checkOwnership, ctx.sessionUser, ctx.instance)
-
-            sinon.assert.calledOnce(ctx.socket.substream)
-            sinon.assert.calledWith(ctx.socket.substream, ctx.data.terminalStreamId)
-            sinon.assert.calledOnce(Docker.prototype.execContainerAndRetryOnTimeout)
-            sinon.assert.calledWith(Docker.prototype.execContainerAndRetryOnTimeout, ctx.data.containerId)
-            done()
+      describe('if that stream still exists', function () {
+        it('should re-use the stream connection', function (done) {
+          terminalStream._setupStream(mockSocket, mockData)
+            .then(function () {
+              sinon.assert.notCalled(Docker.prototype.execContainerAndRetryOnTimeoutAsync)
+            })
+            .asCallback(done)
+        })
+        it('should create a new terminal stream and send the last message', function (done) {
+          terminalStream._setupStream(mockSocket, mockData)
+            .then(function () {
+              sinon.assert.calledOnce(mockSocket.substream)
+              sinon.assert.calledWith(mockSubstream.write, mockConnectionData.lastMessage)
+            })
+            .asCallback(done)
+        })
+        it('should notify a terminal stream created', function (done) {
+          terminalStream._setupStream(mockSocket, mockData)
+            .then(function () {
+              sinon.assert.calledOnce(mockSocket.write)
+              sinon.assert.calledWith(mockSocket.write, {
+                id: 1,
+                event: 'TERMINAL_STREAM_CREATED',
+                data: {
+                  terminalId: sinon.match.string,
+                  substreamId: mockData.terminalStreamId
+                }
+              })
+            })
+            .asCallback(done)
+        })
+        describe('when accessing a different container', function () {
+          it('should throw an authentication error', function (done) {
+            mockConnectionData.containerId = 'fakeContainerId'
+            terminalStream._setupStream(mockSocket, mockData)
+              .catch(function (err) {
+                expect(err.message).to.equal('You are not authorized to access this stream.')
+              })
+              .asCallback(done)
           })
-          .catch(done)
+        })
+      })
+      describe('if that stream does not exist', function () {
+        it('should create a new stream connection', function (done) {
+          mockData.terminalId = 'fooo'
+          terminalStream._setupStream(mockSocket, mockData)
+            .then(function () {
+              sinon.assert.calledOnce(Docker.prototype.execContainerAndRetryOnTimeoutAsync)
+            })
+            .asCallback(done)
+        })
+      })
+
+      describe('when the terminal writes data to the client', function () {
+        it('should store the last message in memory', function (done) {
+          terminalStream._setupStream(mockSocket, mockData)
+            .then(function () {
+              sinon.assert.calledOnce(mockConnectionData.cleanedExecStream.on)
+              sinon.assert.calledWith(mockConnectionData.cleanedExecStream.on, 'data', sinon.match.func)
+              mockConnectionData.cleanedExecStream.on.lastCall.args[1]('test data')
+              expect(mockConnectionData.lastMessage).to.equal('test data')
+            })
+            .asCallback(done)
+        })
+        it('should pass data through to the client', function (done) {
+          terminalStream._setupStream(mockSocket, mockData)
+            .then(function () {
+              sinon.assert.calledOnce(mockConnectionData.cleanedExecStream.pipe)
+              sinon.assert.calledWith(mockConnectionData.cleanedExecStream.pipe, mockSubstream)
+            })
+            .asCallback(done)
+        })
+      })
+      describe('when writing to a stream', function () {
+        it('should pass through the data to the raw stream', function (done) {
+          terminalStream._setupStream(mockSocket, mockData)
+            .then(function () {
+              sinon.assert.calledOnce(mockSubstream.on)
+              sinon.assert.calledWith(mockSubstream.on, 'data', sinon.match.func)
+              mockSubstream.on.lastCall.args[1]('Custom data')
+
+              expect(existingConnection.lastInteracted).to.be.a.date()
+              sinon.assert.calledWith(mockConnectionData.execStream.write, 'Custom data')
+            })
+            .asCallback(done)
+        })
+        describe('when the stream does not exist', function () {
+          it('should end the stream', function (done) {
+            terminalStream._setupStream(mockSocket, mockData)
+              .then(function () {
+                delete terminalStream._terminalConnections[mockData.terminalId]
+                mockSubstream.on.lastCall.args[1]('Custom data')
+
+                sinon.assert.calledOnce(mockSubstream.end)
+              })
+              .asCallback(done)
+          })
+        })
       })
     })
   })
