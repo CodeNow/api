@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "6.33.1",
+  "version": "6.34.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -42,6 +42,7 @@
     "dockerode": "^2.2.8",
     "dogerode": "git://github.com/Runnable/dogerode#v0.1.1",
     "dotenv": "^0.4.0",
+    "error-cat": "^1.4.2",
     "eson": "^0.5.0",
     "express": "^4.8.3",
     "express-request": "^0.3.0",
@@ -99,7 +100,6 @@
     "slack-client": "~1.4.0",
     "strim": "^0.2.2",
     "substream": "0.2.0",
-    "substream-pump": "^1.0.1",
     "sync-exec": "^0.6.1",
     "tailable-capped-array": "^0.1.0",
     "through2": "^2.0.0",
