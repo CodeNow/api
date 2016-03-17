@@ -340,5 +340,24 @@ describe('Versions - /contexts/:contextid/versions', function () {
         ctx.context.fetchVersions(query, expects.success(200, expected, done))
       })
     })
+    describe('Complex Queries', function () {
+      it('should handle queries with multiple parameters', function (done) {
+        var acv = ctx.contextVersion.attrs.appCodeVersions[0]
+        var query = {
+          build: {
+            started: true,
+            triggeredAction: {
+              manual: true
+            }
+          },
+          branch: acv.branch,
+          repo: acv.repo
+        }
+        var expected = [{
+          _id: ctx.contextVersion.id()
+        }]
+        ctx.context.fetchVersions(query, expects.success(200, expected, done))
+      })
+    })
   })
 })
