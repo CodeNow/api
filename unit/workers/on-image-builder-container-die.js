@@ -114,12 +114,12 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     })
     describe('fetch failure', function () {
       beforeEach(function (done) {
-        process.env.SAVE_LOGS = true
+        process.env.SAVE_BUILD_LOGS = true
         sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(new Error('docker error'))
         done()
       })
       afterEach(function (done) {
-        delete process.env.SAVE_LOGS
+        delete process.env.SAVE_BUILD_LOGS
         Docker.prototype.getBuildInfo.restore()
         done()
       })
