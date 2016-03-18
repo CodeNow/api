@@ -60,35 +60,66 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
   })
 
   describe('_getBuildInfo', function () {
-    var buildInfoMock
-
     describe('success', function () {
-      beforeEach(function (done) {
-        buildInfoMock = {}
-        sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(null, buildInfoMock)
-        done()
-      })
-      afterEach(function (done) {
-        Docker.prototype.getBuildInfo.restore()
-        done()
-      })
-      it('should fetch build info and update success', function (done) {
+      it('should get correct build data', function (done) {
         var host = 'superHost'
-        OnImageBuilderContainerDie._getBuildInfo({ id: 1, host: host }).asCallback(function (err, buildInfo) {
+        var testTag = 'axe'
+        var testJob = {
+          host: host,
+          inspectData: {
+            State: {
+              ExitCode: 0
+            },
+            Config: {
+              Labels: {
+                dockerTag: testTag
+              }
+            }
+          }
+        }
+        OnImageBuilderContainerDie._getBuildInfo(testJob).asCallback(function (err, buildInfo) {
           if (err) { return done(err) }
-          sinon.assert.calledOnce(Docker.prototype.getBuildInfo)
-          expect(buildInfo).to.equal(buildInfoMock)
           expect(buildInfo.dockerHost).to.equal(host)
+          expect(buildInfo.failed).to.equal(false)
+          expect(buildInfo.dockerImage).to.equal(testTag)
+          done()
+        })
+      })
+
+      it('should add timout error to info', function (done) {
+        var host = 'superHost'
+        var testTag = 'axe'
+        var testJob = {
+          host: host,
+          inspectData: {
+            State: {
+              ExitCode: 124
+            },
+            Config: {
+              Labels: {
+                dockerTag: testTag
+              }
+            }
+          }
+        }
+        OnImageBuilderContainerDie._getBuildInfo(testJob).asCallback(function (err, buildInfo) {
+          if (err) { return done(err) }
+          expect(buildInfo.dockerHost).to.equal(host)
+          expect(buildInfo.failed).to.equal(true)
+          expect(buildInfo.dockerImage).to.equal(testTag)
+          expect(buildInfo.error.message).to.equal('timed out')
           done()
         })
       })
     })
     describe('fetch failure', function () {
       beforeEach(function (done) {
+        process.env.SAVE_LOGS = true
         sinon.stub(Docker.prototype, 'getBuildInfo').yieldsAsync(new Error('docker error'))
         done()
       })
       afterEach(function (done) {
+        delete process.env.SAVE_LOGS
         Docker.prototype.getBuildInfo.restore()
         done()
       })
