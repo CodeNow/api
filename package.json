@@ -155,7 +155,7 @@
     "lint": "standard --verbose",
     "lint-snazzy": "standard --verbose | snazzy",
     "shrinkwrap": "npm-shrinkwrap --dev",
-    "start": "NODE_PATH=./lib node index.js",
+    "start": "NODE_PATH=./lib node --abort-on-uncaught-exception index.js",
     "start-debug": "NODE_PATH=./lib node --debug index.js",
     "todo": "grep -nR TODO lib test",
     "test": "npm run clear; npm run lint && npm run bdd && npm run unit",
