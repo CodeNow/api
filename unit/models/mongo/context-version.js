@@ -1567,7 +1567,7 @@ describe('Context Version: ' + moduleName, function () {
 
   describe('generateQueryForAppCodeVersions', function () {
     describe('Validations', function () {
-      it('should tell us an arrya is required', function (done) {
+      it('should tell us an array is required', function (done) {
         var query = {}
         expect(ContextVersion.generateQueryForAppCodeVersions.bind(ContextVersion, query)).to.throw(Error, /array/)
         done()
