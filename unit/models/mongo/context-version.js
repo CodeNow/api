@@ -152,7 +152,6 @@ describe('Context Version: ' + moduleName, function () {
         expect(update.$set).to.deep.contain({
           'build.error.message': buildErr.message,
           'build.error.stack': buildErr.stack,
-          'build.log': buildErr.data.docker.log,
           'build.failed': true
         })
         expect(update.$set['build.completed']).to.exist()
@@ -204,7 +203,6 @@ describe('Context Version: ' + moduleName, function () {
         expect(args[1]).to.equal(myCv)
         expect(args[2].$set).to.contains({
           'build.dockerImage': opts.dockerImage,
-          'build.log': opts.log,
           'build.failed': opts.failed
         })
         expect(args[2].$set['build.completed']).to.exist()
