@@ -15,6 +15,7 @@ var expect = Code.expect
 var GitHub = require('models/apis/github')
 var Messenger = require('socket/messenger')
 var User = require('models/mongo/user')
+var createCount = require('callback-count')
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
@@ -94,7 +95,7 @@ describe('Messenger: ' + moduleName, function () {
         done()
       })
     })
-    it('should return false if both authToken and userId are null', function (done) {
+    it('should return error if both authToken and userId are null', function (done) {
       var socket = {
         request: {
           query: {
@@ -108,8 +109,8 @@ describe('Messenger: ' + moduleName, function () {
         }
       }
       Messenger.canJoin(socket, {}, function (err, canJoin) {
-        expect(err).to.be.null()
-        expect(canJoin).to.be.false()
+        expect(err.message).to.equal('No authentication data')
+        expect(canJoin).to.be.undefined()
         done()
       })
     })
@@ -386,15 +387,21 @@ describe('Messenger: ' + moduleName, function () {
           }
         }
       }
+      var count = createCount(2, done)
       socket.write = function (msg) {
         expect(msg.id).to.equal(id)
         expect(msg.error).to.equal('access denied')
         expect(msg.data).to.equal(data)
         User.findById.restore()
-        done()
+        count.next()
       }
-      sinon.stub(User, 'findById').yields(new Error('Mongoose error'))
+      var error = new Error('Mongoose error')
+      sinon.stub(User, 'findById').yields(error)
       Messenger.subscribeStreamHandler(socket, id, data)
+        .catch(function (err) {
+          expect(err.message).to.equal('access denied')
+        })
+        .asCallback(count.next)
     })
   })
 })
