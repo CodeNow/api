@@ -153,7 +153,12 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
             })
             sinon.assert.calledOnce(error.log)
             // Can't do a direct calledWith here because bluebird wraps errors thrown
-            sinon.assert.calledWith(error.log, sinon.match.has('message', ctx.err.message))
+            sinon.assert.calledWith(
+              error.log,
+              sinon.match.has(
+                'message',
+                sinon.match(/publishing.*instance.*failed.*two.*minutes/))
+            )
             done()
           })
       })
