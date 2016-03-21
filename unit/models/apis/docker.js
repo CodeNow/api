@@ -320,6 +320,25 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end _isImageNotFoundErr
 
+  describe('_isSocketHangupErr', function () {
+    it('should return true if error matches', function (done) {
+      var result = Docker._isSocketHangupErr({
+        message: 'Error: Create container failed: socket hang up'
+      })
+      expect(result).to.equal(true)
+      done()
+    })
+
+    it('should return false if error does not match', function (done) {
+      var result = Docker._isSocketHangupErr({
+        statusCode: 400,
+        message: 'unknown error'
+      })
+      expect(result).to.equal(false)
+      done()
+    })
+  })
+
   describe('createImageBuilder', function () {
     beforeEach(function (done) {
       ctx.mockDockerTag = 'mockDockerTag'
