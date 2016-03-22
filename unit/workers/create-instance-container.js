@@ -157,7 +157,7 @@ describe('Worker: create-instance-container: ' + moduleName, function () {
               error.log,
               sinon.match.has(
                 'message',
-                sinon.match(/publishing.*instance.*failed.*two.*minutes/))
+                sinon.match(/publishing.*instance.*two.*minutes/i))
             )
             done()
           })
