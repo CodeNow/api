@@ -50,7 +50,14 @@ module.exports = function (userId, username, token) {
       'company': '',
       'blog': 'http://twitter.com/tjmehta',
       'location': 'San Francisco',
-      'email': '',
+      'email': username + '@runnable.com',
+      'emails': [
+        {
+          value: username + '@runnable.com',
+          verified: true,
+          primary: true
+        }
+      ],
       'hireable': true,
       'bio': '',
       'public_repos': 77,
