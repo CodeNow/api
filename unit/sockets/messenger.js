@@ -412,8 +412,8 @@ describe('Messenger: ' + moduleName, function () {
         _id: id
       }
       beforeEach(function (done) {
-        sinon.stub(User, 'findById').yields(null, mockUser);
-        sinon.stub(Messenger, 'canJoinAsync').resolves();
+        sinon.stub(User, 'findById').yields(null, mockUser)
+        sinon.stub(Messenger, 'canJoinAsync').resolves()
         sinon.stub(Messenger, 'joinRoom')
         done()
       })
