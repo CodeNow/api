@@ -185,6 +185,14 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end createSwarmConstraints
 
+  describe('_getSwarmNodename', function () {
+    it('should format node name correctly', function (done) {
+      var out = Docker._getSwarmNodename('http://10.10.10.1:4242', '1234')
+      expect(out).to.equal('ip-10-10-10-1.1234')
+      done()
+    })
+  }) // end createSwarmConstraints
+
   describe('_handleCreateContainerError', function () {
     beforeEach(function (done) {
       sinon.stub(Docker, '_isConstraintFailure')
@@ -1536,7 +1544,7 @@ describe('docker: ' + moduleName, function () {
             ownerUsername: opts.ownerUsername,
             sessionUserGithubId: opts.sessionUserGithubId.toString(),
             tid: process.domain.runnableData.tid,
-            'com.docker.swarm.constraints': '["org==132456","node==~ip-10-0-0-1"]',
+            'com.docker.swarm.constraints': '["org==132456","node==~ip-10-0-0-1.132456"]',
             type: 'user-container'
           })
           done()
