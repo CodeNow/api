@@ -1300,6 +1300,111 @@ describe('docker: ' + moduleName, function () {
         })
       })
     })
+
+    describe('_evalEnvVars', function () {
+      it('should do nothing for ENV vars without ENV vars', function (done) {
+        var originalEnvs = [
+          'HELLO=WORLD',
+          'WOW=1asdfasd',
+          'BASE_URL=https://app.runnable-gamma.com/CodeNow/test-ws-client/'
+        ]
+        var envs = model._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal(originalEnvs)
+        done()
+      })
+
+      it('should do replace a single ENV var', function (done) {
+        var originalEnvs = [
+          'EXAMPLE=37',
+          'HELLO=$EXAMPLE'
+        ]
+        var envs = model._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'EXAMPLE=37',
+          'HELLO=37'
+        ])
+        done()
+      })
+
+      it('should replace mutliple ENVs with the same name', function (done) {
+        var originalEnvs = [
+          'EXAMPLE=37',
+          'HELLO=$EXAMPLE-$EXAMPLE'
+        ]
+        var envs = model._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'EXAMPLE=37',
+          'HELLO=37-37'
+        ])
+        done()
+      })
+
+      it('should replace mutliple ENVs with the differents names', function (done) {
+        var originalEnvs = [
+          'YOOO=3',
+          'YOO=2',
+          '_YO=1',
+          'HELLO=_YO$_YO-YOO$YOO-YOOO$YOOO'
+        ]
+        var envs = model._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'YOOO=3',
+          'YOO=2',
+          '_YO=1',
+          'HELLO=_YO1-YOO2-YOOO3'
+        ])
+        done()
+      })
+
+      it('should not replace invalid ENVs', function (done) {
+        var originalEnvs = [
+          '23=3',
+          'HELLO=YO$23'
+        ]
+        var envs = model._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          '23=3',
+          'HELLO=YO$23'
+        ])
+        done()
+      })
+
+      it('should replace vars inside {}', function (done) {
+        var originalEnvs = [
+          'YOOO=3',
+          'YOO=2',
+          '_YO=1',
+          'HELLO=_YO${_YO}-YOO${YOO}-YOOO${YOOO}'
+        ]
+        var envs = model._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'YOOO=3',
+          'YOO=2',
+          '_YO=1',
+          'HELLO=_YO1-YOO2-YOOO3'
+        ])
+        done()
+      })
+
+      it('should not replace vars declared before other vars are declared', function (done) {
+        var originalEnvs = [
+          'START=_YO${_YO}-YOO${YOO}-YOOO${YOOO}',
+          'YOOO=3',
+          'YOO=2',
+          '_YO=1',
+          'HELLO=_YO${_YO}-YOO${YOO}-YOOO${YOOO}'
+        ]
+        var envs = model._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'START=_YO${_YO}-YOO${YOO}-YOOO${YOOO}',
+          'YOOO=3',
+          'YOO=2',
+          '_YO=1',
+          'HELLO=_YO1-YOO2-YOOO3'
+        ])
+        done()
+      })
+    })
   })
 
   describe('startUserContainer', function () {
