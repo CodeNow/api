@@ -1308,7 +1308,7 @@ describe('docker: ' + moduleName, function () {
           'WOW=1asdfasd',
           'BASE_URL=https://app.runnable-gamma.com/CodeNow/test-ws-client/'
         ]
-        var envs = model._evalEnvVars(originalEnvs)
+        var envs = Docker._evalEnvVars(originalEnvs)
         expect(envs).to.deep.equal(originalEnvs)
         done()
       })
@@ -1318,7 +1318,7 @@ describe('docker: ' + moduleName, function () {
           'EXAMPLE=37',
           'HELLO=$EXAMPLE'
         ]
-        var envs = model._evalEnvVars(originalEnvs)
+        var envs = Docker._evalEnvVars(originalEnvs)
         expect(envs).to.deep.equal([
           'EXAMPLE=37',
           'HELLO=37'
@@ -1331,7 +1331,7 @@ describe('docker: ' + moduleName, function () {
           'EXAMPLE=37',
           'HELLO=$EXAMPLE-$EXAMPLE'
         ]
-        var envs = model._evalEnvVars(originalEnvs)
+        var envs = Docker._evalEnvVars(originalEnvs)
         expect(envs).to.deep.equal([
           'EXAMPLE=37',
           'HELLO=37-37'
@@ -1346,7 +1346,7 @@ describe('docker: ' + moduleName, function () {
           '_YO=1',
           'HELLO=_YO$_YO-YOO$YOO-YOOO$YOOO'
         ]
-        var envs = model._evalEnvVars(originalEnvs)
+        var envs = Docker._evalEnvVars(originalEnvs)
         expect(envs).to.deep.equal([
           'YOOO=3',
           'YOO=2',
@@ -1361,7 +1361,7 @@ describe('docker: ' + moduleName, function () {
           '23=3',
           'HELLO=YO$23'
         ]
-        var envs = model._evalEnvVars(originalEnvs)
+        var envs = Docker._evalEnvVars(originalEnvs)
         expect(envs).to.deep.equal([
           '23=3',
           'HELLO=YO$23'
@@ -1376,7 +1376,7 @@ describe('docker: ' + moduleName, function () {
           '_YO=1',
           'HELLO=_YO${_YO}-YOO${YOO}-YOOO${YOOO}'
         ]
-        var envs = model._evalEnvVars(originalEnvs)
+        var envs = Docker._evalEnvVars(originalEnvs)
         expect(envs).to.deep.equal([
           'YOOO=3',
           'YOO=2',
@@ -1394,7 +1394,7 @@ describe('docker: ' + moduleName, function () {
           '_YO=1',
           'HELLO=_YO${_YO}-YOO${YOO}-YOOO${YOOO}'
         ]
-        var envs = model._evalEnvVars(originalEnvs)
+        var envs = Docker._evalEnvVars(originalEnvs)
         expect(envs).to.deep.equal([
           'START=_YO${_YO}-YOO${YOO}-YOOO${YOOO}',
           'YOOO=3',
