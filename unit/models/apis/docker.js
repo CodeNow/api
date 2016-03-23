@@ -185,6 +185,14 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end createSwarmConstraints
 
+  describe('_getSwarmNodename', function () {
+    it('should format node name correctly', function (done) {
+      var out = Docker._getSwarmNodename('http://10.10.10.1:4242', '1234')
+      expect(out).to.equal('ip-10-10-10-1.1234')
+      done()
+    })
+  }) // end createSwarmConstraints
+
   describe('_handleCreateContainerError', function () {
     beforeEach(function (done) {
       sinon.stub(Docker, '_isConstraintFailure')
@@ -318,6 +326,25 @@ describe('docker: ' + moduleName, function () {
       done()
     })
   }) // end _isImageNotFoundErr
+
+  describe('_isSocketHangupErr', function () {
+    it('should return true if error matches', function (done) {
+      var result = Docker._isSocketHangupErr({
+        message: 'Error: Create container failed: socket hang up'
+      })
+      expect(result).to.equal(true)
+      done()
+    })
+
+    it('should return false if error does not match', function (done) {
+      var result = Docker._isSocketHangupErr({
+        statusCode: 400,
+        message: 'unknown error'
+      })
+      expect(result).to.equal(false)
+      done()
+    })
+  })
 
   describe('createImageBuilder', function () {
     beforeEach(function (done) {
@@ -1622,7 +1649,7 @@ describe('docker: ' + moduleName, function () {
             ownerUsername: opts.ownerUsername,
             sessionUserGithubId: opts.sessionUserGithubId.toString(),
             tid: process.domain.runnableData.tid,
-            'com.docker.swarm.constraints': '["org==132456","node==~ip-10-0-0-1"]',
+            'com.docker.swarm.constraints': '["org==132456","node==~ip-10-0-0-1.132456"]',
             type: 'user-container'
           })
           done()
