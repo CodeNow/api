@@ -1418,6 +1418,7 @@ describe('docker: ' + moduleName, function () {
           'START=_YO${_YO}-YOO${YOO}-YOOO${YOOO}',
           'YOOO=3',
           'YOO=2',
+          'MIDDLE=_YO${_YO}-YOO${YOO}-YOOO${YOOO}',
           '_YO=1',
           'HELLO=_YO${_YO}-YOO${YOO}-YOOO${YOOO}'
         ]
@@ -1426,8 +1427,26 @@ describe('docker: ' + moduleName, function () {
           'START=_YO${_YO}-YOO${YOO}-YOOO${YOOO}',
           'YOOO=3',
           'YOO=2',
+          'MIDDLE=_YO${_YO}-YOO2-YOOO3',
           '_YO=1',
           'HELLO=_YO1-YOO2-YOOO3'
+        ])
+        done()
+      })
+
+      it('should prevent recurssion and use the last declaration', function (done) {
+        var originalEnvs = [
+          'YO=3',
+          'YO=2',
+          'YO=1',
+          'YO="432${YO}"'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'YO=3',
+          'YO=2',
+          'YO=1',
+          'YO="4321"'
         ])
         done()
       })
