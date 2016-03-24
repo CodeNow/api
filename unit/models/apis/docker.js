@@ -1505,13 +1505,6 @@ describe('docker: ' + moduleName, function () {
       sinon.stub(model, 'startContainer')
       done()
     })
-  })
-
-  describe('startUserContainer', function () {
-    beforeEach(function (done) {
-      sinon.stub(model, 'startContainer')
-      done()
-    })
 
     afterEach(function (done) {
       model.startContainer.restore()
