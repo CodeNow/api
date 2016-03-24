@@ -1353,6 +1353,19 @@ describe('docker: ' + moduleName, function () {
         done()
       })
 
+      it('should should handle single char vars', function (done) {
+        var originalEnvs = [
+          'E=37',
+          'H=$E'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'E=37',
+          'H=37'
+        ])
+        done()
+      })
+
       it('should replace mutliple ENVs with the same name', function (done) {
         var originalEnvs = [
           'EXAMPLE=37',
@@ -1434,7 +1447,7 @@ describe('docker: ' + moduleName, function () {
         done()
       })
 
-      it('should prevent recurssion and use the last declaration', function (done) {
+      it('should use the last declaration of a var', function (done) {
         var originalEnvs = [
           'YO=3',
           'YO=2',
@@ -1450,6 +1463,47 @@ describe('docker: ' + moduleName, function () {
         ])
         done()
       })
+
+      it('should use respect recursive options when they follow an order', function (done) {
+        var originalEnvs = [
+          'FOO=1',
+          'BAR=$FOO',
+          'FOO=$BAR',
+          'BAR=$FOO',
+          'BAZ=$BAR',
+          'FOO=$BAZ'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'FOO=1',
+          'BAR=1',
+          'FOO=1',
+          'BAR=1',
+          'BAZ=1',
+          'FOO=1'
+        ])
+        done()
+      })
+
+      it('should handle regex ENVs', function (done) {
+        var originalEnvs = [
+          'B=/HI/',
+          'A=$B'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'B=/HI/',
+          'A=/HI/'
+        ])
+        done()
+      })
+    })
+  })
+
+  describe('startUserContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(model, 'startContainer')
+      done()
     })
   })
 
