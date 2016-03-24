@@ -1171,7 +1171,11 @@ describe('docker: ' + moduleName, function () {
       ctx.mockInstance = {
         _id: '123456789012345678901234',
         shortHash: 'abcdef',
-        env: []
+        env: [
+          'FOO=1',
+          'URL=${RUNNABLE_CONTAINER_ID}-$FOO.runnableapp.com',
+          'BAR=$URL'
+        ]
       }
       ctx.mockContextVersion = {
         _id: '123456789012345678901234',
@@ -1229,9 +1233,12 @@ describe('docker: ' + moduleName, function () {
           )
           var expectedCreateOpts = {
             Labels: ctx.mockLabels,
-            Env: ctx.mockInstance.env.concat([
-              'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash
-            ]),
+            Env: [
+              'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash,
+              'FOO=1',
+              'URL=' + ctx.mockInstance.shortHash + '-1.runnableapp.com',
+              'BAR=' + ctx.mockInstance.shortHash + '-1.runnableapp.com'
+            ],
             Image: ctx.mockContextVersion.build.dockerTag,
             HostConfig: {
               CapDrop: process.env.CAP_DROP.split(','),
