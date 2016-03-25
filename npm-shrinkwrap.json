@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "6.34.0",
+  "version": "6.34.13",
   "npm-shrinkwrap-version": "5.4.1",
   "node-version": "v0.10.38",
   "dependencies": {
@@ -4160,32 +4160,22 @@
       }
     },
     "passport-github": {
-      "version": "0.1.5",
-      "resolved": "https://registry.npmjs.org/passport-github/-/passport-github-0.1.5.tgz",
+      "version": "1.1.0",
+      "resolved": "https://registry.npmjs.org/passport-github/-/passport-github-1.1.0.tgz",
       "dependencies": {
-        "passport-oauth": {
-          "version": "0.1.15",
-          "resolved": "https://registry.npmjs.org/passport-oauth/-/passport-oauth-0.1.15.tgz",
+        "passport-oauth2": {
+          "version": "1.2.0",
+          "resolved": "https://registry.npmjs.org/passport-oauth2/-/passport-oauth2-1.2.0.tgz",
           "dependencies": {
             "oauth": {
-              "version": "0.9.13",
-              "resolved": "https://registry.npmjs.org/oauth/-/oauth-0.9.13.tgz"
+              "version": "0.9.14",
+              "resolved": "https://registry.npmjs.org/oauth/-/oauth-0.9.14.tgz"
             },
-            "passport": {
-              "version": "0.1.18",
-              "resolved": "https://registry.npmjs.org/passport/-/passport-0.1.18.tgz",
-              "dependencies": {
-                "pause": {
-                  "version": "0.0.1",
-                  "resolved": "https://registry.npmjs.org/pause/-/pause-0.0.1.tgz"
-                }
-              }
+            "uid2": {
+              "version": "0.0.3",
+              "resolved": "https://registry.npmjs.org/uid2/-/uid2-0.0.3.tgz"
             }
           }
-        },
-        "pkginfo": {
-          "version": "0.2.3",
-          "resolved": "https://registry.npmjs.org/pkginfo/-/pkginfo-0.2.3.tgz"
         }
       }
     },

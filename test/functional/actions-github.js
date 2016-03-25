@@ -71,12 +71,10 @@ describe('Github - /actions/github', function () {
   beforeEach(function (done) {
     // Prevent worker creation and github event publishing by rabbit
     sinon.stub(rabbitMQ, 'deleteInstance', function () {})
-    sinon.stub(rabbitMQ, 'publishGithubEvent')
     done()
   })
   afterEach(function (done) {
     rabbitMQ.deleteInstance.restore()
-    rabbitMQ.publishGithubEvent.restore()
     done()
   })
 
@@ -137,21 +135,6 @@ describe('Github - /actions/github', function () {
         done()
       })
     })
-
-    it('should publish the github event job via RabbitMQ', function (done) {
-      var options = hooks().issue_comment
-      request.post(options, function (err) {
-        if (err) { return done(err) }
-        expect(rabbitMQ.publishGithubEvent.calledOnce).to.be.true()
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[0])
-          .to.equal(options.headers['x-github-delivery'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[1])
-          .to.equal(options.headers['x-github-event'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[2])
-          .to.deep.equal(options.json)
-        done()
-      })
-    })
   })
 
   describe('created tag', function () {
@@ -180,24 +163,6 @@ describe('Github - /actions/github', function () {
         if (err) { return done(err) }
         expect(res.statusCode).to.equal(202)
         expect(body).to.equal("Cannot handle tags' related events")
-        sinon.assert.calledOnce(UserWhitelist.findOne)
-        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'podviaznikov' })
-        done()
-      })
-    })
-
-    it('should publish the github event job via RabbitMQ', function (done) {
-      var options = hooks().push
-      options.json.ref = 'refs/tags/v1'
-      request.post(options, function (err) {
-        if (err) { return done(err) }
-        expect(rabbitMQ.publishGithubEvent.calledOnce).to.be.true()
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[0])
-          .to.equal(options.headers['x-github-delivery'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[1])
-          .to.equal(options.headers['x-github-event'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[2])
-          .to.deep.equal(options.json)
         sinon.assert.calledOnce(UserWhitelist.findOne)
         sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'podviaznikov' })
         done()
@@ -233,23 +198,6 @@ describe('Github - /actions/github', function () {
     afterEach(function (done) {
       UserWhitelist.findOne.restore()
       done()
-    })
-
-    it('should publish the github event job via RabbitMQ', function (done) {
-      var options = hooks().push
-      request.post(options, function (err) {
-        if (err) { return done(err) }
-        expect(rabbitMQ.publishGithubEvent.calledOnce).to.be.true()
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[0])
-          .to.equal(options.headers['x-github-delivery'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[1])
-          .to.equal(options.headers['x-github-event'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[2])
-          .to.deep.equal(options.json)
-        sinon.assert.calledOnce(UserWhitelist.findOne)
-        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'podviaznikov' })
-        done()
-      })
     })
 
     it('should return 202 if there is neither autoDeploy nor autoLaunch is needed',
