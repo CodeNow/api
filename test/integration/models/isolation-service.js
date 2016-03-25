@@ -11,13 +11,14 @@ var afterEach = lab.afterEach
 var sinon = require('sinon')
 var Promise = require('bluebird')
 var pluck = require('101/pluck')
+var assign = require('101/assign')
 
 var mongoFactory = require('../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 var IsolationService = require('models/services/isolation-service.js')
 require('sinon-as-promised')(require('bluebird'))
 
-describe('Instance Services Integration Tests', function () {
+describe('Isolation Services Integration Tests', function () {
   before(mongooseControl.start)
   var ctx
   var forked = {}
@@ -48,13 +49,14 @@ describe('Instance Services Integration Tests', function () {
     }
     done()
   })
-  function createNewInstance (name, isolated) {
+  function createNewInstance (name, isolatedOpts) {
     return function (done) {
-      mongoFactory.createInstanceWithProps(ctx.mockSessionUser._id, {
+      isolatedOpts = isolatedOpts || {}
+      var opts = assign({
         name: name,
-        username: ctx.mockUsername,
-        isolated: isolated
-      }, function (err, instance) {
+        username: ctx.mockUsername
+      }, isolatedOpts)
+      mongoFactory.createInstanceWithProps(ctx.mockSessionUser._id, opts, function (err, instance) {
         if (err) {
           return done(err)
         }
@@ -63,9 +65,9 @@ describe('Instance Services Integration Tests', function () {
       })
     }
   }
-  var createNewInstanceAsync = function (name, isolated) {
+  var createNewInstanceAsync = function (name, isolatedOpts) {
     return Promise.fromCallback(function (cb) {
-      createNewInstance(name, isolated)(cb)
+      createNewInstance(name, isolatedOpts)(cb)
     })
   }
   beforeEach(createNewInstance('Frontend'))
@@ -73,12 +75,17 @@ describe('Instance Services Integration Tests', function () {
   beforeEach(createNewInstance('Link'))
   beforeEach(createNewInstance('RabbitMQ'))
   beforeEach(createNewInstance('MongoDB'))
+  beforeEach(createNewInstance('CodependentDatabase1'))
+  beforeEach(createNewInstance('CodependentDatabase2'))
   beforeEach(function (done) {
     sinon.stub(ctx.Frontend, 'getMainBranchName').returns('master')
     sinon.stub(ctx.Api, 'getMainBranchName').returns('master')
     sinon.stub(ctx.Link, 'getMainBranchName').returns('master')
     sinon.stub(ctx.RabbitMQ, 'getMainBranchName').returns('master')
     sinon.stub(ctx.MongoDB, 'getMainBranchName').returns('master')
+
+    sinon.stub(ctx.CodependentDatabase1, 'getMainBranchName').returns('master')
+    sinon.stub(ctx.CodependentDatabase2, 'getMainBranchName').returns('master')
     done()
   })
   beforeEach(function (done) {
@@ -97,7 +104,9 @@ describe('Instance Services Integration Tests', function () {
   var dependencyMap = {
     Frontend: ['Api'],
     Api: ['MongoDB', 'Link'],
-    Link: ['MongoDB', 'RabbitMQ']
+    Link: ['MongoDB', 'RabbitMQ'],
+    CodependentDatabase1: ['CodependentDatabase2'],
+    CodependentDatabase2: ['CodependentDatabase1']
   }
 
   /**
@@ -153,7 +162,7 @@ describe('Instance Services Integration Tests', function () {
       .then(function (missingDependencies) {
         if (missingDependencies) {
           throw new Error('The dependencies for ' + master.name + ' were all wrong! Missing these: ' +
-            JSON.stringify(missingDependencies.map(pluck('name')))
+            missingDependencies.map(pluck('name')).join(',')
           )
         }
       })
@@ -162,7 +171,13 @@ describe('Instance Services Integration Tests', function () {
   function createForks (masterName, childNameArray) {
     function createInstance (instanceName, isMaster) {
       var dashes = isMaster ? '-' : '--'
-      return createNewInstanceAsync(ctx.Frontend.shortHash + dashes + instanceName, 'asdasdasdas')
+      var isolationOpts = {}
+      if (isMaster) {
+        isolationOpts.isIsolationGroupMaster = true
+      } else {
+        isolationOpts.isolated = forked[masterName]._id
+      }
+      return createNewInstanceAsync(ctx[masterName].shortHash + dashes + instanceName, isolationOpts)
         .then(function (instanceModel) {
           forked[instanceName] = instanceModel
           sinon.stub(instanceModel, 'getMainBranchName').returns('branch1')
@@ -175,7 +190,7 @@ describe('Instance Services Integration Tests', function () {
           return createInstance(instanceName)
         })
       })
-      .then(function connectAllForkedDepsToOrginalUnforked(childInstanceArray) {
+      .then(function connectAllForkedDepsToOrginalUnforked (childInstanceArray) {
         // This emulates when each of these instances get configured from their envs
         return Promise.each(Object.keys(forked), function (instanceName) {
           // It should take these newly forked instances, and bind them to the original master
@@ -190,13 +205,7 @@ describe('Instance Services Integration Tests', function () {
     describe('Master\'s dependecies', function () {
       var toFork = ['Api', 'Link', 'MongoDB']
       beforeEach(function (done) {
-        Promise.each(toFork, function (instanceName) {
-          return createNewInstanceAsync(ctx.Frontend.shortHash + '--' + instanceName, 'asdasdasdas')
-            .then(function (instanceModel) {
-              forked[instanceName] = instanceModel
-              sinon.stub(instanceModel, 'getMainBranchName').returns('branch1')
-            })
-        })
+        createForks('Frontend', toFork)
           .asCallback(done)
       })
       it('should connect iFrontend to iApi', function (done) {
@@ -405,14 +414,45 @@ describe('Instance Services Integration Tests', function () {
       it('should connect all isolated instances except Mongo', function (done) {
         // This is what the dependency map should look like for the forked instances
         forkedDependencyMap = {
+          Frontend: ['Api'],
           Api: ['Link'],
           Link: ['RabbitMQ']
         }
         // first fork Link, then master
 
-        createForks('Api', ['Link', 'MongoDB', 'RabbitMQ'])
+        createForks('Api', ['Link', 'RabbitMQ', 'Frontend'])
           .then(function (isolatedChildrenArray) {
             return IsolationService.updateDependenciesForIsolation(forked.Api, isolatedChildrenArray)
+          })
+          .then(function () {
+            // Make sure the original mappings are still intact
+            return Promise.each(Object.keys(dependencyMap), function (instanceName) {
+              return checkDependencies(ctx[instanceName], getDependencyInstances(ctx, instanceName))
+            })
+          })
+          .then(function () {
+            return Promise.each(Object.keys(forkedDependencyMap), function (isolatedInstanceName) {
+              return checkDependencies(
+                forked[isolatedInstanceName],
+                getDependencyInstances(forked, isolatedInstanceName)
+              )
+            })
+          })
+          .asCallback(done)
+      })
+    })
+    describe('Forking codependent services', function () {
+      it('should connect to each other', function (done) {
+        // This is what the dependency map should look like for the forked instances
+        forkedDependencyMap = {
+          CodependentDatabase1: ['CodependentDatabase2'],
+          CodependentDatabase2: ['CodependentDatabase1']
+        }
+        // first fork Link, then master
+
+        createForks('CodependentDatabase1', ['CodependentDatabase2'])
+          .then(function (isolatedChildrenArray) {
+            return IsolationService.updateDependenciesForIsolation(forked.CodependentDatabase1, isolatedChildrenArray)
           })
           .then(function () {
             // Make sure the original mappings are still intact

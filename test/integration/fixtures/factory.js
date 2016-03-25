@@ -231,7 +231,7 @@ var factory = module.exports = {
   },
   instanceTemplate: function (ownerGithubId, props) {
     var name = props.name || uuid()
-    var shortHash = uuid();
+    var shortHash = uuid()
     if (props.isolated && !isObject(props.isolated)) {
       props.isolated = VALID_OBJECT_ID
     }
@@ -248,6 +248,7 @@ var factory = module.exports = {
         username: props.username || ownerGithubId.toString()
       },
       isolated: props.isolated,
+      isIsolationGroupMaster: props.isIsolationGroupMaster,
       parent: 'sdf',
       build: props.build._id,
       contextVersion: props.cv,
@@ -277,7 +278,7 @@ var factory = module.exports = {
           isSource: true
         }
       })
-      opts.context = context._id;
+      opts.context = context._id
     }
     return new ContextVersion({
       message: 'test',
