@@ -1171,7 +1171,11 @@ describe('docker: ' + moduleName, function () {
       ctx.mockInstance = {
         _id: '123456789012345678901234',
         shortHash: 'abcdef',
-        env: []
+        env: [
+          'FOO=1',
+          'URL=${RUNNABLE_CONTAINER_ID}-$FOO.runnableapp.com',
+          'BAR=$URL'
+        ]
       }
       ctx.mockContextVersion = {
         _id: '123456789012345678901234',
@@ -1229,9 +1233,12 @@ describe('docker: ' + moduleName, function () {
           )
           var expectedCreateOpts = {
             Labels: ctx.mockLabels,
-            Env: ctx.mockInstance.env.concat([
-              'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash
-            ]),
+            Env: [
+              'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash,
+              'FOO=1',
+              'URL=' + ctx.mockInstance.shortHash + '-1.runnableapp.com',
+              'BAR=' + ctx.mockInstance.shortHash + '-1.runnableapp.com'
+            ],
             Image: ctx.mockContextVersion.build.dockerTag,
             HostConfig: {
               CapDrop: process.env.CAP_DROP.split(','),
@@ -1325,6 +1332,177 @@ describe('docker: ' + moduleName, function () {
         it('should callback the error', function (done) {
           model.createUserContainer(ctx.opts, expectErr(ctx.err, done))
         })
+      })
+    })
+
+    describe('_evalEnvVars', function () {
+      it('should do nothing for ENV vars without ENV vars', function (done) {
+        var originalEnvs = [
+          'HELLO=WORLD',
+          'WOW=1asdfasd',
+          'BASE_URL=https://app.runnable-gamma.com/CodeNow/test-ws-client/'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal(originalEnvs)
+        done()
+      })
+
+      it('should do replace a single ENV var', function (done) {
+        var originalEnvs = [
+          'EXAMPLE=37',
+          'HELLO=$EXAMPLE'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'EXAMPLE=37',
+          'HELLO=37'
+        ])
+        done()
+      })
+
+      it('should should handle single char vars', function (done) {
+        var originalEnvs = [
+          'E=37',
+          'H=$E'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'E=37',
+          'H=37'
+        ])
+        done()
+      })
+
+      it('should replace mutliple ENVs with the same name', function (done) {
+        var originalEnvs = [
+          'EXAMPLE=37',
+          'HELLO=$EXAMPLE-$EXAMPLE'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'EXAMPLE=37',
+          'HELLO=37-37'
+        ])
+        done()
+      })
+
+      it('should replace mutliple ENVs with the differents names', function (done) {
+        var originalEnvs = [
+          'YOOO=3',
+          'YOO=2',
+          '_YO=1',
+          'HELLO=_YO$_YO-YOO$YOO-YOOO$YOOO'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'YOOO=3',
+          'YOO=2',
+          '_YO=1',
+          'HELLO=_YO1-YOO2-YOOO3'
+        ])
+        done()
+      })
+
+      it('should not replace invalid ENVs', function (done) {
+        var originalEnvs = [
+          '23=3',
+          'HELLO=YO$23'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          '23=3',
+          'HELLO=YO$23'
+        ])
+        done()
+      })
+
+      it('should replace vars inside {}', function (done) {
+        var originalEnvs = [
+          'YOOO=3',
+          'YOO=2',
+          '_YO=1',
+          'HELLO=_YO${_YO}-YOO${YOO}-YOOO${YOOO}'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'YOOO=3',
+          'YOO=2',
+          '_YO=1',
+          'HELLO=_YO1-YOO2-YOOO3'
+        ])
+        done()
+      })
+
+      it('should not replace vars declared before other vars are declared', function (done) {
+        var originalEnvs = [
+          'START=_YO${_YO}-YOO${YOO}-YOOO${YOOO}',
+          'YOOO=3',
+          'YOO=2',
+          'MIDDLE=_YO${_YO}-YOO${YOO}-YOOO${YOOO}',
+          '_YO=1',
+          'HELLO=_YO${_YO}-YOO${YOO}-YOOO${YOOO}'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'START=_YO${_YO}-YOO${YOO}-YOOO${YOOO}',
+          'YOOO=3',
+          'YOO=2',
+          'MIDDLE=_YO${_YO}-YOO2-YOOO3',
+          '_YO=1',
+          'HELLO=_YO1-YOO2-YOOO3'
+        ])
+        done()
+      })
+
+      it('should use the last declaration of a var', function (done) {
+        var originalEnvs = [
+          'YO=3',
+          'YO=2',
+          'YO=1',
+          'YO="432${YO}"'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'YO=3',
+          'YO=2',
+          'YO=1',
+          'YO="4321"'
+        ])
+        done()
+      })
+
+      it('should use respect recursive options when they follow an order', function (done) {
+        var originalEnvs = [
+          'FOO=1',
+          'BAR=$FOO',
+          'FOO=$BAR',
+          'BAR=$FOO',
+          'BAZ=$BAR',
+          'FOO=$BAZ'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'FOO=1',
+          'BAR=1',
+          'FOO=1',
+          'BAR=1',
+          'BAZ=1',
+          'FOO=1'
+        ])
+        done()
+      })
+
+      it('should handle regex ENVs', function (done) {
+        var originalEnvs = [
+          'B=/HI/',
+          'A=$B'
+        ]
+        var envs = Docker._evalEnvVars(originalEnvs)
+        expect(envs).to.deep.equal([
+          'B=/HI/',
+          'A=/HI/'
+        ])
+        done()
       })
     })
   })
