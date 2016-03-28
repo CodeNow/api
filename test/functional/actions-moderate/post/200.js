@@ -56,6 +56,8 @@ describe('Moderate - /actions/moderate', function () {
         body: { username: username },
         jar: ctx.moderatorJar
       }
+      require('../../fixtures/mocks/github/user-emails')()
+      require('../../fixtures/mocks/github/user-emails')()
       request(requestOpts, function (patchErr, patchRes) {
         if (patchErr) { return done(patchErr) }
         expect(patchRes.statusCode).to.equal(200)
