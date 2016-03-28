@@ -224,8 +224,8 @@ describe('Instance - PATCH /instances/:id', function () {
                       var container = ctx.instance.containers.models[0]
                       expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer)
                       expect(ctx.instance.attrs.containers[0].inspect.Env).to.deep.equal([
-                        'ONE=1',
-                        'RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash
+                        'RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash,
+                        'ONE=1'
                       ])
                       done()
                     }))
