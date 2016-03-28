@@ -42,6 +42,7 @@ describe('/auth/github routes', function () {
     it('should redirect without token if none requested', function (done) {
       require('../fixtures/mocks/github/user')(ctx.user, null, testToken)
       require('../fixtures/mocks/github/user-emails')()
+      require('../fixtures/mocks/github/user-emails')()
       request.get({
         url: target,
         followRedirect: false,
@@ -60,6 +61,7 @@ describe('/auth/github routes', function () {
       var j = request.jar()
       var testRedir = 'http://runnableapp.com:9283/datPath?thisqs=great'
       require('../fixtures/mocks/github/user')(ctx.user, null, testToken)
+      require('../fixtures/mocks/github/user-emails')()
       require('../fixtures/mocks/github/user-emails')()
       request.get({
         jar: j,
