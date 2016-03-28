@@ -55,17 +55,15 @@ describe('common stream: ' + moduleName, function () {
     })
     it('should fail if both me checks fail', function (done) {
       var isOwnerOfSpy = sinon.stub().yields(error)
-      var isModeratorSpy = sinon.stub().yields(error)
       sinon.stub(me, 'isOwnerOf').returns(isOwnerOfSpy)
-      sinon.stub(me, 'isModerator').returns(isModeratorSpy)
+      sinon.stub(me, 'isModerator').yields(error)
       commonStream.checkOwnership(ctx.sessionUser, ctx.cv)
         .catch(function (err) {
           expect(err.length, 'error length').to.equal(2)
 
           sinon.assert.calledOnce(me.isModerator)
-          sinon.assert.calledOnce(isModeratorSpy)
           sinon.assert.calledWith(
-            isModeratorSpy,
+            me.isModerator,
             {
               sessionUser: ctx.sessionUser,
               model: ctx.cvAttrs
@@ -91,15 +89,13 @@ describe('common stream: ' + moduleName, function () {
     })
     it('should allow logs if the user owns the build', function (done) {
       var isOwnerOfSpy = sinon.stub().yields(null, true)
-      var isModeratorSpy = sinon.stub().yields(error)
       sinon.stub(me, 'isOwnerOf').returns(isOwnerOfSpy)
-      sinon.stub(me, 'isModerator').returns(isModeratorSpy)
+      sinon.stub(me, 'isModerator').yields(error)
       commonStream.checkOwnership(ctx.sessionUser, ctx.cv)
         .then(function () {
           sinon.assert.calledOnce(me.isModerator)
-          sinon.assert.calledOnce(isModeratorSpy)
           sinon.assert.calledWith(
-            isModeratorSpy,
+            me.isModerator,
             {
               sessionUser: ctx.sessionUser,
               model: ctx.cvAttrs
@@ -124,16 +120,14 @@ describe('common stream: ' + moduleName, function () {
         .catch(done)
     })
     it('should allow logs if the user is a moderator', function (done) {
-      var isOwnerOfSpy = sinon.stub().yields(null, true)
-      var isModeratorSpy = sinon.stub().yields(error)
+      var isOwnerOfSpy = sinon.stub().yields(error)
       sinon.stub(me, 'isOwnerOf').returns(isOwnerOfSpy)
-      sinon.stub(me, 'isModerator').returns(isModeratorSpy)
+      sinon.stub(me, 'isModerator').yields(null, true)
       commonStream.checkOwnership(ctx.sessionUser, ctx.cv)
         .then(function () {
           sinon.assert.calledOnce(me.isModerator)
-          sinon.assert.calledOnce(isModeratorSpy)
           sinon.assert.calledWith(
-            isModeratorSpy,
+            me.isModerator,
             {
               sessionUser: ctx.sessionUser,
               model: ctx.cvAttrs
@@ -159,15 +153,13 @@ describe('common stream: ' + moduleName, function () {
     })
     it('should allow logs if the user is a moderator and owner', function (done) {
       var isOwnerOfSpy = sinon.stub().yields(null, true)
-      var isModeratorSpy = sinon.stub().yields(null, true)
       sinon.stub(me, 'isOwnerOf').returns(isOwnerOfSpy)
-      sinon.stub(me, 'isModerator').returns(isModeratorSpy)
+      sinon.stub(me, 'isModerator').yields(null, true)
       commonStream.checkOwnership(ctx.sessionUser, ctx.cv)
         .then(function () {
           sinon.assert.calledOnce(me.isModerator)
-          sinon.assert.calledOnce(isModeratorSpy)
           sinon.assert.calledWith(
-            isModeratorSpy,
+            me.isModerator,
             {
               sessionUser: ctx.sessionUser,
               model: ctx.cvAttrs
@@ -193,15 +185,13 @@ describe('common stream: ' + moduleName, function () {
     })
     it('should also work on the attrs of a model, without toJSON', function (done) {
       var isOwnerOfSpy = sinon.stub().yields(null, true)
-      var isModeratorSpy = sinon.stub().yields(null, true)
       sinon.stub(me, 'isOwnerOf').returns(isOwnerOfSpy)
-      sinon.stub(me, 'isModerator').returns(isModeratorSpy)
+      sinon.stub(me, 'isModerator').yields(null, true)
       commonStream.checkOwnership(ctx.sessionUser, ctx.cvAttrs)
         .then(function () {
           sinon.assert.calledOnce(me.isModerator)
-          sinon.assert.calledOnce(isModeratorSpy)
           sinon.assert.calledWith(
-            isModeratorSpy,
+            me.isModerator,
             {
               sessionUser: ctx.sessionUser,
               model: ctx.cvAttrs

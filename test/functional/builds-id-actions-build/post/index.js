@@ -87,7 +87,6 @@ describe('Build - /builds/:id/actions/build', function () {
               'build.completed': exists,
               'build.dockerImage': exists,
               'build.dockerTag': exists,
-              'build.log': exists,
               'build.triggeredAction.manual': true
             }
             require('./../../fixtures/mocks/github/user')(ctx.user) // non owner org
@@ -137,7 +136,6 @@ describe('Build - /builds/:id/actions/build', function () {
                   'build.completed': exists,
                   'build.dockerImage': exists,
                   'build.dockerTag': exists,
-                  'build.log': exists,
                   'build.triggeredAction.manual': true
                 }
                 require('./../../fixtures/mocks/github/user')(ctx.user) // non owner org

@@ -15,6 +15,8 @@ var expect = Code.expect
 var GitHub = require('models/apis/github')
 var Messenger = require('socket/messenger')
 var User = require('models/mongo/user')
+var createCount = require('callback-count')
+require('sinon-as-promised')(require('bluebird'))
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
@@ -94,7 +96,7 @@ describe('Messenger: ' + moduleName, function () {
         done()
       })
     })
-    it('should return false if both authToken and userId are null', function (done) {
+    it('should return error if both authToken and userId are null', function (done) {
       var socket = {
         request: {
           query: {
@@ -108,8 +110,8 @@ describe('Messenger: ' + moduleName, function () {
         }
       }
       Messenger.canJoin(socket, {}, function (err, canJoin) {
-        expect(err).to.be.null()
-        expect(canJoin).to.be.false()
+        expect(err.message).to.equal('No authentication data')
+        expect(canJoin).to.be.undefined()
         done()
       })
     })
@@ -314,87 +316,133 @@ describe('Messenger: ' + moduleName, function () {
   })
 
   describe('#subscribeStreamHandler', function () {
-    it('should return error if name is empty', function (done) {
-      var id = 'some-id'
-      var data = { type: 'some-type', action: 'join' }
-      var socket = {}
-      socket.write = sinon.stub()
-      Messenger.subscribeStreamHandler(socket, id, data).asCallback(function (err) {
-        sinon.assert.calledOnce(socket.write)
-        sinon.assert.calledWithExactly(
-          socket.write,
-          {
-            id: id,
-            error: 'name, type and action are required',
-            data: data
-          }
-        )
-        expect(err).to.exist()
-        expect(err.message).to.match(/name.+type.+action.+required/)
-        done()
+    describe('Failures', function () {
+      it('should return error if name is empty', function (done) {
+        var id = 'some-id'
+        var data = {type: 'some-type', action: 'join'}
+        var socket = {}
+        socket.write = sinon.stub()
+        Messenger.subscribeStreamHandler(socket, id, data).asCallback(function (err) {
+          sinon.assert.calledOnce(socket.write)
+          sinon.assert.calledWithExactly(
+            socket.write,
+            {
+              id: id,
+              error: 'name, type and action are required',
+              data: data
+            }
+          )
+          expect(err).to.exist()
+          expect(err.message).to.match(/name.+type.+action.+required/)
+          done()
+        })
       })
-    })
-    it('should return error if action is empty', function (done) {
-      var id = 'some-id'
-      var data = { type: 'some-type', name: 'some-name' }
-      var socket = {}
-      socket.write = sinon.stub()
-      Messenger.subscribeStreamHandler(socket, id, data).asCallback(function (err) {
-        sinon.assert.calledOnce(socket.write)
-        sinon.assert.calledWithExactly(
-          socket.write,
-          {
-            id: id,
-            error: 'name, type and action are required',
-            data: data
-          }
-        )
-        expect(err).to.exist()
-        expect(err.message).to.match(/name.+type.+action.+required/)
-        done()
+      it('should return error if action is empty', function (done) {
+        var id = 'some-id'
+        var data = {type: 'some-type', name: 'some-name'}
+        var socket = {}
+        socket.write = sinon.stub()
+        Messenger.subscribeStreamHandler(socket, id, data).asCallback(function (err) {
+          sinon.assert.calledOnce(socket.write)
+          sinon.assert.calledWithExactly(
+            socket.write,
+            {
+              id: id,
+              error: 'name, type and action are required',
+              data: data
+            }
+          )
+          expect(err).to.exist()
+          expect(err.message).to.match(/name.+type.+action.+required/)
+          done()
+        })
       })
-    })
-    it('should return error if type is empty', function (done) {
-      var id = 'some-id'
-      var data = { action: 'join', name: 'some-name' }
-      var socket = {}
-      socket.write = sinon.stub()
-      Messenger.subscribeStreamHandler(socket, id, data).asCallback(function (err) {
-        sinon.assert.calledOnce(socket.write)
-        sinon.assert.calledWithExactly(
-          socket.write,
-          {
-            id: id,
-            error: 'name, type and action are required',
-            data: data
-          }
-        )
-        expect(err).to.exist()
-        expect(err.message).to.match(/name.+type.+action.+required/)
-        done()
+      it('should return error if type is empty', function (done) {
+        var id = 'some-id'
+        var data = {action: 'join', name: 'some-name'}
+        var socket = {}
+        socket.write = sinon.stub()
+        Messenger.subscribeStreamHandler(socket, id, data).asCallback(function (err) {
+          sinon.assert.calledOnce(socket.write)
+          sinon.assert.calledWithExactly(
+            socket.write,
+            {
+              id: id,
+              error: 'name, type and action are required',
+              data: data
+            }
+          )
+          expect(err).to.exist()
+          expect(err.message).to.match(/name.+type.+action.+required/)
+          done()
+        })
       })
-    })
-    it('should return access denied if user wasnot found', function (done) {
-      var id = 'some-id'
-      var data = { action: 'join', name: 'some-name', type: 'data' }
-      var socket = {
-        request: {
-          session: {
-            passport: {
-              user: 'some-user-id'
+      it('should return access denied if user wasnot found', function (done) {
+        var id = 'some-id'
+        var data = {action: 'join', name: 'some-name', type: 'data'}
+        var socket = {
+          request: {
+            session: {
+              passport: {
+                user: 'some-user-id'
+              }
             }
           }
         }
+        var count = createCount(2, done)
+        socket.write = function (msg) {
+          expect(msg.id).to.equal(id)
+          expect(msg.error).to.equal('access denied')
+          expect(msg.data).to.equal(data)
+          User.findById.restore()
+          count.next()
+        }
+        var error = new Error('Mongoose error')
+        sinon.stub(User, 'findById').yields(error)
+        Messenger.subscribeStreamHandler(socket, id, data)
+          .catch(function (err) {
+            expect(err.message).to.equal('access denied')
+          })
+          .asCallback(count.next)
+      })
+    })
+    describe('Success', function () {
+      var id = 'some-id'
+      var mockUser = {
+        _id: id
       }
-      socket.write = function (msg) {
-        expect(msg.id).to.equal(id)
-        expect(msg.error).to.equal('access denied')
-        expect(msg.data).to.equal(data)
-        User.findById.restore()
+      beforeEach(function (done) {
+        sinon.stub(User, 'findById').yields(null, mockUser)
+        sinon.stub(Messenger, 'canJoinAsync').resolves()
+        sinon.stub(Messenger, 'joinRoom')
         done()
-      }
-      sinon.stub(User, 'findById').yields(new Error('Mongoose error'))
-      Messenger.subscribeStreamHandler(socket, id, data)
+      })
+      afterEach(function (done) {
+        User.findById.restore()
+        Messenger.canJoinAsync.restore()
+        Messenger.joinRoom.restore()
+        done()
+      })
+      it('should join the room successfully', function (done) {
+        var data = { action: 'join', name: 'some-name', type: 'data' }
+        var socket = {
+          request: {
+            session: {
+              passport: {
+                user: id
+              }
+            }
+          },
+          primus: {},
+          write: sinon.spy()
+        }
+        Messenger.subscribeStreamHandler(socket, id, data)
+          .then(function () {
+            sinon.assert.calledWith(Messenger.canJoinAsync, socket, data)
+            sinon.assert.calledWith(Messenger.joinRoom, socket, data.type, data.name)
+          })
+          .asCallback(done)
+      })
     })
   })
 })
