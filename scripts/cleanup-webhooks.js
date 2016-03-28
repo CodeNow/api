@@ -117,7 +117,7 @@ function processHooks (repos, cb) {
         return errorHandler(err)
       }
       hooks = hooks || []
-      var hookUrl = process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH
+      var hookUrl = process.env.GITHUB_WEBHOOK_URL
       var httpsHook = find(hooks, hasKeypaths({
         'config.url': hookUrl
       }))
