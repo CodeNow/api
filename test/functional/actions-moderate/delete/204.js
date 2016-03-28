@@ -29,6 +29,7 @@ describe('De-Moderate - /actions/demoderate', function () {
   beforeEach(function (done) { ctx.user = multi.createUser(done) })
   beforeEach(function (done) {
     ctx.moderatorJar = request.jar()
+    require('../../fixtures/mocks/github/user-emails')()
     ctx.mod = multi.createModerator({
       requestDefaults: { jar: ctx.moderatorJar }
     }, done)
@@ -46,10 +47,12 @@ describe('De-Moderate - /actions/demoderate', function () {
       body: { username: username },
       jar: ctx.moderatorJar
     }
+    require('../../fixtures/mocks/github/user-emails')()
     request(requestOpts, done)
   })
 
   it('should return us to ourselves', function (done) {
+    require('../../fixtures/mocks/github/user-emails')()
     require('../../fixtures/mocks/github/users-username')(
       ctx.mod.attrs.accounts.github.id,
       ctx.mod.attrs.accounts.github.username)
@@ -60,9 +63,11 @@ describe('De-Moderate - /actions/demoderate', function () {
       json: true,
       jar: ctx.moderatorJar
     }
+    require('../../fixtures/mocks/github/user-emails')()
     request(requestOpts, function (patchErr, patchRes) {
       if (patchErr) { return done(patchErr) }
       expect(patchRes.statusCode).to.equal(204)
+      require('../../fixtures/mocks/github/user-emails')()
       request({
         url: process.env.FULL_API_DOMAIN + '/users/me',
         json: true,
