@@ -207,6 +207,9 @@ describe('Instance Model Integration Tests', function () {
     describe('when instances are not all populated', function () {
       it('should fetch build and cv, then update the cv', function (done) {
         Instance.populateModels(ctx.instances, function (err, instances) {
+          if (err) {
+            return done(err)
+          }
           expect(err).to.not.exist()
           expect(instances[0]._id, 'instance._id').to.deep.equal(ctx.instance._id)
           expect(instances[0].contextVersion, 'cv').to.be.object()
@@ -219,48 +222,7 @@ describe('Instance Model Integration Tests', function () {
           expect(instances[1].build, 'build2').to.be.object()
           expect(instances[1].contextVersion._id, 'cv2._id').to.deep.equal(ctx.cv2._id)
           expect(instances[1].build._id, 'build2._id').to.deep.equal(ctx.build2._id)
-
-          var count = createCount(2, done)
-          async.retry(
-            10,
-            function (callback) {
-              Instance.findById(ctx.instance._id, function (err, instance) {
-                if (err) { return done(err) }
-                try {
-                  expect(instance.contextVersion, 'cv').to.be.object()
-                  expect(instance.build, 'buildId').to.deep.equal(ctx.build._id)
-                  expect(instance.contextVersion._id, 'cv._id').to.deep.equal(ctx.cv._id)
-                  expect(instance.contextVersion.build, 'cv.build').to.deep.equal(ctx.cv._doc.build)
-                } catch (e) {
-                  return setTimeout(function () {
-                    callback(e)
-                  }, 25)
-                }
-                callback()
-              })
-            },
-            count.next
-          )
-          async.retry(
-            10,
-            function (callback) {
-              Instance.findById(ctx.instance2._id, function (err, instance) {
-                if (err) { return done(err) }
-                try {
-                  expect(instance.contextVersion, 'cv').to.be.object()
-                  expect(instance.build, 'buildId').to.deep.equal(ctx.build2._id)
-                  expect(instance.contextVersion._id, 'cv._id').to.deep.equal(ctx.cv2._id)
-                  expect(instance.contextVersion.build, 'cv.build').to.deep.equal(ctx.cv2._doc.build)
-                } catch (e) {
-                  return setTimeout(function () {
-                    callback(e)
-                  }, 25)
-                }
-                callback()
-              })
-            },
-            count.next
-          )
+          done()
         })
       })
     })
@@ -282,10 +244,10 @@ describe('Instance Model Integration Tests', function () {
           }
 
           Instance.populateModels(ctx.instances, function (err, instances) {
-            expect(err).to.not.exist()
             if (err) {
               done(err)
             }
+            expect(err).to.not.exist()
             sinon.assert.calledOnce(error.log)
             sinon.assert.calledWith(
               error.log,
@@ -304,48 +266,7 @@ describe('Instance Model Integration Tests', function () {
             expect(instances[1].build, 'build2').to.be.object()
             expect(instances[1].contextVersion._id, 'cv2._id').to.deep.equal(ctx.cv2._id)
             expect(instances[1].build._id, 'build2._id').to.deep.equal(ctx.build2._id)
-
-            var count = createCount(2, done)
-            async.retry(
-              10,
-              function (callback) {
-                Instance.findById(ctx.instance._id, function (err, instance) {
-                  if (err) { return done(err) }
-                  try {
-                    expect(instance.contextVersion, 'cv').to.be.object()
-                    expect(instance.build, 'buildId').to.deep.equal(ctx.build._id)
-                    expect(instance.contextVersion._id, 'cv._id').to.deep.equal(ctx.cv._id)
-                    expect(instance.contextVersion.build, 'cv.build').to.deep.equal(ctx.cv._doc.build)
-                  } catch (e) {
-                    return setTimeout(function () {
-                      callback(e)
-                    }, 25)
-                  }
-                  callback()
-                })
-              },
-              count.next
-            )
-            async.retry(
-              10,
-              function (callback) {
-                Instance.findById(ctx.instance2._id, function (err, instance) {
-                  if (err) { return done(err) }
-                  try {
-                    expect(instance.contextVersion, 'cv').to.be.object()
-                    expect(instance.build, 'buildId').to.deep.equal(ctx.build2._id)
-                    expect(instance.contextVersion._id, 'cv._id').to.deep.equal(ctx.cv2._id)
-                    expect(instance.contextVersion.build, 'cv.build').to.deep.equal(ctx.cv2._doc.build)
-                  } catch (e) {
-                    return setTimeout(function () {
-                      callback(e)
-                    }, 25)
-                  }
-                  callback()
-                })
-              },
-              count.next
-            )
+            done()
           })
         })
       })
