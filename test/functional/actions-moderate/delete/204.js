@@ -10,8 +10,11 @@ var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
+var sinon = require('sinon')
 
 var api = require('../../fixtures/api-control')
+var Github = require('models/apis/github')
+var getUserEmails = require('../../fixtures/mocks/github/get-user-emails')
 var multi = require('../../fixtures/multi-factory')
 var request = require('request')
 
@@ -26,10 +29,22 @@ describe('De-Moderate - /actions/demoderate', function () {
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
 
+  before(function (done) {
+    // Stub out Github API call for `beforeEach` and `it` statements
+    sinon.stub(Github.prototype, 'getUserEmails').yieldsAsync(null, getUserEmails())
+    done()
+  })
+  beforeEach(function (done) {
+    Github.prototype.getUserEmails.reset()
+    done()
+  })
+  after(function (done) {
+    Github.prototype.getUserEmails.restore()
+    done()
+  })
   beforeEach(function (done) { ctx.user = multi.createUser(done) })
   beforeEach(function (done) {
     ctx.moderatorJar = request.jar()
-    require('../../fixtures/mocks/github/user-emails')()
     ctx.mod = multi.createModerator({
       requestDefaults: { jar: ctx.moderatorJar }
     }, done)
@@ -47,12 +62,10 @@ describe('De-Moderate - /actions/demoderate', function () {
       body: { username: username },
       jar: ctx.moderatorJar
     }
-    require('../../fixtures/mocks/github/user-emails')()
     request(requestOpts, done)
   })
 
   it('should return us to ourselves', function (done) {
-    require('../../fixtures/mocks/github/user-emails')()
     require('../../fixtures/mocks/github/users-username')(
       ctx.mod.attrs.accounts.github.id,
       ctx.mod.attrs.accounts.github.username)
@@ -63,11 +76,9 @@ describe('De-Moderate - /actions/demoderate', function () {
       json: true,
       jar: ctx.moderatorJar
     }
-    require('../../fixtures/mocks/github/user-emails')()
     request(requestOpts, function (patchErr, patchRes) {
       if (patchErr) { return done(patchErr) }
       expect(patchRes.statusCode).to.equal(204)
-      require('../../fixtures/mocks/github/user-emails')()
       request({
         url: process.env.FULL_API_DOMAIN + '/users/me',
         json: true,
