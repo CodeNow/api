@@ -34,12 +34,12 @@ describe('De-Moderate - /actions/demoderate', function () {
     sinon.stub(Github.prototype, 'getUserEmails').yieldsAsync(null, getUserEmails())
     done()
   })
-  beforeEach(function (done) {
-    Github.prototype.getUserEmails.reset()
-    done()
-  })
   after(function (done) {
     Github.prototype.getUserEmails.restore()
+    done()
+  })
+  beforeEach(function (done) {
+    Github.prototype.getUserEmails.reset()
     done()
   })
   beforeEach(function (done) { ctx.user = multi.createUser(done) })
