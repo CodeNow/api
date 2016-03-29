@@ -548,8 +548,11 @@ describe('InstanceForkService: ' + moduleName, function () {
             mockClient.createAndBuildBuild,
             'newContextVersionId',
             'instanceOwnerId',
-            'mockRepo',
-            'mockCommit',
+            {
+              'repo': 'mockRepo',
+              'commit': 'mockCommit',
+              'branch': 'mockBranch'
+            },
             sinon.match.func
           )
           done()
@@ -791,8 +794,11 @@ describe('InstanceForkService: ' + moduleName, function () {
           mockRunnableClient.createAndBuildBuild,
           mockContextVersion._id, // 'deadbeef'
           'instanceOwnerId',
-          pushInfo.repo,
-          pushInfo.commit,
+          {
+            repo: pushInfo.repo,
+            commit: pushInfo.commit,
+            branch: pushInfo.branch
+          },
           sinon.match.func
         )
         done()
