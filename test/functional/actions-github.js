@@ -372,7 +372,7 @@ describe('Github - /actions/github', function () {
               sinon.match.object,
               sinon.match.object
             )
-            var forkedInstance = slackStub.args[0]
+            var forkedInstance = slackStub.args[0][1]
             expect(forkedInstance.name).to.equal('feature-1-' + ctx.instance.attrs.name)
             sinon.assert.calledOnce(UserWhitelist.findOne)
             sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: login.toLowerCase() })
@@ -615,8 +615,8 @@ describe('Github - /actions/github', function () {
               'contextVersion.build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id
             }
             sinon.assert.calledTwice(successStub)
-            sinon.assert.calledOnce(slackStub)
-            sinon.assert.calledWith(slackStub, sinon.match.object, sinon.match.array)
+            sinon.assert.calledTwice(slackStub)
+            sinon.assert.calledWith(slackStub, sinon.match.object, sinon.match.object)
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err) }
               ctx.instance2.fetch(expects.success(200, expected, function () {
