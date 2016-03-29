@@ -162,7 +162,7 @@ describe('Slack: ' + moduleName, function () {
         done()
       })
     })
-    it('should do nothing if instances = null', function (done) {
+    it('should do nothing if instance = null', function (done) {
       var settings = {
         notifications: {
           slack: {
@@ -177,21 +177,6 @@ describe('Slack: ' + moduleName, function () {
         done()
       })
     })
-    it('should do nothing if instances = []', function (done) {
-      var settings = {
-        notifications: {
-          slack: {
-            enabled: true
-          }
-        }
-      }
-      var slack = new Slack(settings)
-      slack.notifyOnAutoDeploy({}, [], function (err, resp) {
-        expect(err).to.equal(null)
-        expect(resp).to.equal(undefined)
-        done()
-      })
-    })
     it('should do nothing if user was not found', function (done) {
       var settings = {
         notifications: {
@@ -201,23 +186,14 @@ describe('Slack: ' + moduleName, function () {
         }
       }
       var slack = new Slack(settings)
-      var instances = [
-        {
-          name: 'server-1',
-          owner: {
-            github: 3213,
-            username: 'CodeNow'
-          }
-        },
-        {
-          name: 'server-1-copy',
-          owner: {
-            github: 3213,
-            username: 'CodeNow'
-          }
+      var instance = {
+        name: 'server-1',
+        owner: {
+          github: 3213,
+          username: 'CodeNow'
         }
-      ]
-      slack.notifyOnAutoDeploy({}, instances, function (err, resp) {
+      }
+      slack.notifyOnAutoDeploy({}, instance, function (err, resp) {
         expect(err).to.equal(null)
         expect(resp).to.equal(undefined)
         done()
@@ -232,22 +208,13 @@ describe('Slack: ' + moduleName, function () {
         }
       }
       var slack = new Slack(settings)
-      var instances = [
-        {
-          name: 'server-1',
-          owner: {
-            github: 3213,
-            username: 'CodeNow'
-          }
-        },
-        {
-          name: 'server-1-copy',
-          owner: {
-            github: 3213,
-            username: 'CodeNow'
-          }
+      var instance = {
+        name: 'server-1',
+        owner: {
+          github: 3213,
+          username: 'CodeNow'
         }
-      ]
+      }
       var headCommit = {
         id: 'a240edf982d467201845b3bf10ccbe16f6049ea9',
         message: 'init & commit & push long test \n next line \n 3d line',
@@ -270,7 +237,7 @@ describe('Slack: ' + moduleName, function () {
         repoName: 'api'
       }
       sinon.stub(slack, 'sendDirectMessage').yieldsAsync(null)
-      slack.notifyOnAutoDeploy(gitInfo, instances, function (err, resp) {
+      slack.notifyOnAutoDeploy(gitInfo, instance, function (err, resp) {
         expect(err).to.equal(null)
         expect(resp).to.equal(undefined)
         expect(slack.sendDirectMessage.callCount).to.equal(1)
@@ -417,31 +384,21 @@ describe('Slack: ' + moduleName, function () {
         repo: 'CodeNow/api',
         repoName: 'api'
       }
-      var instances = [
-        {
-          name: 'server-1',
-          owner: {
-            github: 3213,
-            username: 'CodeNow'
-          }
-        },
-        {
-          name: 'server-1-copy',
-          owner: {
-            github: 3213,
-            username: 'CodeNow'
-          }
+      var instance = {
+        name: 'server-1',
+        owner: {
+          github: 3213,
+          username: 'CodeNow'
         }
-      ]
-      var text = Slack.createAutoDeployText(gitInfo, instances)
+      }
+      var text = Slack.createAutoDeployText(gitInfo, instance)
       var expected = 'Your <http://localhost:3031/actions/redirect?'
       expected += 'url=https%3A%2F%2Fgithub.com%2FCodeNow%2Fapi%2Fcommit%2Fa240edf982d467201845b3bf10ccbe16f6049ea9'
       expected += '|changes> (init &amp commit &amp push long test   next line   3d... and '
       expected += '<http://localhost:3031/actions/redirect?'
       expected += 'url=https%3A%2F%2Fgithub.com%2FCodeNow%2Fapi%2Fcompare%2Fa240edf982d4...a240edf982d4|1 more>)'
-      expected += ' to CodeNow/api (feature-1) are deployed on:'
-      expected += '\n<https://' + process.env.DOMAIN + '/CodeNow/server-1?ref=slack|server-1>'
-      expected += '\n<https://' + process.env.DOMAIN + '/CodeNow/server-1-copy?ref=slack|server-1-copy>'
+      expected += ' to CodeNow/api (feature-1) are deployed on'
+      expected += ' <https://' + process.env.DOMAIN + '/CodeNow/server-1?ref=slack|server-1>'
       expect(text).to.equal(expected)
       done()
     })
@@ -459,29 +416,19 @@ describe('Slack: ' + moduleName, function () {
         repo: 'CodeNow/api',
         repoName: 'api'
       }
-      var instances = [
-        {
-          name: 'server-1',
-          owner: {
-            github: 3213,
-            username: 'CodeNow'
-          }
-        },
-        {
-          name: 'server-1-copy',
-          owner: {
-            github: 3213,
-            username: 'CodeNow'
-          }
+      var instance = {
+        name: 'server-1',
+        owner: {
+          github: 3213,
+          username: 'CodeNow'
         }
-      ]
-      var text = Slack.createAutoDeployText(gitInfo, instances)
+      }
+      var text = Slack.createAutoDeployText(gitInfo, instance)
       var expected = 'Your <http://localhost:3031/actions/redirect?'
       expected += 'url=https%3A%2F%2Fgithub.com%2FCodeNow%2Fapi%2Fcommit%2Fa240edf982d467201845b3bf10ccbe16f6049ea9'
       expected += '|changes> (init &amp commit &amp push long test   next line   3d...)'
-      expected += ' to CodeNow/api (feature-1) are deployed on:'
-      expected += '\n<https://' + process.env.DOMAIN + '/CodeNow/server-1?ref=slack|server-1>'
-      expected += '\n<https://' + process.env.DOMAIN + '/CodeNow/server-1-copy?ref=slack|server-1-copy>'
+      expected += ' to CodeNow/api (feature-1) are deployed on'
+      expected += ' <https://' + process.env.DOMAIN + '/CodeNow/server-1?ref=slack|server-1>'
       expect(text).to.equal(expected)
       done()
     })

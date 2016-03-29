@@ -372,7 +372,7 @@ describe('Github - /actions/github', function () {
               sinon.match.object,
               sinon.match.object
             )
-            var forkedInstance = slackStub.args[0][1]
+            var forkedInstance = slackStub.args[0]
             expect(forkedInstance.name).to.equal('feature-1-' + ctx.instance.attrs.name)
             sinon.assert.calledOnce(UserWhitelist.findOne)
             sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: login.toLowerCase() })
