@@ -10,9 +10,12 @@ var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
+var sinon = require('sinon')
 
 var api = require('../../fixtures/api-control')
 var multi = require('../../fixtures/multi-factory')
+var Github = require('models/apis/github')
+var getUserEmails = require('../../fixtures/mocks/github/get-user-emails')
 var request = require('request')
 
 describe('Moderate - /actions/moderate', function () {
@@ -25,6 +28,19 @@ describe('Moderate - /actions/moderate', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
+  before(function (done) {
+    // Stub out Github API call for `beforeEach` and `it` statements
+    sinon.stub(Github.prototype, 'getUserEmails').yieldsAsync(null, getUserEmails())
+    done()
+  })
+  beforeEach(function (done) {
+    Github.prototype.getUserEmails.reset()
+    done()
+  })
+  after(function (done) {
+    Github.prototype.getUserEmails.restore()
+    done()
+  })
 
   describe('moderating', function () {
     beforeEach(function (done) { ctx.user = multi.createUser(done) })
@@ -56,8 +72,6 @@ describe('Moderate - /actions/moderate', function () {
         body: { username: username },
         jar: ctx.moderatorJar
       }
-      require('../../fixtures/mocks/github/user-emails')()
-      require('../../fixtures/mocks/github/user-emails')()
       request(requestOpts, function (patchErr, patchRes) {
         if (patchErr) { return done(patchErr) }
         expect(patchRes.statusCode).to.equal(200)
