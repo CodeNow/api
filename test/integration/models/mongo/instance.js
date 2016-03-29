@@ -11,9 +11,6 @@ var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
-
-var async = require('async')
-var createCount = require('callback-count')
 var error = require('error')
 
 var Instance = require('models/mongo/instance')
