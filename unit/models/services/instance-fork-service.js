@@ -311,98 +311,6 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
   })
 
-  describe('#_notifyExternalServices', function () {
-    var data
-    var instance = {}
-    var pushInfo = {}
-
-    beforeEach(function (done) {
-      data = {
-        instance: instance,
-        accessToken: 'deadbeef',
-        pushInfo: pushInfo
-      }
-      sinon.stub(PullRequest.prototype, 'deploymentSucceeded')
-      sinon.stub(Slack, 'sendSlackAutoForkNotification')
-      sinon.stub(InstanceForkService, '_validatePushInfo')
-      done()
-    })
-
-    afterEach(function (done) {
-      PullRequest.prototype.deploymentSucceeded.restore()
-      Slack.sendSlackAutoForkNotification.restore()
-      InstanceForkService._validatePushInfo.restore()
-      done()
-    })
-
-    describe('validation', function () {
-      it('should require data', function (done) {
-        InstanceForkService._notifyExternalServices().asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/_notifyExternalServices.+data.+required/)
-          done()
-        })
-      })
-
-      it('should require data.instance', function (done) {
-        delete data.instance
-        InstanceForkService._notifyExternalServices(data).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/_notifyExternalServices.+instance.+required/)
-          done()
-        })
-      })
-
-      it('should require data.accessToken', function (done) {
-        delete data.accessToken
-        InstanceForkService._notifyExternalServices(data).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/_notifyExternalServices.+accessToken.+required/)
-          done()
-        })
-      })
-
-      it('should validate pushInfo', function (done) {
-        InstanceForkService._notifyExternalServices(data).asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(InstanceForkService._validatePushInfo)
-          sinon.assert.calledWithExactly(
-            InstanceForkService._validatePushInfo,
-            pushInfo,
-            '_notifyExternalServices'
-          )
-          done()
-        })
-      })
-    })
-
-    it('should use the PullRequest model to notify GitHub', function (done) {
-      InstanceForkService._notifyExternalServices(data).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(PullRequest.prototype.deploymentSucceeded)
-        sinon.assert.calledWithExactly(
-          PullRequest.prototype.deploymentSucceeded,
-          pushInfo,
-          instance
-        )
-        done()
-      })
-    })
-
-    it('should use the Slack model to notify through Slack', function (done) {
-      InstanceForkService._notifyExternalServices(data).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(Slack.sendSlackAutoForkNotification)
-        sinon.assert.calledWithExactly(
-          Slack.sendSlackAutoForkNotification,
-          pushInfo,
-          instance
-        )
-        done()
-      })
-    })
-  })
-
   describe('#forkRepoInstance', function () {
     var mockInstance
     var mockOpts
@@ -864,7 +772,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       })
     })
   })
-  
+
   describe('#_createNewNonRepoContextVersion', function () {
     var mockContextVersion
     var mockOwnerId = 'mockOwnerId'
