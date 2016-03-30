@@ -30,7 +30,9 @@ describe('Moderate - /actions/moderate', function () {
   afterEach(require('../../fixtures/clean-nock'))
   before(function (done) {
     // Stub out Github API call for `beforeEach` and `it` statements
-    sinon.stub(Github.prototype, 'getUserEmails').yieldsAsync(null, getUserEmails())
+    sinon.stub(Github.prototype, 'getUserEmails', function (email, cb) {
+      return cb(null, getUserEmails())
+    })
     done()
   })
   after(function (done) {

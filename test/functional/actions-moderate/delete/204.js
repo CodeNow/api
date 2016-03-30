@@ -31,7 +31,9 @@ describe('De-Moderate - /actions/demoderate', function () {
 
   before(function (done) {
     // Stub out Github API call for `beforeEach` and `it` statements
-    sinon.stub(Github.prototype, 'getUserEmails').yieldsAsync(null, getUserEmails())
+    sinon.stub(Github.prototype, 'getUserEmails', function (user, cb) {
+      return cb(null, getUserEmails())
+    })
     done()
   })
   after(function (done) {
