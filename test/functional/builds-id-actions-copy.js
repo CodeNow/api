@@ -118,6 +118,40 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
               }))
           })
         })
+
+        describe('with buildRoot set on the context version', function () {
+          beforeEach(function (done) {
+            ContextVersion.findById(new ObjectId(ctx.contextVersion.id()), function (err, cv) {
+              if (err) { return done(err) }
+              cv.buildRoot = '/cool/path'
+              cv.save(done)
+            })
+          })
+          it('should create a copy of the context version maintaining the memory', function (done) {
+            var expectedNewBuild = clone(ctx.build.json())
+            expectedNewBuild.contextVersions = function (contextVersions) {
+              expect(contextVersions.length).to.equal(1)
+              expect(contextVersions[0]).to.not.equal(ctx.contextVersion.id())
+              return true
+            }
+            expectedNewBuild.contexts = [ctx.context.id()]
+            expectedNewBuild._id = not(equals(ctx.build.attrs._id))
+            expectedNewBuild.id = not(equals(ctx.build.attrs.id))
+            expectedNewBuild.created = not(equals(ctx.build.attrs.created))
+            expectedNewBuild.started = not(exists)
+            expectedNewBuild.completed = not(exists)
+            expectedNewBuild.duration = not(exists)
+            ctx.buildCopy = ctx.build
+              .deepCopy(expects.success(201, expectedNewBuild, function (err) {
+                if (err) { return done(err) }
+                ContextVersion.findById(new ObjectId(ctx.buildCopy.attrs.contextVersions[0]), function (err, cv) {
+                  expect(cv.buildRoot).to.equal('/cool/path')
+                  expectUnbuiltVersions(ctx, done)(err)
+                })
+              }))
+          })
+        })
+
         it('should create a copy of the build', function (done) {
           var expectedNewBuild = clone(ctx.build.json())
           expectedNewBuild.contextVersions = function (contextVersions) {
