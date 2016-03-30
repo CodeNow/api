@@ -6,7 +6,6 @@ var describe = lab.describe
 var it = lab.it
 var before = lab.before
 var beforeEach = lab.beforeEach
-var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
@@ -21,7 +20,6 @@ var error = require('error')
 var find = require('101/find')
 var hasProps = require('101/has-properties')
 var mongoose = require('mongoose')
-var noop = require('101/noop')
 var pick = require('101/pick')
 var pluck = require('101/pluck')
 var objectId = require('objectid')
@@ -530,89 +528,6 @@ describe('Instance Model Tests ' + moduleName, function () {
         var errArg = error.log.getCall(0).args[0]
         expect(errArg.output.statusCode).to.equal(409)
         done()
-      })
-    })
-  })
-
-  describe('modifyContainerInspect', function () {
-    var instance
-
-    beforeEach(function (done) {
-      instance = mongoFactory.createNewInstance('testy', {})
-      sinon.spy(instance, 'invalidateContainerDNS')
-      sinon.stub(Instance, 'findOneAndUpdate')
-      done()
-    })
-
-    afterEach(function (done) {
-      instance.invalidateContainerDNS.restore()
-      Instance.findOneAndUpdate.restore()
-      done()
-    })
-
-    it('should invalidate the instance container DNS', function (done) {
-      instance.modifyContainerInspect('some-id', {}, noop)
-      expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
-      done()
-    })
-  })
-
-  describe('modifyContainerInspectErr', function () {
-    var savedInstance = null
-    var instance = null
-    before(function (done) {
-      instance = mongoFactory.createNewInstance()
-      instance.save(function (err, instance) {
-        if (err) { return done(err) }
-        expect(instance).to.exist()
-        savedInstance = instance
-        done()
-      })
-    })
-
-    it('should pick message, stack and data fields', function (done) {
-      var fakeError = {
-        message: 'random message',
-        data: 'random data',
-        stack: 'random stack',
-        field: 'random field'
-      }
-      var dockerContainer = savedInstance.container.dockerContainer
-      savedInstance.modifyContainerInspectErr(dockerContainer, fakeError, function (err, newInst) {
-        if (err) { return done(err) }
-        expect(newInst.container.inspect.error.message).to.equal(fakeError.message)
-        expect(newInst.container.inspect.error.data).to.equal(fakeError.data)
-        expect(newInst.container.inspect.error.stack).to.equal(fakeError.stack)
-        expect(newInst.container.inspect.error.field).to.not.exist()
-        done()
-      })
-    })
-
-    describe('conflict error', function () {
-      var origErrorLog = error.log
-      after(function (done) {
-        error.log = origErrorLog
-        done()
-      })
-
-      it('should conflict if the container has changed', function (done) {
-        var fakeError = {
-          message: 'random message',
-          data: 'random data',
-          stack: 'random stack',
-          field: 'random field'
-        }
-        var count = createCount(3, done)
-        error.log = function (err) {
-          // first call
-          if (err === fakeError) { return count.next() }
-          // second call
-          expect(err).to.exist()
-          expect(err.output.statusCode).to.equal(409)
-          count.next()
-        }
-        var dockerContainer = 'fac985124d0f0060006af52f2d5a9098c9b4796811597b45c0f44494cb02b452'
-        savedInstance.modifyContainerInspectErr(dockerContainer, fakeError, count.next)
       })
     })
   })
@@ -1341,7 +1256,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
 
-    describe('Testing changes in envs', function () {
+    describe('Testing changes in connections', function () {
       var masterInstances
       beforeEach(function (done) {
         masterInstances = [
@@ -1358,153 +1273,305 @@ describe('Instance Model Tests ' + moduleName, function () {
         instance.removeDependency.restore()
         done()
       })
-      it('should add a new dep for each env, when starting with none', function (done) {
-        sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
-        instance.env = [
-          'as=hello-staging-' + ownerName + '.runnableapp.com',
-          'df=adelle-staging-' + ownerName + '.runnableapp.com'
-        ]
-        instance.setDependenciesFromEnvironment(ownerName, function (err) {
-          if (err) {
-            done(err)
-          }
-          sinon.assert.calledOnce(instance.invalidateContainerDNS)
-          sinon.assert.calledTwice(instance.addDependency)
-          sinon.assert.calledWith(instance.addDependency.getCall(0),
-            sinon.match.has('shortHash', masterInstances[0].shortHash),
-            'hello-staging-' + ownerName + '.runnableapp.com',
-            sinon.match.func
-          )
-          sinon.assert.calledWith(instance.addDependency.getCall(1),
-            sinon.match.has('shortHash', masterInstances[1].shortHash),
-            'adelle-staging-' + ownerName + '.runnableapp.com',
-            sinon.match.func
-          )
-          sinon.assert.notCalled(instance.removeDependency)
-          done()
+      describe('Envs', function () {
+        it('should add a new dep for each env, when starting with none', function (done) {
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
+          instance.env = [
+            'as=hello-staging-' + ownerName + '.runnableapp.com',
+            'df=adelle-staging-' + ownerName + '.runnableapp.com'
+          ]
+          instance.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              done(err)
+            }
+            sinon.assert.calledOnce(instance.invalidateContainerDNS)
+            sinon.assert.calledTwice(instance.addDependency)
+            sinon.assert.calledWith(instance.addDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[0].shortHash),
+              'hello-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            sinon.assert.calledWith(instance.addDependency.getCall(1),
+              sinon.match.has('shortHash', masterInstances[1].shortHash),
+              'adelle-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            sinon.assert.notCalled(instance.removeDependency)
+            done()
+          })
+        })
+        it('should add 1 new dep, and keep the existing one', function (done) {
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [masterInstances[1]])
+          instance.env = [
+            'as=hello-staging-' + ownerName + '.runnableapp.com',
+            'df=adelle-staging-' + ownerName + '.runnableapp.com'
+          ]
+          instance.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              done(err)
+            }
+            sinon.assert.calledOnce(instance.invalidateContainerDNS)
+            sinon.assert.calledOnce(instance.addDependency)
+            sinon.assert.calledWith(instance.addDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[0].shortHash),
+              'hello-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            sinon.assert.notCalled(instance.removeDependency)
+            done()
+          })
+        })
+        it('should remove one of the existing, but leave the other', function (done) {
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances)
+          instance.env = [
+            'df=adelle-staging-' + ownerName + '.runnableapp.com' // Keep masterInstance[1]
+          ]
+          instance.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              done(err)
+            }
+            sinon.assert.calledOnce(instance.invalidateContainerDNS)
+            sinon.assert.calledOnce(instance.removeDependency)
+            sinon.assert.calledWith(instance.removeDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[0].shortHash),
+              sinon.match.func
+            )
+            sinon.assert.notCalled(instance.addDependency)
+            done()
+          })
+        })
+        it('should remove both of the existing', function (done) {
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances)
+          instance.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              done(err)
+            }
+            sinon.assert.calledOnce(instance.invalidateContainerDNS)
+            sinon.assert.calledTwice(instance.removeDependency)
+            sinon.assert.calledWith(instance.removeDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[0].shortHash),
+              sinon.match.func
+            )
+            sinon.assert.calledWith(instance.removeDependency.getCall(1),
+              sinon.match.has('shortHash', masterInstances[1].shortHash),
+              sinon.match.func
+            )
+            sinon.assert.notCalled(instance.addDependency)
+            done()
+          })
+        })
+        it('should remove the existing one, and add the new one', function (done) {
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [masterInstances[1]])
+          instance.env = [
+            'df=hello-staging-' + ownerName + '.runnableapp.com' // Add masterInstance[0]
+          ]
+          instance.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              done(err)
+            }
+            sinon.assert.calledOnce(instance.invalidateContainerDNS)
+            sinon.assert.calledOnce(instance.removeDependency)
+            sinon.assert.calledWith(instance.removeDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[1].shortHash),
+              sinon.match.func
+            )
+            sinon.assert.calledOnce(instance.addDependency)
+            sinon.assert.calledWith(instance.addDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[0].shortHash),
+              'hello-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            done()
+          })
+        })
+        it('should remove the existing one, and add the new one', function (done) {
+          masterInstances.push(mongoFactory.createNewInstance('cheese', {masterPod: true}))   // 2
+          masterInstances.push(mongoFactory.createNewInstance('chicken', {masterPod: true}))  // 3
+          masterInstances.push(mongoFactory.createNewInstance('beef', {masterPod: true}))     // 4
+          masterInstances.push(mongoFactory.createNewInstance('potatoes', {masterPod: true})) // 5
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
+          instance.env = [
+            'df=hello-staging-' + ownerName + '.runnableapp.com', // keep masterInstance[0]
+            'asd=chicken-staging-' + ownerName + '.runnableapp.com', // add masterInstance[3]
+            'asfgas=potatoes-staging-' + ownerName + '.runnableapp.com' // add masterInstance[5]
+          ]
+          instance.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              done(err)
+            }
+            sinon.assert.calledOnce(instance.invalidateContainerDNS)
+            sinon.assert.calledTwice(instance.removeDependency)
+            sinon.assert.calledWith(instance.removeDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[1].shortHash),
+              sinon.match.func
+            )
+            sinon.assert.calledWith(instance.removeDependency.getCall(1),
+              sinon.match.has('shortHash', masterInstances[2].shortHash),
+              sinon.match.func
+            )
+            sinon.assert.calledTwice(instance.addDependency)
+            sinon.assert.calledWith(instance.addDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[3].shortHash),
+              'chicken-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            sinon.assert.calledWith(instance.addDependency.getCall(1),
+              sinon.match.has('shortHash', masterInstances[5].shortHash),
+              'potatoes-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            done()
+          })
         })
       })
-      it('should add 1 new dep, and keep the existing one', function (done) {
-        sinon.stub(instance, 'getDependencies').yieldsAsync(null, [masterInstances[1]])
-        instance.env = [
-          'as=hello-staging-' + ownerName + '.runnableapp.com',
-          'df=adelle-staging-' + ownerName + '.runnableapp.com'
-        ]
-        instance.setDependenciesFromEnvironment(ownerName, function (err) {
-          if (err) {
-            done(err)
-          }
-          sinon.assert.calledOnce(instance.invalidateContainerDNS)
-          sinon.assert.calledOnce(instance.addDependency)
-          sinon.assert.calledWith(instance.addDependency.getCall(0),
-            sinon.match.has('shortHash', masterInstances[0].shortHash),
-            'hello-staging-' + ownerName + '.runnableapp.com',
-            sinon.match.func
-          )
-          sinon.assert.notCalled(instance.removeDependency)
-          done()
+      describe('FnR', function () {
+        it('should add a new dep for each replace rule, when starting with none', function (done) {
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
+          var firstAppCodeVersion = keypather.get(instance, 'contextVersion.appCodeVersions[0]')
+          firstAppCodeVersion.transformRules.replace = [
+            {
+              action: 'Replace',
+              search: 'hello',
+              replace: 'http://hello-staging-' + ownerName + '.runnableapp.com',
+              exclude: []
+            },
+            {
+              action: 'Replace',
+              search: 'chicken',
+              replace: 'adelle-staging-' + ownerName + '.runnableapp.com',
+              exclude: []
+            }
+          ]
+          instance.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              done(err)
+            }
+            sinon.assert.calledOnce(instance.invalidateContainerDNS)
+            sinon.assert.calledTwice(instance.addDependency)
+            sinon.assert.calledWith(instance.addDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[0].shortHash),
+              'hello-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            sinon.assert.calledWith(instance.addDependency.getCall(1),
+              sinon.match.has('shortHash', masterInstances[1].shortHash),
+              'adelle-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            sinon.assert.notCalled(instance.removeDependency)
+            done()
+          })
+        })
+        it('should remove the existing one, and add the new one', function (done) {
+          masterInstances.push(mongoFactory.createNewInstance('cheese', {masterPod: true}))   // 2
+          masterInstances.push(mongoFactory.createNewInstance('chicken', {masterPod: true}))  // 3
+          masterInstances.push(mongoFactory.createNewInstance('beef', {masterPod: true}))     // 4
+          masterInstances.push(mongoFactory.createNewInstance('potatoes', {masterPod: true})) // 5
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
+          instance.contextVersion.appCodeVersions[0].transformRules.replace = [
+            {
+              action: 'Replace',
+              search: 'hello',
+              replace: 'http://hello-staging-' + ownerName + '.runnableapp.com', // keep masterInstance[0]
+              exclude: []
+            },
+            {
+              action: 'Replace',
+              search: 'chicken',
+              replace: 'chicken-staging-' + ownerName + '.runnableapp.com', // add masterInstance[3]
+              exclude: []
+            }
+          ]
+          instance.contextVersion.appCodeVersions[1].transformRules.replace = [
+            {
+              action: 'Replace',
+              search: 'potatoes',
+              replace: 'http://potatoes-staging-' + ownerName + '.runnableapp.com', // add masterInstance[5]
+              exclude: []
+            }
+          ]
+          instance.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              done(err)
+            }
+            sinon.assert.calledOnce(instance.invalidateContainerDNS)
+            sinon.assert.calledTwice(instance.removeDependency)
+            sinon.assert.calledWith(instance.removeDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[1].shortHash),
+              sinon.match.func
+            )
+            sinon.assert.calledWith(instance.removeDependency.getCall(1),
+              sinon.match.has('shortHash', masterInstances[2].shortHash),
+              sinon.match.func
+            )
+            sinon.assert.calledTwice(instance.addDependency)
+            sinon.assert.calledWith(instance.addDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[3].shortHash),
+              'chicken-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            sinon.assert.calledWith(instance.addDependency.getCall(1),
+              sinon.match.has('shortHash', masterInstances[5].shortHash),
+              'potatoes-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            done()
+          })
         })
       })
-      it('should remove one of the existing, but leave the other', function (done) {
-        sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances)
-        instance.env = [
-          'df=adelle-staging-' + ownerName + '.runnableapp.com' // Keep masterInstance[1]
-        ]
-        instance.setDependenciesFromEnvironment(ownerName, function (err) {
-          if (err) {
-            done(err)
-          }
-          sinon.assert.calledOnce(instance.invalidateContainerDNS)
-          sinon.assert.calledOnce(instance.removeDependency)
-          sinon.assert.calledWith(instance.removeDependency.getCall(0),
-            sinon.match.has('shortHash', masterInstances[0].shortHash),
-            sinon.match.func
-          )
-          sinon.assert.notCalled(instance.addDependency)
-          done()
-        })
-      })
-      it('should remove both of the existing', function (done) {
-        sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances)
-        instance.setDependenciesFromEnvironment(ownerName, function (err) {
-          if (err) {
-            done(err)
-          }
-          sinon.assert.calledOnce(instance.invalidateContainerDNS)
-          sinon.assert.calledTwice(instance.removeDependency)
-          sinon.assert.calledWith(instance.removeDependency.getCall(0),
-            sinon.match.has('shortHash', masterInstances[0].shortHash),
-            sinon.match.func
-          )
-          sinon.assert.calledWith(instance.removeDependency.getCall(1),
-            sinon.match.has('shortHash', masterInstances[1].shortHash),
-            sinon.match.func
-          )
-          sinon.assert.notCalled(instance.addDependency)
-          done()
-        })
-      })
-      it('should remove the existing one, and add the new one', function (done) {
-        sinon.stub(instance, 'getDependencies').yieldsAsync(null, [masterInstances[1]])
-        instance.env = [
-          'df=hello-staging-' + ownerName + '.runnableapp.com' // Add masterInstance[0]
-        ]
-        instance.setDependenciesFromEnvironment(ownerName, function (err) {
-          if (err) {
-            done(err)
-          }
-          sinon.assert.calledOnce(instance.invalidateContainerDNS)
-          sinon.assert.calledOnce(instance.removeDependency)
-          sinon.assert.calledWith(instance.removeDependency.getCall(0),
-            sinon.match.has('shortHash', masterInstances[1].shortHash),
-            sinon.match.func
-          )
-          sinon.assert.calledOnce(instance.addDependency)
-          sinon.assert.calledWith(instance.addDependency.getCall(0),
-            sinon.match.has('shortHash', masterInstances[0].shortHash),
-            'hello-staging-' + ownerName + '.runnableapp.com',
-            sinon.match.func
-          )
-          done()
-        })
-      })
-      it('should remove the existing one, and add the new one', function (done) {
-        masterInstances.push(mongoFactory.createNewInstance('cheese', {masterPod: true}))   // 2
-        masterInstances.push(mongoFactory.createNewInstance('chicken', {masterPod: true}))  // 3
-        masterInstances.push(mongoFactory.createNewInstance('beef', {masterPod: true}))     // 4
-        masterInstances.push(mongoFactory.createNewInstance('potatoes', {masterPod: true})) // 5
-        sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
-        instance.env = [
-          'df=hello-staging-' + ownerName + '.runnableapp.com', // keep masterInstance[0]
-          'asd=chicken-staging-' + ownerName + '.runnableapp.com', // add masterInstance[3]
-          'asfgas=potatoes-staging-' + ownerName + '.runnableapp.com' // add masterInstance[5]
-        ]
-        instance.setDependenciesFromEnvironment(ownerName, function (err) {
-          if (err) {
-            done(err)
-          }
-          sinon.assert.calledOnce(instance.invalidateContainerDNS)
-          sinon.assert.calledTwice(instance.removeDependency)
-          sinon.assert.calledWith(instance.removeDependency.getCall(0),
-            sinon.match.has('shortHash', masterInstances[1].shortHash),
-            sinon.match.func
-          )
-          sinon.assert.calledWith(instance.removeDependency.getCall(1),
-            sinon.match.has('shortHash', masterInstances[2].shortHash),
-            sinon.match.func
-          )
-          sinon.assert.calledTwice(instance.addDependency)
-          sinon.assert.calledWith(instance.addDependency.getCall(0),
-            sinon.match.has('shortHash', masterInstances[3].shortHash),
-            'chicken-staging-' + ownerName + '.runnableapp.com',
-            sinon.match.func
-          )
-          sinon.assert.calledWith(instance.addDependency.getCall(1),
-            sinon.match.has('shortHash', masterInstances[5].shortHash),
-            'potatoes-staging-' + ownerName + '.runnableapp.com',
-            sinon.match.func
-          )
-          done()
+      describe('Working with both envs and FnR', function () {
+        it('should remove the existing one, and add the new one', function (done) {
+          masterInstances.push(mongoFactory.createNewInstance('cheese', {masterPod: true}))   // 2
+          masterInstances.push(mongoFactory.createNewInstance('chicken', {masterPod: true}))  // 3
+          masterInstances.push(mongoFactory.createNewInstance('beef', {masterPod: true}))     // 4
+          masterInstances.push(mongoFactory.createNewInstance('potatoes', {masterPod: true})) // 5
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
+          instance.contextVersion.appCodeVersions[0].transformRules.replace = [
+            {
+              action: 'Replace',
+              search: 'hello',
+              replace: 'http://hello-staging-' + ownerName + '.runnableapp.com', // keep masterInstance[0]
+              exclude: []
+            }
+          ]
+          instance.contextVersion.appCodeVersions[1].transformRules.replace = [
+            {
+              action: 'Replace',
+              search: 'potatoes',
+              replace: 'http://potatoes-staging-' + ownerName + '.runnableapp.com', // add masterInstance[5]
+              exclude: []
+            }
+          ]
+          instance.env = [
+            'asd=chicken-staging-' + ownerName + '.runnableapp.com' // add masterInstance[3]
+          ]
+          instance.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              done(err)
+            }
+            sinon.assert.calledOnce(instance.invalidateContainerDNS)
+            sinon.assert.calledTwice(instance.removeDependency)
+            sinon.assert.calledWith(instance.removeDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[1].shortHash),
+              sinon.match.func
+            )
+            sinon.assert.calledWith(instance.removeDependency.getCall(1),
+              sinon.match.has('shortHash', masterInstances[2].shortHash),
+              sinon.match.func
+            )
+            sinon.assert.calledTwice(instance.addDependency)
+            sinon.assert.calledWith(instance.addDependency.getCall(0),
+              sinon.match.has('shortHash', masterInstances[5].shortHash),
+              'potatoes-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            sinon.assert.calledWith(instance.addDependency.getCall(1),
+              sinon.match.has('shortHash', masterInstances[3].shortHash),
+              'chicken-staging-' + ownerName + '.runnableapp.com',
+              sinon.match.func
+            )
+            done()
+          })
         })
       })
     })

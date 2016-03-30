@@ -154,7 +154,6 @@ function buildTheBuildTests (ctx) {
       'build.duration': exists,
       'build.dockerImage': exists,
       'build.dockerTag': exists,
-      'build.log': exists,
       'build.triggeredBy': ctx.bodyOwner
     })
     done()
@@ -285,7 +284,6 @@ function commonTests (ctx) {
       //       'build.started': exists,
       //       'build.completed': exists,
       //       'build.duration': exists,
-      //       'build.log': exists,
       //       'build.triggeredBy': ctx.bodyOwner
       //       // error?
       //     })

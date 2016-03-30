@@ -71,12 +71,10 @@ describe('Github - /actions/github', function () {
   beforeEach(function (done) {
     // Prevent worker creation and github event publishing by rabbit
     sinon.stub(rabbitMQ, 'deleteInstance', function () {})
-    sinon.stub(rabbitMQ, 'publishGithubEvent')
     done()
   })
   afterEach(function (done) {
     rabbitMQ.deleteInstance.restore()
-    rabbitMQ.publishGithubEvent.restore()
     done()
   })
 
@@ -137,21 +135,6 @@ describe('Github - /actions/github', function () {
         done()
       })
     })
-
-    it('should publish the github event job via RabbitMQ', function (done) {
-      var options = hooks().issue_comment
-      request.post(options, function (err) {
-        if (err) { return done(err) }
-        expect(rabbitMQ.publishGithubEvent.calledOnce).to.be.true()
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[0])
-          .to.equal(options.headers['x-github-delivery'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[1])
-          .to.equal(options.headers['x-github-event'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[2])
-          .to.deep.equal(options.json)
-        done()
-      })
-    })
   })
 
   describe('created tag', function () {
@@ -180,24 +163,6 @@ describe('Github - /actions/github', function () {
         if (err) { return done(err) }
         expect(res.statusCode).to.equal(202)
         expect(body).to.equal("Cannot handle tags' related events")
-        sinon.assert.calledOnce(UserWhitelist.findOne)
-        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'podviaznikov' })
-        done()
-      })
-    })
-
-    it('should publish the github event job via RabbitMQ', function (done) {
-      var options = hooks().push
-      options.json.ref = 'refs/tags/v1'
-      request.post(options, function (err) {
-        if (err) { return done(err) }
-        expect(rabbitMQ.publishGithubEvent.calledOnce).to.be.true()
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[0])
-          .to.equal(options.headers['x-github-delivery'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[1])
-          .to.equal(options.headers['x-github-event'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[2])
-          .to.deep.equal(options.json)
         sinon.assert.calledOnce(UserWhitelist.findOne)
         sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'podviaznikov' })
         done()
@@ -233,23 +198,6 @@ describe('Github - /actions/github', function () {
     afterEach(function (done) {
       UserWhitelist.findOne.restore()
       done()
-    })
-
-    it('should publish the github event job via RabbitMQ', function (done) {
-      var options = hooks().push
-      request.post(options, function (err) {
-        if (err) { return done(err) }
-        expect(rabbitMQ.publishGithubEvent.calledOnce).to.be.true()
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[0])
-          .to.equal(options.headers['x-github-delivery'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[1])
-          .to.equal(options.headers['x-github-event'])
-        expect(rabbitMQ.publishGithubEvent.firstCall.args[2])
-          .to.deep.equal(options.json)
-        sinon.assert.calledOnce(UserWhitelist.findOne)
-        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'podviaznikov' })
-        done()
-      })
     })
 
     it('should return 202 if there is neither autoDeploy nor autoLaunch is needed',
@@ -615,10 +563,23 @@ describe('Github - /actions/github', function () {
       })
 
       describe('with two instances', function () {
+        var stopListeningToBuildRunning
         beforeEach(function (done) {
           var count = createCount(2, done)
           ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, count.next)
           primus.expectActionCount('start', 1, count.next)
+        })
+        beforeEach(function (done) {
+          // Emit build complete for all `build_running` containers
+          stopListeningToBuildRunning = primus.listenToAction('build_running', function (err, actionData) {
+            if (err) return err
+            dockerMockEvents.emitBuildComplete(actionData.data.data)
+          })
+          done()
+        })
+        afterEach(function (done) {
+          stopListeningToBuildRunning()
+          done()
         })
 
         it('should redeploy two instances with new build', function (done) {
@@ -634,7 +595,6 @@ describe('Github - /actions/github', function () {
           var options = hooks(data).push
           options.json.created = false
           var username = user.login
-
           require('./fixtures/mocks/github/users-username')(user.id, username)
           require('./fixtures/mocks/github/user')(username)
 
@@ -654,9 +614,9 @@ describe('Github - /actions/github', function () {
               'contextVersion.build.triggeredAction.appCodeVersion.repo': options.json.repository.full_name,
               'contextVersion.build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id
             }
-            expect(successStub.calledTwice).to.equal(true)
-            expect(slackStub.calledOnce).to.equal(true)
-            expect(slackStub.calledWith(sinon.match.object, sinon.match.array)).to.equal(true)
+            sinon.assert.calledTwice(successStub)
+            sinon.assert.calledTwice(slackStub)
+            sinon.assert.calledWith(slackStub, sinon.match.object, sinon.match.object)
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err) }
               ctx.instance2.fetch(expects.success(200, expected, function () {
@@ -672,7 +632,6 @@ describe('Github - /actions/github', function () {
             expect(cvIds).to.exist()
             expect(cvIds).to.be.an.array()
             expect(cvIds).to.have.length(2)
-            finishAllIncompleteVersions()
           })
         })
       })
