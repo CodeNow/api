@@ -3,6 +3,7 @@ var uuid = require('uuid')
 var multiline = require('multiline')
 var isObject = require('101/is-object')
 var randStr = require('randomstring').generate
+var getUser = require('./get-user')
 
 var userId = 0
 function nextUserId () {
@@ -27,45 +28,7 @@ module.exports = function (userId, username, token) {
   nock('https://api.github.com:443')
     .filteringPath(urlRegExp, '/user')
     .get('/user')
-    .reply(200, {
-      'login': username,
-      'id': userId,
-      'access_token': token,
-      'avatar_url': 'https://avatars.githubusercontent.com/u/' + userId + '?',
-      'gravatar_id': '',
-      'url': 'https://api.github.com/users/' + username,
-      'html_url': 'https://github.com/' + username,
-      'followers_url': 'https://api.github.com/users/' + username + '/followers',
-      'following_url': 'https://api.github.com/users/' + username + '/following{/other_user}',
-      'gists_url': 'https://api.github.com/users/' + username + '/gists{/gist_id}',
-      'starred_url': 'https://api.github.com/users/' + username + '/starred{/owner}{/repo}',
-      'subscriptions_url': 'https://api.github.com/users/' + username + '/subscriptions',
-      'organizations_url': 'https://api.github.com/users/' + username + '/orgs',
-      'repos_url': 'https://api.github.com/users/' + username + '/repos',
-      'events_url': 'https://api.github.com/users/' + username + '/events{/privacy}',
-      'received_events_url': 'https://api.github.com/users/' + username + '/received_events',
-      'type': 'User',
-      'site_admin': false,
-      'name': username,
-      'company': '',
-      'blog': 'http://twitter.com/tjmehta',
-      'location': 'San Francisco',
-      'emails': [
-        {
-          value: username + '@runnable.com',
-          verified: true,
-          primary: true
-        }
-      ],
-      'hireable': true,
-      'bio': '',
-      'public_repos': 77,
-      'public_gists': 8,
-      'followers': 17,
-      'following': 90,
-      'created_at': '2011-02-27T01:20:41Z',
-      'updated_at': '2014-06-24T23:28:16Z'
-    }, {
+    .reply(200, getUser(userId, username, token), {
       server: 'GitHub.com',
       date: new Date().toString(),
       'content-type': 'application/json charset=utf-8',

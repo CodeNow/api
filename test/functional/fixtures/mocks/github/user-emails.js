@@ -1,21 +1,14 @@
 var multiline = require('multiline')
 var uuid = require('uuid')
 var nock = require('nock')
+var getUserEmails = require('./get-user-emails')
 
 module.exports = function (email) {
   email = email || uuid() + '@random.net'
   nock('https://api.github.com:443')
     .filteringPath(/\/user\/emails\?.+/, '/user/emails')
     .get('/user/emails')
-    .reply(200, [{
-      'email': email,
-      'primary': false,
-      'verified': true
-    }, {
-      'email': email,
-      'primary': true,
-      'verified': true
-    }], {
+    .reply(200, getUserEmails(email), {
       server: 'GitHub.com',
       date: 'Tue, 24 Jun 2014 23:32:27 GMT',
       'content-type': 'application/json charset=utf-8',
