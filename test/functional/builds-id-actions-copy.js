@@ -119,11 +119,11 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
           })
         })
 
-        describe('with buildRoot set on the context version', function () {
+        describe('with buildDockerfile set on the context version', function () {
           beforeEach(function (done) {
             ContextVersion.findById(new ObjectId(ctx.contextVersion.id()), function (err, cv) {
               if (err) { return done(err) }
-              cv.buildRoot = '/cool/path'
+              cv.buildDockerfile = '/cool/path'
               cv.save(done)
             })
           })
@@ -145,7 +145,7 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
               .deepCopy(expects.success(201, expectedNewBuild, function (err) {
                 if (err) { return done(err) }
                 ContextVersion.findById(new ObjectId(ctx.buildCopy.attrs.contextVersions[0]), function (err, cv) {
-                  expect(cv.buildRoot).to.equal('/cool/path')
+                  expect(cv.buildDockerfile).to.equal('/cool/path')
                   expectUnbuiltVersions(ctx, done)(err)
                 })
               }))
