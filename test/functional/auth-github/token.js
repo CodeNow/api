@@ -61,7 +61,6 @@ describe('/auth/github with whitelist', function () {
 
     it('should not let the user authenticate', function (done) {
       require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken)
-      require('../fixtures/mocks/github/user-emails')()
       require('../fixtures/mocks/github/user-orgs')(1001, randStr(5))
       request.post({
         url: tokenUrl,
@@ -94,7 +93,6 @@ describe('/auth/github with whitelist', function () {
 
     it('should let the user authenticate', function (done) {
       require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken)
-      require('../fixtures/mocks/github/user-emails')()
       require('../fixtures/mocks/github/user-orgs')(1001, randStr(5))
       request.post({
         url: tokenUrl,
@@ -126,7 +124,6 @@ describe('/auth/github with whitelist', function () {
 
     it('should let the user authenticate', function (done) {
       require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken)
-      require('../fixtures/mocks/github/user-emails')()
       require('../fixtures/mocks/github/user-orgs')(1001, ctx.orgname)
       request.post({
         url: tokenUrl,
