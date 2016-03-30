@@ -863,168 +863,8 @@ describe('InstanceForkService: ' + moduleName, function () {
         })
       })
     })
-
-    describe('the access token it returns', function (done) {
-      it('should use the push user token by default', function (done) {
-        InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err, results) {
-          expect(err).to.not.exist()
-          expect(results).to.be.an.array()
-          expect(results).to.have.length(2)
-          var accessToken = results.pop()
-          expect(accessToken).to.equal('pushUserGithubToken')
-          done()
-        })
-      })
-
-      it('should use the instance user token if no push user token', function (done) {
-        delete mockPushUser.accounts.github.accessToken
-        InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err, results) {
-          expect(err).to.not.exist()
-          expect(results).to.be.an.array()
-          expect(results).to.have.length(2)
-          var accessToken = results.pop()
-          expect(accessToken).to.equal('instanceUserGithubToken')
-          done()
-        })
-      })
-    })
-
-    it('should do all these in the correct order', function (done) {
-      InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.callOrder(
-          InstanceForkService._validatePushInfo,
-          User.findByGithubId,
-          User.findByGithubId,
-          InstanceForkService._createNewContextVersion,
-          mockRunnableClient.createAndBuildBuild,
-          mockRunnableClient.forkMasterInstance
-        )
-        done()
-      })
-    })
-
-    it('should return the newly forked Instance', function (done) {
-      InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err, results) {
-        expect(err).to.not.exist()
-        expect(results).to.be.an.array()
-        expect(results).to.have.length(2)
-        var newInstance = results.shift()
-        expect(newInstance).to.equal(mockInstance)
-        done()
-      })
-    })
   })
-
-  describe('#_forkOneAndNotify', function () {
-    var instance
-    var pushInfo
-    var mockNewInstance = {}
-
-    beforeEach(function (done) {
-      instance = {
-        createdBy: {
-          github: 'instanceCreatedById'
-        },
-        owner: {
-          github: 'instanceOwnerId'
-        }
-      }
-      pushInfo = {
-        repo: 'mockRepo',
-        branch: 'mockBranch',
-        commit: 'mockCommit',
-        user: {
-          id: 'pushUserId'
-        }
-      }
-      sinon.stub(InstanceForkService, '_forkOne').resolves([ mockNewInstance, 'mockAccessToken' ])
-      sinon.stub(InstanceForkService, '_notifyExternalServices').resolves(mockNewInstance)
-      done()
-    })
-
-    afterEach(function (done) {
-      InstanceForkService._forkOne.restore()
-      InstanceForkService._notifyExternalServices.restore()
-      done()
-    })
-
-    describe('errors', function () {
-      it('should require an instance', function (done) {
-        InstanceForkService._forkOneAndNotify().asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/instance.+required/i)
-          done()
-        })
-      })
-
-      it('should require push info', function (done) {
-        InstanceForkService._forkOneAndNotify(instance).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/pushInfo.+required/i)
-          done()
-        })
-      })
-
-      it('should reject with any _forkOne error', function (done) {
-        var error = new Error('robot')
-        InstanceForkService._forkOne.rejects(error)
-        InstanceForkService._forkOneAndNotify(instance, pushInfo).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.equal(error)
-          done()
-        })
-      })
-
-      it('should reject with any notify external services error', function (done) {
-        var error = new Error('robot')
-        InstanceForkService._notifyExternalServices.rejects(error)
-        InstanceForkService._forkOneAndNotify(instance, pushInfo).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.equal(error)
-          done()
-        })
-      })
-    })
-
-    it('should _forkOne our instance', function (done) {
-      InstanceForkService._forkOneAndNotify(instance, pushInfo).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(InstanceForkService._forkOne)
-        sinon.assert.calledWithExactly(
-          InstanceForkService._forkOne,
-          instance,
-          pushInfo
-        )
-        done()
-      })
-    })
-
-    it('should notify external services', function (done) {
-      InstanceForkService._forkOneAndNotify(instance, pushInfo).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(InstanceForkService._notifyExternalServices)
-        sinon.assert.calledWithExactly(
-          InstanceForkService._notifyExternalServices,
-          {
-            instance: mockNewInstance,
-            accessToken: sinon.match.string,
-            pushInfo: pushInfo
-          }
-        )
-        done()
-      })
-    })
-
-    it('should return our new instance', function (done) {
-      InstanceForkService._forkOneAndNotify(instance, pushInfo).asCallback(function (err, instance) {
-        expect(err).to.not.exist()
-        expect(instance).to.equal(mockNewInstance)
-        done()
-      })
-    })
-  })
-
+  
   describe('#_createNewNonRepoContextVersion', function () {
     var mockContextVersion
     var mockOwnerId = 'mockOwnerId'
@@ -1503,7 +1343,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       mockTimer = {
         stop: sinon.stub()
       }
-      sinon.stub(InstanceForkService, '_forkOneAndNotify').resolves({})
+      sinon.stub(InstanceForkService, '_forkOne').resolves({})
       sinon.stub(monitorDog, 'increment')
       sinon.stub(monitorDog, 'timer').returns(mockTimer)
       sinon.stub(Bunyan.prototype, 'error')
@@ -1511,7 +1351,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     afterEach(function (done) {
-      InstanceForkService._forkOneAndNotify.restore()
+      InstanceForkService._forkOne.restore()
       monitorDog.increment.restore()
       monitorDog.timer.restore()
       Bunyan.prototype.error.restore()
@@ -1523,7 +1363,7 @@ describe('InstanceForkService: ' + moduleName, function () {
         InstanceForkService.autoFork('').asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/instances.+array/i)
-          sinon.assert.notCalled(InstanceForkService._forkOneAndNotify)
+          sinon.assert.notCalled(InstanceForkService._forkOne)
           done()
         })
       })
@@ -1532,7 +1372,7 @@ describe('InstanceForkService: ' + moduleName, function () {
         InstanceForkService.autoFork(instances).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/autoFork.+requires.+pushInfo/i)
-          sinon.assert.notCalled(InstanceForkService._forkOneAndNotify)
+          sinon.assert.notCalled(InstanceForkService._forkOne)
           done()
         })
       })
@@ -1541,7 +1381,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     it('should not fork anything with an empty array', function (done) {
       InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.notCalled(InstanceForkService._forkOneAndNotify)
+        sinon.assert.notCalled(InstanceForkService._forkOne)
         done()
       })
     })
@@ -1563,9 +1403,9 @@ describe('InstanceForkService: ' + moduleName, function () {
       instances.push(i)
       InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(InstanceForkService._forkOneAndNotify)
+        sinon.assert.calledOnce(InstanceForkService._forkOne)
         sinon.assert.calledWithExactly(
-          InstanceForkService._forkOneAndNotify,
+          InstanceForkService._forkOne,
           i,
           pushInfo
         )
@@ -1577,18 +1417,18 @@ describe('InstanceForkService: ' + moduleName, function () {
       var one = {}
       var two = {}
       instances.push(one, two)
-      InstanceForkService._forkOneAndNotify.onFirstCall().resolves(1)
-      InstanceForkService._forkOneAndNotify.onSecondCall().resolves(2)
+      InstanceForkService._forkOne.onFirstCall().resolves(1)
+      InstanceForkService._forkOne.onSecondCall().resolves(2)
       InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
         expect(err).to.not.exist()
-        sinon.assert.calledTwice(InstanceForkService._forkOneAndNotify)
+        sinon.assert.calledTwice(InstanceForkService._forkOne)
         sinon.assert.calledWithExactly(
-          InstanceForkService._forkOneAndNotify,
+          InstanceForkService._forkOne,
           one,
           pushInfo
         )
         sinon.assert.calledWithExactly(
-          InstanceForkService._forkOneAndNotify,
+          InstanceForkService._forkOne,
           two,
           pushInfo
         )
@@ -1600,8 +1440,8 @@ describe('InstanceForkService: ' + moduleName, function () {
     it('should silence any errors from forking', function (done) {
       instances.push({}, {})
       var error = new Error('robot')
-      InstanceForkService._forkOneAndNotify.onFirstCall().resolves(1)
-      InstanceForkService._forkOneAndNotify.onSecondCall().rejects(error)
+      InstanceForkService._forkOne.onFirstCall().resolves(1)
+      InstanceForkService._forkOne.onSecondCall().rejects(error)
       InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
         expect(err).to.not.exist()
         expect(results).to.deep.equal([ 1, null ])
@@ -1623,8 +1463,8 @@ describe('InstanceForkService: ' + moduleName, function () {
         sinon.assert.called(mockTimer.stop)
         sinon.assert.callOrder(
           monitorDog.timer,
-          InstanceForkService._forkOneAndNotify,
-          InstanceForkService._forkOneAndNotify,
+          InstanceForkService._forkOne,
+          InstanceForkService._forkOne,
           mockTimer.stop
         )
         done()
