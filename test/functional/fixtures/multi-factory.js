@@ -71,6 +71,7 @@ module.exports = {
       } else {
         user.attrs.accounts.github.accessToken = token
         user.attrs.accounts.github.username = name
+        user.attrs.accounts._json = {}
         log.trace({
           token: token,
           name: name,
