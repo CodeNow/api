@@ -28,7 +28,6 @@
 ./test/functional/builds-id.js
 ./test/functional/builds.js
 ./test/functional/builds/post/400.js
-./test/functional/contexts-id-versions-id-actions-build/201.js
 ./test/functional/contexts-id-versions-id-appcodeversions-id-action-apply-transform-rules/index.js
 ./test/functional/contexts-id-versions-id-appcodeversions-id-action-test-transform-rule/index.js
 ./test/functional/contexts-id-versions-id-appcodeversions-id/patch/200.js
