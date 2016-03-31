@@ -22,14 +22,13 @@ describe('User :' + moduleName, function () {
   function createNewUser () {
     return new User({
       email: Faker.Internet.email(),
-      password: 'pass',
-      name: 'test',
       accounts: {
         github: {
           username: 'test',
           accessToken: 'test',
           refreshToken: 'test',
           id: 'test',
+          _json: {},
           emails: [Faker.Internet.email(), Faker.Internet.email()]
         }
       },
@@ -51,14 +50,6 @@ describe('User :' + moduleName, function () {
   describe('Email Validation', function () {
     validation.emailValidationChecking(createNewUser, 'email')
     validation.requiredValidationChecking(createNewUser, 'email')
-  })
-
-  describe('Name Validation', function () {
-    validation.nameValidationChecking(createNewUser, 'name')
-  })
-
-  describe('Company Validation', function () {
-    validation.nameValidationChecking(createNewUser, 'company')
   })
 
   describe('Gravatar Validation', function () {
