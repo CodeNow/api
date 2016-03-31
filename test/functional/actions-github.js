@@ -615,8 +615,8 @@ describe('Github - /actions/github', function () {
               'contextVersion.build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id
             }
             sinon.assert.calledTwice(successStub)
-            sinon.assert.calledOnce(slackStub)
-            sinon.assert.calledWith(slackStub, sinon.match.object, sinon.match.array)
+            sinon.assert.calledTwice(slackStub)
+            sinon.assert.calledWith(slackStub, sinon.match.object, sinon.match.object)
             ctx.instance.fetch(expects.success(200, expected, function (err) {
               if (err) { return done(err) }
               ctx.instance2.fetch(expects.success(200, expected, function () {

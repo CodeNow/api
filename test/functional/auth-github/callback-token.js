@@ -10,14 +10,17 @@ var after = lab.after
 var afterEach = lab.afterEach
 var before = lab.before
 var beforeEach = lab.beforeEach
+var sinon = require('sinon')
 
 var request = require('request')
 
 var api = require('../fixtures/api-control')
-var redis = require('models/redis')
+var Github = require('models/apis/github')
+var getUserEmails = require('../fixtures/mocks/github/get-user-emails')
 var multi = require('../fixtures/multi-factory')
-var url = require('url')
 var querystring = require('querystring')
+var redis = require('models/redis')
+var url = require('url')
 
 describe('/auth/github routes', function () {
   var ctx = {}
@@ -29,6 +32,19 @@ describe('/auth/github routes', function () {
   })
   before(api.start.bind(ctx))
   after(api.stop.bind(ctx))
+  before(function (done) {
+    // Stub out Github API call for `beforeEach` and `it` statements
+    sinon.stub(Github.prototype, 'getUserEmails').yieldsAsync(null, getUserEmails())
+    done()
+  })
+  after(function (done) {
+    Github.prototype.getUserEmails.restore()
+    done()
+  })
+  beforeEach(function (done) {
+    Github.prototype.getUserEmails.reset()
+    done()
+  })
 
   describe('/auth/github/callback', function () {
     var target = baseUrl + 'callback'
@@ -41,7 +57,6 @@ describe('/auth/github routes', function () {
 
     it('should redirect without token if none requested', function (done) {
       require('../fixtures/mocks/github/user')(ctx.user, null, testToken)
-      require('../fixtures/mocks/github/user-emails')()
       request.get({
         url: target,
         followRedirect: false,
@@ -60,7 +75,6 @@ describe('/auth/github routes', function () {
       var j = request.jar()
       var testRedir = 'http://runnableapp.com:9283/datPath?thisqs=great'
       require('../fixtures/mocks/github/user')(ctx.user, null, testToken)
-      require('../fixtures/mocks/github/user-emails')()
       request.get({
         jar: j,
         url: baseUrl,

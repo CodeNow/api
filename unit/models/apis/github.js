@@ -224,7 +224,7 @@ describe('github: ' + moduleName, function () {
         expect(query.user).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
-        var hookUrl = process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH
+        var hookUrl = process.env.GITHUB_WEBHOOK_URL
         expect(query.config.url).to.equal(hookUrl)
         expect(query.config.content_type).to.equal('json')
         expect(query.events[0]).to.equal('*')
@@ -244,7 +244,7 @@ describe('github: ' + moduleName, function () {
         expect(query.user).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
-        var hookUrl = process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH
+        var hookUrl = process.env.GITHUB_WEBHOOK_URL
         expect(query.config.url).to.equal(hookUrl)
         expect(query.config.content_type).to.equal('json')
         expect(query.events[0]).to.equal('*')
@@ -274,7 +274,7 @@ describe('github: ' + moduleName, function () {
         expect(query.user).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
-        var hookUrl = process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH
+        var hookUrl = process.env.GITHUB_WEBHOOK_URL
         expect(query.config.url).to.equal(hookUrl)
         expect(query.config.content_type).to.equal('json')
         expect(query.events[0]).to.equal('*')
@@ -293,7 +293,7 @@ describe('github: ' + moduleName, function () {
         expect(query.user).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
-        var hookUrl = process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH
+        var hookUrl = process.env.GITHUB_WEBHOOK_URL
         expect(query.config.url).to.equal(hookUrl)
         expect(query.config.content_type).to.equal('json')
         expect(query.events[0]).to.equal('*')
@@ -347,7 +347,7 @@ describe('github: ' + moduleName, function () {
       var hooks = [
         {
           config: {
-            url: process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH
+            url: process.env.GITHUB_WEBHOOK_URL
           },
           active: true,
           events: ['*']

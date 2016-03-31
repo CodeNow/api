@@ -33,7 +33,7 @@ module.exports = function (data) {
           active: true,
           events: [ 'push' ],
           config: { secret: process.env.GITHUB_HOOK_SECRET,
-            url: process.env.FULL_API_DOMAIN + process.env.GITHUB_HOOK_PATH,
+            url: process.env.GITHUB_WEBHOOK_URL,
             content_type: 'json',
           insecure_ssl: '0' },
           last_response: { code: null, status: 'unused', message: null },
