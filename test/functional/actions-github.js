@@ -21,11 +21,8 @@ var PullRequest = require('models/apis/pullrequest')
 var Slack = require('notifications/slack')
 
 var api = require('./fixtures/api-control')
-var createCount = require('callback-count')
 var dock = require('./fixtures/dock')
 var dockerMockEvents = require('./fixtures/docker-mock-events')
-var exists = require('101/exists')
-var expects = require('./fixtures/expects')
 var generateKey = require('./fixtures/key-factory')
 var hooks = require('./fixtures/github-hooks')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
@@ -374,7 +371,7 @@ describe('Github - /actions/github', function () {
 
           // post must complete
           request.post(options, function (err, res, cvIds) {
-            if (err) { return finalCount.next(err) }
+            if (err) { return done(err) }
             expect(res.statusCode).to.equal(200)
             expect(cvIds).to.exist()
             expect(cvIds).to.be.an.array()
