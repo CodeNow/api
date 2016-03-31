@@ -53,7 +53,9 @@ describe('Passport Github Token', function () {
       done()
     })
     beforeEach(function (done) {
-      verify = sinon.stub().yieldsAsync(null, {}, {})
+      verify = sinon.spy(function (accessToken, _, profile, cb) {
+        return cb(null, profile, {})
+      })
       passportGithubToken = new PassporGithubToken(verify)
       done()
     })
@@ -83,6 +85,54 @@ describe('Passport Github Token', function () {
           return done()
         }
         passportGithubToken.authenticate(req)
+      })
+
+      describe('Name', function () {
+        var validateName = function (name, cb) {
+          var user = getUser()
+          user.name = name
+          Github.prototype.getAuthorizedUser.yieldsAsync(null, user)
+
+          passportGithubToken.success = function (user, info) {
+            return cb(null, user)
+          }
+          passportGithubToken.error = function (err, res) {
+            return cb(err)
+          }
+          passportGithubToken.authenticate(req)
+        }
+
+        it('should validate a name if it\'s a string', function (done) {
+          validateName('string', function (err, user) {
+            expect(err).to.not.exist()
+            expect(user.displayName).to.equal('string')
+            return done()
+          })
+        })
+
+        it('should validate a name if it\'s null', function (done) {
+          validateName(null, function (err, user) {
+            expect(err).to.not.exist()
+            expect(user.displayName).to.equal('')
+            return done()
+          })
+        })
+
+        it('should not validate a name if it\'s undefined', function (done) {
+          validateName(undefined, function (err, user) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/is.*required/)
+            return done()
+          })
+        })
+
+        it('should not validate a name if it\'s not a string', function (done) {
+          validateName(234, function (err, user) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/must.*be.*string/)
+            return done()
+          })
+        })
       })
     })
 
