@@ -73,4 +73,19 @@ describe('200 PATCH /contexts/:contextid/versions/:id', function () {
       })
     })
   })
+
+  it('should update buildDockerfilePath', function (done) {
+    var expected = put(ctx.cv.json(), 'buildDockerfilePath', '/dir/Dockerfile')
+    ctx.cv.update({ buildDockerfilePath: '/dir/Dockerfile' }, function (err, body, statusCode) {
+      if (err) { return done(err) }
+      expect(statusCode).to.equal(200)
+      expect(body).to.deep.equal(expected)
+
+      Instance.findById(ctx.instance.id, function (err, refreshedInstance) {
+        if (err) { return done(err) }
+        expect(refreshedInstance.contextVersion.buildDockerfilePath).to.equal('/dir/Dockerfile')
+        done()
+      })
+    })
+  })
 })

@@ -10,8 +10,11 @@ var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
+var sinon = require('sinon')
 
 var api = require('../../fixtures/api-control')
+var Github = require('models/apis/github')
+var getUserEmails = require('../../fixtures/mocks/github/get-user-emails')
 var multi = require('../../fixtures/multi-factory')
 var request = require('request')
 
@@ -26,6 +29,21 @@ describe('De-Moderate - /actions/demoderate', function () {
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
 
+  before(function (done) {
+    // Stub out Github API call for `beforeEach` and `it` statements
+    sinon.stub(Github.prototype, 'getUserEmails', function (user, cb) {
+      return cb(null, getUserEmails())
+    })
+    done()
+  })
+  after(function (done) {
+    Github.prototype.getUserEmails.restore()
+    done()
+  })
+  beforeEach(function (done) {
+    Github.prototype.getUserEmails.reset()
+    done()
+  })
   beforeEach(function (done) { ctx.user = multi.createUser(done) })
   beforeEach(function (done) {
     ctx.moderatorJar = request.jar()
