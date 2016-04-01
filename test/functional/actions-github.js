@@ -239,15 +239,6 @@ describe('Github - /actions/github', function () {
     })
 
     describe('autofork', function () {
-      var slackStub
-      beforeEach(function (done) {
-        slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoFork')
-        done()
-      })
-      afterEach(function (done) {
-        slackStub.restore()
-        done()
-      })
       beforeEach(function (done) {
         multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
           if (err) { return done(err) }
