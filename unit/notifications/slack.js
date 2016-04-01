@@ -141,7 +141,7 @@ describe('Slack: ' + moduleName, function () {
   describe('#notifyOnAutoDeploy', function () {
     it('should do nothing if slack messaging is disabled', function (done) {
       var slack = new Slack()
-      slack.notifyOnAutoDeploy({}, [], function (err, resp) {
+      slack.notifyOnAutoDeploy({}, 'anton', [], function (err, resp) {
         expect(err).to.equal(null)
         expect(resp).to.equal(undefined)
         done()
@@ -156,7 +156,7 @@ describe('Slack: ' + moduleName, function () {
         }
       }
       var slack = new Slack(settings)
-      slack.notifyOnAutoDeploy({}, [], function (err, resp) {
+      slack.notifyOnAutoDeploy({}, 'anton', [], function (err, resp) {
         expect(err).to.equal(null)
         expect(resp).to.equal(undefined)
         done()
@@ -171,7 +171,7 @@ describe('Slack: ' + moduleName, function () {
         }
       }
       var slack = new Slack(settings)
-      slack.notifyOnAutoDeploy({}, null, function (err, resp) {
+      slack.notifyOnAutoDeploy({}, 'anton', null, function (err, resp) {
         expect(err).to.equal(null)
         expect(resp).to.equal(undefined)
         done()
@@ -193,7 +193,7 @@ describe('Slack: ' + moduleName, function () {
           username: 'CodeNow'
         }
       }
-      slack.notifyOnAutoDeploy({}, instance, function (err, resp) {
+      slack.notifyOnAutoDeploy({}, null, instance, function (err, resp) {
         expect(err).to.equal(null)
         expect(resp).to.equal(undefined)
         done()
@@ -237,7 +237,7 @@ describe('Slack: ' + moduleName, function () {
         repoName: 'api'
       }
       sinon.stub(slack, 'sendDirectMessage').yieldsAsync(null)
-      slack.notifyOnAutoDeploy(gitInfo, instance, function (err, resp) {
+      slack.notifyOnAutoDeploy(gitInfo, 'podviaznikov', instance, function (err, resp) {
         expect(err).to.equal(null)
         expect(resp).to.equal(undefined)
         expect(slack.sendDirectMessage.callCount).to.equal(1)
