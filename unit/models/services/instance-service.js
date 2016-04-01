@@ -99,7 +99,7 @@ describe('InstanceService: ' + moduleName, function () {
         })
     })
 
-    describe('When instances are found', function () {
+    describe('When queries succeed', function () {
       beforeEach(function (done) {
         sinon.stub(rabbitMQ, 'deleteInstance')
         done()
@@ -113,6 +113,17 @@ describe('InstanceService: ' + moduleName, function () {
         sinon.stub(Instance, 'findForkedInstances')
           .yieldsAsync(null, [])
         InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
+          function (err) {
+            expect(err).to.not.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
+            done()
+          })
+      })
+
+      it('should error if the original instance wasnt found', function (done) {
+        sinon.stub(Instance, 'findForkedInstances')
+          .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-4', 'api', 'master',
           function (err) {
             expect(err).to.exist()
             expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
