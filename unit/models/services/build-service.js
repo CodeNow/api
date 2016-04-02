@@ -489,7 +489,7 @@ describe('BuildService', function () {
           expect(err).to.not.exist()
           sinon.assert.called(Runnable.createClient)
           sinon.assert.calledWithExactly(
-            Runnable.createClient.firstCall, // firstCall === createAndBuildBuild
+            Runnable.createClient
             {},
             mockPushUser
           )
@@ -504,12 +504,13 @@ describe('BuildService', function () {
           expect(err).to.not.exist()
           sinon.assert.called(Runnable.createClient)
           sinon.assert.calledWithExactly(
-            Runnable.createClient.firstCall, // firstCall === createAndBuildBuild
+            Runnable.createClient
             {},
             mockInstanceUser
           )
           expect(result.user).to.equal(mockInstanceUser)
           expect(result.build).to.equal(mockBuild)
+          expect(result.contextVersion).to.equal(mockContextVersion)
           done()
         })
       })
