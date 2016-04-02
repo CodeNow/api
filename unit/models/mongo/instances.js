@@ -15,7 +15,6 @@ var keypather = require('keypather')()
 var Graph = require('models/apis/graph')
 var Neo4j = require('runna4j')
 var async = require('async')
-var createCount = require('callback-count')
 var error = require('error')
 var find = require('101/find')
 var hasProps = require('101/has-properties')
@@ -1983,35 +1982,16 @@ describe('Instance Model Tests ' + moduleName, function () {
         done()
       })
       afterEach(function (done) {
-        Instance.findOneAndUpdateAsync.restore()
         ContextVersion.findAsync.restore()
         Build.findAsync.restore()
         done()
       })
       it('should fetch build and cv, then update the cv', function (done) {
-        sinon.stub(Instance, 'findOneAndUpdateAsync', function () {
-          // do this setTimeout so the Instance.findOneAndUpdateAsync stub has knowledge of
-          // both calls
-          setTimeout(function () {
-            try {
-              sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
-              sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
-                _id: ctx.mockInstance._id
-              }, {
-                $set: {
-                  contextVersion: ctx.mockContextVersion.toJSON()
-                }
-              })
-              done()
-            } catch (err) {
-              done(err)
-            }
-          }, 0)
-        })
-        Instance.populateModels([ctx.mockInstance], function (err) {
+        Instance.populateModels([ctx.mockInstance], function (err, instance) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(ContextVersion.findAsync)
           sinon.assert.calledOnce(Build.findAsync)
+          done()
         })
       })
       it('should handle when 2 instances share a cv', function (done) {
@@ -2019,37 +1999,15 @@ describe('Instance Model Tests ' + moduleName, function () {
           contextVersion: ctx.mockContextVersion,
           build: ctx.mockBuild._id
         })
-        var count = createCount(2, function () {
-          // do this setTimeout so the Instance.findOneAndUpdateAsync stub has knowledge of
-          // both calls
-          setTimeout(function () {
-            try {
-              sinon.assert.calledTwice(Instance.findOneAndUpdateAsync)
-              sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
-                _id: ctx.mockInstance._id
-              }, {
-                $set: {
-                  contextVersion: ctx.mockContextVersion.toJSON()
-                }
-              })
-              sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
-                _id: ctx.mockInstance2._id
-              }, {
-                $set: {
-                  contextVersion: ctx.mockContextVersion.toJSON()
-                }
-              })
-              done()
-            } catch (err) {
-              done(err)
-            }
-          }, 0)
-        })
-        sinon.stub(Instance, 'findOneAndUpdateAsync', count.next)
-        Instance.populateModels([ctx.mockInstance, ctx.mockInstance2], function (err) {
+
+        Instance.populateModels([ctx.mockInstance, ctx.mockInstance2], function (err, instances) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(ContextVersion.findAsync)
           sinon.assert.calledOnce(Build.findAsync)
+          expect(instances.length).to.equal(2)
+          expect(instances[0].contextVersion.id, 'instance 1').to.equal(ctx.mockContextVersion.id)
+          expect(instances[1].contextVersion.id, 'instance 2').to.equal(ctx.mockContextVersion.id)
+          done()
         })
       })
     })
@@ -2072,7 +2030,6 @@ describe('Instance Model Tests ' + moduleName, function () {
           done()
         })
         afterEach(function (done) {
-          Instance.findOneAndUpdateAsync.restore()
           ContextVersion.findAsync.restore()
           Build.findAsync.restore()
           done()
@@ -2085,37 +2042,6 @@ describe('Instance Model Tests ' + moduleName, function () {
           ctx.mockInstance2.container = {
             dockerContainer: 'asdasdasdsad'
           }
-          var count = createCount(2, function () {
-            setTimeout(function () {
-              try {
-                sinon.assert.calledOnce(error.log)
-                sinon.assert.calledWith(
-                  error.log,
-                  sinon.match.has('message', 'instance missing inspect data' + ctx.mockInstance2._id)
-                )
-                sinon.assert.calledTwice(Instance.findOneAndUpdateAsync)
-                sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
-                  _id: ctx.mockInstance._id
-                }, {
-                  $set: {
-                    contextVersion: ctx.mockContextVersion.toJSON()
-                  }
-                })
-                sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
-                  _id: ctx.mockInstance2._id
-                }, {
-                  $set: {
-                    contextVersion: ctx.mockContextVersion.toJSON()
-                  }
-                })
-                done()
-              } catch (err) {
-                done(err)
-              }
-            })
-          })
-          sinon.stub(Instance, 'findOneAndUpdateAsync', count.next)
-
           Instance.populateModels([ctx.mockInstance, ctx.mockInstance2], function (err, instances) {
             expect(err).to.not.exist()
             if (err) {
@@ -2123,6 +2049,12 @@ describe('Instance Model Tests ' + moduleName, function () {
             }
             sinon.assert.calledOnce(ContextVersion.findAsync)
             sinon.assert.calledOnce(Build.findAsync)
+            sinon.assert.calledOnce(error.log)
+            sinon.assert.calledWith(
+              error.log,
+              sinon.match.has('message', 'instance missing inspect data' + ctx.mockInstance2._id)
+            )
+            done()
           })
         })
       })

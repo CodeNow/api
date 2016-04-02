@@ -96,9 +96,11 @@ describe('GET /instances', function () {
         'owner.github': ctx.user.json().accounts.github.id,
         'owner.username': ctx.user.json().accounts.github.login,
         'createdBy.username': ctx.user.json().accounts.github.login,
-        'createdBy.gravatar': ctx.user.json().accounts.github.avatar_url
+        'createdBy.gravatar': ctx.user.json().gravatar
       }]
-      ctx.user.fetchInstances(query, expects.success(200, expected, count.next))
+      ctx.user.fetchInstances(query, expects.success(200, expected, function (err) {
+        count.next(err)
+      }))
       var query2 = {
         shortHash: ctx.instance2.json().shortHash,
         owner: {
@@ -112,9 +114,11 @@ describe('GET /instances', function () {
         'owner.github': ctx.user2.json().accounts.github.id,
         'owner.username': ctx.user2.json().accounts.github.login,
         'createdBy.username': ctx.user2.json().accounts.github.login,
-        'createdBy.gravatar': ctx.user2.json().accounts.github.avatar_url
+        'createdBy.gravatar': ctx.user2.json().gravatar
       }]
-      ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next))
+      ctx.user2.fetchInstances(query2, expects.success(200, expected2, function (err) {
+        count.next(err)
+      }))
     })
     it('should get instances by id', function (done) {
       var count = createCount(2, done)
@@ -133,7 +137,7 @@ describe('GET /instances', function () {
         'owner.github': ctx.user.json().accounts.github.id,
         'owner.username': ctx.user.json().accounts.github.login,
         'createdBy.username': ctx.user.json().accounts.github.login,
-        'createdBy.gravatar': ctx.user.json().accounts.github.avatar_url
+        'createdBy.gravatar': ctx.user.json().gravatar
       }]
       ctx.user.fetchInstances(query, expects.success(200, expected, count.next))
       var query2 = {
@@ -149,7 +153,7 @@ describe('GET /instances', function () {
         'owner.github': ctx.user2.json().accounts.github.id,
         'owner.username': ctx.user2.json().accounts.github.login,
         'createdBy.username': ctx.user2.json().accounts.github.login,
-        'createdBy.gravatar': ctx.user2.json().accounts.github.avatar_url
+        'createdBy.gravatar': ctx.user2.json().gravatar
       }]
       ctx.user2.fetchInstances(query2, expects.success(200, expected2, count.next))
     })
