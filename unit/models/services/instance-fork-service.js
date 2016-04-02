@@ -7,15 +7,14 @@ var lab = exports.lab = Lab.script()
 var Bunyan = require('bunyan')
 var Code = require('code')
 var Promise = require('bluebird')
-var clone = require('101/clone')
 var omit = require('101/omit')
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
 var Context = require('models/mongo/context')
 var ContextService = require('models/services/context-service')
-var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
+var BuildService = require('models/services/build-service')
 var InstanceForkService = require('models/services/instance-fork-service')
 var Runnable = require('models/apis/runnable')
 var User = require('models/mongo/user')
@@ -27,288 +26,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('InstanceForkService: ' + moduleName, function () {
-  describe('#_validatePushInfo', function () {
-    var pushInfo
-
-    beforeEach(function (done) {
-      pushInfo = {
-        repo: 'some/repo',
-        branch: 'my-branch',
-        commit: 'deadbeef',
-        user: { id: '42' }
-      }
-      done()
-    })
-
-    it('should require push info', function (done) {
-      InstanceForkService._validatePushInfo().asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.match(/requires.+pushInfo/i)
-        done()
-      })
-    })
-
-    it('should require repo', function (done) {
-      var info = omit(pushInfo, 'repo')
-      InstanceForkService._validatePushInfo(info).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.match(/requires.+repo/)
-        done()
-      })
-    })
-
-    it('should require branch', function (done) {
-      var info = omit(pushInfo, 'branch')
-      InstanceForkService._validatePushInfo(info).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.match(/requires.+branch/)
-        done()
-      })
-    })
-
-    it('should require commit', function (done) {
-      var info = omit(pushInfo, 'commit')
-      InstanceForkService._validatePushInfo(info).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.match(/requires.+commit/)
-        done()
-      })
-    })
-
-    it('should require user.id', function (done) {
-      var info = clone(pushInfo)
-      delete info.user.id
-      InstanceForkService._validatePushInfo(info).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.match(/requires.+pushInfo.+user.+id/)
-        done()
-      })
-    })
-  })
-
-  describe('#_createNewContextVersion', function () {
-    var contextVersion
-    var instance
-    var pushInfo
-    var mockContext
-    var mockContextVersion
-
-    beforeEach(function (done) {
-      contextVersion = {
-        context: 'mockContextId'
-      }
-      instance = {
-        contextVersion: contextVersion
-      }
-      pushInfo = {
-        repo: 'mockRepo',
-        branch: 'mockBranch',
-        commit: 'mockCommit',
-        user: {
-          id: 7
-        }
-      }
-      mockContext = {
-        owner: {
-          github: 14
-        }
-      }
-      mockContextVersion = {
-        _id: 21
-      }
-      sinon.stub(Context, 'findOne').yieldsAsync(null, mockContext)
-      sinon.stub(ContextService, 'handleVersionDeepCopy').yieldsAsync(null, mockContextVersion)
-      sinon.stub(ContextVersion, 'modifyAppCodeVersionByRepo').yieldsAsync(null, mockContextVersion)
-      done()
-    })
-
-    afterEach(function (done) {
-      Context.findOne.restore()
-      ContextService.handleVersionDeepCopy.restore()
-      ContextVersion.modifyAppCodeVersionByRepo.restore()
-      done()
-    })
-
-    describe('validation errors', function () {
-      beforeEach(function (done) {
-        sinon.spy(InstanceForkService, '_validatePushInfo')
-        done()
-      })
-
-      afterEach(function (done) {
-        InstanceForkService._validatePushInfo.restore()
-        done()
-      })
-
-      it('should require an instance', function (done) {
-        InstanceForkService._createNewContextVersion().asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/_createNewContextVersion.+instance/)
-          done()
-        })
-      })
-
-      it('should require an instance.contextVersion', function (done) {
-        delete instance.contextVersion
-        InstanceForkService._createNewContextVersion(instance).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/_createNewContextVersion.+instance\.contextVersion/)
-          done()
-        })
-      })
-
-      it('should require an instance.contextVersion.context', function (done) {
-        delete contextVersion.context
-        InstanceForkService._createNewContextVersion(instance).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/_createNewContextVersion.+instance\.contextVersion\.context/)
-          done()
-        })
-      })
-
-      it('should validate pushInfo', function (done) {
-        delete pushInfo.repo
-        InstanceForkService._createNewContextVersion(instance, pushInfo).asCallback(function (err) {
-          expect(err).to.exist()
-          sinon.assert.calledOnce(InstanceForkService._validatePushInfo)
-          sinon.assert.calledWithExactly(
-            InstanceForkService._validatePushInfo,
-            pushInfo,
-            '_createNewContextVersion'
-          )
-          done()
-        })
-      })
-
-      // this is a little later in the flow, but a validation none the less
-      it('should require the found context to have an owner.github', function (done) {
-        delete mockContext.owner.github
-        InstanceForkService._createNewContextVersion(instance, pushInfo).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/_createNewContextVersion.+context.+owner/)
-          done()
-        })
-      })
-    })
-
-    describe('behavior errors', function () {
-      var error
-      describe('in Context.findOne', function () {
-        beforeEach(function (done) {
-          error = new Error('doobie')
-          Context.findOne.yieldsAsync(error)
-          done()
-        })
-
-        it('should return errors', function (done) {
-          InstanceForkService._createNewContextVersion(instance, pushInfo).asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.equal(error.message)
-            done()
-          })
-        })
-
-        it('should not call anything else', function (done) {
-          InstanceForkService._createNewContextVersion(instance, pushInfo).asCallback(function (err) {
-            expect(err).to.exist()
-            sinon.assert.calledOnce(Context.findOne)
-            sinon.assert.notCalled(ContextService.handleVersionDeepCopy)
-            sinon.assert.notCalled(ContextVersion.modifyAppCodeVersionByRepo)
-            done()
-          })
-        })
-      })
-
-      describe('in ContextService.handleVersionDeepCopy', function () {
-        beforeEach(function (done) {
-          error = new Error('robot')
-          ContextService.handleVersionDeepCopy.yieldsAsync(error)
-          done()
-        })
-
-        it('should return errors', function (done) {
-          InstanceForkService._createNewContextVersion(instance, pushInfo).asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.equal(error.message)
-            done()
-          })
-        })
-
-        it('should not call anything else', function (done) {
-          InstanceForkService._createNewContextVersion(instance, pushInfo).asCallback(function (err) {
-            expect(err).to.exist()
-            sinon.assert.calledOnce(Context.findOne)
-            sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
-            sinon.assert.notCalled(ContextVersion.modifyAppCodeVersionByRepo)
-            done()
-          })
-        })
-      })
-
-      describe('in ContextVersion.modifyAppCodeVersionByRepo', function () {
-        beforeEach(function (done) {
-          error = new Error('luna')
-          ContextVersion.modifyAppCodeVersionByRepo.yieldsAsync(error)
-          done()
-        })
-
-        it('should return errors', function (done) {
-          InstanceForkService._createNewContextVersion(instance, pushInfo).asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.equal(error.message)
-            done()
-          })
-        })
-
-        it('should have called everything', function (done) {
-          InstanceForkService._createNewContextVersion(instance, pushInfo).asCallback(function (err) {
-            expect(err).to.exist()
-            sinon.assert.calledOnce(Context.findOne)
-            sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
-            sinon.assert.calledOnce(ContextVersion.modifyAppCodeVersionByRepo)
-            done()
-          })
-        })
-      })
-    })
-
-    it('should create a new context version', function (done) {
-      InstanceForkService._createNewContextVersion(instance, pushInfo).asCallback(function (err, newContextVersion) {
-        expect(err).to.not.exist()
-        expect(newContextVersion).to.deep.equal(mockContextVersion)
-        sinon.assert.calledOnce(Context.findOne)
-        sinon.assert.calledWithExactly(
-          Context.findOne,
-          { _id: 'mockContextId' },
-          sinon.match.func
-        )
-        sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
-        sinon.assert.calledWithExactly(
-          ContextService.handleVersionDeepCopy,
-          mockContext, // returned from `findOne`
-          contextVersion, // from the Instance
-          { accounts: { github: { id: 7 } } }, // from pushInfo (like sessionUser)
-          { owner: { github: 14 } }, // from mockContext.owner.github (owner object)
-          sinon.match.func
-        )
-        sinon.assert.calledOnce(ContextVersion.modifyAppCodeVersionByRepo)
-        sinon.assert.calledWithExactly(
-          ContextVersion.modifyAppCodeVersionByRepo,
-          '21', // from mockContextVersion, stringified
-          pushInfo.repo,
-          pushInfo.branch,
-          pushInfo.commit,
-          sinon.match.func
-        )
-        done()
-      })
-    })
-  })
-
+describe('InstanceForkService', function () {
   describe('#forkRepoInstance', function () {
     var mockInstance
     var mockOpts
@@ -350,7 +68,7 @@ describe('InstanceForkService: ' + moduleName, function () {
       mockClient = {}
       mockClient.createAndBuildBuild = sinon.stub().yieldsAsync(null, mockNewBuild)
       mockClient.createInstance = sinon.stub().yieldsAsync(null, mockNewInstance)
-      sinon.stub(InstanceForkService, '_createNewContextVersion').resolves(mockNewContextVersion)
+      sinon.stub(BuildService, 'createNewContextVersion').resolves(mockNewContextVersion)
       sinon.stub(Runnable, 'createClient').returns(mockClient)
       sinon.stub(Instance, 'findById')
         .withArgs('mockNewInstanceId', sinon.match.func).yieldsAsync(null, mockNewInstance)
@@ -358,7 +76,7 @@ describe('InstanceForkService: ' + moduleName, function () {
     })
 
     afterEach(function (done) {
-      InstanceForkService._createNewContextVersion.restore()
+      BuildService.createNewContextVersion.restore()
       Runnable.createClient.restore()
       Instance.findById.restore()
       done()
@@ -414,9 +132,9 @@ describe('InstanceForkService: ' + moduleName, function () {
       InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(InstanceForkService._createNewContextVersion)
+          sinon.assert.calledOnce(BuildService.createNewContextVersion)
           sinon.assert.calledWithExactly(
-            InstanceForkService._createNewContextVersion,
+            BuildService.createNewContextVersion,
             mockInstance,
             {
               repo: 'mockRepo',
@@ -454,7 +172,7 @@ describe('InstanceForkService: ' + moduleName, function () {
             mockClient.createAndBuildBuild,
             'newContextVersionId',
             'instanceOwnerId',
-            'autolaunch',
+            'isolate',
             {
               'repo': 'mockRepo',
               'commit': 'mockCommit',
@@ -554,20 +272,20 @@ describe('InstanceForkService: ' + moduleName, function () {
       mockInstanceUser = { accounts: { github: { accessToken: 'instanceUserGithubToken' } } }
       mockPushUser = { accounts: { github: { accessToken: 'pushUserGithubToken' } } }
       sinon.stub(monitorDog, 'increment')
-      sinon.spy(InstanceForkService, '_validatePushInfo')
+      sinon.spy(BuildService, 'validatePushInfo')
       sinon.stub(User, 'findByGithubId').yieldsAsync(new Error('define behavior'))
       User.findByGithubId.withArgs('pushUserId').yieldsAsync(null, mockPushUser)
       User.findByGithubId.withArgs('instanceCreatedById').yieldsAsync(null, mockInstanceUser)
-      sinon.stub(InstanceForkService, '_createNewContextVersion').resolves(mockContextVersion)
+      sinon.stub(BuildService, 'createNewContextVersion').resolves(mockContextVersion)
       sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
       done()
     })
 
     afterEach(function (done) {
       monitorDog.increment.restore()
-      InstanceForkService._validatePushInfo.restore()
+      BuildService.validatePushInfo.restore()
       User.findByGithubId.restore()
-      InstanceForkService._createNewContextVersion.restore()
+      BuildService.createNewContextVersion.restore()
       Runnable.createClient.restore()
       done()
     })
@@ -595,9 +313,9 @@ describe('InstanceForkService: ' + moduleName, function () {
         InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/requires.+repo/)
-          sinon.assert.calledOnce(InstanceForkService._validatePushInfo)
+          sinon.assert.calledOnce(BuildService.validatePushInfo)
           sinon.assert.calledWithExactly(
-            InstanceForkService._validatePushInfo,
+            BuildService.validatePushInfo,
             pushInfo,
             '_forkOne'
           )
@@ -683,9 +401,9 @@ describe('InstanceForkService: ' + moduleName, function () {
     it('should create a new context version', function (done) {
       InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(InstanceForkService._createNewContextVersion)
+        sinon.assert.calledOnce(BuildService.createNewContextVersion)
         sinon.assert.calledWithExactly(
-          InstanceForkService._createNewContextVersion,
+          BuildService.createNewContextVersion,
           instance,
           pushInfo
         )
