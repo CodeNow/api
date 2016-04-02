@@ -17,7 +17,6 @@ var Instance = require('models/mongo/instance')
 var BuildService = require('models/services/build-service')
 var InstanceForkService = require('models/services/instance-fork-service')
 var Runnable = require('models/apis/runnable')
-var User = require('models/mongo/user')
 var monitorDog = require('monitor-dog')
 
 var afterEach = lab.afterEach
@@ -237,11 +236,7 @@ describe('InstanceForkService', function () {
   describe('#_forkOne', function () {
     var instance
     var pushInfo
-    var mockInstanceUser
     var mockPushUser
-    var mockContextVersion = {
-      _id: 'deadbeef'
-    }
     var mockBuild = {
       _id: 'buildbeef'
     }
@@ -266,121 +261,33 @@ describe('InstanceForkService', function () {
         }
       }
       mockRunnableClient = {
-        createAndBuildBuild: sinon.stub().yieldsAsync(null, mockBuild),
         forkMasterInstance: sinon.stub().yieldsAsync(null, mockInstance)
       }
-      mockInstanceUser = { accounts: { github: { accessToken: 'instanceUserGithubToken' } } }
       mockPushUser = { accounts: { github: { accessToken: 'pushUserGithubToken' } } }
       sinon.stub(monitorDog, 'increment')
-      sinon.spy(BuildService, 'validatePushInfo')
-      sinon.stub(User, 'findByGithubId').yieldsAsync(new Error('define behavior'))
-      User.findByGithubId.withArgs('pushUserId').yieldsAsync(null, mockPushUser)
-      User.findByGithubId.withArgs('instanceCreatedById').yieldsAsync(null, mockInstanceUser)
-      sinon.stub(BuildService, 'createNewContextVersion').resolves(mockContextVersion)
+      sinon.stub(BuildService, 'createAndBuildContextVersion').resolves({
+        build: mockBuild,
+        user: mockPushUser
+      })
       sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
       done()
     })
 
     afterEach(function (done) {
       monitorDog.increment.restore()
-      BuildService.validatePushInfo.restore()
-      User.findByGithubId.restore()
-      BuildService.createNewContextVersion.restore()
+      BuildService.createAndBuildContextVersion.restore()
       Runnable.createClient.restore()
       done()
     })
 
-    describe('validation errors', function () {
-      it('should require instance', function (done) {
-        InstanceForkService._forkOne().asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/instance.+required/i)
-          done()
-        })
-      })
-
-      it('should require the instance createdBy owner', function (done) {
-        delete instance.createdBy.github
-        InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/instance.+github.+required/i)
-          done()
-        })
-      })
-
-      it('should validate pushInfo', function (done) {
-        delete pushInfo.repo
-        InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/requires.+repo/)
-          sinon.assert.calledOnce(BuildService.validatePushInfo)
-          sinon.assert.calledWithExactly(
-            BuildService.validatePushInfo,
-            pushInfo,
-            '_forkOne'
-          )
-          done()
-        })
-      })
-    })
-
     describe('behaviorial errors', function () {
-      it('should throw any instance user fetch error', function (done) {
+      it('should throw if build errored', function (done) {
         var error = new Error('robot')
-        User.findByGithubId.withArgs('instanceCreatedById').yieldsAsync(error)
+        BuildService.createAndBuildContextVersion.rejects(error)
         InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
-          sinon.assert.called(User.findByGithubId)
-          sinon.assert.calledWithExactly(
-            User.findByGithubId,
-            'instanceCreatedById',
-            sinon.match.func
-          )
+          sinon.assert.called(BuildService.createAndBuildContextVersion)
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
-          done()
-        })
-      })
-
-      it('should throw any push user fetch error', function (done) {
-        var error = new Error('robot')
-        User.findByGithubId.withArgs('pushUserId').yieldsAsync(error)
-        InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
-          sinon.assert.called(User.findByGithubId)
-          sinon.assert.calledWithExactly(
-            User.findByGithubId,
-            'pushUserId',
-            sinon.match.func
-          )
-          expect(err).to.exist()
-          expect(err.message).to.equal(error.message)
-          done()
-        })
-      })
-    })
-
-    describe('fetching users', function () {
-      it('should fetch the instance user', function (done) {
-        InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledTwice(User.findByGithubId)
-          sinon.assert.calledWithExactly(
-            User.findByGithubId,
-            'instanceCreatedById',
-            sinon.match.func
-          )
-          done()
-        })
-      })
-
-      it('should fetch the pushuser', function (done) {
-        InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledTwice(User.findByGithubId)
-          sinon.assert.calledWithExactly(
-            User.findByGithubId,
-            'pushUserId',
-            sinon.match.func
-          )
           done()
         })
       })
@@ -398,12 +305,12 @@ describe('InstanceForkService', function () {
       })
     })
 
-    it('should create a new context version', function (done) {
+    it('should create a new build and build it', function (done) {
       InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(BuildService.createNewContextVersion)
+        sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)
         sinon.assert.calledWithExactly(
-          BuildService.createNewContextVersion,
+          BuildService.createAndBuildContextVersion,
           instance,
           pushInfo
         )
@@ -411,35 +318,15 @@ describe('InstanceForkService', function () {
       })
     })
 
-    it('should create a new build and build it', function (done) {
-      InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(mockRunnableClient.createAndBuildBuild)
-        sinon.assert.calledWithExactly(
-          mockRunnableClient.createAndBuildBuild,
-          mockContextVersion._id, // 'deadbeef'
-          'instanceOwnerId',
-          'autolaunch',
-          {
-            repo: pushInfo.repo,
-            commit: pushInfo.commit,
-            branch: pushInfo.branch
-          },
-          sinon.match.func
-        )
-        done()
-      })
-    })
-
     describe('building a new build', function () {
-      it('should use the instance user to create the runnable client', function (done) {
+      it('should use the push user to create the runnable client', function (done) {
         InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.called(Runnable.createClient)
-          sinon.assert.calledWithExactly(
-            Runnable.createClient.firstCall, // firstCall === createAndBuildBuild
+          sinon.assert.calledWith(
+            Runnable.createClient,
             {},
-            mockInstanceUser
+            mockPushUser
           )
           done()
         })
@@ -458,35 +345,6 @@ describe('InstanceForkService', function () {
           sinon.match.func
         )
         done()
-      })
-    })
-
-    describe('forking master instance', function () {
-      it('should use the push user to create the runnable client', function (done) {
-        InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.called(Runnable.createClient)
-          sinon.assert.calledWithExactly(
-            Runnable.createClient.secondCall, // secondCall === forkMasterInstance
-            {},
-            mockPushUser
-          )
-          done()
-        })
-      })
-
-      it('should use the instance user to create runnable client if no push user', function (done) {
-        User.findByGithubId.withArgs('pushUserId').yieldsAsync(null, null)
-        InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.called(Runnable.createClient)
-          sinon.assert.calledWithExactly(
-            Runnable.createClient.secondCall, // secondCall === forkMasterInstance
-            {},
-            mockInstanceUser
-          )
-          done()
-        })
       })
     })
   })
