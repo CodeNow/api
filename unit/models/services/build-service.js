@@ -166,7 +166,7 @@ describe('BuildService', function () {
 
       it('should validate pushInfo', function (done) {
         delete pushInfo.repo
-        BuildService.createNewContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+        BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
           expect(err).to.exist()
           sinon.assert.calledOnce(BuildService.validatePushInfo)
           sinon.assert.calledWithExactly(
@@ -181,7 +181,7 @@ describe('BuildService', function () {
       // this is a little later in the flow, but a validation none the less
       it('should require the found context to have an owner.github', function (done) {
         delete mockContext.owner.github
-        BuildService.createNewContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+        BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/createNewContextVersion.+context.+owner/)
           done()
@@ -199,7 +199,7 @@ describe('BuildService', function () {
         })
 
         it('should return errors', function (done) {
-          BuildService.createNewContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
             done()
@@ -207,7 +207,7 @@ describe('BuildService', function () {
         })
 
         it('should not call anything else', function (done) {
-          BuildService.createNewContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             sinon.assert.calledOnce(Context.findOne)
             sinon.assert.notCalled(ContextService.handleVersionDeepCopy)
@@ -225,7 +225,7 @@ describe('BuildService', function () {
         })
 
         it('should return errors', function (done) {
-          BuildService.createNewContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
             done()
@@ -233,7 +233,7 @@ describe('BuildService', function () {
         })
 
         it('should not call anything else', function (done) {
-          BuildService.createNewContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             sinon.assert.calledOnce(Context.findOne)
             sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
@@ -251,7 +251,7 @@ describe('BuildService', function () {
         })
 
         it('should return errors', function (done) {
-          BuildService.createNewContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
             done()
@@ -259,7 +259,7 @@ describe('BuildService', function () {
         })
 
         it('should have called everything', function (done) {
-          BuildService.createNewContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             sinon.assert.calledOnce(Context.findOne)
             sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
@@ -271,7 +271,7 @@ describe('BuildService', function () {
     })
 
     it('should create a new context version', function (done) {
-      BuildService.createNewContextVersion(instance, pushInfo, 'autofork').asCallback(function (err, newContextVersion) {
+      BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err, newContextVersion) {
         expect(err).to.not.exist()
         expect(newContextVersion).to.deep.equal(mockContextVersion)
         sinon.assert.calledOnce(Context.findOne)
@@ -365,7 +365,7 @@ describe('BuildService', function () {
 
       it('should require the instance createdBy owner', function (done) {
         delete instance.createdBy.github
-        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/instance.+github.+required/i)
           done()
@@ -374,7 +374,7 @@ describe('BuildService', function () {
 
       it('should validate pushInfo', function (done) {
         delete pushInfo.repo
-        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/requires.+repo/)
           sinon.assert.calledOnce(BuildService.validatePushInfo)
@@ -392,7 +392,7 @@ describe('BuildService', function () {
       it('should throw any instance user fetch error', function (done) {
         var error = new Error('robot')
         User.findByGithubId.withArgs('instanceCreatedById').yieldsAsync(error)
-        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
           sinon.assert.called(User.findByGithubId)
           sinon.assert.calledWithExactly(
             User.findByGithubId,
@@ -408,7 +408,7 @@ describe('BuildService', function () {
       it('should throw any push user fetch error', function (done) {
         var error = new Error('robot')
         User.findByGithubId.withArgs('pushUserId').yieldsAsync(error)
-        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
           sinon.assert.called(User.findByGithubId)
           sinon.assert.calledWithExactly(
             User.findByGithubId,
@@ -424,7 +424,7 @@ describe('BuildService', function () {
 
     describe('fetching users', function () {
       it('should fetch the instance user', function (done) {
-        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(User.findByGithubId)
           sinon.assert.calledWithExactly(
@@ -437,7 +437,7 @@ describe('BuildService', function () {
       })
 
       it('should fetch the pushuser', function (done) {
-        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(User.findByGithubId)
           sinon.assert.calledWithExactly(
@@ -451,7 +451,7 @@ describe('BuildService', function () {
     })
 
     it('should create a new context version', function (done) {
-      BuildService.createAndBuildContextVersion(instance, pushInfo, 'autofork').asCallback(function (err) {
+      BuildService.createAndBuildContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(BuildService.createNewContextVersion)
         sinon.assert.calledWithExactly(
@@ -485,11 +485,11 @@ describe('BuildService', function () {
 
     describe('building a new build', function () {
       it('should use the push user to create the runnable client if available', function (done) {
-        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autofork').asCallback(function (err, result) {
+        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err, result) {
           expect(err).to.not.exist()
           sinon.assert.called(Runnable.createClient)
           sinon.assert.calledWithExactly(
-            Runnable.createClient
+            Runnable.createClient,
             {},
             mockPushUser
           )
@@ -500,11 +500,11 @@ describe('BuildService', function () {
       })
       it('should use the instance user to create the runnable client if pushUser not found', function (done) {
         User.findByGithubId.withArgs('pushUserId').yieldsAsync(null, null)
-        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autofork').asCallback(function (err, result) {
+        BuildService.createAndBuildContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err, result) {
           expect(err).to.not.exist()
           sinon.assert.called(Runnable.createClient)
           sinon.assert.calledWithExactly(
-            Runnable.createClient
+            Runnable.createClient,
             {},
             mockInstanceUser
           )
