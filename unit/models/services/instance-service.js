@@ -99,36 +99,82 @@ describe('InstanceService: ' + moduleName, function () {
         })
     })
 
-    it('should not create new jobs if instances were not found', function (done) {
-      sinon.stub(Instance, 'findForkedInstances')
-        .yieldsAsync(null, [])
-      sinon.stub(rabbitMQ, 'deleteInstance')
-      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
-        function (err) {
-          expect(err).to.not.exist()
-          expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
-          Instance.findForkedInstances.restore()
-          rabbitMQ.deleteInstance.restore()
-          done()
-        })
-    })
+    describe('When queries succeed', function () {
+      beforeEach(function (done) {
+        sinon.stub(rabbitMQ, 'deleteInstance')
+        done()
+      })
+      afterEach(function (done) {
+        Instance.findForkedInstances.restore()
+        rabbitMQ.deleteInstance.restore()
+        done()
+      })
+      it('should not create new jobs if instances were not found', function (done) {
+        sinon.stub(Instance, 'findForkedInstances')
+          .yieldsAsync(null, [])
+        InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
+          function (err) {
+            expect(err).to.not.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
+            done()
+          })
+      })
 
-    it('should create 2 jobs if 3 instances were found and 1 filtered', function (done) {
-      sinon.stub(Instance, 'findForkedInstances')
-        .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
-      sinon.stub(rabbitMQ, 'deleteInstance')
-      InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
-        function (err) {
-          expect(err).to.not.exist()
-          expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
-          var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
-          expect(arg1.instanceId).to.equal('inst-1')
-          var arg2 = rabbitMQ.deleteInstance.getCall(1).args[0]
-          expect(arg2.instanceId).to.equal('inst-3')
-          Instance.findForkedInstances.restore()
-          rabbitMQ.deleteInstance.restore()
-          done()
-        })
+      it('should error if the original instance wasnt found', function (done) {
+        sinon.stub(Instance, 'findForkedInstances')
+          .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-4', 'api', 'master',
+          function (err) {
+            expect(err).to.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
+            done()
+          })
+      })
+
+      it('should create 2 jobs if 3 instances were found and 1 filtered', function (done) {
+        sinon.stub(Instance, 'findForkedInstances')
+          .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
+          function (err) {
+            expect(err).to.not.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
+            var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
+            expect(arg1.instanceId).to.equal('inst-1')
+            var arg2 = rabbitMQ.deleteInstance.getCall(1).args[0]
+            expect(arg2.instanceId).to.equal('inst-3')
+            done()
+          })
+      })
+
+      it('should create 1 job if 3 instances were found and 1 was isolated', function (done) {
+        sinon.stub(Instance, 'findForkedInstances').yieldsAsync(null, [
+          {_id: 'inst-1', isolated: '2sdasdasdasd'},
+          {_id: 'inst-2'},
+          {_id: 'inst-3'}
+        ])
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
+          function (err) {
+            expect(err).to.not.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(1)
+            var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
+            expect(arg1.instanceId).to.equal('inst-3')
+            done()
+          })
+      })
+
+      it('should not create any jobs since the original instance is isolated', function (done) {
+        sinon.stub(Instance, 'findForkedInstances').yieldsAsync(null, [
+          {_id: 'inst-1'},
+          {_id: 'inst-2', isolated: 'asdasdaer3'},
+          {_id: 'inst-3'}
+        ])
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
+          function (err) {
+            expect(err).to.not.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
+            done()
+          })
+      })
     })
   })
 
