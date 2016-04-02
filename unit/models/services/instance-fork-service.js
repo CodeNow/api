@@ -454,6 +454,7 @@ describe('InstanceForkService: ' + moduleName, function () {
             mockClient.createAndBuildBuild,
             'newContextVersionId',
             'instanceOwnerId',
+            'autolaunch',
             {
               'repo': 'mockRepo',
               'commit': 'mockCommit',
@@ -700,6 +701,7 @@ describe('InstanceForkService: ' + moduleName, function () {
           mockRunnableClient.createAndBuildBuild,
           mockContextVersion._id, // 'deadbeef'
           'instanceOwnerId',
+          'autolaunch',
           {
             repo: pushInfo.repo,
             commit: pushInfo.commit,
