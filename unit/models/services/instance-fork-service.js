@@ -312,7 +312,8 @@ describe('InstanceForkService', function () {
         sinon.assert.calledWithExactly(
           BuildService.createAndBuildContextVersion,
           instance,
-          pushInfo
+          pushInfo,
+          'autolaunch'
         )
         done()
       })
