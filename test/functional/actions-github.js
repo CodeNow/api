@@ -17,8 +17,6 @@ var it = lab.it
 
 var ContextVersion = require('models/mongo/context-version')
 var Mixpanel = require('models/apis/mixpanel')
-var PullRequest = require('models/apis/pullrequest')
-var Slack = require('notifications/slack')
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
@@ -247,17 +245,7 @@ describe('Github - /actions/github', function () {
           ctx.build = build
           ctx.user = user
           ctx.instance = instance
-          var settings = {
-            owner: {
-              github: user.attrs.accounts.github.id
-            }
-          }
-          user.createSetting({json: settings}, function (err, body) {
-            if (err) { return done(err) }
-            expect(body._id).to.exist()
-            ctx.settingsId = body._id
-            done()
-          })
+          done()
         })
       })
 
@@ -332,16 +320,13 @@ describe('Github - /actions/github', function () {
       })
 
       describe('enabled autoforking', function () {
-        var successStub
         beforeEach(function (done) {
           ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH
           process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true'
-          successStub = sinon.stub(PullRequest.prototype, 'deploymentSucceeded')
           done()
         })
         afterEach(function (done) {
           process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking
-          successStub.restore()
           done()
         })
 
@@ -390,19 +375,13 @@ describe('Github - /actions/github', function () {
     })
 
     describe('autodeploy', function () {
-      var successStub
-      var slackStub
       beforeEach(function (done) {
         ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH
         process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true'
-        successStub = sinon.stub(PullRequest.prototype, 'deploymentSucceeded')
-        slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoDeploy')
         done()
       })
       afterEach(function (done) {
         process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking
-        slackStub.restore()
-        successStub.restore()
         done()
       })
       beforeEach(function (done) {
@@ -413,17 +392,7 @@ describe('Github - /actions/github', function () {
           ctx.build = build
           ctx.user = user
           ctx.instance = instance
-          var settings = {
-            owner: {
-              github: user.attrs.accounts.github.id
-            }
-          }
-          user.createSetting({json: settings}, function (err, body) {
-            if (err) { return done(err) }
-            expect(body._id).to.exist()
-            ctx.settingsId = body._id
-            done()
-          })
+          done()
         })
       })
 
