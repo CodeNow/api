@@ -690,6 +690,34 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
   })
 
+  describe('instanceDeployedNotify', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        instanceId: 1234,
+        cvId: 56789
+      }
+      ctx.rabbitMQ.notifyOnInstanceDeploy(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.deployed.notify', data)
+      done()
+    })
+    it('should throw an error when parameters are missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.notifyOnInstanceDeploy.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  })
+
   describe('publishContainerImageBuilderStarted', function () {
     beforeEach(function (done) {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
