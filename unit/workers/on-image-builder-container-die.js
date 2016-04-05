@@ -12,8 +12,9 @@ require('sinon-as-promised')(require('bluebird'))
 
 var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
-var Instance = require('models/mongo/instance')
 var Docker = require('models/apis/docker')
+var Instance = require('models/mongo/instance')
+var InstanceService = require('models/services/instance-service')
 var rabbitMQ = require('models/rabbitmq')
 var keypather = require('keypather')()
 var put = require('101/put')
@@ -33,10 +34,7 @@ var expectErr = function (expectedErr, done) {
   }
 }
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('OnImageBuilderContainerDie: ' + moduleName, function () {
+describe('OnImageBuilderContainerDie', function () {
   var ctx
 
   beforeEach(function (done) {
@@ -58,7 +56,6 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
     }
     done()
   })
-
   describe('_getBuildInfo', function () {
     describe('success', function () {
       it('should get correct build data', function (done) {
@@ -264,6 +261,142 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
             })
         })
       })
+    })
+  })
+
+  describe('_handleAutoDeploy', function () {
+    beforeEach(function (done) {
+      sinon.stub(InstanceService, 'updateBuildByRepoAndBranch').resolves(null)
+      done()
+    })
+    afterEach(function (done) {
+      InstanceService.updateBuildByRepoAndBranch.restore()
+      done()
+    })
+    it('should not call updateBuildByRepoAndBranch if no versions were []', function (done) {
+      OnImageBuilderContainerDie._handleAutoDeploy([])
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(InstanceService.updateBuildByRepoAndBranch)
+          done()
+        })
+    })
+    it('should call updateBuildByRepoAndBranch for each cv', function (done) {
+      var cvs = [
+        {
+          _id: 'cv1',
+          build: {
+            triggeredAction: {
+              manual: false,
+              name: 'autodeploy',
+              appCodeVersion: {
+                repo: 'codenow/api',
+                branch: 'master',
+                commit: '21312'
+              }
+            }
+          }
+        },
+        {
+          _id: 'cv2',
+          build: {
+            triggeredAction: {
+              manual: false,
+              name: 'autodeploy',
+              appCodeVersion: {
+                repo: 'codenow/api',
+                branch: 'dev',
+                commit: '21312'
+              }
+            }
+          }
+        }
+      ]
+      OnImageBuilderContainerDie._handleAutoDeploy(cvs)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(InstanceService.updateBuildByRepoAndBranch)
+          sinon.assert.calledWith(InstanceService.updateBuildByRepoAndBranch,
+            'codenow/api', 'master', 'cv1')
+          sinon.assert.calledWith(InstanceService.updateBuildByRepoAndBranch,
+            'codenow/api', 'dev', 'cv2')
+          done()
+        })
+    })
+    it('should not call updateBuildByRepoAndBranch if manual true', function (done) {
+      var cvs = [
+        {
+          _id: 'cv1',
+          build: {
+            triggeredAction: {
+              manual: true,
+              name: 'autodeploy',
+              appCodeVersion: {
+                repo: 'codenow/api',
+                branch: 'master',
+                commit: '21312'
+              }
+            }
+          }
+        }
+      ]
+      OnImageBuilderContainerDie._handleAutoDeploy(cvs)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(InstanceService.updateBuildByRepoAndBranch)
+          done()
+        })
+    })
+    it('should not call updateBuildByRepoAndBranch if action name != autodeploy', function (done) {
+      var cvs = [
+        {
+          _id: 'cv1',
+          build: {
+            triggeredAction: {
+              manual: false,
+              name: 'autolaunch',
+              appCodeVersion: {
+                repo: 'codenow/api',
+                branch: 'master',
+                commit: '21312'
+              }
+            }
+          }
+        }
+      ]
+      OnImageBuilderContainerDie._handleAutoDeploy(cvs)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(InstanceService.updateBuildByRepoAndBranch)
+          done()
+        })
+    })
+    it('should fail if updateBuildByRepoAndBranch failed', function (done) {
+      var cvs = [
+        {
+          _id: 'cv1',
+          build: {
+            triggeredAction: {
+              manual: false,
+              name: 'autodeploy',
+              appCodeVersion: {
+                repo: 'codenow/api',
+                branch: 'master',
+                commit: '21312'
+              }
+            }
+          }
+        }
+      ]
+      var error = new Error('Mongo error')
+      InstanceService.updateBuildByRepoAndBranch.rejects(error)
+      OnImageBuilderContainerDie._handleAutoDeploy(cvs)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          sinon.assert.calledOnce(InstanceService.updateBuildByRepoAndBranch)
+          done()
+        })
     })
   })
 
