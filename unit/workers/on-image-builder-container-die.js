@@ -295,11 +295,13 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
         }
       })
       sinon.stub(rabbitMQ, 'createInstanceContainer')
+      sinon.stub(rabbitMQ, 'notifyOnInstanceDeploy')
       done()
     })
 
     afterEach(function (done) {
       rabbitMQ.createInstanceContainer.restore()
+      rabbitMQ.notifyOnInstanceDeploy.restore()
       done()
     })
 
@@ -314,7 +316,25 @@ describe('OnImageBuilderContainerDie: ' + moduleName, function () {
       })
       done()
     })
-
+    it('should publish notification job to RabbitMQ if the build was succesful', function (done) {
+      OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance], { failed: false })
+      sinon.assert.calledOnce(rabbitMQ.notifyOnInstanceDeploy)
+      sinon.assert.calledWith(rabbitMQ.notifyOnInstanceDeploy, {
+        cvId: ctx.instance.contextVersion._id.toString(),
+        instanceId: ctx.instance._id.toString()
+      })
+      done()
+    })
+    it('should not publish notification job to RabbitMQ if build was manual', function (done) {
+      ctx.instance.contextVersion.build = {
+        triggeredAction: {
+          manual: true
+        }
+      }
+      OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance], { failed: false })
+      sinon.assert.notCalled(rabbitMQ.notifyOnInstanceDeploy)
+      done()
+    })
     it('should not publish jobs to RabbitMQ if the build was unsuccesful', function (done) {
       OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance], { failed: true })
       sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
