@@ -286,9 +286,9 @@ describe('OnImageBuilderContainerDie', function () {
         {
           _id: 'cv1',
           build: {
+            message: 'autodeploy',
             triggeredAction: {
               manual: false,
-              name: 'autodeploy',
               appCodeVersion: {
                 repo: 'codenow/api',
                 branch: 'master',
@@ -300,9 +300,9 @@ describe('OnImageBuilderContainerDie', function () {
         {
           _id: 'cv2',
           build: {
+            message: 'autodeploy',
             triggeredAction: {
               manual: false,
-              name: 'autodeploy',
               appCodeVersion: {
                 repo: 'codenow/api',
                 branch: 'dev',
@@ -328,9 +328,9 @@ describe('OnImageBuilderContainerDie', function () {
         {
           _id: 'cv1',
           build: {
+            message: 'autodeploy',
             triggeredAction: {
               manual: true,
-              name: 'autodeploy',
               appCodeVersion: {
                 repo: 'codenow/api',
                 branch: 'master',
@@ -376,9 +376,9 @@ describe('OnImageBuilderContainerDie', function () {
         {
           _id: 'cv1',
           build: {
+            message: 'autodeploy',
             triggeredAction: {
               manual: false,
-              name: 'autodeploy',
               appCodeVersion: {
                 repo: 'codenow/api',
                 branch: 'master',
