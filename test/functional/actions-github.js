@@ -320,6 +320,26 @@ describe('Github - /actions/github', function () {
           })
         })
 
+      it('should use pusher information if the committer is missing', function (done) {
+        var ownerGithubId = ctx.user.attrs.accounts.github.id
+        var ownerUsername = ctx.user.attrs.accounts.github.login
+        var pusherUsername = 'rsandor'
+        require('./fixtures/mocks/github/users-username')(ownerGithubId, pusherUsername)
+        var acv = ctx.contextVersion.attrs.appCodeVersions[0]
+        var data = {
+          branch: 'newish-branch',
+          repo: acv.repo,
+          ownerId: ownerGithubId,
+          owner: ownerUsername
+        }
+        var options = hooks(data).push_no_committer
+        request.post(options, function (err, res, body) {
+          if (err) { return done(err) }
+          expect(res.statusCode).to.equal(200)
+          done()
+        })
+      })
+
       it('should send 202 and message if autoforking disabled', function (done) {
         var acv = ctx.contextVersion.attrs.appCodeVersions[0]
         var user = ctx.user.attrs.accounts.github

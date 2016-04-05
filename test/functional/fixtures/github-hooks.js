@@ -1904,6 +1904,103 @@ module.exports = function (data) {
           'site_admin': false
         }
       }
+    },
+    push_no_committer: {
+      url: url.format({
+        protocol: 'http:',
+        slashes: true,
+        host: process.env.ROOT_DOMAIN,
+        pathname: 'actions/github'
+      }),
+      headers: {
+        host: process.env.ROOT_DOMAIN,
+        accept: '*/*',
+        'user-agent': 'GitHub Hookshot 2636b5a',
+        'x-github-event': 'push',
+        'x-github-delivery': '763c374e-fbc8-11e3-9918-1e687924f7ff',
+        'content-type': 'application/json'
+      },
+      json: {
+        ref: 'refs/heads/' + branch,
+        after: '7caa8452a30d2ff0e27e82e43b411ec7e42e2238',
+        before: 'd5455d9c4fa4c43b3dfdc88e446bb1ec4903fd90',
+        created: true,
+        deleted: false,
+        forced: false,
+        compare: 'https://github.com/' + fullRepo + '/compare/d5455d9c4fa4...7caa8452a30d',
+        commits: [{
+          id: '7caa8452a30d2ff0e27e82e43b411ec7e42e2238',
+          distinct: true,
+          message: 'updating readme',
+          timestamp: '2014-06-24T11:54:07-07:00',
+          url: 'https://github.com/' + fullRepo + '/commit/7caa8452a30d2ff0e27e82e43b411ec7e42e2238',
+          added: [],
+          removed: [],
+          modified: [
+            'README.md'
+          ]
+        }],
+        'head_commit': {
+          id: '7caa8452a30d2ff0e27e82e43b411ec7e42e2238',
+          distinct: true,
+          message: 'updating readme',
+          timestamp: '2014-06-24T11:54:07-07:00',
+          url: 'https://github.com/' + fullRepo + '/commit/7caa8452a30d2ff0e27e82e43b411ec7e42e2238',
+          added: [],
+          removed: [],
+          modified: [
+            'README.md'
+          ]
+        },
+        repository: {
+          id: 21174769,
+          name: repo,
+          full_name: fullRepo,
+          url: 'https://github.com/' + fullRepo,
+          description: '',
+          watchers: 0,
+          stargazers: 0,
+          forks: 0,
+          fork: false,
+          size: 0,
+          owner: {
+            name: owner,
+            login: owner,
+            email: 'bryan.a.kendall@gmail.com'
+          },
+          'private': false,
+          open_issues: 0,
+          has_issues: true,
+          has_downloads: true,
+          has_wiki: true,
+          created_at: 1403632014,
+          pushed_at: 1403636051,
+          master_branch: 'master'
+        },
+        pusher: {
+          name: owner,
+          email: 'sandor.richards@gmail.com'
+        },
+        sender: {
+          'login': owner,
+          'id': ownerId,
+          'avatar_url': 'https://avatars.githubusercontent.com/u/160236?v=2',
+          'gravatar_id': '',
+          'url': 'https://api.github.com/users/bkendall',
+          'html_url': 'https://github.com/bkendall',
+          'followers_url': 'https://api.github.com/users/bkendall/followers',
+          'following_url': 'https://api.github.com/users/bkendall/following{/other_user}',
+          'gists_url': 'https://api.github.com/users/bkendall/gists{/gist_id}',
+          'starred_url': 'https://api.github.com/users/bkendall/starred{/owner}{/repo}',
+          'subscriptions_url': 'https://api.github.com/users/bkendall/subscriptions',
+          'organizations_url': 'https://api.github.com/users/bkendall/orgs',
+          'repos_url': 'https://api.github.com/users/bkendall/repos',
+          'events_url': 'https://api.github.com/users/bkendall/events{/privacy}',
+          'received_events_url': 'https://api.github.com/users/bkendall/received_events',
+          'type': 'User',
+          'site_admin': false
+        }
+      }
     }
   }
 }
