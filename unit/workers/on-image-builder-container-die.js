@@ -266,11 +266,16 @@ describe('OnImageBuilderContainerDie', function () {
 
   describe('_handleAutoDeploy', function () {
     beforeEach(function (done) {
-      sinon.stub(InstanceService, 'updateBuildByRepoAndBranch').resolves(null)
+      sinon.stub(InstanceService, 'updateBuildByRepoAndBranch').resolves([
+        { _id: 'id-1', contextVersion: { _id: 'cv-1' } },
+        { _id: 'id-2', contextVersion: { _id: 'cv-2' } }
+      ])
+      sinon.stub(rabbitMQ, 'instanceDeployed').returns()
       done()
     })
     afterEach(function (done) {
       InstanceService.updateBuildByRepoAndBranch.restore()
+      rabbitMQ.instanceDeployed.restore()
       done()
     })
     it('should not call updateBuildByRepoAndBranch if no versions were []', function (done) {
@@ -344,6 +349,63 @@ describe('OnImageBuilderContainerDie', function () {
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.notCalled(InstanceService.updateBuildByRepoAndBranch)
+          done()
+        })
+    })
+    it('should create instanceDeployed events', function (done) {
+      var cvs = [
+        {
+          _id: 'cv1',
+          build: {
+            message: 'autodeploy',
+            triggeredAction: {
+              manual: false,
+              appCodeVersion: {
+                repo: 'codenow/api',
+                branch: 'master',
+                commit: '21312'
+              }
+            }
+          }
+        }
+      ]
+      OnImageBuilderContainerDie._handleAutoDeploy(cvs)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(rabbitMQ.instanceDeployed)
+          sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
+            instanceId: 'id-1',
+            cvId: 'cv-1'
+          })
+          sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
+            instanceId: 'id-2',
+            cvId: 'cv-2'
+          })
+          done()
+        })
+    })
+    it('should not create instanceDeployed events if instances were not updated', function (done) {
+      InstanceService.updateBuildByRepoAndBranch.resolves(null)
+      var cvs = [
+        {
+          _id: 'cv1',
+          build: {
+            message: 'autodeploy',
+            triggeredAction: {
+              manual: false,
+              appCodeVersion: {
+                repo: 'codenow/api',
+                branch: 'master',
+                commit: '21312'
+              }
+            }
+          }
+        }
+      ]
+      OnImageBuilderContainerDie._handleAutoDeploy(cvs)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(rabbitMQ.instanceDeployed)
           done()
         })
     })
