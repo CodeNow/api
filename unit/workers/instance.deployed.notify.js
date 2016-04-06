@@ -22,9 +22,9 @@ var Instance = require('models/mongo/instance')
 var PullRequest = require('models/apis/pullrequest')
 var Slack = require('notifications/index')
 var User = require('models/mongo/user')
-var Worker = require('workers/instance.deployed.notify')
+var Worker = require('workers/instance.deployed')
 
-describe('Instance Deployed Notify Worker', function () {
+describe('Instance Deployed Worker', function () {
   describe('worker', function () {
     var testInstanceId = '5633e9273e2b5b0c0077fd41'
     var testCvId = '2933e9211e2bbb0c00888876'
