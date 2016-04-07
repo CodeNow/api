@@ -69,7 +69,10 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
         createFile(ctx.context.id(), '/', 'Dockerfile')
       ]
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
-      ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done))
+      ctx.contextVersion.rootDir.contents.fetch(function (err, body) {
+        console.log('BODY', body)
+        done()
+      })
     })
   })
   describe('POST - discard changes', function () {
@@ -89,7 +92,11 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
             body: 'asdf'
           }
         }, count.next)
-        ctx.dockerfile = ctx.contextVersion.fetchFile('/Dockerfile', count.next)
+        console.log('XXXX fetch')
+        ctx.dockerfile = ctx.contextVersion.fetchFile('/Dockerfile', function (err, body, som, res) {
+          console.log('XXXXX DONE', body, som, res)
+          count.next()
+        })
       })
     })
     it('should get rid of all the changes we had', function (done) {
