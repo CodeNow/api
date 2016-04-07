@@ -101,7 +101,7 @@
     "strim": "^0.2.2",
     "substream": "0.2.0",
     "sync-exec": "^0.6.1",
-    "syslog2": "^1.0.7",
+    "syslog2": "^1.0.6",
     "tailable-capped-array": "^0.1.0",
     "through2": "^2.0.0",
     "underscore.string": "^3.0.2",
