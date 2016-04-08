@@ -182,7 +182,7 @@ var shortHashes = [
 // Taken from 'mbarrin' on 2015-10-20
 var userAccessToken = process.env.USER_ACCESS_TOKEN
 
-var Runnable = require('runnable')
+var Runnable = require('@runnable/api-client')
 var async = require('async')
 
 var user = new Runnable(process.env.API_HOST)

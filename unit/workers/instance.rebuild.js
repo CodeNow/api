@@ -10,7 +10,7 @@ var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var Code = require('code')
 var expect = Code.expect
-var Runnable = require('runnable')
+var Runnable = require('@runnable/api-client')
 var Instance = require('models/mongo/instance')
 var User = require('models/mongo/user')
 
