@@ -60,6 +60,9 @@ describe('Instance Deployed Worker', function () {
       },
       build: '507f191e810c19729de860e2',
       contextVersion: {
+        createdBy: {
+          github: pushUserId
+        },
         appCodeVersions: [
           {
             lowerBranch: 'develop',
@@ -70,6 +73,9 @@ describe('Instance Deployed Worker', function () {
     })
     var testCv = new ContextVersion({
       _id: testCvId,
+      createdBy: {
+        github: pushUserId
+      },
       build: {
         triggeredBy: {
           github: pushUserId
