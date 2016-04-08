@@ -31,48 +31,6 @@ describe('GitHub Actions: ' + moduleName, function () {
         done()
       })
     })
-
-    it('should parse headCommit as {} if req.body.head_commit is null', function (done) {
-      var req = {
-        body: {
-          repository: {
-            id: 20736018,
-            name: 'api',
-            full_name: 'CodeNow/api',
-            owner: {
-              name: 'CodeNow',
-              email: 'live@codenow.com'
-            },
-            private: true
-          },
-          ref: 'refs/heads/feature-1'
-        }
-      }
-      var res = {}
-      githubActions.parseGitHubPushData(req, res, function (err) {
-        if (err) { return done(err) }
-        expect(req.githubPushInfo.branch).to.equal('feature-1')
-        expect(req.githubPushInfo.commitLog.length).to.equal(0)
-        expect(Object.keys(req.githubPushInfo.headCommit).length).to.equal(0)
-        done()
-      })
-    })
-
-    it('should return error if req.body.ref not found', function (done) {
-      var req = {
-        body: {
-          repository: 'podviaznikov/hellonode',
-          head_commit: {}
-        }
-      }
-      var res = {}
-      githubActions.parseGitHubPushData(req, res, function (err) {
-        expect(err.output.statusCode).to.equal(400)
-        expect(err.output.payload.message).to.equal('Unexpected commit hook format. Ref is required')
-        done()
-      })
-    })
-
     it('should parse branch and default to [] for commmitLog', function (done) {
       var headCommit = {
         id: '77485a1a3c2fcf1a6db52e72bf1c05f40336d244',
@@ -146,7 +104,6 @@ describe('GitHub Actions: ' + moduleName, function () {
         expect(req.githubPushInfo.repoName).to.equal('api')
         expect(req.githubPushInfo.repoOwnerOrgName).to.equal('CodeNow')
         expect(req.githubPushInfo.ref).to.equal(req.body.ref)
-        expect(req.githubPushInfo.headCommit).to.equal(headCommit)
         expect(req.githubPushInfo.commit).to.equal(headCommit.id)
         expect(req.githubPushInfo.commitLog.length).to.equal(1)
         expect(req.githubPushInfo.commitLog[0]).to.equal(headCommit)

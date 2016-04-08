@@ -17,15 +17,10 @@ var it = lab.it
 
 var ContextVersion = require('models/mongo/context-version')
 var Mixpanel = require('models/apis/mixpanel')
-var PullRequest = require('models/apis/pullrequest')
-var Slack = require('notifications/slack')
 
 var api = require('./fixtures/api-control')
-var createCount = require('callback-count')
 var dock = require('./fixtures/dock')
 var dockerMockEvents = require('./fixtures/docker-mock-events')
-var exists = require('101/exists')
-var expects = require('./fixtures/expects')
 var generateKey = require('./fixtures/key-factory')
 var hooks = require('./fixtures/github-hooks')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
@@ -242,15 +237,6 @@ describe('Github - /actions/github', function () {
     })
 
     describe('autofork', function () {
-      var slackStub
-      beforeEach(function (done) {
-        slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoFork')
-        done()
-      })
-      afterEach(function (done) {
-        slackStub.restore()
-        done()
-      })
       beforeEach(function (done) {
         multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
           if (err) { return done(err) }
@@ -259,17 +245,7 @@ describe('Github - /actions/github', function () {
           ctx.build = build
           ctx.user = user
           ctx.instance = instance
-          var settings = {
-            owner: {
-              github: user.attrs.accounts.github.id
-            }
-          }
-          user.createSetting({json: settings}, function (err, body) {
-            if (err) { return done(err) }
-            expect(body._id).to.exist()
-            ctx.settingsId = body._id
-            done()
-          })
+          done()
         })
       })
 
@@ -344,41 +320,17 @@ describe('Github - /actions/github', function () {
       })
 
       describe('enabled autoforking', function () {
-        var successStub
         beforeEach(function (done) {
           ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH
           process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true'
-          successStub = sinon.stub(PullRequest.prototype, 'deploymentSucceeded')
           done()
         })
         afterEach(function (done) {
           process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking
-          successStub.restore()
           done()
         })
 
         it('should fork instance from master', function (done) {
-          // three callbacks here:
-          // 1. post should complete
-          // 2. context versions should finish
-          // 3. 'start' action from primus
-          var finalCount = createCount(3, function (err) {
-            if (err) { return done(err) }
-            // validate what we stubbed
-            sinon.assert.calledOnce(successStub)
-            sinon.assert.calledOnce(slackStub)
-            sinon.assert.calledWith(
-              slackStub,
-              sinon.match.object,
-              sinon.match.object
-            )
-            var forkedInstance = slackStub.args[0][1]
-            expect(forkedInstance.name).to.equal('feature-1-' + ctx.instance.attrs.name)
-            sinon.assert.calledOnce(UserWhitelist.findOne)
-            sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: login.toLowerCase() })
-            done()
-          })
-
           var login = ctx.user.attrs.accounts.github.login
           var id = ctx.user.attrs.accounts.github.id
           require('./fixtures/mocks/github/users-username')(id, login)
@@ -393,21 +345,15 @@ describe('Github - /actions/github', function () {
           }
           var options = hooks(data).push
 
-          var contextCount = finishContextVersions(1, finalCount.next)
-
-          // 3. wait for container create worker to finish
-          primus.expectActionCount('start', 1, finalCount.next)
-
           // post must complete
           request.post(options, function (err, res, cvIds) {
-            if (err) { return finalCount.next(err) }
+            if (err) { return done(err) }
             expect(res.statusCode).to.equal(200)
             expect(cvIds).to.exist()
             expect(cvIds).to.be.an.array()
             expect(cvIds).to.have.length(1)
             expect(cvIds[0]).to.exist()
-            contextCount(cvIds[0])
-            finalCount.next()
+            done()
           })
         })
 
@@ -424,92 +370,18 @@ describe('Github - /actions/github', function () {
               done()
             })
           })
-
-          it('should return 1 instancesIds if 1 instance was deleted', function (done) {
-            require('./fixtures/mocks/docker/build-logs')()
-            rabbitMQ.deleteInstance.restore()
-            var acv = ctx.contextVersion.attrs.appCodeVersions[0]
-            var user = ctx.user.attrs.accounts.github
-            var data = {
-              branch: 'feature-1',
-              repo: acv.repo,
-              ownerId: user.id,
-              owner: user.login
-            }
-            var username = user.login
-            // emulate instance deploy event
-
-            var options = hooks(data).push
-
-            var countCb = createCount(2, done)
-            require('./fixtures/mocks/github/users-username')(user.id, username)
-            require('./fixtures/mocks/github/user')(username)
-            require('./fixtures/mocks/github/users-username')(user.id, username)
-            require('./fixtures/mocks/github/user')(username)
-
-            // counter for finishing building forks.
-            var contextCount = finishContextVersions(1, function (err) {
-              if (err) { return countCb.next(err) }
-              sinon.assert.calledOnce(slackStub)
-              sinon.assert.calledWith(
-                slackStub,
-                sinon.match.object,
-                sinon.match.object
-              )
-              // at this point, the create worker has finished.
-
-              // wait for the deleteInstance task to be enqueued.
-              sinon.stub(rabbitMQ, 'deleteInstance', function () { countCb.next() })
-
-              var deleteOptions = hooks(data).push
-              deleteOptions.json.deleted = true
-              require('./fixtures/mocks/github/user-id')(
-                ctx.user.attrs.accounts.github.id,
-                ctx.user.attrs.accounts.github.login
-              )
-              require('./fixtures/mocks/github/user-id')(
-                ctx.user.attrs.accounts.github.id,
-                ctx.user.attrs.accounts.github.login
-              )
-              // post should complete to delete instance.
-              request.post(deleteOptions, function (err, res, body) {
-                if (err) { return countCb.next(err) }
-                expect(res.statusCode).to.equal(201)
-                expect(body.length).to.equal(1)
-                countCb.next()
-              })
-            })
-
-            // post to kick off build.
-            request.post(options, function (err, res, cvIds) {
-              if (err) { return done(err) }
-              expect(res.statusCode).to.equal(200)
-              expect(cvIds).to.exist()
-              expect(cvIds).to.be.an.array()
-              expect(cvIds).to.have.length(1)
-              sinon.assert.calledOnce(UserWhitelist.findOne)
-              sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: sinon.match.string })
-              contextCount(cvIds[0])
-            })
-          })
         })
       })
     })
 
     describe('autodeploy', function () {
-      var successStub
-      var slackStub
       beforeEach(function (done) {
         ctx.originalAutoForking = process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH
         process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = 'true'
-        successStub = sinon.stub(PullRequest.prototype, 'deploymentSucceeded')
-        slackStub = sinon.stub(Slack.prototype, 'notifyOnAutoDeploy')
         done()
       })
       afterEach(function (done) {
         process.env.ENABLE_AUTOFORK_ON_BRANCH_PUSH = ctx.originalAutoForking
-        slackStub.restore()
-        successStub.restore()
         done()
       })
       beforeEach(function (done) {
@@ -520,17 +392,7 @@ describe('Github - /actions/github', function () {
           ctx.build = build
           ctx.user = user
           ctx.instance = instance
-          var settings = {
-            owner: {
-              github: user.attrs.accounts.github.id
-            }
-          }
-          user.createSetting({json: settings}, function (err, body) {
-            if (err) { return done(err) }
-            expect(body._id).to.exist()
-            ctx.settingsId = body._id
-            done()
-          })
+          done()
         })
       })
 
@@ -558,80 +420,6 @@ describe('Github - /actions/github', function () {
             sinon.assert.calledOnce(UserWhitelist.findOne)
             sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: sinon.match.string })
             done()
-          })
-        })
-      })
-
-      describe('with two instances', function () {
-        var stopListeningToBuildRunning
-        beforeEach(function (done) {
-          var count = createCount(2, done)
-          ctx.instance2 = ctx.user.copyInstance(ctx.instance.attrs.shortHash, {}, count.next)
-          primus.expectActionCount('start', 1, count.next)
-        })
-        beforeEach(function (done) {
-          // Emit build complete for all `build_running` containers
-          stopListeningToBuildRunning = primus.listenToAction('build_running', function (err, actionData) {
-            if (err) return err
-            dockerMockEvents.emitBuildComplete(actionData.data.data)
-          })
-          done()
-        })
-        afterEach(function (done) {
-          stopListeningToBuildRunning()
-          done()
-        })
-
-        it('should redeploy two instances with new build', function (done) {
-          require('./fixtures/mocks/docker/build-logs')()
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0]
-          var user = ctx.user.attrs.accounts.github
-          var data = {
-            branch: 'master',
-            repo: acv.repo,
-            ownerId: user.id,
-            owner: user.login
-          }
-          var options = hooks(data).push
-          options.json.created = false
-          var username = user.login
-          require('./fixtures/mocks/github/users-username')(user.id, username)
-          require('./fixtures/mocks/github/user')(username)
-
-          require('./fixtures/mocks/github/users-username')(user.id, username)
-          require('./fixtures/mocks/github/user')(username)
-          // wait for container create worker to finish
-          primus.expectActionCount('start', 2, function () {
-            var expected = {
-              'contextVersion.build.started': exists,
-              'contextVersion.build.completed': exists,
-              'contextVersion.build.duration': exists,
-              'contextVersion.build.triggeredBy.github': exists,
-              'contextVersion.appCodeVersions[0].lowerRepo': options.json.repository.full_name.toLowerCase(),
-              'contextVersion.appCodeVersions[0].commit': options.json.head_commit.id,
-              'contextVersion.appCodeVersions[0].branch': data.branch,
-              'contextVersion.build.triggeredAction.manual': false,
-              'contextVersion.build.triggeredAction.appCodeVersion.repo': options.json.repository.full_name,
-              'contextVersion.build.triggeredAction.appCodeVersion.commit': options.json.head_commit.id
-            }
-            sinon.assert.calledTwice(successStub)
-            sinon.assert.calledTwice(slackStub)
-            sinon.assert.calledWith(slackStub, sinon.match.object, sinon.match.object)
-            ctx.instance.fetch(expects.success(200, expected, function (err) {
-              if (err) { return done(err) }
-              ctx.instance2.fetch(expects.success(200, expected, function () {
-                sinon.assert.calledOnce(UserWhitelist.findOne)
-                sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: sinon.match.string })
-                done()
-              }))
-            }))
-          })
-          request.post(options, function (err, res, cvIds) {
-            if (err) { return done(err) }
-            expect(res.statusCode).to.equal(200)
-            expect(cvIds).to.exist()
-            expect(cvIds).to.be.an.array()
-            expect(cvIds).to.have.length(2)
           })
         })
       })
@@ -691,26 +479,4 @@ function finishAllIncompleteVersions (cb) {
       cb()
     }
   })
-}
-
-function finishContextVersions (numberOfCvs, callback) {
-  var contextVersions = []
-
-  var count = createCount(1 + numberOfCvs, function (err) {
-    if (err) { return callback(err) }
-    ContextVersion.find({ _id: { $in: contextVersions } }, function (err, cvs) {
-      if (err) { return callback(err) }
-      cvs.forEach(function (cv) {
-        dockerMockEvents.emitBuildComplete(cv)
-      })
-      callback()
-    })
-  })
-
-  primus.expectActionCount('build_running', numberOfCvs, function () { count.next() })
-
-  return function watchVersion (contextVersionId) {
-    contextVersions.push(contextVersionId)
-    count.next()
-  }
 }

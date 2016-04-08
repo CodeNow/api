@@ -10,6 +10,7 @@ var Code = require('code')
 var Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
 
+var Build = require('models/mongo/build')
 var cleanMongo = require('../../../test/functional/fixtures/clean-mongo.js')
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
@@ -17,8 +18,10 @@ var dock = require('../../../test/functional/fixtures/dock')
 var mongo = require('../../fixtures/mongo')
 var InstanceService = require('models/services/instance-service')
 var Instance = require('models/mongo/instance')
+var User = require('models/mongo/user')
 var joi = require('utils/joi')
 var rabbitMQ = require('models/rabbitmq')
+var Runnable = require('models/apis/runnable')
 var messenger = require('socket/messenger')
 var ObjectId = require('mongoose').Types.ObjectId
 
@@ -39,10 +42,7 @@ var expectErr = function (expectedErr, done) {
   }
 }
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('InstanceService: ' + moduleName, function () {
+describe('InstanceService', function () {
   var ctx
   before(dock.start)
   before(mongo.connect)
@@ -51,6 +51,159 @@ describe('InstanceService: ' + moduleName, function () {
   beforeEach(function (done) {
     ctx = {}
     done()
+  })
+
+  describe('#updateBuild', function () {
+    beforeEach(function (done) {
+      ctx.mockGithubUserId = 12345
+      ctx.mockUser = new User({
+        _id: 'some-id',
+        accounts: {
+          github: {
+            id: ctx.mockGithubUserId
+          }
+        }
+      })
+      ctx.mockInstance = {
+        _id: 123123,
+        shortHash: 'ab1',
+        createdBy: {
+          github: ctx.mockGithubUserId
+        }
+      }
+      ctx.mockBuild = { _id: 123 }
+      sinon.stub(User, 'findByGithubIdAsync').resolves(ctx.mockUser)
+      sinon.stub(Runnable.prototype, 'updateInstance').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      User.findByGithubIdAsync.restore()
+      Runnable.prototype.updateInstance.restore()
+      done()
+    })
+    it('should fail if user lookup failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      User.findByGithubIdAsync.rejects(mongoError)
+      InstanceService.updateBuild(ctx.mockInstance, ctx.mockBuild)
+        .asCallback(function (err) {
+          expect(err).to.equal(mongoError)
+          done()
+        })
+    })
+    it('should fail if update instnance failed', function (done) {
+      var apiError = new Error('Api error')
+      Runnable.prototype.updateInstance.yieldsAsync(apiError)
+      InstanceService.updateBuild(ctx.mockInstance, ctx.mockBuild)
+        .asCallback(function (err) {
+          expect(err.message).to.equal(apiError.message)
+          done()
+        })
+    })
+    it('should fetch user and update an instance', function (done) {
+      InstanceService.updateBuild(ctx.mockInstance, ctx.mockBuild)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(User.findByGithubIdAsync)
+          sinon.assert.calledWith(User.findByGithubIdAsync, ctx.mockInstance.createdBy.github)
+          sinon.assert.calledOnce(Runnable.prototype.updateInstance)
+          sinon.assert.calledWith(Runnable.prototype.updateInstance,
+            ctx.mockInstance.shortHash, { json: { build: ctx.mockBuild._id } })
+          done()
+        })
+    })
+  })
+
+  describe('#updateBuildByRepoAndBranch', function () {
+    beforeEach(function (done) {
+      ctx.build = {
+        _id: '1233'
+      }
+      ctx.instances = [
+        {
+          _id: 1
+        },
+        {
+          _id: 2
+        }
+      ]
+      sinon.stub(Build, 'findByContextVersionIdsAsync').resolves([ctx.build])
+      sinon.stub(Instance, 'findInstancesLinkedToBranchAsync').resolves(ctx.instances)
+      sinon.stub(InstanceService, 'updateBuild').resolves(null)
+      done()
+    })
+    afterEach(function (done) {
+      Build.findByContextVersionIdsAsync.restore()
+      Instance.findInstancesLinkedToBranchAsync.restore()
+      InstanceService.updateBuild.restore()
+      done()
+    })
+    it('should fail if build lookup failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Build.findByContextVersionIdsAsync.rejects(mongoError)
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(mongoError.message)
+          done()
+        })
+    })
+    it('should fail if instances lookup failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findInstancesLinkedToBranchAsync.rejects(mongoError)
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(mongoError.message)
+          done()
+        })
+    })
+    it('should fail if build update failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      InstanceService.updateBuild.rejects(mongoError)
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(mongoError.message)
+          done()
+        })
+    })
+    it('should call find build', function (done) {
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Build.findByContextVersionIdsAsync)
+          sinon.assert.calledWith(Build.findByContextVersionIdsAsync, ['123123'])
+          done()
+        })
+    })
+    it('should call find instances', function (done) {
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findInstancesLinkedToBranchAsync)
+          sinon.assert.calledWith(Instance.findInstancesLinkedToBranchAsync, 'codenow/api', ' master')
+          done()
+        })
+    })
+    it('should not call find instances if builds was not found', function (done) {
+      Build.findByContextVersionIdsAsync.resolves([])
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(Instance.findInstancesLinkedToBranchAsync)
+          done()
+        })
+    })
+    it('should call update builds', function (done) {
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(InstanceService.updateBuild)
+          sinon.assert.calledWith(InstanceService.updateBuild, ctx.instances[0], ctx.build)
+          sinon.assert.calledWith(InstanceService.updateBuild, ctx.instances[1], ctx.build)
+          done()
+        })
+    })
   })
 
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
