@@ -13,6 +13,8 @@
     ]
   },
   "dependencies": {
+    "@runnable/api-client": "git://github.com/Runnable/api-client.git#dynamic-isolation-urls",
+    "@runnable/hostname": "git://github.com/Runnable/hostname.git#add-isolation-check-to-urls",
     "101": "^1.2.0",
     "JSONStream": "0.10.x",
     "array-subtract": "^2.0.0",
@@ -67,7 +69,7 @@
     "monitor-dog": "^1.4.1",
     "morgan": "^1.1.1",
     "multiparty": "^4.1.2",
-    "navi-entry": "git+ssh://git@github.com/CodeNow/navi-entry.git#v3.0.2",
+    "navi-entry": "git+ssh://git@github.com/CodeNow/navi-entry.git#add-isolation",
     "newrelic": "git+ssh://git@github.com/runnable/node-newrelic.git#6e53a76abd3827667ad1ad9076e57b8399257d1c",
     "node-dogstatsd": "0.0.5",
     "node-forge": "^0.6.12",
@@ -92,9 +94,7 @@
     "retry": "^0.9.0",
     "rollbar": "0.5.4",
     "runna4j": "^0.1.0",
-    "@runnable/api-client": "git://github.com/Runnable/api-client.git#dynamic-isolation-urls",
     "runnable-hermes": "git://github.com/Runnable/hermes.git#v6.4.0",
-    "@runnable/hostname": "git://github.com/Runnable/hostname.git#add-isolation-check-to-urls",
     "sendgrid": "^1.9.2",
     "shimmer": "^1.0.0",
     "slack-client": "~1.4.0",
