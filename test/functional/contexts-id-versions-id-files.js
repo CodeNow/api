@@ -80,7 +80,6 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       ctx.files = ctx.contextVersion.rootDir.contents.fetch(function (err) {
         if (err) { return done(err) }
         var count = createCount(2, done)
-        var count = createCount(1, done)
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'Dockerfile', 'stuff')
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
         require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt')
