@@ -63,25 +63,25 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       done(err)
     })
   })
+
   describe('GET', function () {
     it('should give us files from a given version', function (done) {
       var expected = [
         createFile(ctx.context.id(), '/', 'Dockerfile')
       ]
-      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
-      ctx.contextVersion.rootDir.contents.fetch(function (err, body) {
-        console.log('BODY', body)
-        done()
-      })
+      require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/', 'stuffz')
+      ctx.contextVersion.rootDir.contents.fetch(expects.success(200, expected, done))
     })
   })
+
   describe('POST - discard changes', function () {
     beforeEach(function (done) {
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
       ctx.files = ctx.contextVersion.rootDir.contents.fetch(function (err) {
         if (err) { return done(err) }
         var count = createCount(2, done)
-        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'Dockerfile')
+        var count = createCount(1, done)
+        require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'Dockerfile', 'stuff')
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
         require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file.txt')
         require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'file.txt')
@@ -92,13 +92,10 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
             body: 'asdf'
           }
         }, count.next)
-        console.log('XXXX fetch')
-        ctx.dockerfile = ctx.contextVersion.fetchFile('/Dockerfile', function (err, body, som, res) {
-          console.log('XXXXX DONE', body, som, res)
-          count.next()
-        })
+        ctx.dockerfile = ctx.contextVersion.fetchFile('/Dockerfile', count.next)
       })
     })
+
     it('should get rid of all the changes we had', function (done) {
       require('./fixtures/mocks/s3/get-object')(ctx.srcContext.id(), '/')
       require('./fixtures/mocks/s3/get-object')(ctx.srcContext.id(), 'Dockerfile')
@@ -118,6 +115,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
       }))
     })
   })
+
   describe('POST', function () {
     // it('should create a file with multi-part upload', function (done) {
     //   require('./fixtures/mocks/s3/multi-part-upload')(ctx.context, 'log-stream.js')
