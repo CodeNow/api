@@ -86,20 +86,6 @@ describe('200 PATCH /instances/:id', function () {
     rabbitMQ.deleteInstance.restore()
     done()
   })
-  beforeEach(function (done) {
-    docker.createContainer({
-      Image: 'ubuntu',
-      Cmd: ['/bin/bash'],
-      name: 'fight-frustration'
-    }, function (err, container) {
-      if (err) { return done(err) }
-      container.inspect(function (err, data) {
-        if (err) { return done(err) }
-        ctx.container = data
-        done()
-      })
-    })
-  })
 
   // after
   afterEach(primus.disconnect)
