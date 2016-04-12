@@ -584,7 +584,7 @@ describe('Isolation Services Model', function () {
       sinon.stub(Isolation, 'createIsolation').resolves(mockNewIsolation)
       sinon.stub(IsolationService, 'forkRepoChild').resolves(mockNewChildRepoInstance)
       sinon.stub(IsolationService, 'forkNonRepoChild').resolves(mockNewChildInstance)
-      sinon.stub(IsolationService, '_updateMasterEnv').resolves(mockInstance)
+      sinon.stub(IsolationService, 'updateDependenciesForIsolation').resolves(mockInstance)
       sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       done()
@@ -596,7 +596,7 @@ describe('Isolation Services Model', function () {
       Isolation.createIsolation.restore()
       IsolationService.forkRepoChild.restore()
       IsolationService.forkNonRepoChild.restore()
-      IsolationService._updateMasterEnv.restore()
+      IsolationService.updateDependenciesForIsolation.restore()
       IsolationService._emitUpdateForInstances.restore()
       rabbitMQ.redeployInstanceContainer.restore()
       done()
@@ -663,9 +663,9 @@ describe('Isolation Services Model', function () {
           })
       })
 
-      it('should reject with any _updateMasterEnv error', function (done) {
+      it('should reject with any updateDependenciesForIsolation error', function (done) {
         var error = new Error('pugsly')
-        IsolationService._updateMasterEnv.rejects(error)
+        IsolationService.updateDependenciesForIsolation.rejects(error)
         IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -772,13 +772,13 @@ describe('Isolation Services Model', function () {
         })
     })
 
-    it('should update the master env', function (done) {
+    it('should update all of the dependencies', function (done) {
       IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(IsolationService._updateMasterEnv)
+          sinon.assert.calledOnce(IsolationService.updateDependenciesForIsolation)
           sinon.assert.calledWithExactly(
-            IsolationService._updateMasterEnv,
+            IsolationService.updateDependenciesForIsolation,
             mockInstance,
             []
           )
@@ -1097,7 +1097,12 @@ describe('Isolation Services Model', function () {
   describe('#deleteIsolation', function () {
     var isolationId = 'deadbeefdeadbeefdeadbeef'
     var mockIsolation = {}
-    var mockInstance = { _id: 'foobar', createdBy: { github: 4 } }
+    var mockInstance = {
+      _id: 'foobar',
+      createdBy: { github: 4 },
+      owner: { username: 'owner' },
+      setDependenciesFromEnvironmentAsync: sinon.stub()
+    }
     var mockChildInstances
     var mockChildInstance = { _id: 'childInstanceId' }
 
@@ -1111,6 +1116,7 @@ describe('Isolation Services Model', function () {
       sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
+      mockInstance.setDependenciesFromEnvironmentAsync.reset()
       done()
     })
 
@@ -1168,7 +1174,7 @@ describe('Isolation Services Model', function () {
 
       it('should reject with any _removeIsolationFromEnv errors', function (done) {
         var error = new Error('pugsly')
-        IsolationService._removeIsolationFromEnv.rejects(error)
+        mockInstance.setDependenciesFromEnvironmentAsync.rejects(error)
         IsolationService.deleteIsolation(isolationId)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -1248,8 +1254,8 @@ describe('Isolation Services Model', function () {
       IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(IsolationService._removeIsolationFromEnv)
-          sinon.assert.calledWithExactly(IsolationService._removeIsolationFromEnv, mockInstance)
+          sinon.assert.calledOnce(mockInstance.setDependenciesFromEnvironmentAsync)
+          sinon.assert.calledWithExactly(mockInstance.setDependenciesFromEnvironmentAsync, mockInstance.owner.username)
           done()
         })
     })
@@ -1325,7 +1331,6 @@ describe('Isolation Services Model', function () {
           Instance.find.calledBefore(mockInstance.deIsolate)
           sinon.assert.callOrder(
             mockInstance.deIsolate,
-            IsolationService._removeIsolationFromEnv,
             Isolation.findOneAndRemove,
             rabbitMQ.redeployInstanceContainer
           )
