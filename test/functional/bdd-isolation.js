@@ -79,55 +79,6 @@ describe('BDD - Isolation', function () {
   })
 
   describe('isolation with children', function () {
-    describe('that are referenced via environment variables', function () {
-      beforeEach(function (done) {
-        var username = ctx.user.attrs.accounts.github.username
-        var update = {
-          env: [ 'FOO=api-instance-staging-' + username + '.' + process.env.USER_CONTENT_DOMAIN ]
-        }
-        ctx.webInstance.update(update, function (err) {
-          if (err) { return done(err) }
-          var opts = {
-            master: ctx.webInstance.attrs._id.toString(),
-            children: [
-              { instance: ctx.apiInstance.attrs._id.toString() }
-            ]
-          }
-          ctx.isolation = ctx.user.createIsolation(opts, done)
-        })
-      })
-
-      it('should modify the envs of the isolated instance', function (done) {
-        var count = createCount(2, done)
-        primus.expectAction('redeploy', count.next)
-        var username = ctx.user.attrs.accounts.github.username.toLowerCase()
-        ctx.webInstance.fetch(function (err, instance) {
-          if (err) { return count.next(err) }
-          var shortHash = ctx.webInstance.attrs.shortHash.toLowerCase()
-          expect(instance.env[0]).to.equal(
-            'FOO=' + shortHash + '--api-instance-staging-' + username + '.' + process.env.USER_CONTENT_DOMAIN
-          )
-          count.next()
-        })
-      })
-
-      it('should remove the env updates when the isolation is deleted', function (done) {
-        var count = createCount(2, done)
-        primus.expectAction('redeploy', count.next)
-        var username = ctx.user.attrs.accounts.github.username.toLowerCase()
-        ctx.isolation.destroy(function (err) {
-          if (err) { return count.next(err) }
-          ctx.webInstance.fetch(function (err, instance) {
-            if (err) { return count.next(err) }
-            expect(instance.env[0]).to.equal(
-              'FOO=api-instance-staging-' + username + '.' + process.env.USER_CONTENT_DOMAIN
-            )
-            count.next()
-          })
-        })
-      })
-    })
-
     it('should let us make an isolation', function (done) {
       var count = createCount(2, done)
       primus.expectAction('redeploy', count.next)
@@ -245,7 +196,7 @@ describe('BDD - Isolation', function () {
         })
       })
 
-      it('should mark the child as a master pod', function (done) {
+      it('should not mark the child as a master pod', function (done) {
         var childName = [
           ctx.webInstance.attrs.shortHash,
           ctx.apiInstance.attrs.lowerName
@@ -257,7 +208,7 @@ describe('BDD - Isolation', function () {
         ctx.user.fetchInstances(opts, function (err, instances) {
           if (err) { return done(err) }
           expect(instances).to.have.length(1)
-          expect(instances[0].masterPod).to.equal(true)
+          expect(instances[0].masterPod).to.equal(false)
           done()
         })
       })
