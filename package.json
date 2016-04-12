@@ -13,8 +13,8 @@
     ]
   },
   "dependencies": {
-    "@runnable/api-client": "git://github.com/Runnable/api-client.git#dynamic-isolation-urls",
-    "@runnable/hostname": "git://github.com/Runnable/hostname.git#add-isolation-check-to-urls",
+    "@runnable/api-client": "^7.0.0",
+    "@runnable/hostname": "^3.0.0",
     "101": "^1.2.0",
     "JSONStream": "0.10.x",
     "array-subtract": "^2.0.0",
