@@ -13,12 +13,14 @@ var pick = require('101/pick')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
+var AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 var Bunyan = require('bunyan')
 var Github = require('models/apis/github')
 var Instance = require('models/mongo/instance')
 var InstanceForkService = require('models/services/instance-fork-service')
 var Isolation = require('models/mongo/isolation')
 var rabbitMQ = require('models/rabbitmq')
+var User = require('models/mongo/user')
 
 var IsolationService = require('models/services/isolation-service')
 
@@ -1429,6 +1431,110 @@ describe('Isolation Services Model', function () {
           )
           done()
         })
+    })
+  })
+
+  describe('autoIsolate', function () {
+    var mockInstance = {
+      _id: 'foobar',
+      parent: 'parentId',
+      createdBy: { github: 1 }
+    }
+    var newInstances = [ mockInstance ]
+    var mockAIC = { requestedDependencies: [] }
+    var mockInstanceUser = { user: 1 }
+    var mockPushUser = { user: 2 }
+    var pushInfo = { user: { id: 2 } }
+
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
+      sinon.stub(AutoIsolationConfig, 'findOne').yieldsAsync(null, mockAIC)
+      sinon.stub(User, 'findByGithubId').yieldsAsync(new Error('nope'))
+        .withArgs(1).yieldsAsync(null, mockInstanceUser)
+        .withArgs(2).yieldsAsync(null, mockPushUser)
+      sinon.stub(IsolationService, 'createIsolationAndEmitInstanceUpdates').resolves()
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOne.restore()
+      AutoIsolationConfig.findOne.restore()
+      User.findByGithubId.restore()
+      IsolationService.createIsolationAndEmitInstanceUpdates.restore()
+      done()
+    })
+
+    it('should find each instance', function (done) {
+      IsolationService.autoIsolate(newInstances, pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findOne)
+          sinon.assert.calledWithExactly(
+            Instance.findOne,
+            { shortHash: 'parentId' },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should look for auto isolation config', function (done) {
+      IsolationService.autoIsolate(newInstances, pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(AutoIsolationConfig.findOne)
+          sinon.assert.calledWithExactly(
+            AutoIsolationConfig.findOne,
+            { instance: 'foobar' },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should find a user from the instance', function (done) {
+      IsolationService.autoIsolate(newInstances, pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(User.findByGithubId)
+          sinon.assert.calledWithExactly(
+            User.findByGithubId,
+            1,
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should find a user from the push info', function (done) {
+      IsolationService.autoIsolate(newInstances, pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(User.findByGithubId)
+          sinon.assert.calledWithExactly(
+            User.findByGithubId,
+            2,
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should find a user from the push info', function (done) {
+      IsolationService.autoIsolate(newInstances, pushInfo)
+      .asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(IsolationService.createIsolationAndEmitInstanceUpdates)
+        sinon.assert.calledWithExactly(
+          IsolationService.createIsolationAndEmitInstanceUpdates,
+          {
+            master: 'foobar',
+            children: []
+          },
+          { user: 2 }
+        )
+        done()
+      })
     })
   })
 })

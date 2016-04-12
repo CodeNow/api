@@ -105,6 +105,16 @@ describe('201 POST /instances', function () {
   after(dock.stop.bind(ctx))
   after(require('../../fixtures/mocks/api-client').clean)
 
+  beforeEach(function (done) {
+    sinon.stub(rabbitMQ, 'instanceDeployed').returns()
+    done()
+  })
+
+  afterEach(function (done) {
+    rabbitMQ.instanceDeployed.restore()
+    done()
+  })
+
   describe('For User', function () {
     describe('with in-progress build', function () {
       beforeEach(function (done) {
@@ -159,6 +169,7 @@ describe('201 POST /instances', function () {
 
         assertCreate(body, function () {
           primus.onceVersionComplete(ctx.cv.id(), function () {
+            sinon.assert.notCalled(rabbitMQ.instanceDeployed)
             done()
           })
           dockerMockEvents.emitBuildComplete(ctx.cv)
@@ -214,6 +225,7 @@ describe('201 POST /instances', function () {
           if (err) { return done(err) }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv)
           ctx.body = body
+          sinon.assert.notCalled(rabbitMQ.instanceDeployed)
           var jobData = rabbitMQ.createInstanceContainer.getCall(0).args[0]
           expect(rabbitMQ.createInstanceContainer.calledOnce).to.be.true()
           expect(jobData.instanceId.toString()).to.equal(body._id.toString())
