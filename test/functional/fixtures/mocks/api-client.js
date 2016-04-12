@@ -14,7 +14,7 @@ module.exports.setup = function (cb) {
   }
 
   // INSTANCE
-  mocksForMethods(require('runnable/lib/models/instance'), {
+  mocksForMethods(require('@runnable/api-client/lib/models/instance'), {
     create: function () {
       require('../../fixtures/mocks/github/user')(this.opts.user)
       require('../../fixtures/mocks/github/user')(this.opts.user)
@@ -43,7 +43,7 @@ module.exports.setup = function (cb) {
   })
 
   // BUILD
-  mocksForMethods(require('runnable/lib/models/build'), {
+  mocksForMethods(require('@runnable/api-client/lib/models/build'), {
     build: function () {
       require('../../fixtures/mocks/github/user')(this.opts.user)
       require('../../fixtures/mocks/github/user')(this.opts.user)
@@ -54,7 +54,7 @@ module.exports.setup = function (cb) {
   })
 
   // CONTEXT
-  mocksForMethods(require('runnable/lib/models/context'), {
+  mocksForMethods(require('@runnable/api-client/lib/models/context'), {
     create: function () {
       var opts = optsForCreateOrUpdate.apply(this, arguments)
       if (ownerIsOrg.call(this, opts.json)) {
@@ -65,7 +65,7 @@ module.exports.setup = function (cb) {
   })
 
   // CONTEXT VERSION
-  mocksForMethods(require('runnable/lib/models/context/version'), {
+  mocksForMethods(require('@runnable/api-client/lib/models/context/version'), {
     create: function () {
       var opts = optsForCreateOrUpdate.apply(this, arguments)
       var contextId = this.path().split('/')[1]
@@ -114,7 +114,7 @@ module.exports.setup = function (cb) {
   })
 
   // CONTEXT VERSION FILES
-  mocksForMethods(require('runnable/lib/models/context/version/file'), {
+  mocksForMethods(require('@runnable/api-client/lib/models/context/version/file'), {
     create: function () {
       var opts = optsForCreateOrUpdate.apply(this, arguments)
       var contextId = this.path().split('/')[1]
@@ -140,7 +140,7 @@ module.exports.setup = function (cb) {
   })
 
   // APP CODE VERSIONS
-  mocksForMethods(require('runnable/lib/models/context/version/app-code-version'), {
+  mocksForMethods(require('@runnable/api-client/lib/models/context/version/app-code-version'), {
     create: function () {
       var opts = optsForCreateOrUpdate.apply(this, arguments)
       var username = 'repo-owner'
