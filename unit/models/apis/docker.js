@@ -625,8 +625,8 @@ describe('docker: ' + moduleName, function () {
       done()
     })
 
-    it('should add prev dock if it exist', function (done) {
-      ctx.mockContextVersion.dockerHost = 'http://10.0.0.1:4242'
+    it('should add dock constraint if prevDockerHost exist', function (done) {
+      ctx.mockContextVersion.prevDockerHost = 'http://10.0.0.1:4242'
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
@@ -634,6 +634,18 @@ describe('docker: ' + moduleName, function () {
       })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
         .to.equal('["org==owner","node==~ip-10-0-0-1.owner"]')
+      done()
+    })
+
+    it('should not add dock constraint if no prevDockerHost', function (done) {
+      delete ctx.mockContextVersion.prevDockerHost
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: ctx.mockSessionUser
+      })
+      expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
+        .to.equal('["org==owner"]')
       done()
     })
   })
