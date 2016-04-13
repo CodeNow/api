@@ -624,6 +624,18 @@ describe('docker: ' + moduleName, function () {
       expect(imageBuilderContainerLabels.tid).to.equal('123')
       done()
     })
+
+    it('should add prev dock if it exist', function (done) {
+     ctx.mockContextVersion.dockerHost = 'http://10.0.0.1:4242'
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: ctx.mockSessionUser
+      })
+      expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
+        .to.equal('["org==owner","node==~ip-10-0-0-1.owner"]')
+      done()
+    })
   })
 
   describe('_createImageBuilderEnv', function () {
