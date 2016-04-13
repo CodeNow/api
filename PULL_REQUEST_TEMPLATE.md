@@ -1,4 +1,4 @@
-[//]: # (Let's get your best description here about what's happend! Here's a list as well, if you like:)
+[//]: # (Let's get your best description here about what's happened! Here's a list as well, if you like:)
 
 * I removed this function
 * I fixed all these things, etc.
