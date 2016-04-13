@@ -626,7 +626,7 @@ describe('docker: ' + moduleName, function () {
     })
 
     it('should add prev dock if it exist', function (done) {
-     ctx.mockContextVersion.dockerHost = 'http://10.0.0.1:4242'
+      ctx.mockContextVersion.dockerHost = 'http://10.0.0.1:4242'
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
