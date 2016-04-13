@@ -13,7 +13,7 @@ require('loadenv')()
 var Context = require('models/mongo/context')
 var User = require('models/mongo/user')
 var async = require('async')
-var Runnable = require('runnable')
+var Runnable = require('@runnable/api-client')
 var user = new Runnable(process.env.FULL_API_DOMAIN)
 var mongoose = require('mongoose')
 var sources = [{

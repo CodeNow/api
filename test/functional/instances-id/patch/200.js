@@ -7,7 +7,6 @@ var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
 var Code = require('code')
-var Docker = require('dockerode')
 
 var api = require('../../fixtures/api-control')
 var createCount = require('callback-count')
@@ -28,7 +27,7 @@ var rabbitMQ = require('models/rabbitmq')
 var InstanceService = require('models/services/instance-service')
 var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
-function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
+function expectInstanceUpdated (body, statusCode, user, build, cv) {
   user = user.json()
   build = build.json()
   cv = cv.json()
@@ -51,31 +50,17 @@ function expectInstanceUpdated (body, statusCode, user, build, cv, container) {
     autoForked: false,
     masterPod: false
   }
-  if (container) {
-    delete deepContain.containers
-    expect(body.containers[0].inspect.Id).to.equal(container.Id)
-    expect(body.containers[0].dockerContainer).to.equal(container.Id)
-  }
   expect(body).deep.contain(deepContain)
 }
 
 describe('200 PATCH /instances/:id', function () {
   var ctx = {}
-  var docker
   // before
   before(api.start.bind(ctx))
   before(dock.start.bind(ctx))
   before(require('../../fixtures/mocks/api-client').setup)
   beforeEach(primus.connect)
 
-  before(function (done) {
-    // container to update test w/ later
-    docker = ctx.docker = new Docker({
-      host: 'localhost',
-      port: 4243
-    })
-    done()
-  })
   before(function (done) {
     // prevent worker to be created
     sinon.stub(rabbitMQ, 'deleteInstance', function () {})
@@ -85,20 +70,6 @@ describe('200 PATCH /instances/:id', function () {
   after(function (done) {
     rabbitMQ.deleteInstance.restore()
     done()
-  })
-  beforeEach(function (done) {
-    docker.createContainer({
-      Image: 'ubuntu',
-      Cmd: ['/bin/bash'],
-      name: 'fight-frustration'
-    }, function (err, container) {
-      if (err) { return done(err) }
-      container.inspect(function (err, data) {
-        if (err) { return done(err) }
-        ctx.container = data
-        done()
-      })
-    })
   })
 
   // after
