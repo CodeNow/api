@@ -69,7 +69,7 @@
     "monitor-dog": "^1.4.1",
     "morgan": "^1.1.1",
     "multiparty": "^4.1.2",
-    "navi-entry": "git+ssh://git@github.com/CodeNow/navi-entry.git#v4.0.0",
+    "navi-entry": "git+ssh://git@github.com/CodeNow/navi-entry.git#fix-key-generation",
     "newrelic": "git+ssh://git@github.com/runnable/node-newrelic.git#6e53a76abd3827667ad1ad9076e57b8399257d1c",
     "node-dogstatsd": "0.0.5",
     "node-forge": "^0.6.12",
