@@ -181,6 +181,7 @@ describe('Isolation Services Integration Tests', function () {
         .then(function (instanceModel) {
           forked[instanceName] = instanceModel
           sinon.stub(instanceModel, 'getMainBranchName').returns('branch1')
+          instanceModel.contextVersion.appCodeVersions = [{ lowerRepo: instanceName.toLowerCase() }]
           return instanceModel
         })
     }
