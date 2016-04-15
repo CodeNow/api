@@ -374,6 +374,90 @@ describe('Isolation Services Model', function () {
     })
   })
 
+  describe('#_updateDependenciesForInstanceWithChildren', function () {
+    var mockMasterInstance = {
+      lowerName: 'foo-api',
+      isolated: 'deadbeefdeadbeefdeadbeef',
+      owner: { username: 'barnow' },
+      isIsolationGroupMaster: true,
+      contextVersion: {
+        appCodeVersions: [{
+          lowerRepo: 'barnow/api'
+        }]
+      }
+    }
+    var mockChildInstance = {
+      lowerName: 'deadbe--mongodb',
+      owner: { username: 'barnow' },
+      isolated: 'deadbeefdeadbeefdeadbeef'
+    }
+    var children = [mockMasterInstance, mockChildInstance]
+    var mockDependencyNode = { lowerName: 'mongodb' }
+    var mockOtherDependencyNode = { lowerName: 'redis' }
+
+    beforeEach(function (done) {
+      mockMasterInstance.getDependenciesAsync = sinon.stub().resolves([mockDependencyNode, mockOtherDependencyNode])
+      mockMasterInstance.getElasticHostname = sinon.stub().returns('foo-api-staging-barnow.runnableapp.com')
+      mockMasterInstance._doc = mockMasterInstance
+      mockMasterInstance.addDependencyAsync = sinon.stub().resolves()
+      mockMasterInstance.removeDependencyAsync = sinon.stub().resolves()
+      mockChildInstance.getElasticHostname = sinon.stub().returns('deadbe--mongodb-staging-barnow.runnableapp.com')
+      done()
+    })
+
+    it('should fetch the dependencies for the instance', function (done) {
+      IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockMasterInstance.getDependenciesAsync)
+          done()
+        })
+    })
+
+    it('should add dependencies discovered in the graph', function (done) {
+      IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockMasterInstance.addDependencyAsync)
+          sinon.assert.calledWithExactly(
+            mockMasterInstance.addDependencyAsync,
+            mockChildInstance,
+            'mongodb-staging-barnow.runnableapp.com'
+          )
+          done()
+        })
+    })
+
+    it('should remove previous dependencies matching ones we have isolated', function (done) {
+      IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockMasterInstance.removeDependencyAsync)
+          sinon.assert.calledWithExactly(
+            mockMasterInstance.removeDependencyAsync,
+            mockDependencyNode
+          )
+          done()
+        })
+    })
+
+    // this is a pretty redundant test (because of the calledOnce above), but it's very
+    // important that we don't delete other nodes that were in the graph.
+    it('should ignore other dependencies that were in the graph', function (done) {
+      IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
+        .asCallback(function (err) {
+          expect(err).to.not.exist(mockMasterInstance.removeDependencyAsync)
+          for (var i = 0; i < mockMasterInstance.removeDependencyAsync.callCount; ++i) {
+            var callCheck = mockMasterInstance.removeDependencyAsync.getCall(i).notCalledWith(
+              mockOtherDependencyNode
+            )
+            expect(callCheck).to.be.true()
+          }
+          done()
+        })
+    })
+  })
+
   describe('#createIsolationAndEmitInstanceUpdates', function () {
     var mockRepoInstance = { org: 'Runnable', repo: 'someRepo', branch: 'someBranch' }
     var mockNonRepoInstance = { instance: 'childNonRepo' }
