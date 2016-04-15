@@ -377,7 +377,7 @@ describe('Isolation Services Model', function () {
   describe('#_updateDependenciesForInstanceWithChildren', function () {
     var mockMasterInstance = {
       lowerName: 'foo-api',
-      isolated: 'deadbeef',
+      isolated: 'deadbeefdeadbeefdeadbeef',
       owner: { username: 'barnow' },
       isIsolationGroupMaster: true,
       contextVersion: {
@@ -387,9 +387,9 @@ describe('Isolation Services Model', function () {
       }
     }
     var mockChildInstance = {
-      lowerName: 'deadbeef--mongodb',
+      lowerName: 'deadbe--mongodb',
       owner: { username: 'barnow' },
-      isolated: 'deadbeef'
+      isolated: 'deadbeefdeadbeefdeadbeef'
     }
     var children = [mockMasterInstance, mockChildInstance]
     var mockDependencyNode = { lowerName: 'mongodb' }
@@ -401,7 +401,7 @@ describe('Isolation Services Model', function () {
       mockMasterInstance._doc = mockMasterInstance
       mockMasterInstance.addDependencyAsync = sinon.stub().resolves()
       mockMasterInstance.removeDependencyAsync = sinon.stub().resolves()
-      mockChildInstance.getElasticHostname = sinon.stub().returns('deadbeef--mongodb-staging-barnow.runnableapp.com')
+      mockChildInstance.getElasticHostname = sinon.stub().returns('deadbe--mongodb-staging-barnow.runnableapp.com')
       done()
     })
 
