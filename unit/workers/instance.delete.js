@@ -258,7 +258,9 @@ describe('Instance Delete Worker', function () {
           instanceMasterBranch: testInstance.contextVersion.appCodeVersions[0].lowerBranch,
           container: testInstance.container,
           ownerGithubId: testInstance.owner.github,
-          ownerGithubUsername: testInstance.owner.username
+          ownerGithubUsername: testInstance.owner.username,
+          isolated: testInstance.isolated,
+          isIsolationGroupMaster: testInstance.isIsolationGroupMaster
         })
         done()
       })
