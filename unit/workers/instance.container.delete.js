@@ -32,7 +32,9 @@ describe('instance.container.delete unit test', function () {
     instanceName: 'instanceNameTest',
     instanceShortHash: 'instanceShortHashTest',
     ownerGithubId: 12345,
-    ownerGithubUsername: 'ownerGithubUsernameTest'
+    ownerGithubUsername: 'ownerGithubUsernameTest',
+    isolation: 1234,
+    isIsolationGroupMaster: false
   }
 
   beforeEach(function (done) {
@@ -191,7 +193,9 @@ describe('instance.container.delete unit test', function () {
             branch: testJobData.instanceMasterBranch,
             masterPod: testJobData.instanceMasterPod,
             instanceName: testJobData.instanceName,
-            shortHash: testJobData.instanceShortHash
+            shortHash: testJobData.instanceShortHash,
+            isolated: testJobData.isolated,
+            isIsolationGroupMaster: testJobData.isIsolationGroupMaster
           },
           testJob.container,
           sinon.match.func
@@ -229,13 +233,10 @@ describe('instance.container.delete unit test', function () {
       })
     })
 
-    it('should resolve (with whatever removeContainer returns)', function (done) {
-      var someObject = { some: 'object' }
-      Docker.prototype.removeContainer.yieldsAsync(null, someObject)
-      InstanceContainerDelete(testJob).asCallback(function (err, result) {
+    it('should resolve', function (done) {
+      Docker.prototype.removeContainer.yieldsAsync(null)
+      InstanceContainerDelete(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
-
-        expect(result).to.equal(someObject)
         done()
       })
     })
@@ -245,7 +246,6 @@ describe('instance.container.delete unit test', function () {
         expect(err).to.not.exist()
 
         sinon.assert.callOrder(
-          Hosts.prototype.removeHostsForInstance,
           Docker.prototype.stopContainer,
           Docker.prototype.removeContainer
         )
@@ -267,7 +267,6 @@ describe('instance.container.delete unit test', function () {
         expect(err).to.not.exist()
 
         sinon.assert.callOrder(
-          Hosts.prototype.removeHostsForInstance,
           Docker.prototype.stopContainer,
           Docker.prototype.removeContainer
         )
