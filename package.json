@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "101": "^1.2.0",
-    "@runnable/api-client": "^7.0.1",
+    "@runnable/api-client": "^7.0.2",
     "@runnable/hostname": "^3.0.0",
     "JSONStream": "0.10.x",
     "array-subtract": "^2.0.0",
