@@ -367,46 +367,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             })
         })
       })
-      describe('With an error getting the build logs', function () {
-        beforeEach(createStreamFunction(false, true))
-        afterEach(function (done) {
-          Dockerode.prototype.getContainer.restore()
-          done()
-        })
-
-        it('should not update the UI', function (done) {
-          var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user, 1)
-          OnImageBuilderContainerDie(job)
-            .asCallback(function (err) {
-              expect(err).to.exist()
-              sinon.assert.notCalled(OnImageBuilderContainerDie._handleBuildComplete)
-              sinon.assert.notCalled(ContextVersion.updateBuildErrorByContainer)
-
-              sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
-              // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
-              sinon.assert.notCalled(Build.updateCompletedByContextVersionIds)
-              sinon.assert.notCalled(Instance.emitInstanceUpdates)
-              sinon.assert.notCalled(Instance.prototype.emitInstanceUpdate)
-              sinon.assert.notCalled(messenger.messageRoom)
-
-              sinon.assert.notCalled(rabbitMQ.instanceUpdated)
-              sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
-              ContextVersion.findOne(ctx.cv._id, function (err, cv) {
-                if (err) { return done(err) }
-                expect(cv.build.completed).to.not.exist()
-                expect(cv.build.failed).to.not.exist()
-                Build.findBy('contextVersions', cv._id, function (err, builds) {
-                  if (err) { return done(err) }
-                  builds.forEach(function (build) {
-                    expect(build.completed).to.exist()
-                    expect(build.failed).to.exist()
-                  })
-                  done()
-                })
-              })
-            })
-        })
-      })
       describe('With 2 CVs, one that dedups', function () {
         beforeEach(function (done) {
           mockFactory.createStartedCv(ctx.githubId, ctx.cv.toJSON(), function (err, version) {

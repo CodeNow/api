@@ -54,7 +54,7 @@ function mongoFindAllInstances (cb) {
   })
 }
 
-var Runnable = require('runnable')
+var Runnable = require('@runnable/api-client')
 function loginModerator (instances, cb) {
   var user = new Runnable(process.env.API_HOST)
   user.githubLogin(process.env.RUNNABLE_TOKEN, function (err) {

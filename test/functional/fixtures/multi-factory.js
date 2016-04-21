@@ -24,7 +24,7 @@ module.exports = {
   findUser: function (userId, cb) {
     log.trace({}, 'findUser')
     var host = require('./host')
-    var User = require('runnable')
+    var User = require('@runnable/api-client')
     var opts = { userContentDomain: process.env.USER_CONTENT_DOMAIN }
     var user = new User(host, opts)
     MongoUser.findOne({'accounts.github.id': userId}, function (err, userDoc) {
@@ -62,7 +62,7 @@ module.exports = {
     var token = uuid()
     var name = opts.username || randStr(5)
     require('./mocks/github/action-auth')(token, undefined, name)
-    var User = require('runnable')
+    var User = require('@runnable/api-client')
     opts.userContentDomain = process.env.USER_CONTENT_DOMAIN
     var user = new User(host, opts)
     user.githubLogin(token, function (err) {
@@ -71,6 +71,7 @@ module.exports = {
       } else {
         user.attrs.accounts.github.accessToken = token
         user.attrs.accounts.github.username = name
+        user.attrs.accounts._json = {}
         log.trace({
           token: token,
           name: name,
@@ -87,7 +88,7 @@ module.exports = {
     var token = uuid()
     require('./mocks/github/action-auth')(token,
       process.env.HELLO_RUNNABLE_GITHUB_ID)
-    var User = require('runnable')
+    var User = require('@runnable/api-client')
     var user = new User(host)
     user.opts.userContentDomain = process.env.USER_CONTENT_DOMAIN
     user.githubLogin(token, function (err) {

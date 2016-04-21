@@ -73,7 +73,7 @@ describe('PUT /instances/:id/actions/restart', function () {
       env: [],
       owner: {
         username: ctx.user.json().accounts.github.login,
-        gravatar: ctx.user.json().accounts.github.avatar_url,
+        gravatar: ctx.user.json().gravatar,
         github: ctx.user.json().accounts.github.id
       },
       contextVersions: exists,

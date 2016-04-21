@@ -143,14 +143,6 @@ describe('Build Stream', function () {
         require('./fixtures/mocks/docker/build-logs.js')()
         var client = new PrimusClient('http://localhost:' + process.env.PORT)
         // start build stream
-        client.write({
-          id: 1,
-          event: 'build-stream',
-          data: {
-            id: body.contextVersions[0],
-            streamId: body.contextVersions[0]
-          }
-        })
         // create substream for build logs
         var count = createCount(2, done)
         var buildStream = client.substream(body.contextVersions[0])
@@ -174,6 +166,14 @@ describe('Build Stream', function () {
           expect(objectBuffer[0].content).to.match(/^Successfully built .+/)
           count.next()
         })
+        client.write({
+          id: 1,
+          event: 'build-stream',
+          data: {
+            id: body.contextVersions[0],
+            streamId: body.contextVersions[0]
+          }
+        })
       })
 
       require('./fixtures/mocks/github/user')(ctx.user)
@@ -191,11 +191,15 @@ describe('Build Stream', function () {
       primus.onceVersionBuildRunning(ctx.cv.id(), function () {
         primus.onceVersionComplete(ctx.cv.id(), function () {
           // start build stream
-          var count = createCount(done)
+          var count = createCount(people, done)
           var client
           for (var i = 0; i < people; i++) {
+            require('./fixtures/mocks/docker/build-logs.js')()
             client = new PrimusClient('http://localhost:' + process.env.PORT)
             // start build stream
+            var buildStream = client.substream(body.contextVersions[0])
+            // var concatStream = concat(assertForClient(client, count.inc().next))
+            watchClientAndStream(client, buildStream, count.next)
             client.write({
               id: 1,
               event: 'build-stream',
@@ -204,9 +208,6 @@ describe('Build Stream', function () {
                 streamId: body.contextVersions[0]
               }
             })
-            var buildStream = client.substream(body.contextVersions[0])
-            // var concatStream = concat(assertForClient(client, count.inc().next))
-            watchClientAndStream(client, buildStream, count.inc().next)
           }
           function watchClientAndStream (c, s, cb) {
             var objectBuffer = []

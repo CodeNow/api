@@ -40,4 +40,12 @@ describe('400 PATCH /contexts/:contextid/versions/:id', function () {
       done()
     })
   })
+
+  it('should handle error with buildDockerfilePath', function (done) {
+    ctx.cv.update({ buildDockerfilePath: 1234 }, function (err) {
+      expect(err.message).to.contain('must be a string')
+      expect(err.message).to.contain('buildDockerfilePath')
+      done()
+    })
+  })
 })

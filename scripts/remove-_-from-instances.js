@@ -5,7 +5,7 @@ var Instances = require('models/mongo/instance')
 var Users = require('models/mongo/user')
 var async = require('async')
 var mongoose = require('mongoose')
-var Runnable = require('runnable')
+var Runnable = require('@runnable/api-client')
 
 var dryRun = !process.env.ACTUALLY_RUN
 if (!process.env.API_HOST) {

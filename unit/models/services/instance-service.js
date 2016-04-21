@@ -11,16 +11,18 @@ var Code = require('code')
 var Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
 
-var cleanMongo = require('../../../test/functional/fixtures/clean-mongo.js')
 var Build = require('models/mongo/build')
+var cleanMongo = require('../../../test/functional/fixtures/clean-mongo.js')
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var dock = require('../../../test/functional/fixtures/dock')
 var mongo = require('../../fixtures/mongo')
 var InstanceService = require('models/services/instance-service')
 var Instance = require('models/mongo/instance')
+var User = require('models/mongo/user')
 var joi = require('utils/joi')
 var rabbitMQ = require('models/rabbitmq')
+var Runnable = require('models/apis/runnable')
 var messenger = require('socket/messenger')
 var ObjectId = require('mongoose').Types.ObjectId
 
@@ -228,6 +230,159 @@ describe('InstanceService', function () {
     })
   })
 
+  describe('#updateBuild', function () {
+    beforeEach(function (done) {
+      ctx.mockGithubUserId = 12345
+      ctx.mockUser = new User({
+        _id: 'some-id',
+        accounts: {
+          github: {
+            id: ctx.mockGithubUserId
+          }
+        }
+      })
+      ctx.mockInstance = {
+        _id: 123123,
+        shortHash: 'ab1',
+        createdBy: {
+          github: ctx.mockGithubUserId
+        }
+      }
+      ctx.mockBuild = { _id: 123 }
+      sinon.stub(User, 'findByGithubIdAsync').resolves(ctx.mockUser)
+      sinon.stub(Runnable.prototype, 'updateInstance').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      User.findByGithubIdAsync.restore()
+      Runnable.prototype.updateInstance.restore()
+      done()
+    })
+    it('should fail if user lookup failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      User.findByGithubIdAsync.rejects(mongoError)
+      InstanceService.updateBuild(ctx.mockInstance, ctx.mockBuild)
+        .asCallback(function (err) {
+          expect(err).to.equal(mongoError)
+          done()
+        })
+    })
+    it('should fail if update instnance failed', function (done) {
+      var apiError = new Error('Api error')
+      Runnable.prototype.updateInstance.yieldsAsync(apiError)
+      InstanceService.updateBuild(ctx.mockInstance, ctx.mockBuild)
+        .asCallback(function (err) {
+          expect(err.message).to.equal(apiError.message)
+          done()
+        })
+    })
+    it('should fetch user and update an instance', function (done) {
+      InstanceService.updateBuild(ctx.mockInstance, ctx.mockBuild)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(User.findByGithubIdAsync)
+          sinon.assert.calledWith(User.findByGithubIdAsync, ctx.mockInstance.createdBy.github)
+          sinon.assert.calledOnce(Runnable.prototype.updateInstance)
+          sinon.assert.calledWith(Runnable.prototype.updateInstance,
+            ctx.mockInstance.shortHash, { json: { build: ctx.mockBuild._id } })
+          done()
+        })
+    })
+  })
+
+  describe('#updateBuildByRepoAndBranch', function () {
+    beforeEach(function (done) {
+      ctx.build = {
+        _id: '1233'
+      }
+      ctx.instances = [
+        {
+          _id: 1
+        },
+        {
+          _id: 2
+        }
+      ]
+      sinon.stub(Build, 'findByContextVersionIdsAsync').resolves([ctx.build])
+      sinon.stub(Instance, 'findInstancesLinkedToBranchAsync').resolves(ctx.instances)
+      sinon.stub(InstanceService, 'updateBuild').resolves(null)
+      done()
+    })
+    afterEach(function (done) {
+      Build.findByContextVersionIdsAsync.restore()
+      Instance.findInstancesLinkedToBranchAsync.restore()
+      InstanceService.updateBuild.restore()
+      done()
+    })
+    it('should fail if build lookup failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Build.findByContextVersionIdsAsync.rejects(mongoError)
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(mongoError.message)
+          done()
+        })
+    })
+    it('should fail if instances lookup failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findInstancesLinkedToBranchAsync.rejects(mongoError)
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(mongoError.message)
+          done()
+        })
+    })
+    it('should fail if build update failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      InstanceService.updateBuild.rejects(mongoError)
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(mongoError.message)
+          done()
+        })
+    })
+    it('should call find build', function (done) {
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Build.findByContextVersionIdsAsync)
+          sinon.assert.calledWith(Build.findByContextVersionIdsAsync, ['123123'])
+          done()
+        })
+    })
+    it('should call find instances', function (done) {
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findInstancesLinkedToBranchAsync)
+          sinon.assert.calledWith(Instance.findInstancesLinkedToBranchAsync, 'codenow/api', ' master')
+          done()
+        })
+    })
+    it('should not call find instances if builds was not found', function (done) {
+      Build.findByContextVersionIdsAsync.resolves([])
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(Instance.findInstancesLinkedToBranchAsync)
+          done()
+        })
+    })
+    it('should call update builds', function (done) {
+      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(InstanceService.updateBuild)
+          sinon.assert.calledWith(InstanceService.updateBuild, ctx.instances[0], ctx.build)
+          sinon.assert.calledWith(InstanceService.updateBuild, ctx.instances[1], ctx.build)
+          done()
+        })
+    })
+  })
+
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
     it('should return if instanceId param is missing', function (done) {
       sinon.spy(Instance, 'findForkedInstances')
@@ -274,36 +429,82 @@ describe('InstanceService', function () {
         })
     })
 
-    it('should not create new jobs if instances were not found', function (done) {
-      sinon.stub(Instance, 'findForkedInstances')
-        .yieldsAsync(null, [])
-      sinon.stub(rabbitMQ, 'deleteInstance')
-      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
-        function (err) {
-          expect(err).to.not.exist()
-          expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
-          Instance.findForkedInstances.restore()
-          rabbitMQ.deleteInstance.restore()
-          done()
-        })
-    })
+    describe('When queries succeed', function () {
+      beforeEach(function (done) {
+        sinon.stub(rabbitMQ, 'deleteInstance')
+        done()
+      })
+      afterEach(function (done) {
+        Instance.findForkedInstances.restore()
+        rabbitMQ.deleteInstance.restore()
+        done()
+      })
+      it('should not create new jobs if instances were not found', function (done) {
+        sinon.stub(Instance, 'findForkedInstances')
+          .yieldsAsync(null, [])
+        InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
+          function (err) {
+            expect(err).to.not.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
+            done()
+          })
+      })
 
-    it('should create 2 jobs if 3 instances were found and 1 filtered', function (done) {
-      sinon.stub(Instance, 'findForkedInstances')
-        .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
-      sinon.stub(rabbitMQ, 'deleteInstance')
-      InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
-        function (err) {
-          expect(err).to.not.exist()
-          expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
-          var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
-          expect(arg1.instanceId).to.equal('inst-1')
-          var arg2 = rabbitMQ.deleteInstance.getCall(1).args[0]
-          expect(arg2.instanceId).to.equal('inst-3')
-          Instance.findForkedInstances.restore()
-          rabbitMQ.deleteInstance.restore()
-          done()
-        })
+      it('should error if the original instance wasnt found', function (done) {
+        sinon.stub(Instance, 'findForkedInstances')
+          .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-4', 'api', 'master',
+          function (err) {
+            expect(err).to.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
+            done()
+          })
+      })
+
+      it('should create 2 jobs if 3 instances were found and 1 filtered', function (done) {
+        sinon.stub(Instance, 'findForkedInstances')
+          .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
+          function (err) {
+            expect(err).to.not.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
+            var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
+            expect(arg1.instanceId).to.equal('inst-1')
+            var arg2 = rabbitMQ.deleteInstance.getCall(1).args[0]
+            expect(arg2.instanceId).to.equal('inst-3')
+            done()
+          })
+      })
+
+      it('should create 1 job if 3 instances were found and 1 was isolated', function (done) {
+        sinon.stub(Instance, 'findForkedInstances').yieldsAsync(null, [
+          {_id: 'inst-1', isolated: '2sdasdasdasd'},
+          {_id: 'inst-2'},
+          {_id: 'inst-3'}
+        ])
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
+          function (err) {
+            expect(err).to.not.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(1)
+            var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
+            expect(arg1.instanceId).to.equal('inst-3')
+            done()
+          })
+      })
+
+      it('should not create any jobs since the original instance is isolated', function (done) {
+        sinon.stub(Instance, 'findForkedInstances').yieldsAsync(null, [
+          {_id: 'inst-1'},
+          {_id: 'inst-2', isolated: 'asdasdaer3'},
+          {_id: 'inst-3'}
+        ])
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
+          function (err) {
+            expect(err).to.not.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
+            done()
+          })
+      })
     })
   })
 

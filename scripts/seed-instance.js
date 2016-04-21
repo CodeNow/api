@@ -15,7 +15,7 @@
 // a runnable 0.2.1 script
 
 var async = require('async')
-var Runnable = require('runnable')
+var Runnable = require('@runnable/api-client')
 var user = new Runnable('localhost:3030')
 var uuid = require('uuid')
 

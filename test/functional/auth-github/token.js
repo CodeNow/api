@@ -10,14 +10,17 @@ var after = lab.after
 var afterEach = lab.afterEach
 var before = lab.before
 var beforeEach = lab.beforeEach
+var sinon = require('sinon')
 
 var request = require('request')
 
 var api = require('../fixtures/api-control')
-var url = require('url')
+var Github = require('models/apis/github')
+var getUserEmails = require('../fixtures/mocks/github/get-user-emails')
 var querystring = require('querystring')
-var uuid = require('uuid')
 var randStr = require('randomstring').generate
+var url = require('url')
+var uuid = require('uuid')
 
 describe('/auth/github with whitelist', function () {
   var ctx = {}
@@ -30,6 +33,19 @@ describe('/auth/github with whitelist', function () {
   after(api.stop.bind(ctx))
   after(function (done) {
     delete process.env.ENABLE_USER_WHITELIST
+    done()
+  })
+  before(function (done) {
+    // Stub out Github API call for `beforeEach` and `it` statements
+    sinon.stub(Github.prototype, 'getUserEmails').yieldsAsync(null, getUserEmails())
+    done()
+  })
+  after(function (done) {
+    Github.prototype.getUserEmails.restore()
+    done()
+  })
+  beforeEach(function (done) {
+    Github.prototype.getUserEmails.reset()
     done()
   })
   afterEach(require('../fixtures/clean-mongo').removeEverything)
@@ -45,7 +61,6 @@ describe('/auth/github with whitelist', function () {
 
     it('should not let the user authenticate', function (done) {
       require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken)
-      require('../fixtures/mocks/github/user-emails')()
       require('../fixtures/mocks/github/user-orgs')(1001, randStr(5))
       request.post({
         url: tokenUrl,
@@ -78,7 +93,6 @@ describe('/auth/github with whitelist', function () {
 
     it('should let the user authenticate', function (done) {
       require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken)
-      require('../fixtures/mocks/github/user-emails')()
       require('../fixtures/mocks/github/user-orgs')(1001, randStr(5))
       request.post({
         url: tokenUrl,
@@ -110,7 +124,6 @@ describe('/auth/github with whitelist', function () {
 
     it('should let the user authenticate', function (done) {
       require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken)
-      require('../fixtures/mocks/github/user-emails')()
       require('../fixtures/mocks/github/user-orgs')(1001, ctx.orgname)
       request.post({
         url: tokenUrl,

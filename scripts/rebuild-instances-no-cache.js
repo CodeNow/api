@@ -11,7 +11,7 @@ mongoose.connect(process.env.MONGO)
 var User = require('models/mongo/user.js')
 var Instance = require('models/mongo/instance')
 
-var Runnable = require('runnable')
+var Runnable = require('@runnable/api-client')
 var runnableClient = new Runnable(process.env.FULL_API_DOMAIN, {
   requestDefaults: {
     headers: {

@@ -77,9 +77,8 @@ describe('sendgrid: ' + moduleName, function () {
               expect(emailObject.subject, 'subject').to.equal(emailOpts.subject)
               expect(emailObject.text, 'text').to.equal(emailOpts.body)
               expect(emailObject.html, 'html').to.equal(emailOpts.htmlBody)
-              done()
             })
-            .catch(done)
+            .asCallback(done)
         })
 
         it('should send an email with substitutions and a template', function (done) {
@@ -111,9 +110,8 @@ describe('sendgrid: ' + moduleName, function () {
                   }
                 }
               })
-              done()
             })
-            .catch(done)
+            .asCallback(done)
         })
       })
       describe('failure', function () {
@@ -132,9 +130,8 @@ describe('sendgrid: ' + moduleName, function () {
             .catch(function (err) {
               expect(error).to.equal(err)
               sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
-              done()
             })
-            .catch(done)
+            .asCallback(done)
         })
 
         it('should throw a Boom error when the failure !isOperational', function (done) {
@@ -150,9 +147,8 @@ describe('sendgrid: ' + moduleName, function () {
               expect(err.output.payload.message).to.equal(error.message)
               expect(err.output.payload.error).to.equal('Bad Gateway')
               sinon.assert.calledOnce(sendgrid._sendgrid.sendAsync)
-              done()
             })
-            .catch(done)
+            .asCallback(done)
         })
       })
     })
@@ -165,8 +161,12 @@ describe('sendgrid: ' + moduleName, function () {
         sessionUserMe = {
           accounts: {
             github: {
-              displayName: 'nathan',
-              id: 'sadfasf23r2q31234'
+              _json: {
+                name: 'nathan meyers'
+              },
+              displayName: 'nathan meyers',
+              id: 'sadfasf23r2q31234',
+              username: 'Nathan219'
             }
           },
           findGithubOrgByGithubId: noop
@@ -175,8 +175,12 @@ describe('sendgrid: ' + moduleName, function () {
           email: 'ted@something.com',
           accounts: {
             github: {
-              displayName: 'ted',
-              id: 'sadfasf23r2q31234'
+              _json: {
+                name: 'ted ned'
+              },
+              displayName: 'ted ned',
+              id: 'sadfasf23r2q31234',
+              username: 'teddy'
             }
           }
         }
@@ -217,9 +221,36 @@ describe('sendgrid: ' + moduleName, function () {
               expect(sendEmailOptions.substitutions['%email%'], '%email%').to.equal('nathan@runnable.com')
               expect(sendEmailOptions.substitutions['%orgName%'], '%orgName%').to.equal('AcmeCorp')
               expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('nathan')
-              done()
             })
-            .catch(done)
+            .asCallback(done)
+        })
+        it('should get the requester\'s name from the embedded _json object in the sessionUser', function (done) {
+          sessionUserMe.findGithubOrgByGithubId.yieldsAsync(null, githubOrgResponse)
+          sendgrid.sendEmail.returns(Promise.resolve(true))
+          delete sessionUserMe.accounts.github.displayName
+          sendgrid.inviteUser(recipient, sessionUserMe, githubOrgResponse.id)
+            .then(function () {
+              sinon.assert.calledOnce(sendgrid.sendEmail)
+              var sendEmailOptions = sendgrid.sendEmail.args[0][0]
+
+              expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('nathan')
+            })
+            .asCallback(done)
+        })
+
+        it('should send an email with the user\'s username, since the name is empty', function (done) {
+          sessionUserMe.findGithubOrgByGithubId.yieldsAsync(null, githubOrgResponse)
+          sendgrid.sendEmail.returns(Promise.resolve(true))
+          delete sessionUserMe.accounts.github.displayName
+          delete sessionUserMe.accounts.github._json
+          sendgrid.inviteUser(recipient, sessionUserMe, githubOrgResponse.id)
+            .then(function () {
+              sinon.assert.calledOnce(sendgrid.sendEmail)
+              var sendEmailOptions = sendgrid.sendEmail.args[0][0]
+
+              expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('Nathan219')
+            })
+            .asCallback(done)
         })
         describe('error handling', function () {
           it('should log the github error if one happens', function (done) {
@@ -233,9 +264,8 @@ describe('sendgrid: ' + moduleName, function () {
                 sinon.assert.calledOnce(sessionUserMe.findGithubOrgByGithubId)
                 sinon.assert.calledWith(sessionUserMe.findGithubOrgByGithubId, '1234sfasdf')
                 sinon.assert.notCalled(sendgrid.sendEmail)
-                done()
               })
-              .catch(done)
+              .asCallback(done)
           })
 
           it('should log the error from SendGrid if there is one', function (done) {
@@ -249,9 +279,8 @@ describe('sendgrid: ' + moduleName, function () {
                 sinon.assert.calledOnce(sessionUserMe.findGithubOrgByGithubId)
                 sinon.assert.calledWith(sessionUserMe.findGithubOrgByGithubId, '1234sfasdf')
                 sinon.assert.calledOnce(sendgrid.sendEmail)
-                done()
               })
-              .catch(done)
+              .asCallback(done)
           })
         })
       })
@@ -269,15 +298,41 @@ describe('sendgrid: ' + moduleName, function () {
 
               expect(sendEmailOptions.email, 'email').to.equal(recipient.email)
               expect(sendEmailOptions.from, 'from').to.equal('ted@something.com')
-              expect(sendEmailOptions.fromname, 'fromname').to.equal('ted')
+              expect(sendEmailOptions.fromname, 'fromname').to.equal('ted ned')
               expect(sendEmailOptions.subject, 'subject').to.equal('%requester% has invited you to be an admin for a Runnable Team')
               expect(sendEmailOptions.body, 'body').to.contains(message)
               expect(sendEmailOptions.template, 'template').to.be.undefined()
               expect(sendEmailOptions.substitutions, 'substitutions').to.be.an.object()
               expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('ted')
-              done()
             })
-            .catch(done)
+            .asCallback(done)
+        })
+        it('should get the requester\'s name from the embedded _json object in the sessionUser', function (done) {
+          sendgrid.sendEmail.returns(Promise.resolve(true))
+
+          delete sessionUserMe.accounts.github.displayName
+          sendgrid.inviteAdmin(recipient, sessionUserThem, message)
+            .then(function () {
+              sinon.assert.calledOnce(sendgrid.sendEmail)
+              var sendEmailOptions = sendgrid.sendEmail.args[0][0]
+              expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('ted')
+            })
+            .asCallback(done)
+        })
+
+        it('should send an email with the user\'s username, since the name is empty', function (done) {
+          sendgrid.sendEmail.returns(Promise.resolve(true))
+
+          delete sessionUserThem.accounts.github.displayName
+          delete sessionUserThem.accounts.github._json
+          sendgrid.inviteAdmin(recipient, sessionUserThem, githubOrgResponse.id)
+            .then(function () {
+              sinon.assert.calledOnce(sendgrid.sendEmail)
+              var sendEmailOptions = sendgrid.sendEmail.args[0][0]
+
+              expect(sendEmailOptions.substitutions['%requester%'], '%requester%').to.equal('teddy')
+            })
+            .asCallback(done)
         })
         describe('error handling', function () {
           it('should log the error from SendGrid if there is one', function (done) {
@@ -288,9 +343,8 @@ describe('sendgrid: ' + moduleName, function () {
               .catch(function (err) {
                 expect(err).to.equal(error)
                 sinon.assert.calledOnce(sendgrid.sendEmail)
-                done()
               })
-              .catch(done)
+              .asCallback(done)
           })
         })
       })

@@ -13,12 +13,14 @@ var pick = require('101/pick')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
+var AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 var Bunyan = require('bunyan')
 var Github = require('models/apis/github')
 var Instance = require('models/mongo/instance')
 var InstanceForkService = require('models/services/instance-fork-service')
 var Isolation = require('models/mongo/isolation')
 var rabbitMQ = require('models/rabbitmq')
+var User = require('models/mongo/user')
 
 var IsolationService = require('models/services/isolation-service')
 
@@ -372,194 +374,87 @@ describe('Isolation Services Model', function () {
     })
   })
 
-  describe('#_updateMasterEnv', function () {
-    var mockMaster = {
-      _id: 'mockMasterId',
-      shortHash: 'beef',
-      owner: {
-        username: 'myorg'
+  describe('#_updateDependenciesForInstanceWithChildren', function () {
+    var mockMasterInstance = {
+      lowerName: 'foo-api',
+      isolated: 'deadbeefdeadbeefdeadbeef',
+      owner: { username: 'barnow' },
+      isIsolationGroupMaster: true,
+      contextVersion: {
+        appCodeVersions: [{
+          lowerRepo: 'barnow/api'
+        }]
       }
     }
-    var mockChildOne = {
-      _id: 'mockChildOneId',
-      lowerName: 'beef--childone'
+    var mockChildInstance = {
+      lowerName: 'deadbe--mongodb',
+      owner: { username: 'barnow' },
+      isolated: 'deadbeefdeadbeefdeadbeef'
     }
-    var mockChildTwo = {
-      _id: 'mockChildTwoId',
-      lowerName: 'beef--childtwo'
-    }
-    var mockChildren
-    var mockUpdatedMaster = { _id: 'mockMasterId', __v: 2 }
+    var children = [mockMasterInstance, mockChildInstance]
+    var mockDependencyNode = { lowerName: 'mongodb' }
+    var mockOtherDependencyNode = { lowerName: 'redis' }
 
     beforeEach(function (done) {
-      mockMaster.env = [ 'childone-staging-myorg.' + process.env.USER_CONTENT_DOMAIN ]
-      mockChildren = [ mockChildOne ]
-      mockUpdatedMaster.setDependenciesFromEnvironmentAsync = sinon.stub().resolves(mockUpdatedMaster)
-      sinon.stub(Instance, 'findOneAndUpdateAsync').resolves(mockUpdatedMaster)
+      mockMasterInstance.getDependenciesAsync = sinon.stub().resolves([mockDependencyNode, mockOtherDependencyNode])
+      mockMasterInstance.getElasticHostname = sinon.stub().returns('foo-api-staging-barnow.runnableapp.com')
+      mockMasterInstance._doc = mockMasterInstance
+      mockMasterInstance.addDependencyAsync = sinon.stub().resolves()
+      mockMasterInstance.removeDependencyAsync = sinon.stub().resolves()
+      mockChildInstance.getElasticHostname = sinon.stub().returns('deadbe--mongodb-staging-barnow.runnableapp.com')
       done()
     })
 
-    afterEach(function (done) {
-      Instance.findOneAndUpdateAsync.restore()
-      done()
-    })
-
-    describe('errors', function () {
-      it('should require a master', function (done) {
-        IsolationService._updateMasterEnv().asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/master.+required/)
+    it('should fetch the dependencies for the instance', function (done) {
+      IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockMasterInstance.getDependenciesAsync)
           done()
         })
-      })
+    })
 
-      it('should require children', function (done) {
-        IsolationService._updateMasterEnv(mockMaster).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/children.+required/)
+    it('should add dependencies discovered in the graph', function (done) {
+      IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockMasterInstance.addDependencyAsync)
+          sinon.assert.calledWithExactly(
+            mockMasterInstance.addDependencyAsync,
+            mockChildInstance,
+            'mongodb-staging-barnow.runnableapp.com'
+          )
           done()
         })
-      })
+    })
 
-      it('should require children to be an array', function (done) {
-        IsolationService._updateMasterEnv(mockMaster, {}).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/children.+array/)
+    it('should remove previous dependencies matching ones we have isolated', function (done) {
+      IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(mockMasterInstance.removeDependencyAsync)
+          sinon.assert.calledWithExactly(
+            mockMasterInstance.removeDependencyAsync,
+            mockDependencyNode
+          )
           done()
         })
-      })
+    })
 
-      describe('when updates are made', function () {
-        it('should reject with any database error', function (done) {
-          var error = new Error('pugsly')
-          Instance.findOneAndUpdateAsync.rejects(error)
-          IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err).to.equal(error)
-            done()
-          })
+    // this is a pretty redundant test (because of the calledOnce above), but it's very
+    // important that we don't delete other nodes that were in the graph.
+    it('should ignore other dependencies that were in the graph', function (done) {
+      IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
+        .asCallback(function (err) {
+          expect(err).to.not.exist(mockMasterInstance.removeDependencyAsync)
+          for (var i = 0; i < mockMasterInstance.removeDependencyAsync.callCount; ++i) {
+            var callCheck = mockMasterInstance.removeDependencyAsync.getCall(i).notCalledWith(
+              mockOtherDependencyNode
+            )
+            expect(callCheck).to.be.true()
+          }
+          done()
         })
-
-        it('should reject with any dependencies update error', function (done) {
-          var error = new Error('pugsly')
-          mockUpdatedMaster.setDependenciesFromEnvironmentAsync.rejects(error)
-          IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err).to.equal(error)
-            done()
-          })
-        })
-      })
-    })
-
-    it('should not replace env values if none match', function (done) {
-      mockMaster.env[0] = mockMaster.env[0].replace('childone', 'otherchild')
-      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
-        done()
-      })
-    })
-
-    it('should replace envs values of non-repo containers if it exists', function (done) {
-      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
-        sinon.assert.calledWithExactly(
-          Instance.findOneAndUpdateAsync,
-          { _id: mockMaster._id },
-          {
-            $set: {
-              env: [
-                'beef--childone-staging-myorg.' + process.env.USER_CONTENT_DOMAIN
-              ]
-            }
-          }
-        )
-        done()
-      })
-    })
-
-    it('should replace multiple envs values of non-repo containers if it exists', function (done) {
-      mockMaster.env.push('childtwo-staging-myorg.' + process.env.USER_CONTENT_DOMAIN)
-      mockChildren.push(mockChildTwo)
-      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
-        sinon.assert.calledWithExactly(
-          Instance.findOneAndUpdateAsync,
-          { _id: mockMaster._id },
-          {
-            $set: {
-              env: [
-                'beef--childone-staging-myorg.' + process.env.USER_CONTENT_DOMAIN,
-                'beef--childtwo-staging-myorg.' + process.env.USER_CONTENT_DOMAIN
-              ]
-            }
-          }
-        )
-        done()
-      })
-    })
-
-    it('should ignore envs that do not match', function (done) {
-      mockMaster.env.push('childthree-staging-myorg.' + process.env.USER_CONTENT_DOMAIN)
-      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
-        sinon.assert.calledWithExactly(
-          Instance.findOneAndUpdateAsync,
-          { _id: mockMaster._id },
-          {
-            $set: {
-              env: [
-                'beef--childone-staging-myorg.' + process.env.USER_CONTENT_DOMAIN,
-                'childthree-staging-myorg.' + process.env.USER_CONTENT_DOMAIN
-              ]
-            }
-          }
-        )
-        done()
-      })
-    })
-
-    it('should do nothing with extra children', function (done) {
-      mockMaster.env.push('childthree-staging-myorg.' + process.env.USER_CONTENT_DOMAIN)
-      mockChildren.push(mockChildTwo)
-      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
-        sinon.assert.calledWithExactly(
-          Instance.findOneAndUpdateAsync,
-          { _id: mockMaster._id },
-          {
-            $set: {
-              env: [
-                'beef--childone-staging-myorg.' + process.env.USER_CONTENT_DOMAIN,
-                'childthree-staging-myorg.' + process.env.USER_CONTENT_DOMAIN
-              ]
-            }
-          }
-        )
-        done()
-      })
-    })
-
-    it('should return the updated instance model', function (done) {
-      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
-        expect(err).to.not.exist()
-        expect(instance).to.equal(mockUpdatedMaster)
-        done()
-      })
-    })
-
-    it('should not replace env values if none match', function (done) {
-      mockMaster.env[0] = mockMaster.env[0].replace('childone', 'otherchild')
-      IsolationService._updateMasterEnv(mockMaster, mockChildren).asCallback(function (err, instance) {
-        expect(err).to.not.exist()
-        expect(instance).to.equal(mockMaster)
-        done()
-      })
     })
   })
 
@@ -584,7 +479,7 @@ describe('Isolation Services Model', function () {
       sinon.stub(Isolation, 'createIsolation').resolves(mockNewIsolation)
       sinon.stub(IsolationService, 'forkRepoChild').resolves(mockNewChildRepoInstance)
       sinon.stub(IsolationService, 'forkNonRepoChild').resolves(mockNewChildInstance)
-      sinon.stub(IsolationService, '_updateMasterEnv').resolves(mockInstance)
+      sinon.stub(IsolationService, 'updateDependenciesForIsolation').resolves(mockInstance)
       sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       done()
@@ -596,7 +491,7 @@ describe('Isolation Services Model', function () {
       Isolation.createIsolation.restore()
       IsolationService.forkRepoChild.restore()
       IsolationService.forkNonRepoChild.restore()
-      IsolationService._updateMasterEnv.restore()
+      IsolationService.updateDependenciesForIsolation.restore()
       IsolationService._emitUpdateForInstances.restore()
       rabbitMQ.redeployInstanceContainer.restore()
       done()
@@ -663,9 +558,9 @@ describe('Isolation Services Model', function () {
           })
       })
 
-      it('should reject with any _updateMasterEnv error', function (done) {
+      it('should reject with any updateDependenciesForIsolation error', function (done) {
         var error = new Error('pugsly')
-        IsolationService._updateMasterEnv.rejects(error)
+        IsolationService.updateDependenciesForIsolation.rejects(error)
         IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -772,13 +667,13 @@ describe('Isolation Services Model', function () {
         })
     })
 
-    it('should update the master env', function (done) {
+    it('should update all of the dependencies', function (done) {
       IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(IsolationService._updateMasterEnv)
+          sinon.assert.calledOnce(IsolationService.updateDependenciesForIsolation)
           sinon.assert.calledWithExactly(
-            IsolationService._updateMasterEnv,
+            IsolationService.updateDependenciesForIsolation,
             mockInstance,
             []
           )
@@ -1097,7 +992,12 @@ describe('Isolation Services Model', function () {
   describe('#deleteIsolation', function () {
     var isolationId = 'deadbeefdeadbeefdeadbeef'
     var mockIsolation = {}
-    var mockInstance = { _id: 'foobar', createdBy: { github: 4 } }
+    var mockInstance = {
+      _id: 'foobar',
+      createdBy: { github: 4 },
+      owner: { username: 'owner' },
+      setDependenciesFromEnvironmentAsync: sinon.stub()
+    }
     var mockChildInstances
     var mockChildInstance = { _id: 'childInstanceId' }
 
@@ -1111,6 +1011,7 @@ describe('Isolation Services Model', function () {
       sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
+      mockInstance.setDependenciesFromEnvironmentAsync.reset()
       done()
     })
 
@@ -1168,7 +1069,7 @@ describe('Isolation Services Model', function () {
 
       it('should reject with any _removeIsolationFromEnv errors', function (done) {
         var error = new Error('pugsly')
-        IsolationService._removeIsolationFromEnv.rejects(error)
+        mockInstance.setDependenciesFromEnvironmentAsync.rejects(error)
         IsolationService.deleteIsolation(isolationId)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -1248,8 +1149,8 @@ describe('Isolation Services Model', function () {
       IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(IsolationService._removeIsolationFromEnv)
-          sinon.assert.calledWithExactly(IsolationService._removeIsolationFromEnv, mockInstance)
+          sinon.assert.calledOnce(mockInstance.setDependenciesFromEnvironmentAsync)
+          sinon.assert.calledWithExactly(mockInstance.setDependenciesFromEnvironmentAsync, mockInstance.owner.username)
           done()
         })
     })
@@ -1325,7 +1226,6 @@ describe('Isolation Services Model', function () {
           Instance.find.calledBefore(mockInstance.deIsolate)
           sinon.assert.callOrder(
             mockInstance.deIsolate,
-            IsolationService._removeIsolationFromEnv,
             Isolation.findOneAndRemove,
             rabbitMQ.redeployInstanceContainer
           )
@@ -1424,6 +1324,110 @@ describe('Isolation Services Model', function () {
           )
           done()
         })
+    })
+  })
+
+  describe('autoIsolate', function () {
+    var mockInstance = {
+      _id: 'foobar',
+      parent: 'parentId',
+      createdBy: { github: 1 }
+    }
+    var newInstances = [ mockInstance ]
+    var mockAIC = { requestedDependencies: [] }
+    var mockInstanceUser = { user: 1 }
+    var mockPushUser = { user: 2 }
+    var pushInfo = { user: { id: 2 } }
+
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
+      sinon.stub(AutoIsolationConfig, 'findOne').yieldsAsync(null, mockAIC)
+      sinon.stub(User, 'findByGithubId').yieldsAsync(new Error('nope'))
+        .withArgs(1).yieldsAsync(null, mockInstanceUser)
+        .withArgs(2).yieldsAsync(null, mockPushUser)
+      sinon.stub(IsolationService, 'createIsolationAndEmitInstanceUpdates').resolves()
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOne.restore()
+      AutoIsolationConfig.findOne.restore()
+      User.findByGithubId.restore()
+      IsolationService.createIsolationAndEmitInstanceUpdates.restore()
+      done()
+    })
+
+    it('should find each instance', function (done) {
+      IsolationService.autoIsolate(newInstances, pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findOne)
+          sinon.assert.calledWithExactly(
+            Instance.findOne,
+            { shortHash: 'parentId' },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should look for auto isolation config', function (done) {
+      IsolationService.autoIsolate(newInstances, pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(AutoIsolationConfig.findOne)
+          sinon.assert.calledWithExactly(
+            AutoIsolationConfig.findOne,
+            { instance: 'foobar' },
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should find a user from the instance', function (done) {
+      IsolationService.autoIsolate(newInstances, pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(User.findByGithubId)
+          sinon.assert.calledWithExactly(
+            User.findByGithubId,
+            1,
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should find a user from the push info', function (done) {
+      IsolationService.autoIsolate(newInstances, pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(User.findByGithubId)
+          sinon.assert.calledWithExactly(
+            User.findByGithubId,
+            2,
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+    it('should find a user from the push info', function (done) {
+      IsolationService.autoIsolate(newInstances, pushInfo)
+      .asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(IsolationService.createIsolationAndEmitInstanceUpdates)
+        sinon.assert.calledWithExactly(
+          IsolationService.createIsolationAndEmitInstanceUpdates,
+          {
+            master: 'foobar',
+            children: []
+          },
+          { user: 2 }
+        )
+        done()
+      })
     })
   })
 })
