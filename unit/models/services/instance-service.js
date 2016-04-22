@@ -53,6 +53,62 @@ describe('InstanceService', function () {
     done()
   })
 
+  describe('#deleteInstanceContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
+      done()
+    })
+
+    afterEach(function (done) {
+      rabbitMQ.deleteInstanceContainer.restore()
+      done()
+    })
+
+    it('should publish new job', function (done) {
+      var instance = new Instance({
+        _id: 123123,
+        shortHash: 'ab1',
+        name: 'api',
+        createdBy: {
+          github: 123
+        },
+        owner: {
+          github: 124,
+          username: 'runnable'
+        },
+        masterPod: true,
+        isolated: false,
+        isIsolationGroupMaster: false,
+        contextVersions: [
+          {
+            appCodeVersions: [
+              {
+                additionalRepo: false,
+                branch: 'develop'
+              }
+            ]
+          }
+        ]
+      })
+      var container = {
+        dockerContainer: '46080d6253c8db55b8bbb9408654896964b86c63e863f1b3b0301057d1ad92ba'
+      }
+      InstanceService.deleteOldContainer(instance, container)
+      sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
+      var jobData = rabbitMQ.deleteInstanceContainer.getCall(0).args[0]
+      expect(jobData.instanceShortHash).to.equal(instance.shortHash)
+      expect(jobData.instanceName).to.equal(instance.name)
+      expect(jobData.instanceMasterPod).to.equal(instance.masterPod)
+      expect(jobData.instanceMasterBranch).to.equal('develop')
+      expect(jobData.container).to.equal(container)
+      expect(jobData.ownerGithubId).to.equal(instance.owner.github)
+      expect(jobData.ownerGithubUsername).to.equal(instance.owner.username)
+      expect(jobData.isolated).to.equal(instance.isolated)
+      expect(jobData.isIsolationGroupMaster).to.equal(instance.isIsolationGroupMaster)
+      done()
+    })
+  })
+
   describe('#updateBuild', function () {
     beforeEach(function (done) {
       ctx.mockGithubUserId = 12345
