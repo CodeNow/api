@@ -53,4 +53,76 @@ describe('build-files: ' + moduleName, function () {
       })
     })
   })
+
+  describe('getObject', function ()
+    var key = 'key'
+    var version = 'version'
+    var etag = 'etag'
+    beforeEach(function (done) {
+      sinon.stub(model.s3, 'getObject').yieldsAsync(null, {
+        getObjectResults: true
+      })
+
+      sinon.stub(model.s3, 'headObject').yieldsAsync(null, {
+        ContentLength: 1024
+      })
+      done()
+    })
+
+    afterEach(function (done) {
+      model.s3.getObject.restore()
+      model.s3.headObject.restore()
+      done()
+    })
+
+    it('should return the objects contents', function (done) {
+      model.getObject(key, version, etag, function (err, data) {
+        expect(err).to.not.exist()
+        expect(data).to.equal({
+          getObjectResults: true
+        })
+        sinon.assert.calledOnce(model.s3.headObject)
+        sinon.assert.calledWith(model.s3.headObject, {
+          Bucket: process.env.S3_CONTEXT_RESOURCE_BUCKET,
+          Key: 'some-context-id/source',
+          VersionId: version,
+          IfMatch: etag
+        }, sinon.match.func)
+
+        sinon.assert.calledOnce(model.s3.getObject)
+        sinon.assert.calledWith(model.s3.getObject, {
+          Bucket: process.env.S3_CONTEXT_RESOURCE_BUCKET,
+          Key: 'some-context-id/source',
+          VersionId: version,
+          IfMatch: etag
+        }, sinon.match.func)
+        done()
+      })
+    });
+    describe('if the object is too large', function () {
+      beforeEach(function (done) {
+        model.s3.headObject.yieldsAsync(null, {
+          ContentLength: 1024000000000000000
+        })
+        done()
+      })
+      it('should throw 413 error', function (done) {
+        model.getObject(key, version, etag, function (err) {
+          expect(err).to.exist()
+          expect(err.code).to.equal(413)
+          sinon.assert.calledOnce(model.s3.headObject)
+          sinon.assert.calledWith(model.s3.headObject, {
+            Bucket: process.env.S3_CONTEXT_RESOURCE_BUCKET,
+            Key: 'some-context-id/source',
+            VersionId: version,
+            IfMatch: etag
+          }, sinon.match.func)
+
+          sinon.assert.notCalled(model.s3.getObject)
+          done()
+        })
+      });
+    })
+
+  })
 })
