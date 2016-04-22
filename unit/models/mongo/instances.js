@@ -21,6 +21,7 @@ var hasProps = require('101/has-properties')
 var mongoose = require('mongoose')
 var pick = require('101/pick')
 var pluck = require('101/pluck')
+var assign = require('101/assign')
 var objectId = require('objectid')
 
 var Build = require('models/mongo/build')
@@ -1216,6 +1217,160 @@ describe('Instance Model Tests ' + moduleName, function () {
         process.env.REDIS_DNS_INVALIDATION_KEY + ':' + hostIp,
         localIp
       )).to.be.true()
+      done()
+    })
+  })
+
+  describe('fetchMatchingInstancesForDepChecking', function () {
+    var ownerName = 'someowner'
+    var isolationId = newObjectId()
+    var instance
+
+    beforeEach(function (done) {
+      instance = mongoFactory.createNewInstance('wooosh', {
+        isolated: isolationId
+      })
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.find.restore()
+      done()
+    })
+
+    describe('Error testing', function () {
+      it('should be fine with an empty array result', function (done) {
+        sinon.stub(Instance, 'find').yieldsAsync(null, [])
+        instance.fetchMatchingInstancesForDepChecking(ownerName)
+          .then(function (instances) {
+            expect(instances.length).to.equal(0)
+            sinon.assert.calledWith(
+              Instance.find,
+              {
+                lowerName: { $ne: instance.lowerName },
+                'owner.github': instance.owner.github,
+                masterPod: true
+              }
+            )
+          })
+          .asCallback(done)
+      })
+      it('should throw error from Mongo', function (done) {
+        var error = new Error('error')
+        sinon.stub(Instance, 'find').yieldsAsync(error)
+        instance.fetchMatchingInstancesForDepChecking(ownerName, true)
+          .asCallback(function (err) {
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+    })
+
+    describe('Test query creation', function () {
+      beforeEach(function (done) {
+        sinon.stub(Instance, 'find').yieldsAsync(null, [instance])
+        done()
+      })
+
+      it('should query for masterpods', function (done) {
+        instance.fetchMatchingInstancesForDepChecking(ownerName)
+          .then(function (instances) {
+            expect(instances[0]).to.deep.equal(assign(instance, {
+              hostname: instance.getElasticHostname(ownerName)
+            }))
+            sinon.assert.calledWith(
+              Instance.find,
+              {
+                lowerName: { $ne: instance.lowerName },
+                'owner.github': instance.owner.github,
+                masterPod: true
+              }
+            )
+          })
+          .asCallback(done)
+      })
+
+      it('should query for isolated containers', function (done) {
+        instance.fetchMatchingInstancesForDepChecking(ownerName, true)
+          .then(function (instances) {
+            expect(instances[0]).to.deep.equal(assign(instance, {
+              hostname: instance.getElasticHostname(ownerName)
+            }))
+            sinon.assert.calledWith(Instance.find,
+              {
+                lowerName: { $ne: instance.lowerName },
+                'owner.github': instance.owner.github,
+                isolated: isolationId
+              }
+            )
+          })
+          .asCallback(done)
+      })
+    })
+  })
+
+  describe('getHostnamesFromEnvsAndFnr', function () {
+    var ownerName = 'someowner'
+
+    it('should be fine with an empty array result', function (done) {
+      var instanceWithOnlyEnvs = mongoFactory.createNewInstance('instanceWithOnlyEnvs', {
+        env: [
+          'as=hello-staging-' + ownerName + '.runnableapp.com',
+          'df=adelle-staging-' + ownerName + '.runnableapp.com'
+        ]
+      })
+      var hostnames = instanceWithOnlyEnvs.getHostnamesFromEnvsAndFnr()
+      expect(hostnames).to.deep.equal([
+        'hello-staging-' + ownerName + '.runnableapp.com',
+        'adelle-staging-' + ownerName + '.runnableapp.com'
+      ])
+      done()
+    })
+    it('should be fine with an empty array result', function (done) {
+      var instanceWithOnlyFnR = mongoFactory.createNewInstance('instanceWithOnlyFnR')
+      keypather.set(instanceWithOnlyFnR, 'contextVersion.appCodeVersions[0].transformRules.replace', [
+        {
+          find: 'hello',
+          replace: 'hello-staging-' + ownerName + '.runnableapp.com'
+        },
+        {
+          find: 'youthere',
+          replace: 'adelle-staging-' + ownerName + '.runnableapp.com'
+        }
+      ])
+      var hostnames = instanceWithOnlyFnR.getHostnamesFromEnvsAndFnr()
+      expect(hostnames).to.deep.equal([
+        'hello-staging-' + ownerName + '.runnableapp.com',
+        'adelle-staging-' + ownerName + '.runnableapp.com'
+      ])
+      done()
+    })
+
+    it('should grab hostnames from both envs and FnR', function (done) {
+      var instanceWithBoth = mongoFactory.createNewInstance('instanceWithBoth', {
+        env: [
+          'as=hello-staging-' + ownerName + '.runnableapp.com',
+          'df=adelle-staging-' + ownerName + '.runnableapp.com'
+        ]
+      })
+      keypather.set(instanceWithBoth, 'contextVersion.appCodeVersions[0].transformRules.replace', [
+        {
+          find: 'hello',
+          replace: 'hello2-staging-' + ownerName + '.runnableapp.com'
+        },
+        {
+          find: 'youthere',
+          replace: 'adelle-staging-' + ownerName + '.runnableapp.com'
+        }
+      ])
+
+      var hostnames = instanceWithBoth.getHostnamesFromEnvsAndFnr()
+      expect(hostnames).to.deep.equal([
+        'hello2-staging-' + ownerName + '.runnableapp.com',
+        'adelle-staging-' + ownerName + '.runnableapp.com',
+        'hello-staging-' + ownerName + '.runnableapp.com',
+        'adelle-staging-' + ownerName + '.runnableapp.com' // repeat hosts are expected
+      ])
       done()
     })
   })
