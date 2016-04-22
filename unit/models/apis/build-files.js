@@ -22,7 +22,6 @@ describe('build-files: ' + moduleName, function () {
 
   describe('copyObject', function () {
     var readStream = { pipe: noop }
-
     beforeEach(function (done) {
       sinon.stub(model.s3, 'getObject').returns({
         createReadStream: function () { return readStream }
@@ -53,8 +52,7 @@ describe('build-files: ' + moduleName, function () {
       })
     })
   })
-
-  describe('getObject', function ()
+  describe('getObject', function () {
     var key = 'key'
     var version = 'version'
     var etag = 'etag'
@@ -98,7 +96,7 @@ describe('build-files: ' + moduleName, function () {
         }, sinon.match.func)
         done()
       })
-    });
+    })
     describe('if the object is too large', function () {
       beforeEach(function (done) {
         model.s3.headObject.yieldsAsync(null, {
@@ -121,7 +119,7 @@ describe('build-files: ' + moduleName, function () {
           sinon.assert.notCalled(model.s3.getObject)
           done()
         })
-      });
+      })
     })
 
   })
