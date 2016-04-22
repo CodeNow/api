@@ -84,7 +84,7 @@ describe('InstanceService', function () {
             appCodeVersions: [
               {
                 additionalRepo: false,
-                branch: 'develop'
+                lowerBranch: 'develop'
               }
             ]
           }
