@@ -121,6 +121,5 @@ describe('build-files: ' + moduleName, function () {
         })
       })
     })
-
   })
 })
