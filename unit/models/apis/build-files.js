@@ -56,10 +56,11 @@ describe('build-files: ' + moduleName, function () {
     var key = 'key'
     var version = 'version'
     var etag = 'etag'
+    var objectResults = {
+      getObjectResults: true
+    }
     beforeEach(function (done) {
-      sinon.stub(model.s3, 'getObject').yieldsAsync(null, {
-        getObjectResults: true
-      })
+      sinon.stub(model.s3, 'getObject').yieldsAsync(null, objectResults)
 
       sinon.stub(model.s3, 'headObject').yieldsAsync(null, {
         ContentLength: 1024
@@ -76,13 +77,11 @@ describe('build-files: ' + moduleName, function () {
     it('should return the objects contents', function (done) {
       model.getObject(key, version, etag, function (err, data) {
         expect(err).to.not.exist()
-        expect(data).to.equal({
-          getObjectResults: true
-        })
+        expect(data).to.equal(objectResults)
         sinon.assert.calledOnce(model.s3.headObject)
         sinon.assert.calledWith(model.s3.headObject, {
           Bucket: process.env.S3_CONTEXT_RESOURCE_BUCKET,
-          Key: 'some-context-id/source',
+          Key: 'some-context-id/source/key',
           VersionId: version,
           IfMatch: etag
         }, sinon.match.func)
@@ -90,7 +89,7 @@ describe('build-files: ' + moduleName, function () {
         sinon.assert.calledOnce(model.s3.getObject)
         sinon.assert.calledWith(model.s3.getObject, {
           Bucket: process.env.S3_CONTEXT_RESOURCE_BUCKET,
-          Key: 'some-context-id/source',
+          Key: 'some-context-id/source/key',
           VersionId: version,
           IfMatch: etag
         }, sinon.match.func)
@@ -107,11 +106,11 @@ describe('build-files: ' + moduleName, function () {
       it('should throw 413 error', function (done) {
         model.getObject(key, version, etag, function (err) {
           expect(err).to.exist()
-          expect(err.code).to.equal(413)
+          expect(err.statusCode).to.equal(413)
           sinon.assert.calledOnce(model.s3.headObject)
           sinon.assert.calledWith(model.s3.headObject, {
             Bucket: process.env.S3_CONTEXT_RESOURCE_BUCKET,
-            Key: 'some-context-id/source',
+            Key: 'some-context-id/source/key',
             VersionId: version,
             IfMatch: etag
           }, sinon.match.func)
