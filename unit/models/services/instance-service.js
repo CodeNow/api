@@ -93,7 +93,7 @@ describe('InstanceService', function () {
       var container = {
         dockerContainer: '46080d6253c8db55b8bbb9408654896964b86c63e863f1b3b0301057d1ad92ba'
       }
-      InstanceService.deleteOldContainer(instance, container)
+      InstanceService.deleteInstanceContainer(instance, container)
       sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
       var jobData = rabbitMQ.deleteInstanceContainer.getCall(0).args[0]
       expect(jobData.instanceShortHash).to.equal(instance.shortHash)
