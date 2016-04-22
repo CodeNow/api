@@ -431,8 +431,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         ownerGithubId: 429706,
         ownerGithubUsername: 'runnable',
         hostIp: '10.0.1.1',
-        isolated: false,
-        isIsolationGroupMaster: false,
         container: {
           dockerHost: 'https://localhost:4242',
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
@@ -446,8 +444,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         'instanceName',
         'instanceShortHash',
         'instanceMasterPod',
-        'isolated',
-        'isIsolationGroupMaster',
         'ownerGithubId',
         'ownerGithubUsername'
       ]
