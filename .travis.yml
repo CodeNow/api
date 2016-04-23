@@ -9,7 +9,6 @@ env:
   - LOG_LEVEL_STDOUT=fatal
   - CIRCLE_NODE_TOTAL=3
   - CXX=g++-4.8
-  - LOG_LEVEL_STDOUT=none
   matrix:
   - CIRCLE_NODE_INDEX=0
   - CIRCLE_NODE_INDEX=1
