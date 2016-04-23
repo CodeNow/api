@@ -51,7 +51,7 @@ var factory = module.exports = {
     })
     if (!props.build) {
       count.inc()
-      factory.createBuild(ownerGithubId, function (err, build, cv) {
+      factory.createBuild(ownerGithubId, props.cv, function (err, build, cv) {
         if (err) { return count.next(err) }
         props.build = build
         props.cv = cv
@@ -254,7 +254,8 @@ var factory = module.exports = {
       contextVersion: props.cv,
       locked: props.locked,
       created: new Date(),
-      env: [],
+      masterPod: props.masterPod || false,
+      env: props.env || [],
       network: {
         hostIp: '127.0.0.1'
       }
