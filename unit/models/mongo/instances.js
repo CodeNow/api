@@ -1281,7 +1281,6 @@ describe('Instance Model Tests ' + moduleName, function () {
             sinon.assert.calledWith(
               Instance.find,
               {
-                lowerName: { $ne: instance.lowerName },
                 'owner.github': instance.owner.github,
                 masterPod: true
               }
@@ -1298,7 +1297,6 @@ describe('Instance Model Tests ' + moduleName, function () {
             }))
             sinon.assert.calledWith(Instance.find,
               {
-                lowerName: { $ne: instance.lowerName },
                 'owner.github': instance.owner.github,
                 isolated: isolationId
               }
