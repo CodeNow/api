@@ -223,8 +223,7 @@ describe('Instance Model Integration Tests', function () {
               expect(dependencies.length).to.equal(2)
               var expected0 = createExpectedConnection({name: 'goodbye'})
               var expected1 = createExpectedConnection({name: 'adelle'})
-              expect(dependencies[0]).to.deep.include(expected0)
-              expect(dependencies[1]).to.deep.include(expected1)
+              expect(dependencies).to.deep.includes([expected0, expected1])
               done(err)
             })
           })
@@ -289,8 +288,7 @@ describe('Instance Model Integration Tests', function () {
               expect(dependencies.length).to.equal(2)
               var expected0 = createExpectedConnection({name: 'goodbye'})
               var expected1 = createExpectedConnection({name: 'fb1-adelle', parentName: 'adelle'})
-              expect(dependencies[0]).to.deep.include(expected0)
-              expect(dependencies[1]).to.deep.include(expected1)
+              expect(dependencies).to.deep.includes([expected0, expected1])
               done(err)
             })
           })
@@ -367,7 +365,7 @@ describe('Instance Model Integration Tests', function () {
               parentName: 'goodbye',
               isolated: ctx['fb1-hello']._id.toString()
             })
-            expect(dependencies[0]).to.deep.include(expected)
+            expect(dependencies[0]).to.deep.equal(expected)
             done()
           })
         })
@@ -385,14 +383,13 @@ describe('Instance Model Integration Tests', function () {
               }
               expect(dependencies).to.be.array()
               expect(dependencies.length).to.equal(2)
-              var expected1 = createExpectedConnection({
+              var expected0 = createExpectedConnection({
                 name: fb1GoodbyeName,
                 parentName: 'goodbye',
                 isolated: ctx['fb1-hello']._id.toString()
               })
-              var expected0 = createExpectedConnection({name: 'adelle'})
-              expect(dependencies[0]).to.deep.include(expected0)
-              expect(dependencies[1]).to.deep.include(expected1)
+              var expected1 = createExpectedConnection({name: 'adelle'})
+              expect(dependencies).to.deep.includes([expected0, expected1])
               done()
             })
           })
