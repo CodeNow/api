@@ -1,7 +1,6 @@
 'use strict'
 
 var nock = require('nock')
-var uuid = require('uuid')
 var join = require('path').join
 function fixedEncodeURIComponent (str) {
   // This has been added to change any characters not allowed in URIs, but still leave the /
