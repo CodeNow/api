@@ -74,6 +74,8 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
   })
   describe('POST - discard changes', function () {
     beforeEach(function (done) {
+      require('./fixtures/mocks/s3/get-object-head')(ctx.context.id(), '/')
+      require('./fixtures/mocks/s3/get-object-head')(ctx.context.id(), 'Dockerfile')
       require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
       ctx.files = ctx.contextVersion.rootDir.contents.fetch(function (err) {
         if (err) { return done(err) }
