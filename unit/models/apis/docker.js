@@ -194,118 +194,74 @@ describe('docker: ' + moduleName, function () {
   }) // end createSwarmConstraints
 
   describe('_handleCreateContainerError', function () {
+    var mockOrgId = '12345'
+    var mockCreateOpts = {
+      Labels: {
+        'com.docker.swarm.constraints': '["org==' + mockOrgId + '"]'
+      },
+      Memory: 1024
+    }
+
     beforeEach(function (done) {
-      sinon.stub(Docker, '_isConstraintFailure')
-      sinon.stub(Docker, '_isOutOfResources')
-      sinon.stub(Docker.prototype, 'createContainer')
       sinon.stub(monitor, 'event')
       sinon.stub(error, 'log')
       done()
     })
 
     afterEach(function (done) {
-      Docker._isConstraintFailure.restore()
-      Docker._isOutOfResources.restore()
-      Docker.prototype.createContainer.restore()
       monitor.event.restore()
       error.log.restore()
       done()
     })
 
-    it('should report an error if there is no dock for an org', function (done) {
-      var testOpts = {
-        Labels: {
-          'com.docker.swarm.constraints': 'fluff'
-        }
-      }
-      Docker._isConstraintFailure.returns(true)
-      Docker.prototype.createContainer.yieldsAsync()
-
-      model._handleCreateContainerError({}, testOpts, function (err) {
-        expect(err).to.exist()
+    it('should alert if there is no dock for an org', function (done) {
+      var noNodeErr = new Error(
+        'flufzzz' + 'unable to find a node that satisfies' + 'wowowo0092'
+      )
+      model._handleCreateContainerError(noNodeErr, mockCreateOpts, function (err) {
+        expect(err).to.equal(noNodeErr)
         expect(err.data.level).to.equal('critical')
         sinon.assert.calledOnce(monitor.event)
-        sinon.assert.calledWith(monitor.event, {
-          title: sinon.match(/dock.*org/),
-          text: sinon.match(/dock.*org/),
-          alert_type: 'error'
-        })
+        sinon.assert.calledWith(monitor.event, sinon.match({
+          title: sinon.match('Cannot find dock for org: ' + mockOrgId),
+          text: sinon.match(/Container create options:/),
+          alert_type: sinon.match(/^error$/)
+        }))
         sinon.assert.calledOnce(error.log)
         sinon.assert.calledWith(error.log, err)
         done()
       })
     })
 
-    it('should alert datadog and rollbar if our of resources', function (done) {
-      var testOpts = {
-        Memory: 999999,
-        Labels: {}
-      }
-      testOpts.Labels['com.docker.swarm.constraints'] = 'test'
-      Docker._isConstraintFailure.returns(false)
-      Docker._isOutOfResources.returns(true)
-      monitor.event.returns()
-      error.log.returns()
-
-      model._handleCreateContainerError({}, testOpts, function (err) {
-        expect(err).to.exist()
-        sinon.assert.notCalled(Docker.prototype.createContainer)
+    it('should alert if our of resources', function (done) {
+      var resourceErr = new Error(
+        'somethingsomething' + 'no resources available to schedule' + 'wozie'
+      )
+      model._handleCreateContainerError(resourceErr, mockCreateOpts, function (err) {
+        expect(err).to.equal(resourceErr)
+        expect(err.data.level).to.equal('critical')
         sinon.assert.calledOnce(monitor.event)
+        sinon.assert.calledWith(monitor.event, sinon.match({
+          title: sinon.match('Out of dock resources for org: ' + mockOrgId),
+          text: sinon.match(/Container create options:/),
+          alert_type: sinon.match(/^error$/)
+        }))
         sinon.assert.calledOnce(error.log)
-        sinon.assert.calledWith(
-          error.log, {
-            data: {
-              level: 'critical'
-            }
-          }
-        )
+        sinon.assert.calledWith(error.log, err)
         done()
       })
     })
 
-    it('should cb paseed err if not special', function (done) {
-      var testErr = 'unicorn'
-
-      Docker._isConstraintFailure.returns(false)
-      Docker._isOutOfResources.returns(false)
-
+    it('should pass the error through if it is not special', function (done) {
+      var testErr = new Error('unicorns rule!')
       model._handleCreateContainerError(testErr, {}, function (err) {
         expect(err).to.equal(testErr)
-        expect(Docker.prototype.createContainer.called)
-          .to.be.false()
-
+        expect(monitor.event.called).to.be.false()
+        expect(error.log.called).to.be.false()
         done()
       })
     })
   }) // end _handleCreateContainerError
-
-  describe('_isConstraintFailure', function () {
-    it('should return true if constraint failure', function (done) {
-      var out = Docker._isConstraintFailure(new Error('unable to find a node that satisfies'))
-      expect(out).to.be.true()
-      done()
-    })
-
-    it('should return false if not constraint failure', function (done) {
-      var out = Docker._isConstraintFailure(new Error('no resources available to schedule'))
-      expect(out).to.be.false()
-      done()
-    })
-  }) // end _isConstraintFailure
-
-  describe('_isOutOfResources', function () {
-    it('should return true if out of resources', function (done) {
-      var out = Docker._isOutOfResources(new Error('no resources available to schedule'))
-      expect(out).to.be.true()
-      done()
-    })
-
-    it('should return false if not constraint failure', function (done) {
-      var out = Docker._isOutOfResources(new Error('unable to find a node that satisfies'))
-      expect(out).to.be.false()
-      done()
-    })
-  }) // end _isOutOfResources
 
   describe('_isImageNotFoundErr', function () {
     it('should return true if error matches', function (done) {
