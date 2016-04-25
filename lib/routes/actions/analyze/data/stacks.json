@@ -2,6 +2,7 @@
   "rails": {
     "name": "Rails",
     "versions": [
+      "3.2.2",
       "4",
       "4.1",
       "4.1.4",
@@ -376,7 +377,11 @@
       "5.6.7",
       "5.6.7-apache",
       "5.6.7-cli",
-      "5.6.7-fpm"
+      "5.6.7-fpm",
+      "7.0.5-apache",
+      "7.0-apache",
+      "7-apache",
+      "7"
     ],
     "defaultVersion": "5.6.7-apache",
     "ports": "80, 8080, 8000",
