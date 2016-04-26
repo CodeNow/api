@@ -29,8 +29,7 @@ before_install:
 before_script:
 - npm run lint
 script:
-- timeout 3m ./scripts/run-command-conditionally.sh npm run unit
-- timeout 10m ./scripts/npm-bdd-split-files.sh
+- timeout 10m npm run bdd-whitelist
 after_script:
 - /tmp/neo4j-community-2.1.8/bin/neo4j stop
 notifications:
