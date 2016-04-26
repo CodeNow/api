@@ -214,6 +214,14 @@ describe('docker: ' + moduleName, function () {
       done()
     })
 
+    it('should shortcircut if create options are invalid', function (done) {
+      model._handleCreateContainerError(new Error('wow'), 'neat', function (err) {
+        expect(err).to.equal(err)
+        expect(err.data).to.not.exist()
+        done()
+      })
+    })
+
     it('should alert if there is no dock for an org', function (done) {
       var noNodeErr = new Error(
         'flufzzz' + 'unable to find a node that satisfies' + 'wowowo0092'
@@ -225,7 +233,7 @@ describe('docker: ' + moduleName, function () {
         sinon.assert.calledWith(monitor.event, sinon.match({
           title: sinon.match('Cannot find dock for org: ' + mockOrgId),
           text: sinon.match(/Container create options:/),
-          alert_type: sinon.match(/^error$/)
+          alert_type: sinon.match('error')
         }))
         sinon.assert.calledOnce(error.log)
         sinon.assert.calledWith(error.log, err)
@@ -239,12 +247,12 @@ describe('docker: ' + moduleName, function () {
       )
       model._handleCreateContainerError(resourceErr, mockCreateOpts, function (err) {
         expect(err).to.equal(resourceErr)
-        expect(err.data.level).to.equal('critical')
+        expect(err.data.level).to.equal('error')
         sinon.assert.calledOnce(monitor.event)
         sinon.assert.calledWith(monitor.event, sinon.match({
           title: sinon.match('Out of dock resources for org: ' + mockOrgId),
           text: sinon.match(/Container create options:/),
-          alert_type: sinon.match(/^error$/)
+          alert_type: sinon.match('error')
         }))
         sinon.assert.calledOnce(error.log)
         sinon.assert.calledWith(error.log, err)
