@@ -102,6 +102,9 @@ var factory = module.exports = {
       network: {
         hostIp: '1.1.1.100'
       },
+      env: opts.env || [],
+      isolated: opts.isolated,
+      isIsolationGroupMaster: opts.isIsolationGroupMaster,
       imagePull: opts.imagePull || null
     })
   }
