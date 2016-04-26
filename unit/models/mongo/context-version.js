@@ -852,7 +852,11 @@ describe('Context Version: ' + moduleName, function () {
         'build.completed': {$exists: false},
         'build.hash': cv.build.hash,
         'build._id': {$ne: cv.build._id},
-        advanced: false
+        advanced: false,
+        $or: [
+          { 'buildDockerfilePath': { $exists: false } },
+          { 'buildDockerfilePath': null }
+        ]
       })
 
       cv.findPendingDupe(function (err) {
@@ -863,6 +867,45 @@ describe('Context Version: ' + moduleName, function () {
         expect(ContextVersion.find.firstCall.args[0])
           .to.deep.equal(expectedQuery)
         done()
+      })
+    })
+    describe('buildDockerfilePath is set', function () {
+      var buildDockerfilePath = '/asdasd/asd/asd/asd/as/dfas/aer/af/a3w/f'
+      beforeEach(function (done) {
+        cv = new ContextVersion({
+          build: {
+            _id: 'id-a',
+            hash: 'hash-a'
+          },
+          buildDockerfilePath: buildDockerfilePath
+        })
+        dupe = new ContextVersion({
+          build: {
+            _id: 'id-b',
+            hash: 'hash-b'
+          },
+          buildDockerfilePath: buildDockerfilePath
+        })
+        done()
+      })
+
+      it('uses the correct ContextVersion.find query', function (done) {
+        var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
+          'build.completed': {$exists: false},
+          'build.hash': cv.build.hash,
+          'build._id': {$ne: cv.build._id},
+          advanced: false,
+          buildDockerfilePath: buildDockerfilePath
+        })
+        cv.findPendingDupe(function (err) {
+          if (err) {
+            return done(err)
+          }
+          expect(ContextVersion.find.calledOnce).to.be.true()
+          expect(ContextVersion.find.firstCall.args[0])
+            .to.deep.equal(expectedQuery)
+          done()
+        })
       })
     })
 
@@ -967,7 +1010,11 @@ describe('Context Version: ' + moduleName, function () {
         'build.completed': {$exists: true},
         'build.hash': cv.build.hash,
         'build._id': {$ne: cv.build._id},
-        advanced: false
+        advanced: false,
+        $or: [
+          {'buildDockerfilePath': {$exists: false}},
+          {'buildDockerfilePath': null}
+        ]
       })
 
       cv.findCompletedDupe(function (err) {
@@ -978,6 +1025,47 @@ describe('Context Version: ' + moduleName, function () {
         expect(ContextVersion.find.firstCall.args[0])
           .to.deep.equal(expectedQuery)
         done()
+      })
+    })
+
+    describe('buildDockerfilePath is set', function () {
+      var buildDockerfilePath = '/asdasd/asd/asd/asd/as/dfas/aer/af/a3w/f'
+      beforeEach(function (done) {
+        cv = new ContextVersion({
+          build: {
+            _id: 'id-a',
+            hash: 'hash-a'
+          },
+          buildDockerfilePath: buildDockerfilePath
+        })
+        dupe = new ContextVersion({
+          build: {
+            _id: 'id-b',
+            hash: 'hash-b'
+          },
+          buildDockerfilePath: buildDockerfilePath
+        })
+        done()
+      })
+
+      it('uses the correct ContextVersion.find query', function (done) {
+        var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
+          'build.completed': {$exists: true},
+          'build.hash': cv.build.hash,
+          'build._id': {$ne: cv.build._id},
+          advanced: false,
+          buildDockerfilePath: buildDockerfilePath
+        })
+
+        cv.findCompletedDupe(function (err) {
+          if (err) {
+            return done(err)
+          }
+          expect(ContextVersion.find.calledOnce).to.be.true()
+          expect(ContextVersion.find.firstCall.args[0])
+            .to.deep.equal(expectedQuery)
+          done()
+        })
       })
     })
 
