@@ -112,7 +112,7 @@ describe('InstanceService', function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
           sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
-          sinon.assert.calledOnce(Build.findByIdAsync)
+          sinon.assert.notCalled(Build.findByIdAsync)
           sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
           done()
         })
