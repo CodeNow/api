@@ -597,7 +597,7 @@ describe('docker: ' + moduleName, function () {
         sessionUser: ctx.mockSessionUser
       })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
-        .to.equal('["org==owner","node==~ip-10-0-0-1.owner"]')
+        .to.equal('["org==owner"]')
       done()
     })
 
