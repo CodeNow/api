@@ -18,6 +18,7 @@ var clone = require('101/clone')
 var keypath = require('keypather')()
 
 var logger = require('logger')
+var _removeExtraKeys = require('logger/extra-key-serializer')._removeExtraKeys
 
 describe('lib/logger.js unit test', function () {
   describe('serializers', function () {
@@ -136,7 +137,7 @@ describe('lib/logger.js unit test', function () {
         insta: 'instance',
         cat: 'key'
       }
-      var out = logger._removeExtraKeys(testObj)
+      var out = _removeExtraKeys(testObj)
       expect(out).to.deep.equal(testObj)
       done()
     })
@@ -151,7 +152,7 @@ describe('lib/logger.js unit test', function () {
       keypath.set(inputData, 'ca', 'bad')
       keypath.set(inputData, 'cert', 'bad')
       keypath.set(inputData, 'key', 'bad')
-      var out = logger._removeExtraKeys(inputData)
+      var out = _removeExtraKeys(inputData)
       expect(out).to.deep.equal(testObj)
       done()
     })
@@ -170,7 +171,7 @@ describe('lib/logger.js unit test', function () {
       keypath.set(inputData, 'ca', 'bad')
       keypath.set(inputData, 'cert', 'bad')
       keypath.set(inputData, 'key', 'bad')
-      var out = logger._removeExtraKeys(inputData)
+      var out = _removeExtraKeys(inputData)
       expect(out).to.deep.equal(testObj)
       done()
     })
@@ -209,7 +210,7 @@ describe('lib/logger.js unit test', function () {
           toJSON: toJSON
         }
       }
-      var out = logger._removeExtraKeys(inputData)
+      var out = _removeExtraKeys(inputData)
       expect(out).to.deep.equal({
         data: {
           data: {
