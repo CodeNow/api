@@ -33,16 +33,18 @@ describe('ContextVersion Model Query Integration Tests', function () {
   before(mongooseControl.start)
   var ctx
   beforeEach(function (done) {
-    ctx = {}
+    ctx = {
+      githubId: 1234
+    }
     ctx.mockSessionUser = {
-      _id: 1234,
+      _id: ctx.githubId,
       findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
         login: 'TEST-login',
         avatar_url: 'TEST-avatar_url'
       }),
       accounts: {
         github: {
-          id: 1234
+          id: ctx.githubId
         }
       }
     }
@@ -600,6 +602,62 @@ describe('ContextVersion Model Query Integration Tests', function () {
               })
               .asCallback(done)
           })
+        })
+      })
+    })
+  })
+
+  describe('statics', function () {
+    describe('updateContainerByBuildId', function () {
+      beforeEach(function (done) {
+        mongoFactory.createStartedCv(ctx.githubId, function (err, cv) {
+          if (err) {
+            return done(err)
+          }
+          ctx.cv = cv
+          done()
+        })
+      })
+
+      it('should update the build.hash property on the document', function (done) {
+        ContextVersion.updateContainerByBuildId({
+          buildId: ctx.cv.build._id,
+          containerIp: '1.2.3.4'
+        }, function (err, count) {
+          if (err) {
+            return done(err)
+          }
+          expect(count).to.equal(1)
+          // expect build.hash updated on document in database
+          ContextVersion.findById(ctx.cv._id, function (err, cv) {
+            if (err) {
+              return done(err)
+            }
+            expect(cv.build.ipAddress).to.equal('1.2.3.4')
+            done()
+          })
+        })
+      })
+    })
+    describe('findByBuildId', function () {
+      beforeEach(function (done) {
+        mongoFactory.createStartedCv(ctx.githubId, function (err, cv) {
+          if (err) {
+            return done(err)
+          }
+          ctx.cv = cv
+          done()
+        })
+      })
+
+      it('should update the build.hash property on the document', function (done) {
+        ContextVersion.findByBuildId(ctx.cv.build._id, function (err, cvs) {
+          if (err) {
+            return done(err)
+          }
+          expect(cvs.length).to.equal(1)
+          expect(cvs[0]._id).to.deep.equal(ctx.cv._id)
+          done()
         })
       })
     })
