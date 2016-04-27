@@ -199,6 +199,25 @@ describe('201 POST /instances', function () {
           dockerMockEvents.emitBuildComplete(ctx.cv)
         })
       })
+      it('should create an instance with name, build, ipWhitelist', function (done) {
+        var name = 'CustomName'
+        ctx.user.createInstance({
+          build: ctx.build.id(),
+          name: name,
+          ipWhitelist: {
+            enabled: true
+          }
+        }, function (err, body) {
+          if (err) { return done(err) }
+          expect(body.ipWhitelist).to.deep.equal({
+            enabled: true
+          })
+          primus.onceVersionComplete(ctx.cv.id(), function () {
+            done()
+          })
+          dockerMockEvents.emitBuildComplete(ctx.cv)
+        })
+      })
     })
 
     describe('with built build', function () {
