@@ -54,7 +54,7 @@ describe('Messenger: ' + moduleName, function () {
         done()
       }
     })
-    it('should throw if instance was not fully populated', function (done) {
+    it('should trigger an error if instance was not fully populated and bypass emitInstanceUpdate', function (done) {
       Messenger.emitInstanceUpdate({ _id: 'some-id' }, 'update')
       sinon.assert.calledOnce(errorModule.log)
       expect(errorModule.log.lastCall.args[0].message).to.equal('emitInstanceUpdate malformed instance')
