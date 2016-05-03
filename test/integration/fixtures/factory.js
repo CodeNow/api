@@ -126,7 +126,8 @@ var factory = module.exports = {
     })
     var data = this.cvTemplate(
       ownerGithubId,
-      props.build
+      props.build,
+      props
     )
     ContextVersion.create(data, cb)
   },
@@ -167,13 +168,13 @@ var factory = module.exports = {
     )
     ContextVersion.create(data, cb)
   },
-  cvTemplate: function (ownerGithubId, buildExtend) {
+  cvTemplate: function (ownerGithubId, buildExtend, opts) {
     var cv = {
       infraCodeVersion: new ObjectId(),
       createdBy: {
         github: ownerGithubId
       },
-      context: new ObjectId(),
+      context: opts.context || new ObjectId(),
       owner: {
         github: ownerGithubId
       },
