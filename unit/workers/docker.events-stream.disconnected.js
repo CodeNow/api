@@ -69,8 +69,18 @@ describe('docker.events-stream.disconnected unit test', function () {
       })
     })
 
-    it('should throw task fatal if invalid org', function (done) {
+    it('should throw task fatal if org not a string', function (done) {
       testJob.org = 12345
+      dockerEventStreamDisconnected(testJob).asCallback(function (err) {
+        expect(err).to.be.instanceof(TaskFatalError)
+
+        sinon.assert.notCalled(rabbitMQ.publishDockRemoved)
+        done()
+      })
+    })
+
+    it('should throw task fatal if org not a number', function (done) {
+      testJob.org = '12a45'
       dockerEventStreamDisconnected(testJob).asCallback(function (err) {
         expect(err).to.be.instanceof(TaskFatalError)
 
