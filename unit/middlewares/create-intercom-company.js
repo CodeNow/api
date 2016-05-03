@@ -18,6 +18,7 @@ var it = lab.it
 var createIntercomCompanyMiddleware = rewire('middlewares/create-intercom-company')
 
 var path = require('path')
+var moduleName = path.relative(process.cwd(), __filename)
 
 describe('middlewares/create-intercom-company unit test: ' + moduleName, function () {
 
@@ -25,7 +26,6 @@ describe('middlewares/create-intercom-company unit test: ' + moduleName, functio
   var oldOrion
   var req
   var res
-  var next
   beforeEach(function (done) {
     mockOrion = {
       companies: {
@@ -40,7 +40,6 @@ describe('middlewares/create-intercom-company unit test: ' + moduleName, functio
       }
     }
     res = {}
-    next = sinon.stub()
     done()
   })
 
@@ -50,14 +49,14 @@ describe('middlewares/create-intercom-company unit test: ' + moduleName, functio
   })
 
   it('should call orion create company', function (done) {
-    createIntercomCompanyMiddleware(req, res, next)
-    sinon.assert.calledOnce(mockOrion.companies.create)
-    sinon.assert.calledWith(mockOrion.companies.create, {
-      company_id: req.body.name.toLowerCase(),
-      name: req.body.name,
-      remote_created_at: new Date().getTime() / 1000
+    createIntercomCompanyMiddleware(req, res, function () {
+      sinon.assert.calledOnce(mockOrion.companies.create)
+      sinon.assert.calledWith(mockOrion.companies.create, {
+        company_id: req.body.name.toLowerCase(),
+        name: req.body.name,
+        remote_created_at: sinon.match.number
+      })
+      done()
     })
-    sinon.assert.calledOnce(next)
-    done()
   })
 })
