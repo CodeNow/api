@@ -16,6 +16,7 @@
     "101": "^1.2.0",
     "@runnable/api-client": "^7.0.2",
     "@runnable/hostname": "^3.0.0",
+    "@runnable/orion": "^1.0.4",
     "JSONStream": "0.10.x",
     "array-subtract": "^2.0.0",
     "async": "^0.9.0",
