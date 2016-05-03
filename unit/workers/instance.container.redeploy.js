@@ -78,7 +78,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       sinon.stub(Instance.prototype, 'update')
       sinon.stub(User.prototype, 'findGithubUsernameByGithubId')
       sinon.stub(InstanceService, 'emitInstanceUpdate')
-      sinon.stub(Worker, '_deleteOldContainer').returns()
+      sinon.stub(InstanceService, 'deleteInstanceContainer').returns()
       sinon.stub(Worker, '_createNewContainer').returns()
       done()
     })
@@ -92,7 +92,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       Instance.prototype.update.restore()
       User.prototype.findGithubUsernameByGithubId.restore()
       InstanceService.emitInstanceUpdate.restore()
-      Worker._deleteOldContainer.restore()
+      InstanceService.deleteInstanceContainer.restore()
       Worker._createNewContainer.restore()
       done()
     })
@@ -477,7 +477,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             sinon.assert.calledOnce(ContextVersion.prototype.clearDockerHost)
             sinon.assert.calledOnce(Instance.prototype.update)
             sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
-            sinon.assert.calledOnce(Worker._deleteOldContainer)
+            sinon.assert.calledOnce(InstanceService.deleteInstanceContainer)
             sinon.assert.calledOnce(Worker._createNewContainer)
             sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
             done()
@@ -535,8 +535,9 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
             sinon.assert.calledWith(User.prototype.findGithubUsernameByGithubId, instance.owner.github)
 
-            sinon.assert.calledOnce(Worker._deleteOldContainer)
-            sinon.assert.calledWith(Worker._deleteOldContainer, testData)
+            sinon.assert.calledOnce(InstanceService.deleteInstanceContainer)
+            sinon.assert.calledWith(InstanceService.deleteInstanceContainer,
+              instance, instance.container)
             sinon.assert.calledOnce(Worker._createNewContainer)
             sinon.assert.calledWith(Worker._createNewContainer, testData)
             sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
@@ -545,44 +546,6 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             done()
           })
       })
-    })
-  })
-
-  describe('_deleteOldContainer', function () {
-    beforeEach(function (done) {
-      sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
-      done()
-    })
-    afterEach(function (done) {
-      rabbitMQ.deleteInstanceContainer.restore()
-      done()
-    })
-    it('should publish new job', function (done) {
-      var data = {
-        instance: new Instance(ctx.mockInstance),
-        oldContainer: {
-          dockerContainer: '46080d6253c8db55b8bbb9408654896964b86c63e863f1b3b0301057d1ad92ba'
-        },
-        user: new User({_id: '507f191e810c19729de860eb'})
-      }
-      var job = {
-        instanceId: ctx.mockInstance._id,
-        sessionUserGithubId: 429706,
-        deploymentUuid: 'some-deployment-uuid'
-      }
-      Worker._deleteOldContainer(job, data)
-      expect(rabbitMQ.deleteInstanceContainer.calledOnce).to.be.true()
-      var jobData = rabbitMQ.deleteInstanceContainer.getCall(0).args[0]
-      expect(jobData.instanceShortHash).to.equal(data.instance.shortHash)
-      expect(jobData.instanceName).to.equal(data.instance.name)
-      expect(jobData.instanceName).to.equal(data.instance.name)
-      expect(jobData.instanceMasterPod).to.equal(data.instance.masterPod)
-      expect(jobData.instanceMasterBranch).to.equal('develop')
-      expect(jobData.container).to.equal(data.oldContainer)
-      expect(jobData.ownerGithubId).to.equal(data.instance.owner.github)
-      expect(jobData.ownerGithubUsername).to.equal(data.instance.owner.username)
-      expect(jobData.deploymentUuid).to.equal(job.deploymentUuid)
-      done()
     })
   })
 

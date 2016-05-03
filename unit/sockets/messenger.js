@@ -16,6 +16,7 @@ var GitHub = require('models/apis/github')
 var Messenger = require('socket/messenger')
 var User = require('models/mongo/user')
 var createCount = require('callback-count')
+var errorModule = require('error')
 require('sinon-as-promised')(require('bluebird'))
 
 var path = require('path')
@@ -25,10 +26,12 @@ describe('Messenger: ' + moduleName, function () {
   describe('emitInstanceUpdate', function () {
     beforeEach(function (done) {
       sinon.stub(Messenger, '_emitInstanceUpdateAction')
+      sinon.stub(errorModule, 'log')
       done()
     })
     afterEach(function (done) {
       Messenger._emitInstanceUpdateAction.restore()
+      errorModule.log.restore()
       done()
     })
     it('should throw if instance is null', function (done) {
@@ -51,15 +54,12 @@ describe('Messenger: ' + moduleName, function () {
         done()
       }
     })
-    it('should throw if instance was not fully populated', function (done) {
-      try {
-        Messenger.emitInstanceUpdate({ _id: 'some-id' }, 'update')
-        done(new Error('Should never happen'))
-      } catch (err) {
-        expect(err.message).to.equal('emitInstanceUpdate malformed instance')
-        sinon.assert.notCalled(Messenger._emitInstanceUpdateAction)
-        done()
-      }
+    it('should trigger an error if instance was not fully populated and bypass emitInstanceUpdate', function (done) {
+      Messenger.emitInstanceUpdate({ _id: 'some-id' }, 'update')
+      sinon.assert.calledOnce(errorModule.log)
+      expect(errorModule.log.lastCall.args[0].message).to.equal('emitInstanceUpdate malformed instance')
+      sinon.assert.notCalled(Messenger._emitInstanceUpdateAction)
+      done()
     })
     it('should call _emitInstanceUpdateAction if validation passed', function (done) {
       var instance = {

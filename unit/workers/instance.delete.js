@@ -22,7 +22,6 @@ var InstanceService = require('models/services/instance-service')
 var IsolationService = require('models/services/isolation-service')
 var Worker = require('workers/instance.delete')
 var messenger = require('socket/messenger')
-var rabbitMQ = require('models/rabbitmq')
 
 describe('Instance Delete Worker', function () {
   describe('worker', function () {
@@ -64,7 +63,7 @@ describe('Instance Delete Worker', function () {
 
     beforeEach(function (done) {
       sinon.stub(Instance, 'findByIdAsync').resolves(testInstance)
-      sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
+      sinon.stub(InstanceService, 'deleteInstanceContainer').returns()
       sinon.stub(Instance.prototype, 'removeSelfFromGraphAsync').resolves()
       sinon.stub(Instance.prototype, 'removeAsync').resolves()
       sinon.stub(InstanceService, 'deleteAllInstanceForks').resolves()
@@ -75,7 +74,7 @@ describe('Instance Delete Worker', function () {
 
     afterEach(function (done) {
       Instance.findByIdAsync.restore()
-      rabbitMQ.deleteInstanceContainer.restore()
+      InstanceService.deleteInstanceContainer.restore()
       Instance.prototype.removeSelfFromGraphAsync.restore()
       Instance.prototype.removeAsync.restore()
       InstanceService.deleteAllInstanceForks.restore()
@@ -250,18 +249,9 @@ describe('Instance Delete Worker', function () {
     it('should enqueue a job to remove the container', function (done) {
       Worker(testData).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
-        sinon.assert.calledWithExactly(rabbitMQ.deleteInstanceContainer, {
-          instanceShortHash: testInstance.shortHash,
-          instanceName: testInstance.name,
-          instanceMasterPod: testInstance.masterPod,
-          instanceMasterBranch: testInstance.contextVersion.appCodeVersions[0].lowerBranch,
-          container: testInstance.container,
-          ownerGithubId: testInstance.owner.github,
-          ownerGithubUsername: testInstance.owner.username,
-          isolated: testInstance.isolated,
-          isIsolationGroupMaster: testInstance.isIsolationGroupMaster
-        })
+        sinon.assert.calledOnce(InstanceService.deleteInstanceContainer)
+        sinon.assert.calledWithExactly(InstanceService.deleteInstanceContainer,
+          testInstance, testInstance.container)
         done()
       })
     })
@@ -293,7 +283,7 @@ describe('Instance Delete Worker', function () {
       it('should not delete container if there is no container', function (done) {
         Worker(testData).asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+          sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
           done()
         })
       })
@@ -306,7 +296,7 @@ describe('Instance Delete Worker', function () {
           Instance.findByIdAsync,
           Instance.prototype.removeSelfFromGraphAsync,
           Instance.prototype.removeAsync,
-          rabbitMQ.deleteInstanceContainer,
+          InstanceService.deleteInstanceContainer,
           InstanceService.deleteAllInstanceForks,
           messenger.emitInstanceDelete
         )

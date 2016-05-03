@@ -14,7 +14,6 @@ var sinon = require('sinon')
 var error = require('error')
 
 var Instance = require('models/mongo/instance')
-var ContextVersion = require('models/mongo/context-version')
 var mongoFactory = require('../../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 
@@ -25,18 +24,9 @@ describe('Instance Model Integration Tests', function () {
     ctx = {}
     done()
   })
-  afterEach(function (done) {
-    Instance.remove({}, done)
-  })
-  after(function (done) {
-    Instance.remove({}, done)
-  })
-  afterEach(function (done) {
-    ContextVersion.remove({}, done)
-  })
-  after(function (done) {
-    ContextVersion.remove({}, done)
-  })
+
+  beforeEach(require('../../../functional/fixtures/clean-mongo').removeEverything)
+  afterEach(require('../../../functional/fixtures/clean-mongo').removeEverything)
   after(mongooseControl.stop)
 
   describe('markAsStopping', function () {
@@ -125,6 +115,299 @@ describe('Instance Model Integration Tests', function () {
             expect(err.message).to.equal('Instance container has changed')
             expect(result).to.be.undefined()
             done()
+          })
+        })
+      })
+    })
+  })
+  function createNewInstance (name, opts) {
+    return function (done) {
+      mongoFactory.createInstanceWithProps(ctx.mockSessionUser._id, opts, function (err, instance) {
+        if (err) {
+          return done(err)
+        }
+        ctx[name] = instance
+        done(null, instance)
+      })
+    }
+  }
+  function createExpectedConnection (opts) {
+    var name = opts.name
+    var parentName = opts.parentName || name
+    var dep = {
+      'shortHash': ctx[name].shortHash,
+      'lowerName': name.toLowerCase(),
+      'name': name,
+      'id': ctx[name]._id.toString(),
+      'hostname': parentName.toLowerCase() + '-staging-someowner.runnableapp.com',
+      'owner': {
+        'github': 1234
+      },
+      'contextVersion': {
+        'context': ctx[name].contextVersion.context.toString()
+      },
+
+      'network': {
+        'hostIp': '127.0.0.1'
+      }
+    }
+    if (opts.isIsolationGroupMaster) {
+      dep.isIsolationGroupMaster = opts.isIsolationGroupMaster
+    }
+    if (opts.isolated) {
+      dep.isolated = opts.isolated
+    }
+    return dep
+  }
+
+  describe('setDependenciesFromEnvironment', function () {
+    var ownerName = 'someowner'
+    beforeEach(function (done) {
+      ctx.mockUsername = 'TEST-login'
+      ctx.mockSessionUser = {
+        _id: 1234,
+        findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
+          login: ctx.mockUsername,
+          avatar_url: 'TEST-avatar_url'
+        }),
+        accounts: {
+          github: {
+            id: 1234,
+            username: ctx.mockUsername
+          }
+        }
+      }
+      ctx.deps = {}
+      done()
+    })
+
+    describe('Testing changes in connections', function () {
+      beforeEach(createNewInstance('hello', {
+        name: 'hello',
+        masterPod: true,
+        env: [
+          'df=adelle-staging-' + ownerName + '.runnableapp.com'
+        ]
+      }))
+      beforeEach(createNewInstance('adelle', {
+        name: 'adelle',
+        masterPod: true
+      }))
+      beforeEach(createNewInstance('goodbye', {
+        name: 'goodbye',
+        masterPod: true
+      }))
+      describe('Masters', function () {
+        beforeEach(function (done) {
+          ctx.hello.setDependenciesFromEnvironment(ownerName, done)
+        })
+        it('should add a new dep for each env, when starting with none', function (done) {
+          ctx.hello.getDependencies(function (err, dependencies) {
+            expect(dependencies).to.be.array()
+            expect(dependencies.length).to.equal(1)
+            var expected = createExpectedConnection({name: 'adelle'})
+            expect(dependencies[0]).to.deep.include(expected)
+            done(err)
+          })
+        })
+        it('should add 1 new dep, and keep the existing one', function (done) {
+          ctx.hello.env.push([
+            'as=goodbye-staging-' + ownerName + '.runnableapp.com'
+          ])
+          ctx.hello.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              return done(err)
+            }
+            ctx.hello.getDependencies(function (err, dependencies) {
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(2)
+              var expected0 = createExpectedConnection({name: 'goodbye'})
+              var expected1 = createExpectedConnection({name: 'adelle'})
+              expect(dependencies).to.deep.includes([expected0, expected1])
+              done(err)
+            })
+          })
+        })
+        it('should remove the only dependency', function (done) {
+          ctx.hello.env = []
+          ctx.hello.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              return done(err)
+            }
+            ctx.hello.getDependencies(function (err, dependencies) {
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(0)
+              done(err)
+            })
+          })
+        })
+      })
+      describe('connecting to branches', function () {
+        beforeEach(function (done) {
+          createNewInstance('fb1-adelle', {
+            name: 'fb1-adelle',
+            masterPod: false,
+            cv: ctx.adelle.contextVersion
+          })(done)
+        })
+        beforeEach(function (done) {
+          createNewInstance('fb1-goodbye', {
+            name: 'fb1-goodbye',
+            masterPod: false,
+            cv: ctx.goodbye.contextVersion
+          })(done)
+        })
+        beforeEach(function (done) {
+          // Set the dep to a branch
+          ctx.hello.addDependency(ctx['fb1-adelle'], 'adelle-staging-' + ownerName + '.runnableapp.com', done)
+        })
+        it('should add a new dep for each env, when starting with none', function (done) {
+          ctx.hello.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              return done(err)
+            }
+            ctx.hello.getDependencies(function (err, dependencies) {
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(1)
+              var expected = createExpectedConnection({name: 'fb1-adelle', parentName: 'adelle'})
+              expect(dependencies[0]).to.deep.include(expected)
+              done(err)
+            })
+          })
+        })
+        it('should add 1 new dep, and keep the existing one', function (done) {
+          ctx.hello.env.push([
+            'as=goodbye-staging-' + ownerName + '.runnableapp.com'
+          ])
+          ctx.hello.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              return done(err)
+            }
+            ctx.hello.getDependencies(function (err, dependencies) {
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(2)
+              var expected0 = createExpectedConnection({name: 'goodbye'})
+              var expected1 = createExpectedConnection({name: 'fb1-adelle', parentName: 'adelle'})
+              expect(dependencies).to.deep.includes([expected0, expected1])
+              done(err)
+            })
+          })
+        })
+        it('should remove the only dependency', function (done) {
+          ctx.hello.env = []
+          ctx.hello.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              return done(err)
+            }
+            ctx.hello.getDependencies(function (err, dependencies) {
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(0)
+              done(err)
+            })
+          })
+        })
+      })
+
+      describe('being isolated', function () {
+        beforeEach(function (done) {
+          createNewInstance('fb1-hello', {
+            name: 'fb1-hello',
+            masterPod: false,
+            env: [
+              'df=goodbye-staging-' + ownerName + '.runnableapp.com'
+            ],
+            cv: ctx.hello.contextVersion
+          })(function () {
+            Instance.findOneAndUpdate({
+              _id: ctx['fb1-hello']._id
+            }, {
+              $set: {
+                isolated: ctx['fb1-hello']._id,
+                isIsolationGroupMaster: true
+              }
+            }, function (err, instance) {
+              ctx['fb1-hello'] = instance
+              done(err)
+            })
+          })
+        })
+        beforeEach(function (done) {
+          createNewInstance('fb1-adelle', {
+            name: 'fb1-adelle',
+            masterPod: false,
+            cv: ctx.adelle.contextVersion
+          })(done)
+        })
+
+        var fb1GoodbyeName = null
+
+        beforeEach(function (done) {
+          fb1GoodbyeName = ctx['fb1-hello'].shortHash + '--goodbye'
+          createNewInstance(fb1GoodbyeName, {
+            name: fb1GoodbyeName,
+            masterPod: false,
+            isolated: ctx['fb1-hello']._id,
+            cv: ctx.goodbye.contextVersion
+          })(done)
+        })
+        beforeEach(function (done) {
+          ctx['fb1-hello'].setDependenciesFromEnvironment(ownerName, done)
+        })
+        it('should add the isolated branch as the dep from the start', function (done) {
+          ctx['fb1-hello'].getDependencies(function (err, dependencies) {
+            if (err) {
+              return done(err)
+            }
+            expect(dependencies).to.be.array()
+            expect(dependencies.length).to.equal(1)
+            var expected = createExpectedConnection({
+              name: fb1GoodbyeName,
+              parentName: 'goodbye',
+              isolated: ctx['fb1-hello']._id.toString()
+            })
+            expect(dependencies[0]).to.deep.equal(expected)
+            done()
+          })
+        })
+        it('should add 1 new dep, and keep the existing one', function (done) {
+          ctx['fb1-hello'].env.push([
+            'as=adelle-staging-' + ownerName + '.runnableapp.com'
+          ])
+          ctx['fb1-hello'].setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              return done(err)
+            }
+            ctx['fb1-hello'].getDependencies(function (err, dependencies) {
+              if (err) {
+                return done(err)
+              }
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(2)
+              var expected0 = createExpectedConnection({
+                name: fb1GoodbyeName,
+                parentName: 'goodbye',
+                isolated: ctx['fb1-hello']._id.toString()
+              })
+              var expected1 = createExpectedConnection({name: 'adelle'})
+              expect(dependencies).to.deep.includes([expected0, expected1])
+              done()
+            })
+          })
+        })
+        it('should remove the only dependency', function (done) {
+          ctx['fb1-hello'].env = []
+          ctx['fb1-hello'].setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              return done(err)
+            }
+            ctx['fb1-hello'].getDependencies(function (err, dependencies) {
+              if (err) {
+                return done(err)
+              }
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(0)
+              done()
+            })
           })
         })
       })

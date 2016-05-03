@@ -852,7 +852,11 @@ describe('Context Version: ' + moduleName, function () {
         'build.completed': {$exists: false},
         'build.hash': cv.build.hash,
         'build._id': {$ne: cv.build._id},
-        advanced: false
+        advanced: false,
+        $or: [
+          { 'buildDockerfilePath': { $exists: false } },
+          { 'buildDockerfilePath': null }
+        ]
       })
 
       cv.findPendingDupe(function (err) {
@@ -967,7 +971,11 @@ describe('Context Version: ' + moduleName, function () {
         'build.completed': {$exists: true},
         'build.hash': cv.build.hash,
         'build._id': {$ne: cv.build._id},
-        advanced: false
+        advanced: false,
+        $or: [
+          {'buildDockerfilePath': {$exists: false}},
+          {'buildDockerfilePath': null}
+        ]
       })
 
       cv.findCompletedDupe(function (err) {
