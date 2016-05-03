@@ -381,19 +381,30 @@ describe('Isolation Services Model', function () {
       owner: { username: 'barnow' },
       isIsolationGroupMaster: true,
       contextVersion: {
-        appCodeVersions: [{
-          lowerRepo: 'barnow/api'
-        }]
+        context: 'a312213123122'
+      }
+    }
+    var mockOtherDependencyNode = {
+      lowerName: 'redis',
+      contextVersion: {
+        context: 'eweqw232131'
+      }
+    }
+    var mockDependencyNode = {
+      lowerName: 'mongodb',
+      contextVersion: {
+        context: 'cxfsdfg22'
       }
     }
     var mockChildInstance = {
       lowerName: 'deadbe--mongodb',
+      contextVersion: {
+        context: mockDependencyNode.contextVersion.context
+      },
       owner: { username: 'barnow' },
       isolated: 'deadbeefdeadbeefdeadbeef'
     }
     var children = [mockMasterInstance, mockChildInstance]
-    var mockDependencyNode = { lowerName: 'mongodb' }
-    var mockOtherDependencyNode = { lowerName: 'redis' }
 
     beforeEach(function (done) {
       mockMasterInstance.getDependenciesAsync = sinon.stub().resolves([mockDependencyNode, mockOtherDependencyNode])
