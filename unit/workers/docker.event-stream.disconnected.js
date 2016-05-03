@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/docker.event-stream.disconnected
+ * @module unit/workers/docker.events-stream.disconnected
  */
 'use strict'
 
@@ -9,7 +9,7 @@ var Lab = require('lab')
 var sinon = require('sinon')
 var TaskFatalError = require('ponos').TaskFatalError
 
-var dockerEventStreamDisconnected = require('workers/docker.event-stream.disconnected')
+var dockerEventStreamDisconnected = require('workers/docker.events-stream.disconnected')
 var rabbitMQ = require('models/rabbitmq')
 
 var lab = exports.lab = Lab.script()
@@ -18,7 +18,7 @@ var beforeEach = lab.beforeEach
 var describe = lab.describe
 var it = lab.it
 
-describe('docker.event-stream.disconnected unit test', function () {
+describe('docker.events-stream.disconnected unit test', function () {
   var testHost = 'http://host:4242'
   var testOrg = '12345'
   var baseJob = {
@@ -94,4 +94,4 @@ describe('docker.event-stream.disconnected unit test', function () {
       })
     })
   }) // end valid job
-}) // end docker.event-stream.disconnected unit test
+}) // end docker.events-stream.disconnected unit test
