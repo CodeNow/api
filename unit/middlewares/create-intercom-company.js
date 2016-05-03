@@ -3,13 +3,11 @@
 require('loadenv')()
 
 var Lab = require('lab')
-var keypather = require('keypather')()
 var rewire = require('rewire')
 var sinon = require('sinon')
 var Promise = require('bluebird')
 
 var lab = exports.lab = Lab.script()
-
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
@@ -21,7 +19,6 @@ var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('middlewares/create-intercom-company unit test: ' + moduleName, function () {
-
   var mockOrion
   var oldOrion
   var req
