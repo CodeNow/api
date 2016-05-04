@@ -749,4 +749,44 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       done()
     })
   }) // end publishContainerImageBuilderStarted
+
+  describe('publishDockRemoved', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        githubId: 1234,
+        host: 'http://10.0.0.1:4242'
+      }
+      ctx.rabbitMQ.publishDockRemoved(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish,
+        'dock.removed',
+        data)
+      done()
+    })
+
+    it('should throw an error when host is missing', function (done) {
+      var data = { githubId: 1234 }
+      expect(ctx.rabbitMQ.publishDockRemoved.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+
+    it('should throw an error when githubId is missing', function (done) {
+      var data = { host: 'http://10.0.0.1:4242' }
+      expect(ctx.rabbitMQ.publishDockRemoved.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  }) // end publishDockRemoved
 })
