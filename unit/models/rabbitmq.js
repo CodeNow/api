@@ -718,6 +718,61 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
   })
 
+  describe('deleteContextVersion', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        contextVersionId: 1234
+      }
+      ctx.rabbitMQ.deleteContextVersion(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'context-version.delete', data)
+      done()
+    })
+    it('should throw an error when parameters are missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.deleteContextVersion.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  })
+
+  describe('contextVersionDeleted', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var cv = { _id: 1 }
+      var data = {
+        contextVersion: cv
+      }
+      ctx.rabbitMQ.contextVersionDeleted(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'context-version.deleted', data)
+      done()
+    })
+    it('should throw an error when parameters are missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.deleteContextVersion.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  })
+
   describe('publishContainerImageBuilderStarted', function () {
     beforeEach(function (done) {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
