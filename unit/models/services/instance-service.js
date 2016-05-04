@@ -253,6 +253,21 @@ describe('InstanceService', function () {
           done()
         })
     })
+    it('should not delete the old context version if there is no old context version', function (done) {
+      var updates = {
+        build: 'build_id'
+      }
+      var newInstance = clone(instance)
+      assign(newInstance.contextVersion, null)
+      Instance.findByIdAndUpdateAsync.resolves(newInstance)
+
+      InstanceService.updateInstanceBuild(instance, updates, 12345)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(rabbitMQ.deleteContextVersion)
+          done()
+        })
+    })
   })
 
   describe('#deleteInstanceContainer', function () {
