@@ -169,6 +169,7 @@ var factory = module.exports = {
     ContextVersion.create(data, cb)
   },
   cvTemplate: function (ownerGithubId, buildExtend, opts) {
+    opts = opts || {}
     var cv = {
       infraCodeVersion: new ObjectId(),
       createdBy: {
