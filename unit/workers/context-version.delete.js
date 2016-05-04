@@ -110,7 +110,7 @@ describe('Context Version Delete Worker', function () {
             expect(err).to.be.instanceOf(TaskFatalError)
             expect(err.data.validationError).to.exist()
             expect(err.data.validationError.message)
-              .to.match(/job.+required/)
+              .to.match(/must.+be.+string/)
             done()
           })
         })
@@ -128,7 +128,7 @@ describe('Context Version Delete Worker', function () {
       Worker(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(ContextVersion.findByIdAsync)
-        sinon.assert.calledWithExactly(ContextVersion.findByIdAsync, testContextVersion._id)
+        sinon.assert.calledWithExactly(ContextVersion.findByIdAsync, testContextVersion._id.toString())
         done()
       })
     })
@@ -137,15 +137,18 @@ describe('Context Version Delete Worker', function () {
       Worker(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(ContextVersion.removeByIdAsync)
+        sinon.assert.calledWith(ContextVersion.removeByIdAsync, testContextVersion._id.toString())
         done()
       })
     })
 
-    it('should publish an event that the context verison was deleted', function (done) {
+    it('should publish an event that the context version was deleted', function (done) {
       Worker(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(rabbitMQ.contextVersionDeleted)
-        sinon.assert.calledWithExactly(rabbitMQ.contextVersionDeleted, testContextVersion)
+        sinon.assert.calledWith(rabbitMQ.contextVersionDeleted, {
+          contextVersion: testContextVersion
+        })
         done()
       })
     })
