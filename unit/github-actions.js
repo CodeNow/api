@@ -113,9 +113,20 @@ describe('GitHub Actions: ' + moduleName, function () {
     })
   })
 
-  describe('checkRepoOwnerOrgIsWhitelisted', function () {
+  describe('checkRepoOrganizationAgainstWhitelist', function () {
+    var req = {
+      githubPushInfo: {
+        repoOwnerOrgName: 'CodeNow'
+      }
+    }
+    var res
+
     beforeEach(function (done) {
-      sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, { _id: 'some-id' })
+      sinon.stub(UserWhitelist, 'findOne')
+        .yieldsAsync(null, { _id: 'some-id', allowed: true })
+      res = {}
+      res.status = sinon.stub().returns(res)
+      res.send = function () {}
       done()
     })
     afterEach(function (done) {
@@ -126,12 +137,8 @@ describe('GitHub Actions: ' + moduleName, function () {
     it('should next with error if db call failed', function (done) {
       var mongoErr = new Error('Mongo error')
       UserWhitelist.findOne.yieldsAsync(mongoErr)
-      var req = {
-        githubPushInfo: {
-          repoOwnerOrgName: 'CodeNow'
-        }
-      }
-      githubActions.checkRepoOwnerOrgIsWhitelisted(req, {}, function (err) {
+
+      githubActions.checkRepoOrganizationAgainstWhitelist(req, res, function (err) {
         expect(err).to.equal(mongoErr)
         sinon.assert.calledOnce(UserWhitelist.findOne)
         sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
@@ -139,12 +146,7 @@ describe('GitHub Actions: ' + moduleName, function () {
       })
     })
     it('should next without error if everything worked', function (done) {
-      var req = {
-        githubPushInfo: {
-          repoOwnerOrgName: 'CodeNow'
-        }
-      }
-      githubActions.checkRepoOwnerOrgIsWhitelisted(req, {}, function (err) {
+      githubActions.checkRepoOrganizationAgainstWhitelist(req, res, function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(UserWhitelist.findOne)
         sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
@@ -152,26 +154,32 @@ describe('GitHub Actions: ' + moduleName, function () {
       })
     })
     it('should respond with 403 if no whitelist found', function (done) {
-      var req = {
-        githubPushInfo: {
-          repoOwnerOrgName: 'CodeNow'
-        }
-      }
       UserWhitelist.findOne.yieldsAsync(null, null)
-      var res = {
-        status: function (code) {
-          return {
-            send: function (message) {
-              expect(code).to.equal(403)
-              expect(message).to.equal('Repo owner is not registered in Runnable')
-              sinon.assert.calledOnce(UserWhitelist.findOne)
-              sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
-              done()
-            }
-          }
-        }
-      }
-      githubActions.checkRepoOwnerOrgIsWhitelisted(req, res, function () {
+      sinon.stub(res, 'send', function (message) {
+        sinon.assert.calledOnce(res.status)
+        sinon.assert.calledWithExactly(res.status, 403)
+        sinon.assert.calledOnce(res.send)
+        sinon.assert.calledWithExactly(res.send, sinon.match(/not registered/))
+        sinon.assert.calledOnce(UserWhitelist.findOne)
+        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
+        done()
+      })
+      githubActions.checkRepoOrganizationAgainstWhitelist(req, res, function () {
+        throw new Error('Should never happen')
+      })
+    })
+    it('should respond with 403 if not allowed', function (done) {
+      UserWhitelist.findOne.yieldsAsync(null, { allowed: false })
+      sinon.stub(res, 'send', function (message) {
+        sinon.assert.calledOnce(res.status)
+        sinon.assert.calledWithExactly(res.status, 403)
+        sinon.assert.calledOnce(res.send)
+        sinon.assert.calledWithExactly(res.send, sinon.match(/suspended/))
+        sinon.assert.calledOnce(UserWhitelist.findOne)
+        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
+        done()
+      })
+      githubActions.checkRepoOrganizationAgainstWhitelist(req, res, function () {
         throw new Error('Should never happen')
       })
     })

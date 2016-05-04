@@ -143,7 +143,7 @@ describe('Github - /actions/github', function () {
       done()
     })
     beforeEach(function (done) {
-      sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, {})
+      sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, { allowed: true })
       done()
     })
     afterEach(function (done) {
@@ -187,7 +187,7 @@ describe('Github - /actions/github', function () {
       })
     })
     beforeEach(function (done) {
-      sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, {})
+      sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, { allowed: true })
       done()
     })
     afterEach(function (done) {
@@ -229,7 +229,28 @@ describe('Github - /actions/github', function () {
       request.post(options, function (err, res, body) {
         if (err) { return done(err) }
         expect(res.statusCode).to.equal(403)
-        expect(body).to.match(/Repo owner is not registered in Runnable/i)
+        expect(body).to.match(/Repo owner is not registered on Runnable/i)
+        sinon.assert.calledOnce(UserWhitelist.findOne)
+        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'anton' })
+        done()
+      })
+    })
+
+    it('should return a 403 if the repo owner is whitelisted but disabled', function (done) {
+      // disabled organization
+      UserWhitelist.findOne.yieldsAsync(null, { allowed: false })
+
+      var data = {
+        branch: 'some-branch',
+        repo: 'some-repo',
+        ownerId: 3217371238,
+        owner: 'anton'
+      }
+      var options = hooks(data).push
+      request.post(options, function (err, res, body) {
+        if (err) { return done(err) }
+        expect(res.statusCode).to.equal(403)
+        expect(body).to.match(/organization has been suspended/i)
         sinon.assert.calledOnce(UserWhitelist.findOne)
         sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'anton' })
         done()
