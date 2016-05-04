@@ -1,6 +1,7 @@
 /**
  * @module unit/models/services/instance-service
  */
+var assign = require('101/assign')
 var clone = require('101/clone')
 var keypather = require('keypather')()
 var Lab = require('lab')
@@ -47,8 +48,9 @@ describe('InstanceService', function () {
   })
 
   describe('updateInstanceBuild', function () {
+    var instance
     beforeEach(function (done) {
-      var instance = {
+      instance = {
         _id: 'instance_id_1',
         shortHash: 'abc1',
         name: 'hellonode',
@@ -58,6 +60,7 @@ describe('InstanceService', function () {
           username: 'anton'
         },
         contextVersion: {
+          _id: '123',
           appCodeVersions: [
             {
               lowerBranch: 'master',
@@ -77,6 +80,7 @@ describe('InstanceService', function () {
       sinon.stub(InstanceService, 'deleteInstanceContainer').returns()
       sinon.stub(Build, 'findByIdAsync').resolves(build)
       sinon.stub(rabbitMQ, 'createInstanceContainer').returns()
+      sinon.stub(rabbitMQ, 'deleteContextVersion')
       done()
     })
     afterEach(function (done) {
@@ -84,6 +88,7 @@ describe('InstanceService', function () {
       InstanceService.deleteInstanceContainer.restore()
       Build.findByIdAsync.restore()
       rabbitMQ.createInstanceContainer.restore()
+      rabbitMQ.deleteContextVersion.restore()
       done()
     })
     it('should return an error if instance update failed', function (done) {
@@ -92,7 +97,7 @@ describe('InstanceService', function () {
       var updates = {
         build: 'build_id'
       }
-      InstanceService.updateInstanceBuild({ _id: 'instance_id_1' }, updates, 12345)
+      InstanceService.updateInstanceBuild(instance, updates, 12345)
         .asCallback(function (err) {
           expect(err).to.equal(mongoError)
           sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
@@ -107,7 +112,7 @@ describe('InstanceService', function () {
       var updates = {
         build: 'build_id'
       }
-      InstanceService.updateInstanceBuild({ _id: 'instance_id_1' }, updates, 12345)
+      InstanceService.updateInstanceBuild(instance, updates, 12345)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
@@ -123,7 +128,7 @@ describe('InstanceService', function () {
       var updates = {
         build: 'build_id'
       }
-      InstanceService.updateInstanceBuild({ _id: 'instance_id_1' }, updates, 12345)
+      InstanceService.updateInstanceBuild(instance, updates, 12345)
         .asCallback(function (err) {
           expect(err).to.equal(mongoError)
           sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
@@ -138,7 +143,7 @@ describe('InstanceService', function () {
       var updates = {
         build: 'build_id'
       }
-      InstanceService.updateInstanceBuild({ _id: 'instance_id_1' }, updates, 12345)
+      InstanceService.updateInstanceBuild(instance, updates, 12345)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
@@ -153,7 +158,7 @@ describe('InstanceService', function () {
       var updates = {
         build: 'build_id'
       }
-      InstanceService.updateInstanceBuild({ _id: 'instance_id_1' }, updates, 12345)
+      InstanceService.updateInstanceBuild(instance, updates, 12345)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
@@ -177,6 +182,7 @@ describe('InstanceService', function () {
           username: 'anton'
         },
         contextVersion: {
+          _id: '123',
           appCodeVersions: [
             {
               lowerBranch: 'master',
@@ -212,6 +218,38 @@ describe('InstanceService', function () {
             InstanceService.deleteInstanceContainer,
             Build.findByIdAsync,
             rabbitMQ.createInstanceContainer)
+          done()
+        })
+    })
+    it('should not delete the old context version if there is a new context version', function (done) {
+      var updates = {
+        build: 'build_id'
+      }
+      var newInstance = clone(instance)
+      Instance.findByIdAndUpdateAsync.resolves(newInstance)
+
+      InstanceService.updateInstanceBuild(instance, updates, 12345)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(rabbitMQ.deleteContextVersion)
+          done()
+        })
+    })
+    it('should delete the old context version if there is a new context version', function (done) {
+      var updates = {
+        build: 'build_id'
+      }
+      var newInstance = clone(instance)
+      assign(newInstance.contextVersion, { _id: '456' })
+      Instance.findByIdAndUpdateAsync.resolves(newInstance)
+
+      InstanceService.updateInstanceBuild(instance, updates, 12345)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(rabbitMQ.deleteContextVersion)
+          sinon.assert.calledWith(rabbitMQ.deleteContextVersion, {
+            contextVersionId: instance.contextVersion._id
+          })
           done()
         })
     })
