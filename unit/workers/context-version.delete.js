@@ -115,6 +115,19 @@ describe('Context Version Delete Worker', function () {
           })
         })
       })
+
+      describe('context version not found', function () {
+        it('should throw a task fatal error if the context-version was not found', function (done) {
+          ContextVersion.findByIdAsync.resolves(null)
+          Worker(testJob).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err.message)
+              .to.match(/contextversion.+not.+found/i)
+            done()
+          })
+        })
+      })
     })
 
     it('should return no error', function (done) {
