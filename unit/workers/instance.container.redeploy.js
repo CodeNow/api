@@ -491,10 +491,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             sinon.assert.calledOnce(Instance.prototype.update)
             var query = Instance.prototype.update.getCall(0).args[0]
             expect(query['$unset'].container).to.equal(1)
-            expect(objectId.equals(
-              query['$set']['contextVersion._id'],
-              build.contextVersions[0]
-            )).to.be.true()
+            expect(objectId.equals(query['$set']['contextVersion'], cv)).to.be.true()
 
             sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
             sinon.assert.calledWith(User.prototype.findGithubUsernameByGithubId, instance.owner.github)
