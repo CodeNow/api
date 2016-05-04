@@ -18,7 +18,6 @@ var InstanceService = require('models/services/instance-service')
 var ContextVersion = require('models/mongo/context-version')
 var User = require('models/mongo/user')
 var Build = require('models/mongo/build')
-var objectId = require('objectid')
 
 var TaskFatalError = require('ponos').TaskFatalError
 var afterEach = lab.afterEach
@@ -491,7 +490,6 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             sinon.assert.calledOnce(Instance.prototype.update)
             var query = Instance.prototype.update.getCall(0).args[0]
             expect(query['$unset'].container).to.equal(1)
-            expect(objectId.equals(query['$set']['contextVersion'], cv)).to.be.true()
 
             sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
             sinon.assert.calledWith(User.prototype.findGithubUsernameByGithubId, instance.owner.github)
