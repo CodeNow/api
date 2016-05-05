@@ -1032,6 +1032,40 @@ describe('docker: ' + moduleName, function () {
     })
   })
 
+  describe('updateContainer', function () {
+    var testId = 'some-container-id'
+    var testMemory = 12345
+    beforeEach(function (done) {
+      sinon.stub(model, '_containerAction')
+      done()
+    })
+    afterEach(function (done) {
+      model._containerAction.restore()
+      done()
+    })
+    it('should call _containerAction with correct args', function (done) {
+      model._containerAction.yieldsAsync()
+      model.updateContainer(testId, testMemory, function (err, resp) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(model._containerAction)
+        sinon.assert.calledWith(model._containerAction, testId, 'update', {
+          Memory: testMemory
+        })
+        done()
+      })
+    })
+
+    it('should call _containerAction and callback with an error', function (done) {
+      var dockerErr = new Error('Docker error')
+      model._containerAction.yieldsAsync(dockerErr)
+      model.updateContainer(testId, testMemory, function (err, resp) {
+        expect(err).to.equal(dockerErr)
+        sinon.assert.calledOnce(model._containerAction)
+        done()
+      })
+    })
+  })
+
   describe('removeContainer', function () {
     beforeEach(function (done) {
       ctx.resp = { removed: true }
