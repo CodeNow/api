@@ -94,7 +94,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         sinon.stub(messenger, 'messageRoom')
         sinon.stub(Docker.prototype, 'startContainer').yieldsAsync()
 
-        sinon.spy(Docker.prototype, 'startImageBuilderContainerAsync')
+        sinon.spy(Docker.prototype, 'startContainerAsync')
 
         sinon.spy(ContextVersion, 'updateAsync')
         sinon.spy(ContextVersion, 'findAsync')
@@ -117,7 +117,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         messenger.messageRoom.restore()
         Docker.prototype.startContainer.restore()
 
-        Docker.prototype.startImageBuilderContainerAsync.restore()
+        Docker.prototype.startContainerAsync.restore()
 
         ContextVersion.updateAsync.restore()
         ContextVersion.findAsync.restore()
@@ -157,7 +157,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
           OnImageBuilderContainerCreate(job)
             .then(function () {
               sinon.assert.calledOnce(ContextVersion.updateAsync)
-              sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, job.id)
+              sinon.assert.calledWith(Docker.prototype.startContainerAsync, job.id)
 
               sinon.assert.calledOnce(Instance.prototype.updateCv)
               sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
@@ -211,7 +211,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
           OnImageBuilderContainerCreate(job)
             .then(function () {
               sinon.assert.calledOnce(ContextVersion.updateAsync)
-              sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, job.id)
+              sinon.assert.calledWith(Docker.prototype.startContainerAsync, job.id)
               sinon.assert.calledTwice(Instance.prototype.updateCv)
               sinon.assert.calledTwice(rabbitMQ.instanceUpdated)
               return ContextVersion.findByIdAsync(ctx.cv._id)
