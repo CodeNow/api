@@ -12,6 +12,7 @@ var sinon = require('sinon')
 var Promise = require('bluebird')
 var pluck = require('101/pluck')
 var assign = require('101/assign')
+var createCount = require('callback-count')
 
 var mongoFactory = require('../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
@@ -49,25 +50,40 @@ describe('Isolation Services Integration Tests', function () {
     }
     done()
   })
-  function createNewInstance (name, isolatedOpts) {
+  function createNewInstance (name, isolatedOpts, contextId) {
     return function (done) {
       isolatedOpts = isolatedOpts || {}
       var opts = assign({
         name: name,
         username: ctx.mockUsername
       }, isolatedOpts)
-      mongoFactory.createInstanceWithProps(ctx.mockSessionUser._id, opts, function (err, instance) {
+      var count = createCount(1, function (err) {
         if (err) {
           return done(err)
         }
-        ctx[name] = instance
-        done(null, instance)
+        mongoFactory.createInstanceWithProps(ctx.mockSessionUser._id, opts, function (err, instance) {
+          if (err) {
+            return done(err)
+          }
+          ctx[name] = instance
+          done(null, instance)
+        })
       })
+      if (contextId) {
+        count.inc()
+        mongoFactory.createStartedCv(ctx.mockSessionUser._id, {
+          context: contextId
+        }, function (err, cv) {
+          opts.cv = cv
+          count.next(err)
+        })
+      }
+      count.next()
     }
   }
-  var createNewInstanceAsync = function (name, isolatedOpts) {
+  var createNewInstanceAsync = function (name, isolatedOpts, contextId) {
     return Promise.fromCallback(function (cb) {
-      createNewInstance(name, isolatedOpts)(cb)
+      createNewInstance(name, isolatedOpts, contextId)(cb)
     })
   }
   beforeEach(createNewInstance('Frontend'))
@@ -177,11 +193,11 @@ describe('Isolation Services Integration Tests', function () {
       } else {
         isolationOpts.isolated = forked[masterName]._id
       }
-      return createNewInstanceAsync(ctx[masterName].shortHash + dashes + instanceName, isolationOpts)
+      var name = ctx[masterName].shortHash + dashes + instanceName
+      return createNewInstanceAsync(name, isolationOpts, ctx[instanceName].contextVersion.context)
         .then(function (instanceModel) {
           forked[instanceName] = instanceModel
           sinon.stub(instanceModel, 'getMainBranchName').returns('branch1')
-          instanceModel.contextVersion.appCodeVersions = [{ lowerRepo: instanceName.toLowerCase() }]
           return instanceModel
         })
     }

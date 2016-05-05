@@ -381,19 +381,30 @@ describe('Isolation Services Model', function () {
       owner: { username: 'barnow' },
       isIsolationGroupMaster: true,
       contextVersion: {
-        appCodeVersions: [{
-          lowerRepo: 'barnow/api'
-        }]
+        context: 'a312213123122'
+      }
+    }
+    var mockOtherDependencyNode = {
+      lowerName: 'redis',
+      contextVersion: {
+        context: 'eweqw232131'
+      }
+    }
+    var mockDependencyNode = {
+      lowerName: 'mongodb',
+      contextVersion: {
+        context: 'cxfsdfg22'
       }
     }
     var mockChildInstance = {
       lowerName: 'deadbe--mongodb',
+      contextVersion: {
+        context: mockDependencyNode.contextVersion.context
+      },
       owner: { username: 'barnow' },
       isolated: 'deadbeefdeadbeefdeadbeef'
     }
     var children = [mockMasterInstance, mockChildInstance]
-    var mockDependencyNode = { lowerName: 'mongodb' }
-    var mockOtherDependencyNode = { lowerName: 'redis' }
 
     beforeEach(function (done) {
       mockMasterInstance.getDependenciesAsync = sinon.stub().resolves([mockDependencyNode, mockOtherDependencyNode])
@@ -403,6 +414,35 @@ describe('Isolation Services Model', function () {
       mockMasterInstance.removeDependencyAsync = sinon.stub().resolves()
       mockChildInstance.getElasticHostname = sinon.stub().returns('deadbe--mongodb-staging-barnow.runnableapp.com')
       done()
+    })
+    describe('Errors', function () {
+      it('should throw an error if the instance doesn\'t have an contextId', function (done) {
+        IsolationService._updateDependenciesForInstanceWithChildren(
+          mockMasterInstance,
+          [{
+            lowerName: 'deadbe--mongodb',
+            owner: { username: 'barnow' },
+            isolated: 'deadbeefdeadbeefdeadbeef'
+          }]
+        )
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.include('is missing a contextId')
+            done()
+          })
+      })
+      it('should throw an error if the instance doesn\'t have an contextId', function (done) {
+        mockMasterInstance.getDependenciesAsync.resolves([{}])
+        IsolationService._updateDependenciesForInstanceWithChildren(
+          mockMasterInstance,
+          children
+        )
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.include('is missing a contextId')
+            done()
+          })
+      })
     })
 
     it('should fetch the dependencies for the instance', function (done) {
@@ -999,7 +1039,10 @@ describe('Isolation Services Model', function () {
       setDependenciesFromEnvironmentAsync: sinon.stub()
     }
     var mockChildInstances
-    var mockChildInstance = { _id: 'childInstanceId' }
+    var mockChildInstance = {
+      _id: 'childInstanceId',
+      removeSelfFromGraphAsync: sinon.stub()
+    }
 
     beforeEach(function (done) {
       mockChildInstances = []
@@ -1012,6 +1055,7 @@ describe('Isolation Services Model', function () {
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       mockInstance.setDependenciesFromEnvironmentAsync.reset()
+      mockChildInstance.removeSelfFromGraphAsync.reset()
       done()
     })
 
@@ -1188,6 +1232,7 @@ describe('Isolation Services Model', function () {
             rabbitMQ.deleteInstance,
             { instanceId: mockChildInstance._id }
           )
+          sinon.assert.calledOnce(mockChildInstance.removeSelfFromGraphAsync)
           done()
         })
     })
@@ -1198,6 +1243,7 @@ describe('Isolation Services Model', function () {
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(rabbitMQ.deleteInstance)
+          sinon.assert.calledTwice(mockChildInstance.removeSelfFromGraphAsync)
           done()
         })
     })
