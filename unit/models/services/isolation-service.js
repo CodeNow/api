@@ -415,6 +415,35 @@ describe('Isolation Services Model', function () {
       mockChildInstance.getElasticHostname = sinon.stub().returns('deadbe--mongodb-staging-barnow.runnableapp.com')
       done()
     })
+    describe('Errors', function () {
+      it('should throw an error if the instance doesn\'t have an contextId', function (done) {
+        IsolationService._updateDependenciesForInstanceWithChildren(
+          mockMasterInstance,
+          [{
+            lowerName: 'deadbe--mongodb',
+            owner: { username: 'barnow' },
+            isolated: 'deadbeefdeadbeefdeadbeef'
+          }]
+        )
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.include('is missing a contextId')
+            done()
+          })
+      })
+      it('should throw an error if the instance doesn\'t have an contextId', function (done) {
+        mockMasterInstance.getDependenciesAsync.resolves([{}])
+        IsolationService._updateDependenciesForInstanceWithChildren(
+          mockMasterInstance,
+          children
+        )
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.include('is missing a contextId')
+            done()
+          })
+      })
+    })
 
     it('should fetch the dependencies for the instance', function (done) {
       IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
