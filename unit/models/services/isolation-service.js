@@ -1039,7 +1039,10 @@ describe('Isolation Services Model', function () {
       setDependenciesFromEnvironmentAsync: sinon.stub()
     }
     var mockChildInstances
-    var mockChildInstance = { _id: 'childInstanceId' }
+    var mockChildInstance = {
+      _id: 'childInstanceId',
+      removeSelfFromGraphAsync: sinon.stub()
+    }
 
     beforeEach(function (done) {
       mockChildInstances = []
@@ -1052,6 +1055,7 @@ describe('Isolation Services Model', function () {
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       mockInstance.setDependenciesFromEnvironmentAsync.reset()
+      mockChildInstance.removeSelfFromGraphAsync.reset()
       done()
     })
 
@@ -1228,6 +1232,7 @@ describe('Isolation Services Model', function () {
             rabbitMQ.deleteInstance,
             { instanceId: mockChildInstance._id }
           )
+          sinon.assert.calledOnce(mockChildInstance.removeSelfFromGraphAsync)
           done()
         })
     })
@@ -1238,6 +1243,7 @@ describe('Isolation Services Model', function () {
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(rabbitMQ.deleteInstance)
+          sinon.assert.calledTwice(mockChildInstance.removeSelfFromGraphAsync)
           done()
         })
     })
