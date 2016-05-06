@@ -859,7 +859,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     it('should publish the job with the correct payload', function (done) {
       var data = {
         containerId: 'abcd',
-        Memory: 12345
+        memoryInBytes: 12345
       }
       ctx.rabbitMQ.updateContainerMemory(data)
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
@@ -878,7 +878,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
 
     it('should throw an error when githubId is missing', function (done) {
-      var data = { Memory: 12345 }
+      var data = { memoryInBytes: 12345 }
       expect(ctx.rabbitMQ.updateContainerMemory.bind(ctx.rabbitMQ, data))
         .to.throw(Error, /^Validation failed/)
       done()

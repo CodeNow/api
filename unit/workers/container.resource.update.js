@@ -3,18 +3,17 @@
  */
 'use strict'
 
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-
 var clone = require('101/clone')
 var Code = require('code')
-var noop = require('101/noop')
+var Lab = require('lab')
+var Promise = require('bluebird')
 var sinon = require('sinon')
 var TaskFatalError = require('ponos').TaskFatalError
 
 var ContainerImageBuilderCreated = require('workers/container.resource.update')
-var ContextVersion = require('models/mongo/context-version')
-var messenger = require('socket/messenger')
+var Docker = require('models/apis/docker')
+
+var lab = exports.lab = Lab.script()
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -23,10 +22,11 @@ var expect = Code.expect
 var it = lab.it
 
 describe('container.resource.update unit test', function () {
-  var testCvBuildId = 'dat_cv_id'
+  var testId = 'adsfasdf'
+  var testMem = 1234
   var testJobData = {
-    containerId: 'adsfasdf',
-    memoryInBytes: 12345
+    containerId: testId,
+    memoryInBytes: testMem
   }
   var testJob
 
@@ -47,11 +47,11 @@ describe('container.resource.update unit test', function () {
     })
 
     it('should throw if memoryInBytes is a string', function (done) {
-      testJob.memoryInBytes = '123123'
+      testJob.memoryInBytes = 'asdf'
 
       ContainerImageBuilderCreated(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
-        expect(err.data.err.message).to.match(/memoryInBytes.*required/)
+        expect(err.data.err.message).to.match(/memoryInBytes.*must be a number/)
         done()
       })
     })
@@ -65,5 +65,51 @@ describe('container.resource.update unit test', function () {
         done()
       })
     })
+
+    it('should throw if containerId is a number', function (done) {
+      testJob.containerId = 123445
+
+      ContainerImageBuilderCreated(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.data.err.message).to.match(/containerId.*must be a string/)
+        done()
+      })
+    })
   }) // end job validation
+
+  describe('valid jobs', function () {
+    beforeEach(function (done) {
+      sinon.stub(Docker.prototype, 'updateContainerAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      Docker.prototype.updateContainerAsync.restore()
+      done()
+    })
+
+    it('should update container memory', function (done) {
+      Docker.prototype.updateContainerAsync.returns(Promise.resolve())
+      ContainerImageBuilderCreated(testJob).asCallback(function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(Docker.prototype.updateContainerAsync)
+        sinon.assert.calledWith(Docker.prototype.updateContainerAsync, testId, testMem)
+        done()
+      })
+    })
+
+    it('should TaskFatalError if 404', function (done) {
+      Docker.prototype.updateContainerAsync.returns(Promise.reject({
+        output: {
+          statusCode: 404
+        }
+      }))
+      ContainerImageBuilderCreated(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        sinon.assert.calledOnce(Docker.prototype.updateContainerAsync)
+        sinon.assert.calledWith(Docker.prototype.updateContainerAsync, testId, testMem)
+        done()
+      })
+    })
+  }) // end valid jobs
 }) // end container.resource.update unit test
