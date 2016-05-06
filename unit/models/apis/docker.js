@@ -65,6 +65,7 @@ var dockerLogs = {
 
 describe('docker: ' + moduleName, function () {
   var model = new Docker()
+  var testMemory = 12341234
   var ctx
 
   describe('constructor', function () {
@@ -146,6 +147,9 @@ describe('docker: ' + moduleName, function () {
             privateKey: 'private2'
           }
         ],
+        getUserContainerMemoryLimit: function () {
+          return testMemory
+        },
         toJSON: function () {
           var json = clone(ctx.mockContextVersion)
           delete json.toJSON
@@ -385,7 +389,8 @@ describe('docker: ' + moduleName, function () {
             Env: ctx.mockEnv,
             HostConfig: {
               CapDrop: process.env.CAP_DROP.split(','),
-              Binds: ['/var/run/docker.sock:/var/run/docker.sock']
+              Binds: ['/var/run/docker.sock:/var/run/docker.sock'],
+              Memory: testMemory
             },
             Labels: ctx.mockLabels
           }
@@ -436,7 +441,8 @@ describe('docker: ' + moduleName, function () {
             Env: ctx.mockEnv,
             HostConfig: {
               CapDrop: process.env.CAP_DROP.split(','),
-              Binds: ['/var/run/docker.sock:/var/run/docker.sock']
+              Binds: ['/var/run/docker.sock:/var/run/docker.sock'],
+              Memory: testMemory
             },
             Labels: ctx.mockLabels
           }
@@ -486,7 +492,8 @@ describe('docker: ' + moduleName, function () {
                   '/var/run/docker.sock:/var/run/docker.sock',
                   process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
                   process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
-                ]
+                ],
+                Memory: testMemory
               },
               Labels: ctx.mockLabels
             })
@@ -642,7 +649,6 @@ describe('docker: ' + moduleName, function () {
       it('should return an array of ENV for image builder container', function (done) {
         var opts = ctx.opts
         var buildOpts = {
-          Memory: process.env.BUILD_MEMORY_LIMIT_BYTES,
           forcerm: true,
           nocache: true
         }
@@ -692,7 +698,6 @@ describe('docker: ' + moduleName, function () {
       it('should return conditional container env', function (done) {
         var envs = model._createImageBuilderEnv(ctx.opts)
         var buildOpts = {
-          Memory: process.env.BUILD_MEMORY_LIMIT_BYTES,
           forcerm: true
         }
         expect(envs).to.contain([
@@ -1021,6 +1026,40 @@ describe('docker: ' + moduleName, function () {
       model.restartContainer('some-container-id', function (err, resp) {
         expect(err).to.equal(dockerErr)
         expect(resp).to.not.exist()
+        sinon.assert.calledOnce(model._containerAction)
+        done()
+      })
+    })
+  })
+
+  describe('updateContainerMemory', function () {
+    var testId = 'some-container-id'
+    var testMemory = 12345
+    beforeEach(function (done) {
+      sinon.stub(model, '_containerAction')
+      done()
+    })
+    afterEach(function (done) {
+      model._containerAction.restore()
+      done()
+    })
+    it('should call _containerAction with correct args', function (done) {
+      model._containerAction.yieldsAsync()
+      model.updateContainerMemory(testId, testMemory, function (err, resp) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(model._containerAction)
+        sinon.assert.calledWith(model._containerAction, testId, 'update', {
+          Memory: testMemory
+        })
+        done()
+      })
+    })
+
+    it('should call _containerAction and callback with an error', function (done) {
+      var dockerErr = new Error('Docker error')
+      model._containerAction.yieldsAsync(dockerErr)
+      model.updateContainerMemory(testId, testMemory, function (err, resp) {
+        expect(err).to.equal(dockerErr)
         sinon.assert.calledOnce(model._containerAction)
         done()
       })

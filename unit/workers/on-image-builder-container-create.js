@@ -85,7 +85,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       sinon.stub(ContextVersion, 'updateAsync')
       sinon.stub(ContextVersion, 'findAsync')
       sinon.stub(messenger, 'emitContextVersionUpdate')
-      sinon.stub(Docker.prototype, 'startImageBuilderContainerAsync')
+      sinon.stub(Docker.prototype, 'startContainerAsync')
       sinon.stub(InstanceService, 'emitInstanceUpdateByCvBuildId')
       done()
     })
@@ -94,7 +94,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       ContextVersion.updateAsync.restore()
       ContextVersion.findAsync.restore()
       messenger.emitContextVersionUpdate.restore()
-      Docker.prototype.startImageBuilderContainerAsync.restore()
+      Docker.prototype.startContainerAsync.restore()
       InstanceService.emitInstanceUpdateByCvBuildId.restore()
       done()
     })
@@ -139,14 +139,14 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
 
     it('should start container', function (done) {
       ContextVersion.updateAsync.returns(1)
-      Docker.prototype.startImageBuilderContainerAsync.returns()
+      Docker.prototype.startContainerAsync.returns()
       ContextVersion.findAsync.returns([])
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         if (err) { return done(err) }
 
-        sinon.assert.calledOnce(Docker.prototype.startImageBuilderContainerAsync)
-        sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, testContainerId)
+        sinon.assert.calledOnce(Docker.prototype.startContainerAsync)
+        sinon.assert.calledWith(Docker.prototype.startContainerAsync, testContainerId)
         done()
       })
     })
@@ -156,14 +156,14 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       var cv2 = { cv: 2, toJSON: noop }
       ContextVersion.updateAsync.returns(1)
       ContextVersion.findAsync.returns([cv1, cv2])
-      Docker.prototype.startImageBuilderContainerAsync.returns()
+      Docker.prototype.startContainerAsync.returns()
       messenger.emitContextVersionUpdate.returns()
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         if (err) { return done(err) }
 
-        sinon.assert.calledOnce(Docker.prototype.startImageBuilderContainerAsync)
-        sinon.assert.calledWith(Docker.prototype.startImageBuilderContainerAsync, testContainerId)
+        sinon.assert.calledOnce(Docker.prototype.startContainerAsync)
+        sinon.assert.calledWith(Docker.prototype.startContainerAsync, testContainerId)
 
         sinon.assert.calledOnce(ContextVersion.findAsync)
         sinon.assert.calledWith(ContextVersion.findAsync, {
