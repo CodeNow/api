@@ -1032,7 +1032,7 @@ describe('docker: ' + moduleName, function () {
     })
   })
 
-  describe('updateContainer', function () {
+  describe('updateContainerMemory', function () {
     var testId = 'some-container-id'
     var testMemory = 12345
     beforeEach(function (done) {
@@ -1045,7 +1045,7 @@ describe('docker: ' + moduleName, function () {
     })
     it('should call _containerAction with correct args', function (done) {
       model._containerAction.yieldsAsync()
-      model.updateContainer(testId, testMemory, function (err, resp) {
+      model.updateContainerMemory(testId, testMemory, function (err, resp) {
         if (err) { return done(err) }
         sinon.assert.calledOnce(model._containerAction)
         sinon.assert.calledWith(model._containerAction, testId, 'update', {
@@ -1058,7 +1058,7 @@ describe('docker: ' + moduleName, function () {
     it('should call _containerAction and callback with an error', function (done) {
       var dockerErr = new Error('Docker error')
       model._containerAction.yieldsAsync(dockerErr)
-      model.updateContainer(testId, testMemory, function (err, resp) {
+      model.updateContainerMemory(testId, testMemory, function (err, resp) {
         expect(err).to.equal(dockerErr)
         sinon.assert.calledOnce(model._containerAction)
         done()

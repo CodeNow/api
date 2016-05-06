@@ -79,35 +79,35 @@ describe('container.resource.update unit test', function () {
 
   describe('valid jobs', function () {
     beforeEach(function (done) {
-      sinon.stub(Docker.prototype, 'updateContainerAsync')
+      sinon.stub(Docker.prototype, 'updateContainerMemoryAsync')
       done()
     })
 
     afterEach(function (done) {
-      Docker.prototype.updateContainerAsync.restore()
+      Docker.prototype.updateContainerMemoryAsync.restore()
       done()
     })
 
     it('should update container memory', function (done) {
-      Docker.prototype.updateContainerAsync.returns(Promise.resolve())
+      Docker.prototype.updateContainerMemoryAsync.returns(Promise.resolve())
       ContainerImageBuilderCreated(testJob).asCallback(function (err) {
         if (err) { return done(err) }
-        sinon.assert.calledOnce(Docker.prototype.updateContainerAsync)
-        sinon.assert.calledWith(Docker.prototype.updateContainerAsync, testId, testMem)
+        sinon.assert.calledOnce(Docker.prototype.updateContainerMemoryAsync)
+        sinon.assert.calledWith(Docker.prototype.updateContainerMemoryAsync, testId, testMem)
         done()
       })
     })
 
     it('should TaskFatalError if 404', function (done) {
-      Docker.prototype.updateContainerAsync.returns(Promise.reject({
+      Docker.prototype.updateContainerMemoryAsync.returns(Promise.reject({
         output: {
           statusCode: 404
         }
       }))
       ContainerImageBuilderCreated(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskFatalError)
-        sinon.assert.calledOnce(Docker.prototype.updateContainerAsync)
-        sinon.assert.calledWith(Docker.prototype.updateContainerAsync, testId, testMem)
+        sinon.assert.calledOnce(Docker.prototype.updateContainerMemoryAsync)
+        sinon.assert.calledWith(Docker.prototype.updateContainerMemoryAsync, testId, testMem)
         done()
       })
     })
