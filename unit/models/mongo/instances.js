@@ -296,7 +296,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  describe('#findInstancesBuiltButNotStoppedOrCrashedByDockerHost', function () {
+  describe('#findInstancesBuilByDockerHost', function () {
     var testHost = 'http://10.0.0.1:4242'
     var instances = [
       {
@@ -315,17 +315,13 @@ describe('Instance Model Tests ' + moduleName, function () {
       done()
     })
     it('should get all instances from testHost', function (done) {
-      Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHost(testHost, function (err, foundInstances) {
+      Instance.findInstancesBuilByDockerHost(testHost, function (err, foundInstances) {
         expect(err).to.be.null()
         expect(foundInstances).to.equal(instances)
         sinon.assert.calledOnce(Instance.find)
         sinon.assert.calledWith(Instance.find, {
           'container.dockerHost': testHost,
-          'contextVersion.build.completed': { $exists: true },
-          $or: [
-            { 'container.inspect.State.Stopping': false },
-            { 'container.inspect.State.Status': { $ne: 'exited' } }
-          ]
+          'contextVersion.build.completed': { $exists: true }
         })
         done()
       })
@@ -333,14 +329,14 @@ describe('Instance Model Tests ' + moduleName, function () {
     it('should return an error if mongo fails', function (done) {
       var error = new Error('Mongo Error')
       Instance.find.yieldsAsync(error)
-      Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHost(testHost, function (err, foundInstances) {
+      Instance.findInstancesBuilByDockerHost(testHost, function (err, foundInstances) {
         sinon.assert.calledOnce(Instance.find)
         expect(err).to.equal(error)
         expect(foundInstances).to.not.exist()
         done()
       })
     })
-  }) // end findInstancesBuiltButNotStoppedOrCrashedByDockerHost
+  }) // end findInstancesBuilByDockerHost
 
   describe('#setStoppingAsStoppedByDockerHost', function () {
     var dockerHost = 'http://10.0.0.1:4242'
