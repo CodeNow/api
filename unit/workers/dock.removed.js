@@ -32,7 +32,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
 
   describe('worker', function () {
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findInstancesBuilByDockerHostAsync')
+      sinon.stub(Instance, 'findInstancesBuiltByDockerHostAsync')
       sinon.stub(ContextVersion, 'markDockRemovedByDockerHost').yieldsAsync()
       sinon.stub(Instance, 'setStoppingAsStoppedByDockerHost').yieldsAsync()
       sinon.stub(Worker, '_redeploy')
@@ -47,7 +47,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       Worker._redeploy.restore()
       Worker._updateFrontendInstances.restore()
 
-      Instance.findInstancesBuilByDockerHostAsync.restore()
+      Instance.findInstancesBuiltByDockerHostAsync.restore()
       ContextVersion.markDockRemovedByDockerHost.restore()
       Instance.setStoppingAsStoppedByDockerHost.restore()
       rabbitMQ.asgInstanceTerminate.restore()
@@ -426,22 +426,22 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       host: 'http://10.12.12.14:4242'
     }
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findInstancesBuilByDockerHostAsync')
+      sinon.stub(Instance, 'findInstancesBuiltByDockerHostAsync')
       sinon.stub(Worker, '_redeployContainers').returns()
       done()
     })
 
     afterEach(function (done) {
-      Instance.findInstancesBuilByDockerHostAsync.restore()
+      Instance.findInstancesBuiltByDockerHostAsync.restore()
       Worker._redeployContainers.restore()
       done()
     })
 
-    describe('#findInstancesBuilByDockerHostAsync fails', function () {
+    describe('#findInstancesBuiltByDockerHostAsync fails', function () {
       beforeEach(function (done) {
         var promise = Promise.reject(testErr)
         promise.suppressUnhandledRejections()
-        Instance.findInstancesBuilByDockerHostAsync.returns(promise)
+        Instance.findInstancesBuiltByDockerHostAsync.returns(promise)
         done()
       })
 
@@ -449,20 +449,20 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
         Worker._redeploy(testData)
           .asCallback(function (err) {
             expect(err.message).to.equal(testErr.message)
-            sinon.assert.calledOnce(Instance.findInstancesBuilByDockerHostAsync)
-            sinon.assert.calledWith(Instance.findInstancesBuilByDockerHostAsync, testData.host)
+            sinon.assert.calledOnce(Instance.findInstancesBuiltByDockerHostAsync)
+            sinon.assert.calledWith(Instance.findInstancesBuiltByDockerHostAsync, testData.host)
             done()
           })
       })
     })
 
-    describe('#findInstancesBuilByDockerHostAsync returns 2 instances', function () {
+    describe('#findInstancesBuiltByDockerHostAsync returns 2 instances', function () {
       var instances = [
         { _id: '1' },
         { _id: '2' }
       ]
       beforeEach(function (done) {
-        Instance.findInstancesBuilByDockerHostAsync.returns(Promise.resolve(instances))
+        Instance.findInstancesBuiltByDockerHostAsync.returns(Promise.resolve(instances))
         done()
       })
 
@@ -470,8 +470,8 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
         Worker._redeploy(testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
-            sinon.assert.calledOnce(Instance.findInstancesBuilByDockerHostAsync)
-            sinon.assert.calledWith(Instance.findInstancesBuilByDockerHostAsync, testData.host)
+            sinon.assert.calledOnce(Instance.findInstancesBuiltByDockerHostAsync)
+            sinon.assert.calledWith(Instance.findInstancesBuiltByDockerHostAsync, testData.host)
             sinon.assert.calledOnce(Worker._redeployContainers)
             sinon.assert.calledWith(Worker._redeployContainers, instances)
             done()

@@ -296,7 +296,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  describe('#findInstancesBuilByDockerHost', function () {
+  describe('#findInstancesBuiltByDockerHost', function () {
     var testHost = 'http://10.0.0.1:4242'
     var instances = [
       {
@@ -315,7 +315,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       done()
     })
     it('should get all instances from testHost', function (done) {
-      Instance.findInstancesBuilByDockerHost(testHost, function (err, foundInstances) {
+      Instance.findInstancesBuiltByDockerHost(testHost, function (err, foundInstances) {
         expect(err).to.be.null()
         expect(foundInstances).to.equal(instances)
         sinon.assert.calledOnce(Instance.find)
@@ -329,14 +329,14 @@ describe('Instance Model Tests ' + moduleName, function () {
     it('should return an error if mongo fails', function (done) {
       var error = new Error('Mongo Error')
       Instance.find.yieldsAsync(error)
-      Instance.findInstancesBuilByDockerHost(testHost, function (err, foundInstances) {
+      Instance.findInstancesBuiltByDockerHost(testHost, function (err, foundInstances) {
         sinon.assert.calledOnce(Instance.find)
         expect(err).to.equal(error)
         expect(foundInstances).to.not.exist()
         done()
       })
     })
-  }) // end findInstancesBuilByDockerHost
+  }) // end findInstancesBuiltByDockerHost
 
   describe('#setStoppingAsStoppedByDockerHost', function () {
     var dockerHost = 'http://10.0.0.1:4242'
