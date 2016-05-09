@@ -34,7 +34,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     beforeEach(function (done) {
       sinon.stub(Instance, 'findInstancesBuiltByDockerHostAsync')
       sinon.stub(ContextVersion, 'markDockRemovedByDockerHost').yieldsAsync()
-      sinon.stub(Instance, 'setStoppingAsStoppedByDockerHost').yieldsAsync()
       sinon.stub(Worker, '_redeploy')
       sinon.stub(Worker, '_rebuild')
       sinon.stub(Worker, '_updateFrontendInstances')
@@ -49,7 +48,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
 
       Instance.findInstancesBuiltByDockerHostAsync.restore()
       ContextVersion.markDockRemovedByDockerHost.restore()
-      Instance.setStoppingAsStoppedByDockerHost.restore()
       rabbitMQ.asgInstanceTerminate.restore()
       done()
     })
@@ -116,39 +114,8 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
-          sinon.assert.notCalled(Instance.setStoppingAsStoppedByDockerHost)
           sinon.assert.notCalled(Worker._redeploy)
           sinon.assert.notCalled(Worker._rebuild)
-          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
-          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
-            ipAddress: testTarget
-          })
-          done()
-        })
-      })
-    })
-
-    describe('Instance.setStoppingAsStoppedByDockerHost returns error', function () {
-      var testError = new Error('Mongo error')
-      beforeEach(function (done) {
-        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
-        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(testError)
-
-        Worker._redeploy.returns(Promise.resolve())
-        Worker._rebuild.returns(Promise.resolve())
-        Worker._updateFrontendInstances.returns(Promise.resolve())
-        done()
-      })
-
-      it('should error', function (done) {
-        Worker(testData).asCallback(function (err) {
-          expect(err.message).to.equal(testError.message)
-          sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
-          sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
-          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
-          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
-          sinon.assert.calledOnce(Worker._redeploy)
-          sinon.assert.calledOnce(Worker._rebuild)
           sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
           sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
             ipAddress: testTarget
@@ -162,7 +129,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       var testError = new Error('Redeploy error')
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
-        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(null)
         var rejectionPromise = Promise.reject(testError)
         rejectionPromise.suppressUnhandledRejections()
         Worker._redeploy.returns(rejectionPromise)
@@ -177,8 +143,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
-          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
-          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._redeploy)
           sinon.assert.calledOnce(Worker._updateFrontendInstances)
           sinon.assert.calledOnce(Worker._rebuild)
@@ -194,7 +158,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       var testError = new Error('Update error')
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
-        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(null)
         Worker._redeploy.returns(Promise.resolve())
         Worker._rebuild.returns(Promise.resolve())
         var rejectionPromise = Promise.reject(testError)
@@ -208,8 +171,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
-          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
-          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._redeploy)
           sinon.assert.calledTwice(Worker._updateFrontendInstances)
           sinon.assert.calledOnce(Worker._rebuild)
@@ -225,7 +186,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       var testError = new Error('Rebuild error')
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
-        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(null)
         Worker._redeploy.returns(Promise.resolve())
         Worker._updateFrontendInstances.returns(Promise.resolve())
         var rejectionPromise = Promise.reject(testError)
@@ -239,8 +199,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
-          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
-          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._redeploy)
           sinon.assert.calledOnce(Worker._updateFrontendInstances)
           sinon.assert.calledOnce(Worker._rebuild)
@@ -256,7 +214,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       var testError = new Error('Update error')
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
-        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(null)
         Worker._redeploy.returns(Promise.resolve())
         Worker._rebuild.returns(Promise.resolve())
         var rejectionPromise = Promise.reject(testError)
@@ -271,8 +228,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
-          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
-          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._redeploy)
           sinon.assert.calledOnce(Worker._rebuild)
           sinon.assert.calledTwice(Worker._updateFrontendInstances)
@@ -287,7 +242,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     describe('no errors', function () {
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
-        Instance.setStoppingAsStoppedByDockerHost.yieldsAsync(null)
         Worker._redeploy.returns(Promise.resolve())
         Worker._updateFrontendInstances.returns(Promise.resolve())
         Worker._rebuild.returns(Promise.resolve())
@@ -299,8 +253,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
-          sinon.assert.calledOnce(Instance.setStoppingAsStoppedByDockerHost)
-          sinon.assert.calledWith(Instance.setStoppingAsStoppedByDockerHost, testHost)
           sinon.assert.calledOnce(Worker._redeploy)
           sinon.assert.calledTwice(Worker._updateFrontendInstances)
           sinon.assert.calledOnce(Worker._rebuild)
