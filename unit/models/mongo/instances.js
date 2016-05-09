@@ -296,7 +296,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
   })
 
-  describe('#findInstancesBuiltButNotStoppedOrCrashedByDockerHost', function () {
+  describe('#findInstancesBuiltByDockerHost', function () {
     var testHost = 'http://10.0.0.1:4242'
     var instances = [
       {
@@ -315,17 +315,13 @@ describe('Instance Model Tests ' + moduleName, function () {
       done()
     })
     it('should get all instances from testHost', function (done) {
-      Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHost(testHost, function (err, foundInstances) {
+      Instance.findInstancesBuiltByDockerHost(testHost, function (err, foundInstances) {
         expect(err).to.be.null()
         expect(foundInstances).to.equal(instances)
         sinon.assert.calledOnce(Instance.find)
         sinon.assert.calledWith(Instance.find, {
           'container.dockerHost': testHost,
-          'contextVersion.build.completed': { $exists: true },
-          $or: [
-            { 'container.inspect.State.Stopping': false },
-            { 'container.inspect.State.Status': { $ne: 'exited' } }
-          ]
+          'contextVersion.build.completed': { $exists: true }
         })
         done()
       })
@@ -333,75 +329,14 @@ describe('Instance Model Tests ' + moduleName, function () {
     it('should return an error if mongo fails', function (done) {
       var error = new Error('Mongo Error')
       Instance.find.yieldsAsync(error)
-      Instance.findInstancesBuiltButNotStoppedOrCrashedByDockerHost(testHost, function (err, foundInstances) {
+      Instance.findInstancesBuiltByDockerHost(testHost, function (err, foundInstances) {
         sinon.assert.calledOnce(Instance.find)
         expect(err).to.equal(error)
         expect(foundInstances).to.not.exist()
         done()
       })
     })
-  }) // end findInstancesBuiltButNotStoppedOrCrashedByDockerHost
-
-  describe('#setStoppingAsStoppedByDockerHost', function () {
-    var dockerHost = 'http://10.0.0.1:4242'
-    beforeEach(function (done) {
-      sinon.stub(Instance, 'update')
-      done()
-    })
-    afterEach(function (done) {
-      Instance.update.restore()
-      done()
-    })
-    describe('if mongo passes', function () {
-      beforeEach(function (done) {
-        Instance.update.yieldsAsync()
-        done()
-      })
-
-      it('should call update with the right parameters', function (done) {
-        Instance.setStoppingAsStoppedByDockerHost(dockerHost, function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.update)
-          sinon.assert.calledWith(Instance.update,
-            {
-              'container.dockerHost': dockerHost,
-              'container.inspect.State.Stopping': true
-            }, {
-              $set: {
-                'container.inspect.State.Pid': 0,
-                'container.inspect.State.Running': false,
-                'container.inspect.State.Restarting': false,
-                'container.inspect.State.Paused': false,
-                'container.inspect.State.FinishedAt': sinon.match.string,
-                'container.inspect.State.ExitCode': 0
-              },
-              $unset: {
-                'container.inspect.State.Stopping': ''
-              }
-            }, {
-              multi: true
-            }
-          )
-          done()
-        })
-      })
-    })
-
-    describe('on mongoError', function () {
-      var error = 'heaters'
-      beforeEach(function (done) {
-        Instance.update.yieldsAsync(error)
-        done()
-      })
-      it('should propegate the error to the cb function', function (done) {
-        Instance.setStoppingAsStoppedByDockerHost(dockerHost, function (err) {
-          expect(err).to.equal(error)
-          sinon.assert.calledOnce(Instance.update)
-          done()
-        })
-      })
-    })
-  })
+  }) // end findInstancesBuiltByDockerHost
 
   describe('save', function () {
     it('should not save an instance with the same (lower) name and owner', function (done) {
