@@ -51,13 +51,14 @@ describe('Dependencies - /instances/:id/dependencies', function () {
       ctx.instance.fetchDependencies(expects.success(200, [], done))
     })
 
-    describe('Instance has a env dependency', function () {
+    describe('Instance has a env dependency', { timeout: 1000 }, function () {
       beforeEach(function (done) {
         ctx.elasticHostname = ctx.instance.getElasticHostname()
         var body = {
           env: [
             'other=' + ctx.elasticHostname
           ],
+          name: 'name',
           build: ctx.build.id()
         }
 
