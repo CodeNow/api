@@ -524,17 +524,6 @@ describe('GET /instances', function () {
     })
 
     describe('errors', function () {
-      it('should error invalid hostname if the hostname is not on the user content domain', function (done) {
-        var query = {
-          hostname: 'http://google.com'
-        }
-        require('../../fixtures/mocks/github/user-orgs')()
-        ctx.user.fetchInstances(query, expects.error(400, /invalid.*hostname/i, function (err, expectedErr) {
-          if (err) { return done(err) }
-          expect(expectedErr.data.errorCode).to.equal('INVALID_HOSTNAME') // used by api-client
-          done()
-        }))
-      })
       it('should not list projects for owner.github the user does not have permission for', function (done) {
         var query = {
           owner: {
