@@ -1,4 +1,4 @@
--/**
+/**
  * @module unit/models/rabbitmq
  */
 'use strict'
