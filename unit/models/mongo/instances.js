@@ -23,16 +23,20 @@ var pick = require('101/pick')
 var pluck = require('101/pluck')
 var assign = require('101/assign')
 var objectId = require('objectid')
+var put = require('101/put')
 
 var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
+var InstanceCounter = require('models/mongo/instance-counter')
 var Version = require('models/mongo/context-version')
 var User = require('models/mongo/user')
 var pubsub = require('models/redis/pubsub')
 var Promise = require('bluebird')
+var rabbitMQ = require('models/rabbitmq')
 
 var mongoFactory = require('../../factories/mongo')
+var typesTests = require('../../../test/functional/fixtures/types-test-util')
 require('sinon-as-promised')(Promise)
 
 var expectErr = function (expectedErr, done) {
@@ -88,7 +92,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
     it('should error if container stopping', function (done) {
       var instance = mongoFactory.createNewInstance('container-stopping')
-      instance.container.inspect.State.Stopping = true
+      instance.container.inspect.State.Stopping =true
       instance.isNotStartingOrStopping(function (err) {
         expect(err.message).to.equal('Instance is already stopping')
         done()
@@ -2465,5 +2469,465 @@ describe('Instance Model Tests ' + moduleName, function () {
         done()
       })
     })
+  })
+
+  describe('validateBody', function () {
+    var ctx = {}
+    beforeEach(function (done) {
+      ctx = {}
+      ctx.mockUsername = 'TEST-login'
+      ctx.mockSessionUser = {
+        _id: 1234,
+        findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
+          login: ctx.mockUsername,
+          avatar_url: 'TEST-avatar_url'
+        }),
+        accounts: {
+          github: {
+            id: 1234,
+            username: ctx.mockUsername
+          }
+        }
+      }
+      done()
+    })
+    var def = {
+      action: 'create an instance',
+      requiredParams: [
+        {
+          name: 'build',
+          type: 'string'
+        }, {
+          name: 'name',
+          type: 'string'
+        }
+      ],
+      optionalParams: [
+        {
+          name: 'parent',
+          type: 'string'
+        }, {
+          name: 'ipWhitelist',
+          type: 'object',
+          keys: [
+            {
+              name: 'enabled',
+              type: 'boolean'
+            }
+          ]
+        }, {
+          name: 'isolated',
+          type: 'string'
+        }, {
+          name: 'masterPod',
+          type: 'boolean'
+        }, {
+          name: 'public',
+          type: 'boolean'
+        }, {
+          name: 'env',
+          type: 'array',
+          itemType: 'string',
+          itemRegExp: /^([A-z]+[A-z0-9_]*)=.*$/,
+          itemValues: [
+            'string1',
+            '1=X',
+            'a!=x'
+          ]
+        }, {
+          name: 'owner',
+          type: 'object',
+          keys: [
+            {
+              name: 'github',
+              type: 'number'
+            }
+          ]
+        }
+      ]
+    }
+
+    typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
+      Instance.validateBody(body, true)
+        .asCallback(cb)
+    })
+  })
+
+  describe('createInstance', function () {
+    var ctx = {}
+    beforeEach(function (done) {
+      sinon.stub(rabbitMQ, 'instanceDeployed')
+      sinon.stub(rabbitMQ, 'createInstanceContainer')
+      done()
+    })
+    afterEach(function (done) {
+      rabbitMQ.instanceDeployed.restore()
+      rabbitMQ.createInstanceContainer.restore()
+      done()
+    })
+    beforeEach(function (done) {
+      ctx.mockSessionUser = {
+        findGithubUserByGithubIdAsync: sinon.spy(function (id) {
+          var login = (id === ctx.mockSessionUser.accounts.github.id) ? 'user' : 'owner'
+          return Promise.resolve({
+            login: login,
+            avatar_url: 'TEST-avatar_url'
+          })
+        }),
+        accounts: {
+          github: {
+            id: 1234
+          }
+        }
+      }
+      ctx.cvAttrs = {
+        name: 'name1',
+        owner: {
+          github: 2335750
+        },
+        createdBy: {
+          github: 146592
+        }
+      }
+      ctx.unstartedMockCv = new ContextVersion(ctx.cvAttrs)
+      ctx.mockCv = new ContextVersion(put(ctx.cvAttrs, {
+        build: {
+          _id: '23412312h3nk1lj2h3l1k2',
+          started: new Date(),
+          completed: new Date()
+        }
+      }))
+      ctx.buildAttrs = {
+        name: 'name1',
+        owner: {
+          github: 2335750
+        },
+        createdBy: {
+          github: 146592
+        },
+        contextVersions: [ctx.mockCv._id]
+      }
+      ctx.mockHostname = 'hello-runnable.runnableapp.com'
+      ctx.mockBuild = new Build(ctx.buildAttrs)
+      ctx.mockInstance = {
+        _id: '507f1f77bcf86cd799439014',
+        name: 'name1',
+        owner: {
+          github: 2335750
+        },
+        createdBy: {
+          github: 146592
+        },
+        contextVersion: ctx.mockCv.toJSON(),
+        getElasticHostname: sinon.stub().returns('hello-runnable.runnableapp.com'),
+        saveAsync: sinon.spy(function () {
+          return Promise.resolve(ctx.mockInstance)
+        }),
+        setAsync: sinon.spy(function () {
+          return Promise.resolve(ctx.mockInstance)
+        }),
+        upsertIntoGraphAsync: sinon.stub(),
+        setDependenciesFromEnvironmentAsync: sinon.stub()
+      }
+      done()
+    })
+    describe('flow validation', function () {
+      beforeEach(function (done) {
+        sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
+        sinon.stub(InstanceCounter, 'nextHashAsync').resolves('dsafsd')
+        sinon.stub(Instance, 'createAsync').resolves(ctx.mockInstance)
+        sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
+        done()
+      })
+      afterEach(function (done) {
+        Build.findByIdAsync.restore()
+        ContextVersion.findByIdAsync.restore()
+        InstanceCounter.nextHashAsync.restore()
+        Instance.createAsync.restore()
+        done()
+      })
+      describe('built version', function () {
+        it('should create an instance, set the hostname, save it, then emit both rabbit events', function (done) {
+          var body = {
+            name: 'asdasdasd',
+            build: '507f1f77bcf86cd799439011',
+            owner: {
+              github: 11111
+            }
+          }
+          Instance.createInstance(body, ctx.mockSessionUser)
+            .then(function (instance) {
+              expect(instance).to.exist()
+              // -----
+              sinon.assert.calledWithMatch(Instance.createAsync, sinon.match({
+                build: ctx.mockBuild._id,
+                contextVersion: sinon.match.has('id', ctx.mockCv._id.toString()),
+                createdBy: {
+                  github: 1234
+                },
+                name: body.name,
+                lowerName: body.name.toLowerCase(),
+                owner: {
+                  github: 11111,
+                  username: 'owner'
+                },
+                shortHash: 'dsafsd'
+              }))
+              // -----
+              sinon.assert.calledWith(ctx.mockInstance.getElasticHostname, 'owner')
+              sinon.assert.calledWith(ctx.mockInstance.setAsync, {
+                elasticHostname: ctx.mockHostname,
+                hostname: ctx.mockHostname
+              })
+              sinon.assert.calledOnce(ctx.mockInstance.setAsync)
+              sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
+                cvId: ctx.mockCv._id.toString(),
+                instanceId: '507f1f77bcf86cd799439014'
+              })
+              sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
+                contextVersionId: ctx.mockCv._id.toString(),
+                instanceId: '507f1f77bcf86cd799439014',
+                ownerUsername: 'owner',
+                sessionUserGithubId: 1234
+              })
+              sinon.assert.calledOnce(ctx.mockInstance.saveAsync)
+              sinon.assert.calledOnce(ctx.mockInstance.upsertIntoGraphAsync)
+              sinon.assert.calledWith(ctx.mockInstance.setDependenciesFromEnvironmentAsync, 'owner')
+            })
+            .asCallback(done)
+        })
+        it('should use the build\'s owner if one wasn\'t included', function (done) {
+          var body =  {
+            name: 'asdasdasd',
+            build: '507f1f77bcf86cd799439011'
+          }
+          Instance.createInstance(body, ctx.mockSessionUser)
+            .then(function (instance) {
+              expect(instance).to.exist()
+
+              sinon.assert.calledWithMatch(Instance.createAsync, sinon.match({
+                build: ctx.mockBuild._id,
+                contextVersion: sinon.match.has('id', ctx.mockCv._id.toString()),
+                createdBy: {
+                  github: 1234
+                },
+                name: body.name,
+                lowerName: body.name.toLowerCase(),
+                owner: {
+                  github: 2335750,
+                  username: 'owner'
+                },
+                shortHash: 'dsafsd'
+              }))
+            })
+            .asCallback(done)
+        })
+      })
+    })
+
+    describe('errors', function () {
+      var validBody = {
+        name: 'asdasdasd',
+        build: '507f1f77bcf86cd799439011'
+      }
+      var error = new Error('oh shit')
+      describe('fetch build errors', function () {
+        afterEach(function (done) {
+          Build.findByIdAsync.restore()
+          done()
+        })
+        it('should throw error when the build fails to fetch', function (done) {
+          sinon.stub(Build, 'findByIdAsync').rejects(error)
+          Instance.createInstance(validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal(error.message)
+            })
+            .asCallback(done)
+        })
+        it('should throw error when the build fetch doesn\'t return anythin', function (done) {
+          sinon.stub(Build, 'findByIdAsync').resolves()
+          Instance.createInstance(validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal('build not found')
+            })
+            .asCallback(done)
+        })
+      })
+      describe('fetch github user errors', function () {
+        beforeEach(function (done) {
+          ctx.mockSessionUser.findGithubUserByGithubIdAsync = sinon.stub()
+          sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
+          sinon.stub(InstanceCounter, 'nextHashAsync').resolves('dsafsd')
+          sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
+          done()
+        })
+        afterEach(function (done) {
+          Build.findByIdAsync.restore()
+          ContextVersion.findByIdAsync.restore()
+          InstanceCounter.nextHashAsync.restore()
+          done()
+        })
+        it('should throw error when the github returns an error', function (done) {
+          ctx.mockSessionUser.findGithubUserByGithubIdAsync.rejects(error)
+          Instance.createInstance(validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal(error.message)
+            })
+            .asCallback(done)
+        })
+        it('should throw error when the user\'s info isn\'t returned by Github', function (done) {
+          ctx.mockSessionUser.findGithubUserByGithubIdAsync.resolves()
+          Instance.createInstance(validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal('owner not found')
+            })
+            .asCallback(done)
+        })
+        it('should throw error when the user\'s login isn\'t returned by Github', function (done) {
+          ctx.mockSessionUser.findGithubUserByGithubIdAsync.resolves({})
+          Instance.createInstance(validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal('owner login info not found on Github')
+            })
+            .asCallback(done)
+        })
+      })
+      describe('fetch github user errors', function () {
+        beforeEach(function (done) {
+          sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
+          sinon.stub(InstanceCounter, 'nextHashAsync').resolves('dsafsd')
+          sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
+          done()
+        })
+        afterEach(function (done) {
+          Build.findByIdAsync.restore()
+          ContextVersion.findByIdAsync.restore()
+          InstanceCounter.nextHashAsync.restore()
+          done()
+        })
+        it('should throw error when the github returns an error', function (done) {
+          InstanceCounter.nextHashAsync.rejects(error)
+          Instance.createInstance(validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal(error.message)
+            })
+            .asCallback(done)
+        })
+        it('should throw error when the user\'s info isn\'t returned by Github', function (done) {
+          InstanceCounter.nextHashAsync.resolves()
+          Instance.createInstance(validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal('failed to generate shortHash')
+            })
+            .asCallback(done)
+        })
+      })
+      describe('fetch cv errors', function () {
+        beforeEach(function (done) {
+          sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
+          sinon.stub(InstanceCounter, 'nextHashAsync').resolves('dsafsd')
+          sinon.stub(Instance, 'createAsync').resolves(ctx.mockInstance)
+          sinon.stub(ContextVersion, 'findByIdAsync')
+          done()
+        })
+        afterEach(function (done) {
+          Build.findByIdAsync.restore()
+          ContextVersion.findByIdAsync.restore()
+          InstanceCounter.nextHashAsync.restore()
+          Instance.createAsync.restore()
+          done()
+        })
+        describe('first fetch', function () {
+          it('should throw error when the cv fetch fails', function (done) {
+            ContextVersion.findByIdAsync.onFirstCall().rejects(error)
+            Instance.createInstance(validBody, ctx.mockSessionUser)
+              .catch(function (err) {
+                expect(err.message).to.equal(error.message)
+              })
+              .asCallback(done)
+          })
+          it('should throw error when the cv fetch returns nothing', function (done) {
+            ContextVersion.findByIdAsync.onFirstCall().resolves()
+            Instance.createInstance(validBody, ctx.mockSessionUser)
+              .catch(function (err) {
+                expect(err.message).to.equal('contextVersion not found')
+              })
+              .asCallback(done)
+          })
+          it('should throw error when the cv hasn\'t started building', function (done) {
+            ContextVersion.findByIdAsync.onFirstCall().resolves(ctx.unstartedMockCv)
+            Instance.createInstance(validBody, ctx.mockSessionUser)
+              .catch(function (err) {
+                expect(err.message).to.equal('Cannot attach a build to an instance with context ' +
+                  'versions that have not started building')
+              })
+              .asCallback(done)
+          })
+        })
+        describe('second fetch', function () {
+          beforeEach(function (done) {
+            ContextVersion.findByIdAsync.onFirstCall().resolves(ctx.mockCv)
+            done()
+          })
+          it('should throw error when the cv fetch fails', function (done) {
+            ContextVersion.findByIdAsync.onSecondCall().rejects(error)
+            Instance.createInstance(validBody, ctx.mockSessionUser)
+              .catch(function (err) {
+                expect(err.message).to.equal(error.message)
+              })
+              .asCallback(done)
+          })
+          it('should throw error when the cv fetch returns nothing', function (done) {
+            ContextVersion.findByIdAsync.onSecondCall().resolves()
+            Instance.createInstance(validBody, ctx.mockSessionUser)
+              .catch(function (err) {
+                expect(err.message).to.equal('contextVersion not found the second time')
+              })
+              .asCallback(done)
+          })
+        })
+      })
+      describe('instance errors', function () {
+        beforeEach(function (done) {
+          sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
+          sinon.stub(InstanceCounter, 'nextHashAsync').resolves('dsafsd')
+          sinon.stub(Instance, 'createAsync').resolves(ctx.mockInstance)
+          sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
+          done()
+        })
+        afterEach(function (done) {
+          Build.findByIdAsync.restore()
+          ContextVersion.findByIdAsync.restore()
+          InstanceCounter.nextHashAsync.restore()
+          Instance.createAsync.restore()
+          done()
+        })
+        it('should throw error when create fails', function (done) {
+          Instance.createAsync.rejects(error)
+          Instance.createInstance(validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal(error.message)
+            })
+            .asCallback(done)
+        })
+        it('should throw error when set fails', function (done) {
+          ctx.mockInstance.setAsync = sinon.stub().rejects(error)
+          Instance.createInstance(validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal(error.message)
+            })
+            .asCallback(done)
+        })
+        it('should throw error when save fails', function (done) {
+          ctx.mockInstance.saveAsync = sinon.stub().rejects(error)
+          Instance.createInstance(validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal(error.message)
+            })
+            .asCallback(done)
+        })
+      })
+    })
+
   })
 })

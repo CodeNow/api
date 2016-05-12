@@ -13,21 +13,12 @@ var dock = require('../../fixtures/dock')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
+var Instance = require('models/mongo/instance')
 
 var typesTests = require('../../fixtures/types-test-util')
 
 describe('400 POST /instances', function () {
   var ctx = {}
-
-  before(api.start.bind(ctx))
-  before(dock.start.bind(ctx))
-  before(require('../../fixtures/mocks/api-client').setup)
-  beforeEach(primus.connect)
-
-  afterEach(primus.disconnect)
-  after(api.stop.bind(ctx))
-  after(dock.stop.bind(ctx))
-  after(require('../../fixtures/mocks/api-client').clean)
 
   beforeEach(
     mockGetUserById.stubBefore(function () {
@@ -69,6 +60,13 @@ describe('400 POST /instances', function () {
         {
           name: 'build',
           type: 'ObjectId'
+        }, {
+          name: 'name',
+          type: 'string',
+          invalidValues: [
+            'has!',
+            'has.x2'
+          ]
         }
       ],
       optionalParams: [
@@ -88,14 +86,6 @@ describe('400 POST /instances', function () {
           ]
         },
         {
-          name: 'name',
-          type: 'string',
-          invalidValues: [
-            'has!',
-            'has.x2'
-          ]
-        },
-        {
           name: 'owner',
           type: 'object',
           keys: [
@@ -109,7 +99,7 @@ describe('400 POST /instances', function () {
     }
 
     typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
-      ctx.user.createInstance(body, cb)
+      Instance.createInstance(body, cb)
     })
   })
 })

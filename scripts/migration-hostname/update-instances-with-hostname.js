@@ -13,10 +13,10 @@ var dryRun = !process.env.ACTUALLY_RUN
 console.log('dryRun?', !!dryRun)
 
 async.waterfall([
-  function getAllMasterPodInstances (cb) {
+  function findAllInstances (cb) {
     Instances.find({}, cb)
   },
-  function renameMasterPods (instances, cb) {
+  function addElasticHostname (instances, cb) {
     console.log('updating instances:', instances.length)
     async.eachLimit(
       instances,

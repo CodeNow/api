@@ -59,7 +59,7 @@ function errorMessageSuffix (paramType, type) {
     'string': 'must be a string',
     'repo-string': 'must be a string',
     'number': 'must be a number',
-    'array': 'must be instance of Array',
+    'array': '(must be instance of Array)|(must be an array)',
     'object': 'must be an object',
     'ObjectId': 'is not an ObjectId'
   }
@@ -123,7 +123,7 @@ function setupTests (ctx, handler, def, types, param, buildBodyFunction, index) 
   paramTypes.forEach(function (type) {
     exports.lab.it('should not ' + def.action + ' when `' + param.name + '` param is ' + type, function (done) {
       var body = buildBodyFunction(ctx, def.requiredParams, param, type, index)
-      var message = new RegExp('body parameter "' + param.name + '" ' + errorMessageSuffix(param.type, type))
+      var message = new RegExp('"' + param.name + '" ' + errorMessageSuffix(param.type, type))
       var cb = expects.error(400, message, done)
       handler(body, cb)
     })
@@ -136,7 +136,7 @@ function setupTests (ctx, handler, def, types, param, buildBodyFunction, index) 
         var body = buildBodyFunction(ctx, def.requiredParams)
         body[param.name] = invalidValue
         // e.g. "env" should match
-        var message = new RegExp('"' + param.name + '" should match ')
+        var message = new RegExp('"' + param.name + '" should match ||("' + param.name + '" .* match)')
         var cb = expects.error(400, message, done)
         handler(body, cb)
       })
@@ -153,7 +153,7 @@ function setupTests (ctx, handler, def, types, param, buildBodyFunction, index) 
           var body = buildBodyFunction(ctx, def.requiredParams, param, type, index)
           body[param.name] = {}
           body[param.name][keyParam.name] = typeValue(ctx, type)
-          var testMsg = 'body parameter "' + param.name + '.' + keyParam.name +
+          var testMsg = param.name + '.' + keyParam.name +
             '" ' + errorMessageSuffix(keyParam.type, type)
           var message = new RegExp(testMsg)
           var cb = expects.error(400, message, done)
@@ -178,7 +178,7 @@ function setupArrayParamsTests (ctx, handler, def, types, param, buildBodyFuncti
         body[param.name].push(typeValue(ctx, arrayItemType))
         body[param.name].push(typeValue(ctx, arrayItemType))
         body[param.name].push(typeValue(ctx, arrayItemType))
-        var regexp = '"env" should match'
+        var regexp = '("env" should match)||("env./d" must be a ' + arrayItemType + ')'
         var message = new RegExp(regexp)
         var cb = expects.error(400, message, done)
         handler(body, cb)
@@ -192,7 +192,7 @@ function setupArrayParamsTests (ctx, handler, def, types, param, buildBodyFuncti
           var body = buildBodyFunction(ctx, def.requiredParams)
           body[param.name] = [invalidValue]
           // e.g. "env" should match
-          var message = new RegExp('"' + param.name + '" should match ')
+          var message = new RegExp('("' + param.name + '" should match )||("' + param.name + '" .* match)')
           var cb = expects.error(400, message, done)
           handler(body, cb)
         })

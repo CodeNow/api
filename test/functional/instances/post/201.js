@@ -177,7 +177,7 @@ describe('201 POST /instances', function () {
       })
 
       it('should create an instance with a build', function (done) {
-        ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
+        ctx.user.createInstance({ name: uuid(), build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err) }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv)
           primus.onceVersionComplete(ctx.cv.id(), function () {
@@ -221,7 +221,7 @@ describe('201 POST /instances', function () {
         var count = createCount(2, done)
 
         primus.expectActionCount('start', 1, count.next)
-        ctx.user.createInstance({ build: ctx.build.id() }, function (err, body, statusCode) {
+        ctx.user.createInstance({ name: uuid(), build: ctx.build.id() }, function (err, body, statusCode) {
           if (err) { return done(err) }
           expectInstanceCreated(body, statusCode, ctx.user, ctx.build, ctx.cv)
           ctx.body = body
