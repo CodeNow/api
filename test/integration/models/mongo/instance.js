@@ -576,4 +576,5 @@ describe('Instance Model Integration Tests', function () {
       })
     })
   })
+  describe('.createInstance')
 })

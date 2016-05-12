@@ -71,6 +71,7 @@ describe('InstanceForkService', function () {
       sinon.stub(Runnable, 'createClient').returns(mockClient)
       sinon.stub(Instance, 'findById')
         .withArgs('mockNewInstanceId', sinon.match.func).yieldsAsync(null, mockNewInstance)
+      sinon.stub(Instance, 'createInstance').resolves(mockNewInstance)
       done()
     })
 
@@ -78,6 +79,7 @@ describe('InstanceForkService', function () {
       BuildService.createNewContextVersion.restore()
       Runnable.createClient.restore()
       Instance.findById.restore()
+      Instance.createInstance.restore()
       done()
     })
 
@@ -188,9 +190,9 @@ describe('InstanceForkService', function () {
       InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockClient.createInstance)
+          sinon.assert.calledOnce(Instance.createInstance)
           sinon.assert.calledWithExactly(
-            mockClient.createInstance,
+            Instance.createInstance,
             {
               build: 'newBuildId',
               name: 'mockInstanceShortHash--mockInstanceRepo',
@@ -200,7 +202,7 @@ describe('InstanceForkService', function () {
               isolated: 'mockIsolationId',
               isIsolationGroupMaster: false
             },
-            sinon.match.func
+            mockSessionUser
           )
           done()
         }
@@ -240,11 +242,10 @@ describe('InstanceForkService', function () {
     var mockBuild = {
       _id: 'buildbeef'
     }
-    var mockInstance = {}
-    var mockRunnableClient
 
     beforeEach(function (done) {
       instance = {
+        _id: 'instanceId',
         createdBy: {
           github: 'instanceCreatedById'
         },
@@ -260,23 +261,20 @@ describe('InstanceForkService', function () {
           id: 'pushUserId'
         }
       }
-      mockRunnableClient = {
-        forkMasterInstance: sinon.stub().yieldsAsync(null, mockInstance)
-      }
       mockPushUser = { accounts: { github: { accessToken: 'pushUserGithubToken' } } }
       sinon.stub(monitorDog, 'increment')
       sinon.stub(BuildService, 'createAndBuildContextVersion').resolves({
         build: mockBuild,
         user: mockPushUser
       })
-      sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
+      sinon.stub(InstanceForkService, 'forkMasterInstance').resolves(instance)
       done()
     })
 
     afterEach(function (done) {
       monitorDog.increment.restore()
       BuildService.createAndBuildContextVersion.restore()
-      Runnable.createClient.restore()
+      InstanceForkService.forkMasterInstance.restore()
       done()
     })
 
@@ -319,31 +317,16 @@ describe('InstanceForkService', function () {
       })
     })
 
-    describe('building a new build', function () {
-      it('should use the push user to create the runnable client', function (done) {
-        InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.called(Runnable.createClient)
-          sinon.assert.calledWith(
-            Runnable.createClient,
-            {},
-            mockPushUser
-          )
-          done()
-        })
-      })
-    })
-
     it('should fork a master instance', function (done) {
       InstanceForkService._forkOne(instance, pushInfo).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(mockRunnableClient.forkMasterInstance)
+        sinon.assert.calledOnce(InstanceForkService.forkMasterInstance)
         sinon.assert.calledWithExactly(
-          mockRunnableClient.forkMasterInstance,
+          InstanceForkService.forkMasterInstance,
           instance,
           'buildbeef',
           pushInfo.branch,
-          sinon.match.func
+          mockPushUser
         )
         done()
       })
@@ -523,7 +506,6 @@ describe('InstanceForkService', function () {
     var mockRunnableClient
     var mockNewContextVersion = { _id: 'beefdeadbeefdeadbeefdead' }
     var mockNewBuild = { _id: 'mockBuildId' }
-    var mockNewInstance = { _id: 'mockInstanceId' }
     var mockNewInstanceModel = { _id: 'mockInstanceId', isModel: true } // for diff
     var mockMasterName = 'foo-repo'
 
@@ -541,17 +523,18 @@ describe('InstanceForkService', function () {
       sinon.stub(InstanceForkService, '_createNewNonRepoContextVersion').resolves(mockNewContextVersion)
       mockRunnableClient = {
         createBuild: sinon.stub().yieldsAsync(null, mockNewBuild),
-        buildBuild: sinon.stub().yieldsAsync(null, mockNewBuild),
-        createInstance: sinon.stub().yieldsAsync(null, mockNewInstance)
+        buildBuild: sinon.stub().yieldsAsync(null, mockNewBuild)
       }
       sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
       sinon.stub(Instance, 'findByIdAsync').resolves(mockNewInstanceModel)
+      sinon.stub(Instance, 'createInstance').resolves(mockNewInstanceModel)
       done()
     })
 
     afterEach(function (done) {
       InstanceForkService._createNewNonRepoContextVersion.restore()
       Runnable.createClient.restore()
+      Instance.createInstance.restore()
       Instance.findByIdAsync.restore()
       done()
     })
@@ -654,7 +637,7 @@ describe('InstanceForkService', function () {
 
       it('should reject with any createInstance error', function (done) {
         var error = new Error('robot')
-        mockRunnableClient.createInstance.yieldsAsync(error)
+        Instance.createInstance.rejects(error)
         InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -751,9 +734,9 @@ describe('InstanceForkService', function () {
       InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockRunnableClient.createInstance)
+          sinon.assert.calledOnce(Instance.createInstance)
           sinon.assert.calledWithExactly(
-            mockRunnableClient.createInstance,
+            Instance.createInstance,
             {
               build: mockNewBuild._id,
               name: mockMasterName + '--' + mockInstance.name,
@@ -763,7 +746,7 @@ describe('InstanceForkService', function () {
               isolated: mockIsolationId,
               isIsolationGroupMaster: false
             },
-            sinon.match.func
+            mockSessionUser
           )
           done()
         })
@@ -801,7 +784,7 @@ describe('InstanceForkService', function () {
             Runnable.createClient,
             mockRunnableClient.createBuild,
             mockRunnableClient.buildBuild,
-            mockRunnableClient.createInstance,
+            Instance.createInstance,
             Instance.findByIdAsync
           )
           done()

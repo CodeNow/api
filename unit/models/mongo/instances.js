@@ -2540,7 +2540,7 @@ describe('Instance Model Tests ' + moduleName, function () {
           keys: [
             {
               name: 'github',
-              type: 'number'
+              type: 'string, number'
             }
           ]
         }

@@ -61,7 +61,8 @@ function errorMessageSuffix (paramType, type) {
     'number': 'must be a number',
     'array': '(must be instance of Array)|(must be an array)',
     'object': 'must be an object',
-    'ObjectId': 'is not an ObjectId'
+    'ObjectId': 'is not an ObjectId',
+    'string, number': 'must be a (string)||(number)'
   }
   return suffixes[paramType]
 }
