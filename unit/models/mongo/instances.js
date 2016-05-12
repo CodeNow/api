@@ -21,6 +21,7 @@ var hasProps = require('101/has-properties')
 var mongoose = require('mongoose')
 var pick = require('101/pick')
 var pluck = require('101/pluck')
+var clone = require('101/clone')
 var assign = require('101/assign')
 var objectId = require('objectid')
 var put = require('101/put')
@@ -92,7 +93,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     })
     it('should error if container stopping', function (done) {
       var instance = mongoFactory.createNewInstance('container-stopping')
-      instance.container.inspect.State.Stopping =true
+      instance.container.inspect.State.Stopping = true
       instance.isNotStartingOrStopping(function (err) {
         expect(err.message).to.equal('Instance is already stopping')
         done()
@@ -2632,13 +2633,6 @@ describe('Instance Model Tests ' + moduleName, function () {
       done()
     })
     describe('flow validation', function () {
-      beforeEach(function (done) {
-        sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
-        sinon.stub(InstanceCounter, 'nextHashAsync').resolves('dsafsd')
-        sinon.stub(Instance, 'createAsync').resolves(ctx.mockInstance)
-        sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
-        done()
-      })
       afterEach(function (done) {
         Build.findByIdAsync.restore()
         ContextVersion.findByIdAsync.restore()
@@ -2647,6 +2641,13 @@ describe('Instance Model Tests ' + moduleName, function () {
         done()
       })
       describe('built version', function () {
+        beforeEach(function (done) {
+          sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
+          sinon.stub(InstanceCounter, 'nextHashAsync').resolves('dsafsd')
+          sinon.stub(Instance, 'createAsync').resolves(ctx.mockInstance)
+          sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
+          done()
+        })
         it('should create an instance, set the hostname, save it, then emit both rabbit events', function (done) {
           var body = {
             name: 'asdasdasd',
@@ -2697,7 +2698,7 @@ describe('Instance Model Tests ' + moduleName, function () {
             .asCallback(done)
         })
         it('should use the build\'s owner if one wasn\'t included', function (done) {
-          var body =  {
+          var body = {
             name: 'asdasdasd',
             build: '507f1f77bcf86cd799439011'
           }
@@ -2719,6 +2720,179 @@ describe('Instance Model Tests ' + moduleName, function () {
                 },
                 shortHash: 'dsafsd'
               }))
+            })
+            .asCallback(done)
+        })
+      })
+
+      describe('unbuilt version', function () {
+        beforeEach(function (done) {
+          ctx.mockCv = new ContextVersion(put(ctx.cvAttrs, {
+            build: {
+              _id: '23412312h3nk1lj2h3l1k2',
+              started: new Date()
+            }
+          }))
+          ctx.buildAttrs.contextVersions = [ctx.mockCv._id]
+          ctx.mockBuild = new Build(ctx.buildAttrs)
+          ctx.mockInstance.contextVersion = ctx.mockCv.toJSON()
+          done()
+        })
+        beforeEach(function (done) {
+          sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
+          sinon.stub(InstanceCounter, 'nextHashAsync').resolves('dsafsd')
+          sinon.stub(Instance, 'createAsync').resolves(ctx.mockInstance)
+          sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
+          done()
+        })
+        it('should create an instance, set the hostname, save it, then not emit any rabbit events', function (done) {
+          var body = {
+            name: 'asdasdasd',
+            build: '507f1f77bcf86cd799439011',
+            owner: {
+              github: 11111
+            }
+          }
+          Instance.createInstance(body, ctx.mockSessionUser)
+            .then(function (instance) {
+              expect(instance).to.exist()
+              // -----
+              sinon.assert.calledWithMatch(Instance.createAsync, sinon.match({
+                build: ctx.mockBuild._id,
+                contextVersion: sinon.match.has('id', ctx.mockCv._id.toString()),
+                createdBy: {
+                  github: 1234
+                },
+                name: body.name,
+                lowerName: body.name.toLowerCase(),
+                owner: {
+                  github: 11111,
+                  username: 'owner'
+                },
+                shortHash: 'dsafsd'
+              }))
+              // -----
+              sinon.assert.calledWith(ctx.mockInstance.getElasticHostname, 'owner')
+              sinon.assert.calledWith(ctx.mockInstance.setAsync, {
+                elasticHostname: ctx.mockHostname,
+                hostname: ctx.mockHostname
+              })
+              sinon.assert.calledOnce(ctx.mockInstance.setAsync)
+              sinon.assert.notCalled(rabbitMQ.instanceDeployed)
+              sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+              sinon.assert.calledOnce(ctx.mockInstance.saveAsync)
+              sinon.assert.calledOnce(ctx.mockInstance.upsertIntoGraphAsync)
+              sinon.assert.calledWith(ctx.mockInstance.setDependenciesFromEnvironmentAsync, 'owner')
+            })
+            .asCallback(done)
+        })
+
+        describe('that finishes building during the create', function () {
+          beforeEach(function (done) {
+            ContextVersion.findByIdAsync.onFirstCall().resolves(ctx.mockCv)
+            ctx.mockCv.setAsync({'build.completed': new Date()})
+              .then(function (builtCv) {
+                ctx.builtCv = builtCv
+                return ContextVersion.findByIdAsync.onSecondCall().resolves(ctx.builtCv)
+              })
+              .asCallback(done)
+          })
+          it('creates an instance, set the hostname and cv again, saves, then emit 2 rabbit events', function (done) {
+            var body = {
+              name: 'asdasdasd',
+              build: '507f1f77bcf86cd799439011',
+              owner: {
+                github: 11111
+              }
+            }
+            Instance.createInstance(body, ctx.mockSessionUser)
+              .then(function (instance) {
+                expect(instance).to.exist()
+                // -----
+                sinon.assert.calledWithMatch(Instance.createAsync, sinon.match({
+                  build: ctx.mockBuild._id,
+                  contextVersion: sinon.match.has('id', ctx.mockCv._id.toString()),
+                  createdBy: {
+                    github: 1234
+                  },
+                  name: body.name,
+                  lowerName: body.name.toLowerCase(),
+                  owner: {
+                    github: 11111,
+                    username: 'owner'
+                  },
+                  shortHash: 'dsafsd'
+                }))
+                // -----
+                sinon.assert.calledWith(ctx.mockInstance.getElasticHostname, 'owner')
+                sinon.assert.calledWith(ctx.mockInstance.setAsync.firstCall, {
+                  elasticHostname: ctx.mockHostname,
+                  hostname: ctx.mockHostname
+                })
+                sinon.assert.calledWithMatch(ctx.mockInstance.setAsync.secondCall, {
+                  contextVersion: sinon.match.has('id', ctx.mockCv._id.toString())
+                })
+                sinon.assert.calledTwice(ctx.mockInstance.setAsync)
+                sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
+                  cvId: ctx.mockCv._id.toString(),
+                  instanceId: '507f1f77bcf86cd799439014'
+                })
+                sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
+                  contextVersionId: ctx.mockCv._id.toString(),
+                  instanceId: '507f1f77bcf86cd799439014',
+                  ownerUsername: 'owner',
+                  sessionUserGithubId: 1234
+                })
+                sinon.assert.calledOnce(ctx.mockInstance.saveAsync)
+                sinon.assert.calledOnce(ctx.mockInstance.upsertIntoGraphAsync)
+                sinon.assert.calledWith(ctx.mockInstance.setDependenciesFromEnvironmentAsync, 'owner')
+              })
+              .asCallback(done)
+          })
+        })
+      })
+      describe('manual built version', function () {
+        beforeEach(function (done) {
+          ctx.mockCv = new ContextVersion(put(ctx.cvAttrs, {
+            build: {
+              _id: '23412312h3nk1lj2h3l1k2',
+              started: new Date(),
+              completed: new Date(),
+              triggeredAction: {
+                manual: true
+              }
+            }
+          }))
+          ctx.buildAttrs.contextVersions = [ctx.mockCv._id]
+          ctx.mockBuild = new Build(ctx.buildAttrs)
+          ctx.mockInstance.contextVersion = ctx.mockCv.toJSON()
+          done()
+        })
+        beforeEach(function (done) {
+          sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
+          sinon.stub(InstanceCounter, 'nextHashAsync').resolves('dsafsd')
+          sinon.stub(Instance, 'createAsync').resolves(ctx.mockInstance)
+          sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
+          done()
+        })
+        it('should only send createInstanceContainer rabbit event when it\'s a manual build', function (done) {
+          var body = {
+            name: 'asdasdasd',
+            build: '507f1f77bcf86cd799439011',
+            owner: {
+              github: 11111
+            }
+          }
+          Instance.createInstance(body, ctx.mockSessionUser)
+            .then(function (instance) {
+              expect(instance).to.exist()
+              sinon.assert.notCalled(rabbitMQ.instanceDeployed)
+              sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
+                contextVersionId: ctx.mockCv._id.toString(),
+                instanceId: '507f1f77bcf86cd799439014',
+                ownerUsername: 'owner',
+                sessionUserGithubId: 1234
+              })
             })
             .asCallback(done)
         })
@@ -2928,6 +3102,5 @@ describe('Instance Model Tests ' + moduleName, function () {
         })
       })
     })
-
   })
 })

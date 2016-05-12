@@ -29,16 +29,13 @@ Instances.findAsync({})
       var github = new Github()
       return github.getUserByIdAsync(i.owner.github)
         .get('login')
-        .tap(function (name) {
-          console.log('name', name);
-        })
-        .catch(function (err) {
+        .catch(function () {
           return
         })
     })
       .then(function (username) {
         if (dryRun || !username) {
-          console.log('Skipped instance ' + i.name);
+          console.log('Skipped instance ' + i.name)
           return
         } else {
           var hostname = i.getElasticHostname(username)
