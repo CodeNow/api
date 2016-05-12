@@ -12,6 +12,7 @@ var sinon = require('sinon')
 
 var InstanceContainerDied = require('workers/instance.container.died')
 var InstanceService = require('models/services/instance-service')
+var IsolationService = require('models/services/isolation-service')
 var Promise = require('bluebird')
 var TaskFatalError = require('ponos').TaskFatalError
 
@@ -81,16 +82,22 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         }
       }
     }
+    ctx.instanceUpdateResults = {
+      isolated: 'isolation1234',
+      id: 'instanceUpdateResults'
+    }
     done()
   })
   beforeEach(function (done) {
     sinon.stub(InstanceService, 'modifyExistingContainerInspect').yieldsAsync(null, ctx.mockInstance)
-    sinon.stub(InstanceService, 'emitInstanceUpdate').returns()
+    sinon.stub(InstanceService, 'emitInstanceUpdate').returns(Promise.resolve(ctx.instanceUpdateResults))
+    sinon.stub(IsolationService, 'redeployIfAble').returns(Promise.resolve())
     done()
   })
   afterEach(function (done) {
     InstanceService.modifyExistingContainerInspect.restore()
     InstanceService.emitInstanceUpdate.restore()
+    IsolationService.redeployIfAble.restore()
     done()
   })
   describe('success', function () {
@@ -103,6 +110,8 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
           ctx.mockInstance, ctx.sessionUserGithubId, 'update', true)
+        sinon.assert.calledOnce(IsolationService.redeployIfAble)
+        sinon.assert.calledWith(IsolationService.redeployIfAble, ctx.instanceUpdateResults.isolated)
         done()
       })
     })
