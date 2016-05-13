@@ -180,12 +180,9 @@ describe('Instance - PATCH /instances/:id', function () {
                   ctx.instance.fetch(expects.success(200, expected, function (err) {
                     if (err) { return done(err) }
                     var container = ctx.instance.containers.models[0]
-                    var elasticUrl = ctx.instance.getElasticHostname(ctx.user.attrs.accounts.github.login)
                     expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer)
                     expect(container.attrs.inspect.Env).to.deep.equal([
-                      'RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash,
-                      'RUNNABLE_HOSTNAME=' + ctx.instance.attrs.shortHash + '-' + elasticUrl,
-                      'RUNNABLE_SHARED_HOSTNAME=' + elasticUrl
+                      'RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash
                     ])
                     done()
                   }))
@@ -225,12 +222,9 @@ describe('Instance - PATCH /instances/:id', function () {
                     ctx.instance.fetch(expects.success(200, expected, function (err) {
                       if (err) { return done(err) }
                       var container = ctx.instance.containers.models[0]
-                      var elasticUrl = ctx.instance.getElasticHostname(ctx.user.attrs.accounts.github.login)
                       expect(container.attrs.dockerContainer).to.not.equal(oldDockerContainer)
                       expect(ctx.instance.attrs.containers[0].inspect.Env).to.deep.equal([
                         'RUNNABLE_CONTAINER_ID=' + ctx.instance.attrs.shortHash,
-                        'RUNNABLE_HOSTNAME=' + ctx.instance.attrs.shortHash + '-' + elasticUrl,
-                        'RUNNABLE_SHARED_HOSTNAME=' + elasticUrl,
                         'ONE=1'
                       ])
                       done()
