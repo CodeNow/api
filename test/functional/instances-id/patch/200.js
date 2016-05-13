@@ -26,6 +26,7 @@ var sinon = require('sinon')
 var rabbitMQ = require('models/rabbitmq')
 var InstanceService = require('models/services/instance-service')
 var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
+var uuid = require('uuid')
 
 function expectInstanceUpdated (body, statusCode, user, build, cv) {
   user = user.json()
@@ -121,6 +122,7 @@ describe('200 PATCH /instances/:id', function () {
         // create instance
         ctx.instance = ctx.user.createInstance({
           json: {
+            name: uuid(),
             build: ctx.build.id()
           }
         }, function (err) {
