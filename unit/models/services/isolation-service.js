@@ -1478,7 +1478,7 @@ describe('Isolation Services Model', function () {
     })
   })
 
-  describe('findInstancesToKill', function () {
+  describe('findInstancesNotStoppingWithContainers', function () {
     var mockInstances
 
     beforeEach(function (done) {
@@ -1496,7 +1496,7 @@ describe('Isolation Services Model', function () {
 
     it('should query mongo for instances which should be stopped', function (done) {
       var isolationId = '1234'
-      IsolationService.findInstancesToKill(isolationId)
+      IsolationService.findInstancesNotStoppingWithContainers(isolationId)
         .then(function (results) {
           expect(results).to.equal(mockInstances)
           sinon.assert.calledOnce(Instance.findAsync)

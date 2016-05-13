@@ -61,14 +61,14 @@ describe('Workers: Isolation Kill', function () {
   ]
   beforeEach(function (done) {
     sinon.stub(Isolation, 'findOneAndUpdate').resolves({})
-    sinon.stub(IsolationService, 'findInstancesToKill').resolves(instancesToStop)
+    sinon.stub(IsolationService, 'findInstancesNotStoppingWithContainers').resolves(instancesToStop)
     sinon.stub(InstanceService, 'killInstance').resolves()
     done()
   })
 
   afterEach(function (done) {
     Isolation.findOneAndUpdate.restore()
-    IsolationService.findInstancesToKill.restore()
+    IsolationService.findInstancesNotStoppingWithContainers.restore()
     InstanceService.killInstance.restore()
     done()
   })
@@ -113,9 +113,9 @@ describe('Workers: Isolation Kill', function () {
     })
   })
 
-  it('should fail if findInstancesToKill failed', function (done) {
+  it('should fail if findInstancesNotStoppingWithContainers failed', function (done) {
     var error = new Error('Mongo error')
-    IsolationService.findInstancesToKill.rejects(error)
+    IsolationService.findInstancesNotStoppingWithContainers.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
