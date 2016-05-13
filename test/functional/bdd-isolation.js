@@ -129,7 +129,7 @@ describe('BDD - Isolation', function () {
         if (err) { return count.next(err) }
         // try because having multiple throws can be bad
         try {
-          expect(data.data.data.isIsolationGroupMaster).to.be.false()
+          expect(data.data.data.isIsolationGroupMaster).to.be.undefined()
           expect(data.data.data.isolated).to.exist()
         } catch (expectErr) {
           err = expectErr
@@ -241,6 +241,7 @@ describe('BDD - Isolation', function () {
             owner: { github: ctx.user.attrs.accounts.github.id },
             isolated: ctx.isolation.attrs._id.toString()
           }
+          console.log('ISOLATE', JSON.stringify(opts));
           async.retry(
             10,
             function (callback) {
@@ -248,6 +249,7 @@ describe('BDD - Isolation', function () {
               ctx.user.fetchInstances(opts, function (err, instances) {
                 if (err) { return done(err) }
                 try {
+                  JSON.stringify('INSTGNA', JSON.stringify(instances))
                   expect(instances).to.have.length(0)
                 } catch (e) {
                   return setTimeout(function () { callback(e) }, 25)
