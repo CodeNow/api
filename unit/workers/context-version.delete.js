@@ -18,6 +18,7 @@ var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
 var ContextVersion = require('models/mongo/context-version')
+var Instance = require('models/mongo/instance')
 var rabbitMQ = require('models/rabbitmq')
 var Worker = require('workers/context-version.delete')
 
@@ -78,6 +79,7 @@ describe('Context Version Delete Worker', function () {
     })
 
     beforeEach(function (done) {
+      sinon.stub(Instance, 'findByContextVersionIdsAsync').resolves([])
       sinon.stub(ContextVersion, 'findByIdAsync').resolves(testContextVersion)
       sinon.stub(ContextVersion, 'removeByIdAsync').resolves(testContextVersion)
       sinon.stub(rabbitMQ, 'contextVersionDeleted')
@@ -85,6 +87,7 @@ describe('Context Version Delete Worker', function () {
     })
 
     afterEach(function (done) {
+      Instance.findByContextVersionIdsAsync.restore()
       ContextVersion.findByIdAsync.restore()
       ContextVersion.removeByIdAsync.restore()
       rabbitMQ.contextVersionDeleted.restore()
@@ -124,6 +127,19 @@ describe('Context Version Delete Worker', function () {
             expect(err).to.be.instanceOf(TaskFatalError)
             expect(err.message)
               .to.match(/contextversion.+not.+found/i)
+            done()
+          })
+        })
+      })
+
+      describe('context version being used', function () {
+        it('should throw a fatal task error if another instance is already using the context version', function (done) {
+          Instance.findByContextVersionIdsAsync.resolves([{ _id: '123' }])
+          Worker(testJob).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err.message)
+              .to.match(/used.+by.+instances/i)
             done()
           })
         })
