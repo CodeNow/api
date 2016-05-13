@@ -141,7 +141,7 @@ describe('Workers: Isolation Kill', function () {
           _id: testData.isolationId
         }, {
           $set: {
-            killing: true,
+            state: 'killing',
             redeployOnKilled: true
           }
         })
@@ -158,7 +158,7 @@ describe('Workers: Isolation Kill', function () {
           _id: testData.isolationId
         }, {
           $set: {
-            killing: true,
+            state: 'killing',
             redeployOnKilled: false
           }
         })
