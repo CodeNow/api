@@ -925,7 +925,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
   }) // end killInstanceContainer
 
-  describe('stopIsolation', function () {
+  describe('killIsolation', function () {
     beforeEach(function (done) {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
       done()
@@ -940,20 +940,20 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       var data = {
         isolationId: 'efgh'
       }
-      ctx.rabbitMQ.stopIsolation(data)
+      ctx.rabbitMQ.killIsolation(data)
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
       sinon.assert.calledWith(
         ctx.rabbitMQ.hermesClient.publish,
-        'isolation.stop',
+        'isolation.kill',
         data)
       done()
     })
 
     it('should throw an error when isolationId is missing', function (done) {
       var data = { }
-      expect(ctx.rabbitMQ.stopIsolation.bind(ctx.rabbitMQ, data))
+      expect(ctx.rabbitMQ.killIsolation.bind(ctx.rabbitMQ, data))
         .to.throw(Error, /^Validation failed/)
       done()
     })
-  }) // end stopIsolation
+  }) // end killIsolation
 })
