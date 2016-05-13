@@ -2473,24 +2473,22 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('validateBody', function () {
     var ctx = {}
-    beforeEach(function (done) {
-      ctx = {}
-      ctx.mockUsername = 'TEST-login'
-      ctx.mockSessionUser = {
-        _id: 1234,
-        findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
-          login: ctx.mockUsername,
+    ctx.mockSessionUser = {
+      findGithubUserByGithubIdAsync: sinon.spy(function (id) {
+        var login = (id === ctx.mockSessionUser.accounts.github.id) ? 'user' : 'owner'
+        return Promise.resolve({
+          login: login,
           avatar_url: 'TEST-avatar_url'
-        }),
-        accounts: {
-          github: {
-            id: 1234,
-            username: ctx.mockUsername
-          }
+        })
+      }),
+      gravatar: 'sdasdasdasdasdasd',
+      accounts: {
+        github: {
+          id: 1234,
+          username: 'user'
         }
       }
-      done()
-    })
+    }
     var def = {
       action: 'create an instance',
       requiredParams: [
@@ -2574,9 +2572,11 @@ describe('Instance Model Tests ' + moduleName, function () {
             avatar_url: 'TEST-avatar_url'
           })
         }),
+        gravatar: 'sdasdasdasdasdasd',
         accounts: {
           github: {
-            id: 1234
+            id: 1234,
+            username: 'user'
           }
         }
       }
@@ -2613,10 +2613,12 @@ describe('Instance Model Tests ' + moduleName, function () {
         _id: '507f1f77bcf86cd799439014',
         name: 'name1',
         owner: {
-          github: 2335750
+          github: 2335750,
+          username: 'owner'
         },
         createdBy: {
-          github: 146592
+          github: 146592,
+          username: 'owner'
         },
         contextVersion: ctx.mockCv.toJSON(),
         getElasticHostname: sinon.stub().returns('hello-runnable.runnableapp.com'),
@@ -2626,6 +2628,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         setAsync: sinon.spy(function () {
           return Promise.resolve(ctx.mockInstance)
         }),
+        emitInstanceUpdateAsync: sinon.stub().resolves(),
         upsertIntoGraphAsync: sinon.stub(),
         setDependenciesFromEnvironmentAsync: sinon.stub()
       }
@@ -2663,12 +2666,15 @@ describe('Instance Model Tests ' + moduleName, function () {
                 build: ctx.mockBuild._id,
                 contextVersion: sinon.match.has('id', ctx.mockCv._id.toString()),
                 createdBy: {
-                  github: 1234
+                  github: 1234,
+                  gravatar: 'sdasdasdasdasdasd',
+                  username: 'user'
                 },
                 name: body.name,
                 lowerName: body.name.toLowerCase(),
                 owner: {
                   github: 11111,
+                  gravatar: 'TEST-avatar_url',
                   username: 'owner'
                 },
                 shortHash: 'dsafsd'
@@ -2709,7 +2715,8 @@ describe('Instance Model Tests ' + moduleName, function () {
                 build: ctx.mockBuild._id,
                 contextVersion: sinon.match.has('id', ctx.mockCv._id.toString()),
                 createdBy: {
-                  github: 1234
+                  github: 1234,
+                  username: 'user'
                 },
                 name: body.name,
                 lowerName: body.name.toLowerCase(),
@@ -2760,7 +2767,8 @@ describe('Instance Model Tests ' + moduleName, function () {
                 build: ctx.mockBuild._id,
                 contextVersion: sinon.match.has('id', ctx.mockCv._id.toString()),
                 createdBy: {
-                  github: 1234
+                  github: 1234,
+                  username: 'user'
                 },
                 name: body.name,
                 lowerName: body.name.toLowerCase(),
@@ -2812,7 +2820,8 @@ describe('Instance Model Tests ' + moduleName, function () {
                   build: ctx.mockBuild._id,
                   contextVersion: sinon.match.has('id', ctx.mockCv._id.toString()),
                   createdBy: {
-                    github: 1234
+                    github: 1234,
+                    username: 'user'
                   },
                   name: body.name,
                   lowerName: body.name.toLowerCase(),

@@ -37,16 +37,38 @@ var factory = module.exports = {
       }
     }, cb)
   },
-  createInstanceWithProps: function (ownerGithubId, props, cb) {
+  createInstanceWithProps: function (owner, props, cb) {
     if (isFunction(props)) {
       cb = props
       props = null
     }
+    var username = (typeof owner === 'string' || typeof owner === 'number')
+      ? 'owner'
+      : owner.accounts.github.username
+    var ownerGithubId = (typeof owner === 'string' || typeof owner === 'number')
+      ? owner
+      : owner.accounts.github.id
     var count = createCount(1, function () {
       var data = factory.instanceTemplate(ownerGithubId, props)
       Instance.create(data, function (err, instance) {
-        if (err) { return cb(err) }
-        cb(null, instance, props.build, props.cv)
+        if (err) {
+          return cb(err)
+        }
+        var hostname = instance.getElasticHostname(username).toLowerCase()
+        instance.set({
+          elasticHostname: hostname,
+          hostname: hostname
+        }, function (err, instance) {
+          if (err) {
+            return cb(err)
+          }
+          instance.save(function (err, instance) {
+            if (err) {
+              return cb(err)
+            }
+            cb(null, instance, props.build, props.cv)
+          })
+        })
       })
     })
     if (!props.build) {

@@ -1,3 +1,5 @@
+'use strict'
+
 /**
  * @module unit/models/services/instance-fork-service
  */
@@ -203,21 +205,6 @@ describe('InstanceForkService', function () {
               isIsolationGroupMaster: false
             },
             mockSessionUser
-          )
-          done()
-        }
-      )
-    })
-
-    it('should fetch the instance from the database', function (done) {
-      InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
-        .asCallback(function (err, instance) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.findById)
-          sinon.assert.calledWithExactly(
-            Instance.findById,
-            'mockNewInstanceId',
-            sinon.match.func
           )
           done()
         }
