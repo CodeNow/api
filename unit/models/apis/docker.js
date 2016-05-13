@@ -1198,11 +1198,15 @@ describe('docker: ' + moduleName, function () {
       ctx.mockInstance = {
         _id: '123456789012345678901234',
         shortHash: 'abcdef',
+        owner: {
+          username: 'Runnable'
+        },
         env: [
           'FOO=1',
           'URL=${RUNNABLE_CONTAINER_ID}-$FOO.runnableapp.com',
           'BAR=$URL'
-        ]
+        ],
+        getElasticHostname: function () { }
       }
       ctx.mockContextVersion = {
         _id: '123456789012345678901234',
@@ -1233,13 +1237,16 @@ describe('docker: ' + moduleName, function () {
         ownerUsername: 'runnable',
         sessionUserGithubId: 10
       }
+      sinon.stub(ctx.mockInstance, 'getElasticHostname')
       sinon.stub(Docker.prototype, '_createUserContainerLabels')
       sinon.stub(Docker.prototype, 'createContainer')
       done()
     })
+
     afterEach(function (done) {
       Docker.prototype._createUserContainerLabels.restore()
       Docker.prototype.createContainer.restore()
+      ctx.mockInstance.getElasticHostname.restore()
       done()
     })
 
@@ -1247,12 +1254,14 @@ describe('docker: ' + moduleName, function () {
       beforeEach(function (done) {
         ctx.mockLabels = {}
         ctx.mockContainer = {}
+        ctx.testHost = 'api-stage-runnable.runnableapp.com'
+        ctx.mockInstance.getElasticHostname.returns(ctx.testHost)
         Docker.prototype._createUserContainerLabels.yieldsAsync(null, ctx.mockLabels)
         Docker.prototype.createContainer.yieldsAsync(null, ctx.mockContainer)
         done()
       })
 
-      it('should create a container with repo memory limit', function (done) {
+      it('should create a container with repo memory limit and envs', function (done) {
         model.createUserContainer(ctx.opts, function (err, container) {
           if (err) { return done(err) }
           sinon.assert.calledWith(
@@ -1262,6 +1271,8 @@ describe('docker: ' + moduleName, function () {
             Labels: ctx.mockLabels,
             Env: [
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash,
+              'RUNNABLE_HOSTNAME=' + ctx.mockInstance.shortHash + '-' + ctx.testHost,
+              'RUNNABLE_SHARED_HOSTNAME=' + ctx.testHost,
               'FOO=1',
               'URL=' + ctx.mockInstance.shortHash + '-1.runnableapp.com',
               'BAR=' + ctx.mockInstance.shortHash + '-1.runnableapp.com'
