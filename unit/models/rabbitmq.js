@@ -884,4 +884,44 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       done()
     })
   }) // end updateContainerMemory
+
+  describe('killInstanceContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        containerId: 'abcd',
+        instanceId: 'efgh'
+      }
+      ctx.rabbitMQ.killInstanceContainer(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish,
+        'instance.kill',
+        data)
+      done()
+    })
+
+    it('should throw an error when containerId is missing', function (done) {
+      var data = { instanceId: 'efgh' }
+      expect(ctx.rabbitMQ.killInstanceContainer.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+
+    it('should throw an error when instanceId is missing', function (done) {
+      var data = { containerId: 'abcd' }
+      expect(ctx.rabbitMQ.killInstanceContainer.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  }) // end killInstanceContainer
 })

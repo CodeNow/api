@@ -1001,6 +1001,34 @@ describe('docker: ' + moduleName, function () {
     })
   })
 
+  describe('killContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(model, '_containerAction').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      model._containerAction.restore()
+      done()
+    })
+    it('should call _containerAction with correct options', function (done) {
+      model.killContainer('some-container-id', function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(model._containerAction)
+        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'kill', { })
+        done()
+      })
+    })
+    it('should call _containerAction and callback with an error', function (done) {
+      var dockerErr = new Error('Docker error')
+      model._containerAction.yieldsAsync(dockerErr)
+      model.killContainer('some-container-id', function (err) {
+        expect(err).to.equal(dockerErr)
+        sinon.assert.calledOnce(model._containerAction)
+        done()
+      })
+    })
+  })
+
   describe('restartContainer', function () {
     beforeEach(function (done) {
       ctx.resp = { restarted: true }
