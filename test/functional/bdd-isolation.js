@@ -241,7 +241,6 @@ describe('BDD - Isolation', function () {
             owner: { github: ctx.user.attrs.accounts.github.id },
             isolated: ctx.isolation.attrs._id.toString()
           }
-          console.log('ISOLATE', JSON.stringify(opts));
           async.retry(
             10,
             function (callback) {
