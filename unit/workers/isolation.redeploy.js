@@ -36,13 +36,13 @@ describe('Workers: Isolation Redeploy', function () {
   var mockInstances = [
     {
       _id: '1234',
-      owner: {
+      createdBy: {
         github: 'myztiq'
       }
     },
     {
       _id: '5678',
-      owner: {
+      createdBy: {
         github: 'myztiq'
       }
     }
