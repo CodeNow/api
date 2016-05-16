@@ -23,7 +23,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-describe('Workers: Instance Stop', function () {
+describe('Workers: Instance Kill', function () {
   var testInstanceId = '5633e9273e2b5b0c0077fd41'
   var dockerContainer = '46080d6253c8db55b8bbb9408654896964b86c63e863f1b3b0301057d1ad92ba'
   var testData = {
