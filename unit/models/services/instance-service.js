@@ -1685,4 +1685,77 @@ describe('InstanceService', function () {
       })
     })
   })
+
+  describe('killInstance', function () {
+    var mockInstance
+
+    beforeEach(function (done) {
+      mockInstance = {
+        _id: '1234',
+        container: {
+          dockerContainer: '12344',
+          inspect: {
+            State: {
+              Starting: false
+            }
+          }
+        }
+      }
+      sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').resolves(true)
+      sinon.stub(Instance, 'markAsStoppingAsync').resolves(mockInstance)
+      sinon.stub(rabbitMQ, 'killInstanceContainer')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.prototype.isNotStartingOrStoppingAsync.restore()
+      Instance.markAsStoppingAsync.restore()
+      rabbitMQ.killInstanceContainer.restore()
+      done()
+    })
+
+    it('should fail if instance.isNotStartingOrStoppingAsync fails', function (done) {
+      var error = new Error('notStartingOrStopping error')
+      Instance.prototype.isNotStartingOrStoppingAsync.rejects(error)
+      InstanceService.killInstance(mockInstance)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+    })
+
+    it('should fail if markingAsStoppingAsync fails', function (done) {
+      var error = new Error('Mongo error')
+      Instance.markAsStoppingAsync.rejects(error)
+      InstanceService.killInstance(mockInstance)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+    })
+
+    it('should mark instance as stopping', function (done) {
+      InstanceService.killInstance(mockInstance)
+        .then(function () {
+          sinon.assert.calledOnce(Instance.markAsStoppingAsync)
+          sinon.assert.calledWith(Instance.markAsStoppingAsync, mockInstance._id, mockInstance.container.dockerContainer)
+        })
+        .asCallback(done)
+    })
+
+    it('should publish killInstanceContainer', function (done) {
+      InstanceService.killInstance(mockInstance)
+        .then(function () {
+          sinon.assert.calledOnce(rabbitMQ.killInstanceContainer)
+          sinon.assert.calledWith(rabbitMQ.killInstanceContainer, {
+            containerId: mockInstance.container.dockerContainer,
+            instanceId: mockInstance._id,
+            tid: sinon.match.any
+          })
+        })
+        .asCallback(done)
+    })
+  })
 })

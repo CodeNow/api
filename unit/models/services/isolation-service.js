@@ -10,6 +10,7 @@ var afterEach = lab.afterEach
 var expect = require('code').expect
 var omit = require('101/omit')
 var pick = require('101/pick')
+var Promise = require('bluebird')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
@@ -1474,6 +1475,42 @@ describe('Isolation Services Model', function () {
         )
         done()
       })
+    })
+  })
+
+  describe('findInstancesNotStoppingWithContainers', function () {
+    var mockInstances
+
+    beforeEach(function (done) {
+      mockInstances = [{
+        id: 'mockInstance'
+      }]
+      sinon.stub(Instance, 'findAsync').returns(Promise.resolve(mockInstances))
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findAsync.restore()
+      done()
+    })
+
+    it('should query mongo for instances which should be stopped', function (done) {
+      var isolationId = '1234'
+      IsolationService.findInstancesNotStoppingWithContainers(isolationId)
+        .then(function (results) {
+          expect(results).to.equal(mockInstances)
+          sinon.assert.calledOnce(Instance.findAsync)
+          sinon.assert.calledWith(Instance.findAsync, {
+            isolated: isolationId,
+            'container.inspect.State.Stopping': {
+              $ne: true
+            },
+            'container.inspect.State': {
+              $exists: true
+            }
+          })
+        })
+        .asCallback(done)
     })
   })
 })
