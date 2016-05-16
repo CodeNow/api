@@ -250,6 +250,7 @@ describe('Instance Model Integration Tests', function () {
           createNewInstance('fb1-adelle', {
             name: 'fb1-adelle',
             masterPod: false,
+            branch: 'fb1',
             cv: ctx.adelle.contextVersion
           })(done)
         })
@@ -257,6 +258,7 @@ describe('Instance Model Integration Tests', function () {
           createNewInstance('fb1-goodbye', {
             name: 'fb1-goodbye',
             masterPod: false,
+            branch: 'fb1',
             cv: ctx.goodbye.contextVersion
           })(done)
         })
@@ -315,6 +317,7 @@ describe('Instance Model Integration Tests', function () {
         beforeEach(function (done) {
           createNewInstance('fb1-hello', {
             name: 'fb1-hello',
+            branch: 'fb1',
             masterPod: false,
             env: [
               'df=goodbye-staging-' + ownerName + '.runnableapp.com'
@@ -337,6 +340,7 @@ describe('Instance Model Integration Tests', function () {
         beforeEach(function (done) {
           createNewInstance('fb1-adelle', {
             name: 'fb1-adelle',
+            branch: 'fb1',
             masterPod: false,
             cv: ctx.adelle.contextVersion
           })(done)
