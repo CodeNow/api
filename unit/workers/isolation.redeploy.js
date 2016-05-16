@@ -23,7 +23,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-describe('Workers: Isolation Kill', function () {
+describe('Workers: Isolation Redeploy', function () {
   var testIsolationId = '5633e9273e2b5b0c0077fd41'
   var testData = {
     isolationId: testIsolationId
