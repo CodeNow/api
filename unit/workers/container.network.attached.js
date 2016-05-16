@@ -35,16 +35,16 @@ describe('Workers: Isolation Kill', function () {
       },
       NetworkSettings: {
         Ports: {
-          "80/tcp": [
+          '80/tcp': [
             {
-              "HostIp": "0.0.0.0",
-              "HostPort": "64573"
+              'HostIp': '0.0.0.0',
+              'HostPort': '64573'
             }
           ],
-          "8080/tcp": [
+          '8080/tcp': [
             {
-              "HostIp": "0.0.0.0",
-              "HostPort": "64574"
+              'HostIp': '0.0.0.0',
+              'HostPort': '64574'
             }
           ]
         }
