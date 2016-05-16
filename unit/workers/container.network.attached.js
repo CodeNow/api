@@ -30,7 +30,8 @@ describe('Workers: Isolation Kill', function () {
     inspectData: {
       Config: {
         Labels: {
-          ownerUsername: 'myztiq'
+          ownerUsername: 'myztiq',
+          instanceId: '1234'
         }
       },
       NetworkSettings: {
@@ -116,6 +117,16 @@ describe('Workers: Isolation Kill', function () {
 
     it('should fatally fail if job has no ownerUsername', function (done) {
       var data = omit(testData, 'inspectData.Config.Labels.ownerUsername')
+      Worker(data).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err).to.be.an.instanceOf(TaskFatalError)
+        expect(err.message).to.equal('container.network.attached: Invalid Job')
+        done()
+      })
+    })
+
+    it('should fatally fail if job has no instanceId', function (done) {
+      var data = omit(testData, 'inspectData.Config.Labels.instanceId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(TaskFatalError)
@@ -245,7 +256,7 @@ describe('Workers: Isolation Kill', function () {
       sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
         mockModifiedInstance,
         null,
-        'update',
+        'start',
         false
       )
       done()
