@@ -48,7 +48,6 @@ describe('Workers: Isolation Redeploy', function () {
     }
   ]
   beforeEach(function (done) {
-    sinon.stub(Isolation, 'findOneAsync').resolves(mockIsolation)
     sinon.stub(Isolation, 'findOneAndUpdateAsync').resolves({})
     sinon.stub(Instance, 'findOneAsync').resolves(mockInstances)
     sinon.stub(rabbitMQ, 'redeployInstanceContainer').resolves({})
@@ -56,7 +55,6 @@ describe('Workers: Isolation Redeploy', function () {
   })
 
   afterEach(function (done) {
-    Isolation.findOneAsync.restore()
     Isolation.findOneAndUpdateAsync.restore()
     Instance.findOneAsync.restore()
     rabbitMQ.redeployInstanceContainer.restore()
@@ -93,50 +91,6 @@ describe('Workers: Isolation Redeploy', function () {
     })
   })
 
-  it('should fail if findOneAsync failed', function (done) {
-    var error = new Error('Mongo error')
-    Isolation.findOneAsync.rejects(error)
-    Worker(testData).asCallback(function (err) {
-      expect(err).to.exist()
-      expect(err.message).to.equal(error.message)
-      done()
-    })
-  })
-
-  it('should fail if isolation does not have state', function (done) {
-    var newIsolation = omit(mockIsolation, 'state')
-    Isolation.findOneAsync.resolves(newIsolation)
-    Worker(testData).asCallback(function (err) {
-      expect(err).to.exist()
-      expect(err).to.be.an.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('isolation.redeploy: Isolation state is not killed')
-      done()
-    })
-  })
-
-  it('should fail if isolation state is not killed', function (done) {
-    var newIsolation = omit(mockIsolation, 'state')
-    newIsolation.state = 'killing'
-    Isolation.findOneAsync.resolves(newIsolation)
-    Worker(testData).asCallback(function (err) {
-      expect(err).to.exist()
-      expect(err).to.be.an.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('isolation.redeploy: Isolation state is not killed')
-      done()
-    })
-  })
-
-  it('should fail if isolation does not have redeployOnKilled', function (done) {
-    var newIsolation = omit(mockIsolation, 'redeployOnKilled')
-    Isolation.findOneAsync.resolves(newIsolation)
-    Worker(testData).asCallback(function (err) {
-      expect(err).to.exist()
-      expect(err).to.be.an.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('isolation.redeploy: Isolation is not set to redeploy on killed')
-      done()
-    })
-  })
-
   it('should fail if findOneAndUpdateAsync fails', function (done) {
     var error = new Error('Mongo error')
     Isolation.findOneAndUpdateAsync.rejects(error)
@@ -162,7 +116,9 @@ describe('Workers: Isolation Redeploy', function () {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(Isolation.findOneAndUpdateAsync)
       sinon.assert.calledWith(Isolation.findOneAndUpdateAsync, {
-        _id: testData.isolationId
+        _id: testData.isolationId,
+        state: 'killed',
+        redeployOnKilled: true
       }, {
         $set: {
           state: 'redeploying'
