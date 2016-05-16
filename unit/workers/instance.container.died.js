@@ -9,6 +9,7 @@ var lab = exports.lab = Lab.script()
 
 var Code = require('code')
 var sinon = require('sinon')
+require('sinon-as-promised')(require('bluebird'))
 
 var InstanceContainerDied = require('workers/instance.container.died')
 var InstanceService = require('models/services/instance-service')
@@ -84,7 +85,7 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
     done()
   })
   beforeEach(function (done) {
-    sinon.stub(InstanceService, 'modifyExistingContainerInspect').yieldsAsync(null, ctx.mockInstance)
+    sinon.stub(InstanceService, 'modifyExistingContainerInspect').resolves(ctx.mockInstance)
     sinon.stub(InstanceService, 'emitInstanceUpdate').returns()
     done()
   })
@@ -142,7 +143,7 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
     })
     it('should fail if modifyExistingContainerInspect failed', function (done) {
       var mongoError = new Error('Mongo error')
-      InstanceService.modifyExistingContainerInspect.yieldsAsync(mongoError)
+      InstanceService.modifyExistingContainerInspect.rejects(mongoError)
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
@@ -155,7 +156,7 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
     })
     it('should fail if modifyExistingContainerInspect returned 409', function (done) {
       var conflictErr = Boom.conflict('Instance not found')
-      InstanceService.modifyExistingContainerInspect.yieldsAsync(conflictErr)
+      InstanceService.modifyExistingContainerInspect.rejects(conflictErr)
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(TaskFatalError)
