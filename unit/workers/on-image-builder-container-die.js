@@ -588,7 +588,7 @@ describe('OnImageBuilderContainerDie', function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(rabbitMQ.killIsolation)
           sinon.assert.calledWith(rabbitMQ.killIsolation, {
-            isolationId: mockInstance.isolated,
+            isolationId: mockInstance.isolated
           })
           done()
         })
