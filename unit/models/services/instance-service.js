@@ -639,117 +639,122 @@ describe('InstanceService', function () {
       }
       ctx.containerId = ctx.instance.container.dockerContainer
       sinon.spy(Instance.prototype, 'invalidateContainerDNS')
-      sinon.stub(Instance, 'findOne').yieldsAsync(null, ctx.instance)
+      sinon.stub(Instance, 'findOneAsync').resolves(ctx.instance)
       sinon.stub(InstanceService, 'updateContainerInspect').yieldsAsync(null, ctx.instance)
       done()
     })
 
     afterEach(function (done) {
-      Instance.findOne.restore()
+      Instance.findOneAsync.restore()
       Instance.prototype.invalidateContainerDNS.restore()
       InstanceService.updateContainerInspect.restore()
       done()
     })
 
-    it('should return an error if findOne failed', function (done) {
+    it('should return an error if findOneAsync failed', function (done) {
       var mongoErr = new Error('Mongo error')
-      Instance.findOne.yieldsAsync(mongoErr)
-      InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
-        expect(err.message).to.equal('Mongo error')
-        sinon.assert.calledOnce(Instance.findOne)
-        sinon.assert.calledWith(Instance.findOne, {
-          _id: ctx.instance._id,
-          'container.dockerContainer': ctx.containerId
+      Instance.findOneAsync.rejects(mongoErr)
+      InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1')
+        .asCallback(function (err) {
+          expect(err.message).to.equal('Mongo error')
+          sinon.assert.calledOnce(Instance.findOneAsync)
+          sinon.assert.calledWith(Instance.findOneAsync, {
+            _id: ctx.instance._id,
+            'container.dockerContainer': ctx.containerId
+          })
+          sinon.assert.notCalled(InstanceService.updateContainerInspect)
+          sinon.assert.notCalled(Instance.prototype.invalidateContainerDNS)
+          done()
         })
-        sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(Instance.prototype.invalidateContainerDNS)
-        done()
-      })
     })
 
-    it('should return an error if findOne found nothing', function (done) {
-      Instance.findOne.yieldsAsync(null, null)
-      InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
-        expect(err.message).to.equal("Container was not updated, instance's container has changed")
-        expect(err.output.statusCode).to.equal(409)
-        sinon.assert.calledOnce(Instance.findOne)
-        sinon.assert.calledWith(Instance.findOne, {
-          _id: ctx.instance._id,
-          'container.dockerContainer': ctx.containerId
+    it('should return an error if findOneAsync found nothing', function (done) {
+      Instance.findOneAsync.resolves(null)
+      InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1')
+        .asCallback(function (err) {
+          expect(err.message).to.equal("Container was not updated, instance's container has changed")
+          expect(err.output.statusCode).to.equal(409)
+          sinon.assert.calledOnce(Instance.findOneAsync)
+          sinon.assert.calledWith(Instance.findOneAsync, {
+            _id: ctx.instance._id,
+            'container.dockerContainer': ctx.containerId
+          })
+          sinon.assert.notCalled(InstanceService.updateContainerInspect)
+          sinon.assert.notCalled(Instance.prototype.invalidateContainerDNS)
+          done()
         })
-        sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(Instance.prototype.invalidateContainerDNS)
-        done()
-      })
     })
 
     it('should return an error if updateContainerInspect failed', function (done) {
       var mongoErr = new Error('Mongo error')
       InstanceService.updateContainerInspect.yieldsAsync(mongoErr)
-      InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1', function (err) {
-        expect(err.message).to.equal('Mongo error')
-        sinon.assert.calledOnce(Instance.findOne)
-        sinon.assert.calledWith(Instance.findOne, {
-          _id: ctx.instance._id,
-          'container.dockerContainer': ctx.containerId
+      InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1')
+        .asCallback(function (err) {
+          expect(err.message).to.equal('Mongo error')
+          sinon.assert.calledOnce(Instance.findOneAsync)
+          sinon.assert.calledWith(Instance.findOneAsync, {
+            _id: ctx.instance._id,
+            'container.dockerContainer': ctx.containerId
+          })
+          sinon.assert.calledOnce(InstanceService.updateContainerInspect)
+          sinon.assert.calledWith(InstanceService.updateContainerInspect, {
+            _id: ctx.instance._id,
+            'container.dockerContainer': ctx.containerId
+          }, {
+            'container.inspect': sinon.match.object,
+            'container.ports': sinon.match.object,
+            'network.hostIp': '127.0.0.1'
+          })
+          sinon.assert.notCalled(Instance.prototype.invalidateContainerDNS)
+          done()
         })
-        sinon.assert.calledOnce(InstanceService.updateContainerInspect)
-        sinon.assert.calledWith(InstanceService.updateContainerInspect, {
-          _id: ctx.instance._id,
-          'container.dockerContainer': ctx.containerId
-        }, {
-          'container.inspect': sinon.match.object,
-          'container.ports': sinon.match.object,
-          'network.hostIp': '127.0.0.1'
-        })
-        sinon.assert.notCalled(Instance.prototype.invalidateContainerDNS)
-        done()
-      })
     })
 
-    it('should run successully if no errors', function (done) {
-      InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1', function (err, instance) {
-        expect(err).to.not.exist()
-        expect(instance).to.deep.equal(ctx.instance)
-        sinon.assert.calledOnce(Instance.findOne)
-        sinon.assert.calledWith(Instance.findOne, {
-          _id: ctx.instance._id,
-          'container.dockerContainer': ctx.containerId
+    it('should run successfully if no errors', function (done) {
+      InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1')
+        .asCallback(function (err, instance) {
+          expect(err).to.not.exist()
+          expect(instance).to.deep.equal(ctx.instance)
+          sinon.assert.calledOnce(Instance.findOneAsync)
+          sinon.assert.calledWith(Instance.findOneAsync, {
+            _id: ctx.instance._id,
+            'container.dockerContainer': ctx.containerId
+          })
+          sinon.assert.calledOnce(InstanceService.updateContainerInspect)
+          sinon.assert.calledWith(InstanceService.updateContainerInspect, {
+            _id: ctx.instance._id,
+            'container.dockerContainer': ctx.containerId
+          }, {
+            'container.inspect': sinon.match.object,
+            'container.ports': sinon.match.object,
+            'network.hostIp': '127.0.0.1'
+          })
+          sinon.assert.calledOnce(Instance.prototype.invalidateContainerDNS)
+          done()
         })
-        sinon.assert.calledOnce(InstanceService.updateContainerInspect)
-        sinon.assert.calledWith(InstanceService.updateContainerInspect, {
-          _id: ctx.instance._id,
-          'container.dockerContainer': ctx.containerId
-        }, {
-          'container.inspect': sinon.match.object,
-          'container.ports': sinon.match.object,
-          'network.hostIp': '127.0.0.1'
-        })
-        sinon.assert.calledOnce(Instance.prototype.invalidateContainerDNS)
-        done()
-      })
     })
 
     it('should run successully if no errors and ip was not provided', function (done) {
-      InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, function (err, instance) {
-        expect(err).to.not.exist()
-        expect(instance).to.deep.equal(ctx.instance)
-        sinon.assert.calledOnce(Instance.findOne)
-        sinon.assert.calledWith(Instance.findOne, {
-          _id: ctx.instance._id,
-          'container.dockerContainer': ctx.containerId
+      InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect)
+        .asCallback(function (err, instance) {
+          expect(err).to.not.exist()
+          expect(instance).to.deep.equal(ctx.instance)
+          sinon.assert.calledOnce(Instance.findOneAsync)
+          sinon.assert.calledWith(Instance.findOneAsync, {
+            _id: ctx.instance._id,
+            'container.dockerContainer': ctx.containerId
+          })
+          sinon.assert.calledOnce(InstanceService.updateContainerInspect)
+          sinon.assert.calledWith(InstanceService.updateContainerInspect, {
+            _id: ctx.instance._id,
+            'container.dockerContainer': ctx.containerId
+          }, {
+            'container.inspect': sinon.match.object,
+            'container.ports': sinon.match.object
+          })
+          sinon.assert.calledOnce(Instance.prototype.invalidateContainerDNS)
+          done()
         })
-        sinon.assert.calledOnce(InstanceService.updateContainerInspect)
-        sinon.assert.calledWith(InstanceService.updateContainerInspect, {
-          _id: ctx.instance._id,
-          'container.dockerContainer': ctx.containerId
-        }, {
-          'container.inspect': sinon.match.object,
-          'container.ports': sinon.match.object
-        })
-        sinon.assert.calledOnce(Instance.prototype.invalidateContainerDNS)
-        done()
-      })
     })
   })
 
