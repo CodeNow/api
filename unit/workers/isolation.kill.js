@@ -27,8 +27,7 @@ var it = lab.it
 describe('Workers: Isolation Kill', function () {
   var testIsolationId = '5633e9273e2b5b0c0077fd41'
   var testData = {
-    isolationId: testIsolationId,
-    redeployOnKilled: true
+    isolationId: testIsolationId
   }
   var instancesToStop = [
     {
@@ -146,7 +145,7 @@ describe('Workers: Isolation Kill', function () {
     })
   })
 
-  it('should update the isolation with the restarting flag', function (done) {
+  it('should update the isolation with the state of killing', function (done) {
     Worker(testData)
       .then(function () {
         sinon.assert.calledOnce(Isolation.findOneAndUpdateAsync)
@@ -154,25 +153,7 @@ describe('Workers: Isolation Kill', function () {
           _id: objectId(testData.isolationId)
         }, {
           $set: {
-            state: 'killing',
-            redeployOnKilled: true
-          }
-        })
-      })
-      .asCallback(done)
-  })
-
-  it('should set the isolation with the restarting flag to false', function (done) {
-    testData.redeployOnKilled = false
-    Worker(testData)
-      .then(function () {
-        sinon.assert.calledOnce(Isolation.findOneAndUpdateAsync)
-        sinon.assert.calledWith(Isolation.findOneAndUpdateAsync, {
-          _id: objectId(testData.isolationId)
-        }, {
-          $set: {
-            state: 'killing',
-            redeployOnKilled: false
+            state: 'killing'
           }
         })
       })
