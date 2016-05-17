@@ -15,6 +15,7 @@ var dock = require('../../fixtures/dock')
 var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var expects = require('../../fixtures/expects')
+var createCount = require('callback-count')
 var primus = require('../../fixtures/primus')
 
 describe('Dependencies - /instances/:id/dependencies', function () {
@@ -53,6 +54,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
 
     describe('Instance has a env dependency', { timeout: 1000 }, function () {
       beforeEach(function (done) {
+        var count = createCount(2, done)
         ctx.elasticHostname = ctx.instance.getElasticHostname()
         var body = {
           env: [
@@ -62,8 +64,8 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           build: ctx.build.id()
         }
 
-        primus.expectAction('start', done)
-        ctx.instanceWithDep = ctx.user.createInstance(body, function () {})
+        primus.expectAction('start', count.next)
+        ctx.instanceWithDep = ctx.user.createInstance(body, count.next)
       })
 
       it('should return a dependency', function (done) {

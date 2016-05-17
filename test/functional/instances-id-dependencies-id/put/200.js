@@ -18,7 +18,7 @@ var primus = require('../../fixtures/primus')
 var createCount = require('callback-count')
 var uuid = require('uuid')
 
-describe('Dependencies - /instances/:id/dependencies', function () {
+describe('Dependencies - /instances/:id/dependencies/:hostname', function () {
   var ctx = {}
 
   before(api.start.bind(ctx))
