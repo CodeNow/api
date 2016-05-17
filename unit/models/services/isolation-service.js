@@ -1535,4 +1535,130 @@ describe('Isolation Services Model', function () {
         .asCallback(done)
     })
   })
+
+  describe('redeployIfAllKilled', function () {
+    var mockIsolation
+    var mockInstances
+    var mockUpdatedIsolation
+    var mockIsolationId
+
+    beforeEach(function (done) {
+      mockIsolationId = 'mockIsolationId1234'
+      mockIsolation = {
+        _id: 'mockIsolationId'
+      }
+      mockUpdatedIsolation = {
+        _id: 'mockUpdatedIsolationId'
+      }
+      mockInstances = []
+      sinon.stub(Isolation, 'findOneAsync').resolves(mockIsolation)
+      sinon.stub(Instance, 'findAsync').resolves(mockInstances)
+      sinon.stub(Isolation, 'findOneAndUpdateAsync').resolves(mockUpdatedIsolation)
+      sinon.stub(rabbitMQ, 'redeployIsolation')
+      done()
+    })
+
+    afterEach(function (done) {
+      Isolation.findOneAsync.restore()
+      Instance.findAsync.restore()
+      Isolation.findOneAndUpdateAsync.restore()
+      rabbitMQ.redeployIsolation.restore()
+      done()
+    })
+
+    it('should fail if Isolation.findOneAsync fails', function (done) {
+      var error = new Error('Mongo error')
+      Isolation.findOneAsync.rejects(error)
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+    })
+
+    it('should fail if Instance.findAsync fails', function (done) {
+      var error = new Error('Mongo error')
+      Instance.findAsync.rejects(error)
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+    })
+
+    it('should fail if Isolation.findOneAndUpdateAsync fails', function (done) {
+      var error = new Error('Mongo error')
+      Isolation.findOneAndUpdateAsync.rejects(error)
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+    })
+
+    it('should call Isolation.findOneAsync', function (done) {
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Isolation.findOneAsync)
+          sinon.assert.calledWith(Isolation.findOneAsync, {
+            _id: mockIsolationId,
+            redeployOnKilled: true,
+            state: 'killing'
+          })
+          done()
+        })
+    })
+
+    it('should call Instance.findAsync', function (done) {
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.findAsync)
+          sinon.assert.calledWith(Instance.findAsync, {
+            isolated: mockIsolationId,
+            'container.inspect.State.Stopping': {
+              $ne: true
+            },
+            'container.inspect.State.running': {
+              $ne: true
+            }
+          })
+          done()
+        })
+    })
+
+    it('should call Isolation.findOneAndUpdateAsync', function (done) {
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Isolation.findOneAndUpdateAsync)
+          sinon.assert.calledWith(Isolation.findOneAndUpdateAsync, {
+            _id: mockIsolationId,
+            redeployOnKilled: true,
+            state: 'killing'
+          }, {
+            $set: {
+              state: 'killed'
+            }
+          })
+          done()
+        })
+    })
+
+    it('should call rabbitMQ.redeployIsolation', function (done) {
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(rabbitMQ.redeployIsolation)
+          sinon.assert.calledWith(rabbitMQ.redeployIsolation, {
+            isolationId: mockIsolationId
+          })
+          done()
+        })
+    })
+  })
 })
