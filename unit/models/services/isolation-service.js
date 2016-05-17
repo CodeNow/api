@@ -1528,7 +1528,8 @@ describe('Isolation Services Model', function () {
             },
             'container.inspect.State': {
               $exists: true
-            }
+            },
+            'container.inspect.State.Running': true
           })
         })
         .asCallback(done)
