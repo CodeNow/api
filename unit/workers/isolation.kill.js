@@ -61,7 +61,7 @@ describe('Workers: Isolation Kill', function () {
     }
   ]
   beforeEach(function (done) {
-    sinon.stub(Isolation, 'findOneAndUpdate').resolves({})
+    sinon.stub(Isolation, 'findOneAndUpdateAsync').resolves({})
     sinon.stub(IsolationService, 'findInstancesNotStoppingWithContainers').resolves(instancesToStop)
     sinon.stub(InstanceService, 'killInstance').resolves()
     sinon.stub(IsolationService, 'redeployIfAllKilled').resolves()
@@ -69,7 +69,7 @@ describe('Workers: Isolation Kill', function () {
   })
 
   afterEach(function (done) {
-    Isolation.findOneAndUpdate.restore()
+    Isolation.findOneAndUpdateAsync.restore()
     IsolationService.findInstancesNotStoppingWithContainers.restore()
     InstanceService.killInstance.restore()
     IsolationService.redeployIfAllKilled.restore()
@@ -106,9 +106,9 @@ describe('Workers: Isolation Kill', function () {
     })
   })
 
-  it('should fail if findOneAndUpdate failed', function (done) {
+  it('should fail if findOneAndUpdateAsync failed', function (done) {
     var error = new Error('Mongo error')
-    Isolation.findOneAndUpdate.rejects(error)
+    Isolation.findOneAndUpdateAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
@@ -149,8 +149,8 @@ describe('Workers: Isolation Kill', function () {
   it('should update the isolation with the restarting flag', function (done) {
     Worker(testData)
       .then(function () {
-        sinon.assert.calledOnce(Isolation.findOneAndUpdate)
-        sinon.assert.calledWith(Isolation.findOneAndUpdate, {
+        sinon.assert.calledOnce(Isolation.findOneAndUpdateAsync)
+        sinon.assert.calledWith(Isolation.findOneAndUpdateAsync, {
           _id: objectId(testData.isolationId)
         }, {
           $set: {
@@ -166,8 +166,8 @@ describe('Workers: Isolation Kill', function () {
     testData.redeployOnKilled = false
     Worker(testData)
       .then(function () {
-        sinon.assert.calledOnce(Isolation.findOneAndUpdate)
-        sinon.assert.calledWith(Isolation.findOneAndUpdate, {
+        sinon.assert.calledOnce(Isolation.findOneAndUpdateAsync)
+        sinon.assert.calledWith(Isolation.findOneAndUpdateAsync, {
           _id: objectId(testData.isolationId)
         }, {
           $set: {
