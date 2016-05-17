@@ -1469,12 +1469,33 @@ describe('Isolation Services Model', function () {
           IsolationService.createIsolationAndEmitInstanceUpdates,
           {
             master: 'foobar',
-            children: []
+            children: [],
+            redeployOnKilled: false
           },
           { user: 2 }
         )
         done()
       })
+    })
+
+    it('should copy over redeployOnKilled flag', function (done) {
+      mockAIC.redeployOnKilled = true
+      AutoIsolationConfig.findOne.yieldsAsync(null, mockAIC)
+      IsolationService.autoIsolate(newInstances, pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(IsolationService.createIsolationAndEmitInstanceUpdates)
+          sinon.assert.calledWithExactly(
+            IsolationService.createIsolationAndEmitInstanceUpdates,
+            {
+              master: 'foobar',
+              children: [],
+              redeployOnKilled: true
+            },
+            { user: 2 }
+          )
+          done()
+        })
     })
   })
 
