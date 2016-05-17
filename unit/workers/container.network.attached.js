@@ -5,6 +5,7 @@
 
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
+var objectId = require('objectid')
 
 var omit = require('101/omit')
 var Code = require('code')
@@ -63,7 +64,7 @@ describe('Workers: Isolation Kill', function () {
     isolated: 'isolatedId'
   }
   var mockIsolation = {
-    status: 'killing'
+    state: 'killing'
   }
   beforeEach(function (done) {
     sinon.stub(Instance, 'findOneByContainerIdAsync').resolves(mockInstance)
