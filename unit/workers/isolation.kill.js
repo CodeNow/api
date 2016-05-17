@@ -193,7 +193,7 @@ describe('Workers: Isolation Kill', function () {
     Worker(testData)
       .then(function () {
         sinon.assert.calledOnce(IsolationService.redeployIfAllKilled)
-        sinon.assert.calledWith(IsolationService.redeployIfAllKilled, testIsolationId)
+        sinon.assert.calledWith(IsolationService.redeployIfAllKilled, objectId(testIsolationId))
       })
       .asCallback(done)
   })
