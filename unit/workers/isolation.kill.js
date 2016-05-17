@@ -6,6 +6,7 @@
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
+var objectId = require('objectid')
 var omit = require('101/omit')
 var Code = require('code')
 var sinon = require('sinon')
@@ -150,7 +151,7 @@ describe('Workers: Isolation Kill', function () {
       .then(function () {
         sinon.assert.calledOnce(Isolation.findOneAndUpdate)
         sinon.assert.calledWith(Isolation.findOneAndUpdate, {
-          _id: testData.isolationId
+          _id: objectId(testData.isolationId)
         }, {
           $set: {
             state: 'killing',
@@ -167,7 +168,7 @@ describe('Workers: Isolation Kill', function () {
       .then(function () {
         sinon.assert.calledOnce(Isolation.findOneAndUpdate)
         sinon.assert.calledWith(Isolation.findOneAndUpdate, {
-          _id: testData.isolationId
+          _id: objectId(testData.isolationId)
         }, {
           $set: {
             state: 'killing',
