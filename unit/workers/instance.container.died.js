@@ -13,6 +13,7 @@ require('sinon-as-promised')(require('bluebird'))
 
 var InstanceContainerDied = require('workers/instance.container.died')
 var InstanceService = require('models/services/instance-service')
+var IsolationService = require('models/services/isolation-service')
 var Promise = require('bluebird')
 var TaskFatalError = require('ponos').TaskFatalError
 
@@ -46,7 +47,8 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
       },
       network: {
         hostIp: '0.0.0.0'
-      }
+      },
+      isolated: 'isolatedId'
     }
     ctx.instanceId = '5633e9273e2b5b0c0077fd41'
     ctx.sessionUserGithubId = 111987
@@ -87,11 +89,13 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
   beforeEach(function (done) {
     sinon.stub(InstanceService, 'modifyExistingContainerInspect').resolves(ctx.mockInstance)
     sinon.stub(InstanceService, 'emitInstanceUpdate').returns()
+    sinon.stub(IsolationService, 'redeployIfAllKilled').resolves()
     done()
   })
   afterEach(function (done) {
     InstanceService.modifyExistingContainerInspect.restore()
     InstanceService.emitInstanceUpdate.restore()
+    IsolationService.redeployIfAllKilled.restore()
     done()
   })
   describe('success', function () {
@@ -104,6 +108,8 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
           ctx.mockInstance, ctx.sessionUserGithubId, 'update', true)
+        sinon.assert.calledOnce(IsolationService.redeployIfAllKilled)
+        sinon.assert.calledWith(IsolationService.redeployIfAllKilled, ctx.mockInstance.isolated)
         done()
       })
     })
@@ -182,6 +188,15 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
           ctx.mockInstance, ctx.sessionUserGithubId, 'update', true)
+        done()
+      })
+    })
+    it('should fail if IsolationService.redeployIfAllKilled failed', function (done) {
+      var error = new Error('Mongo error')
+      IsolationService.redeployIfAllKilled.rejects(error)
+      InstanceContainerDied(ctx.data).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.message).to.equal(error.message)
         done()
       })
     })

@@ -63,6 +63,7 @@ describe('Workers: Isolation Kill', function () {
     sinon.stub(Isolation, 'findOneAndUpdate').resolves({})
     sinon.stub(IsolationService, 'findInstancesNotStoppingWithContainers').resolves(instancesToStop)
     sinon.stub(InstanceService, 'killInstance').resolves()
+    sinon.stub(IsolationService, 'redeployIfAllKilled').resolves()
     done()
   })
 
@@ -70,6 +71,7 @@ describe('Workers: Isolation Kill', function () {
     Isolation.findOneAndUpdate.restore()
     IsolationService.findInstancesNotStoppingWithContainers.restore()
     InstanceService.killInstance.restore()
+    IsolationService.redeployIfAllKilled.restore()
     done()
   })
 
@@ -133,6 +135,16 @@ describe('Workers: Isolation Kill', function () {
     })
   })
 
+  it('should fail if IsolationService.redeployIfAllKilled failed', function (done) {
+    var error = new Error('Mongo error')
+    IsolationService.redeployIfAllKilled.rejects(error)
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.exist()
+      expect(err.message).to.equal(error.message)
+      done()
+    })
+  })
+
   it('should update the isolation with the restarting flag', function (done) {
     Worker(testData)
       .then(function () {
@@ -172,6 +184,15 @@ describe('Workers: Isolation Kill', function () {
         sinon.assert.calledTwice(InstanceService.killInstance)
         sinon.assert.calledWith(InstanceService.killInstance, instancesToStop[1])
         sinon.assert.calledWith(InstanceService.killInstance, instancesToStop[2])
+      })
+      .asCallback(done)
+  })
+
+  it('should call IsolationService.redeployIfAllKilled', function (done) {
+    Worker(testData)
+      .then(function () {
+        sinon.assert.calledOnce(IsolationService.redeployIfAllKilled)
+        sinon.assert.calledWith(IsolationService.redeployIfAllKilled, testIsolationId)
       })
       .asCallback(done)
   })
