@@ -541,11 +541,16 @@ describe('OnImageBuilderContainerDie', function () {
   describe('_killIsolationIfNeeded', function () {
     var mockJob
     var mockInstance
+    var mockInstance1
     beforeEach(function (done) {
       mockJob = {}
       mockInstance = {
         isIsolationGroupMaster: true,
         isolated: 'isolationId'
+      }
+      mockInstance1 = {
+        isIsolationGroupMaster: true,
+        isolated: 'isolationId23'
       }
       sinon.stub(Isolation, 'findOneAsync').resolves({})
       sinon.stub(rabbitMQ, 'killIsolation')
@@ -588,7 +593,7 @@ describe('OnImageBuilderContainerDie', function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(rabbitMQ.killIsolation)
           sinon.assert.calledWith(rabbitMQ.killIsolation, {
-            isolationId: mockInstance.isolated
+            isolationId: mockInstance.isolated,
           })
           done()
         })
@@ -600,6 +605,17 @@ describe('OnImageBuilderContainerDie', function () {
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.notCalled(rabbitMQ.killIsolation)
+          done()
+        })
+    })
+
+    it('should return an array of instances which were not triggered on isolation', function (done) {
+      Isolation.findOneAsync.onSecondCall().resolves(null)
+      OnImageBuilderContainerDie._killIsolationIfNeeded(mockJob, [mockInstance1, mockInstance])
+        .asCallback(function (err, data) {
+          expect(err).to.not.exist()
+          expect(data[0]).to.equal(mockInstance)
+          expect(data.length).to.equal(1)
           done()
         })
     })
