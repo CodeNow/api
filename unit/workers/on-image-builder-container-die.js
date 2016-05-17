@@ -13,6 +13,7 @@ require('sinon-as-promised')(require('bluebird'))
 var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
+var Isolation = require('models/mongo/isolation')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 var rabbitMQ = require('models/rabbitmq')
@@ -534,6 +535,73 @@ describe('OnImageBuilderContainerDie', function () {
       OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance], { failed: true })
       sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
       done()
+    })
+  })
+
+  describe('_killIsolationIfNeeded', function () {
+    var mockJob
+    var mockInstance
+    beforeEach(function (done) {
+      mockJob = {}
+      mockInstance = {
+        isIsolationGroupMaster: true,
+        isolated: 'isolationId'
+      }
+      sinon.stub(Isolation, 'findOneAsync').resolves({})
+      sinon.stub(rabbitMQ, 'killIsolation')
+      done()
+    })
+
+    afterEach(function (done) {
+      Isolation.findOneAsync.restore()
+      rabbitMQ.killIsolation.restore()
+      done()
+    })
+
+    it('should fail if findOneAsync fails', function (done) {
+      var error = new Error('Mongo error')
+      Isolation.findOneAsync.rejects(error)
+      OnImageBuilderContainerDie._killIsolationIfNeeded(mockJob, [mockInstance])
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+    })
+
+    it('should call Isolation.findOneAsync', function (done) {
+      OnImageBuilderContainerDie._killIsolationIfNeeded(mockJob, [mockInstance])
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Isolation.findOneAsync)
+          sinon.assert.calledWith(Isolation.findOneAsync, {
+            _id: mockInstance.isolated,
+            redeployOnKilled: true
+          })
+          done()
+        })
+    })
+
+    it('should call rabbitMQ.killIsolation', function (done) {
+      OnImageBuilderContainerDie._killIsolationIfNeeded(mockJob, [mockInstance])
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(rabbitMQ.killIsolation)
+          sinon.assert.calledWith(rabbitMQ.killIsolation, {
+            isolationId: mockInstance.isolated,
+          })
+          done()
+        })
+    })
+
+    it('should not call rabbitMQ.killIsolation if no isolation found', function (done) {
+      Isolation.findOneAsync.resolves(null)
+      OnImageBuilderContainerDie._killIsolationIfNeeded(mockJob, [mockInstance])
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(rabbitMQ.killIsolation)
+          done()
+        })
     })
   })
 })
