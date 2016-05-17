@@ -14,6 +14,7 @@ require('sinon-as-promised')(require('bluebird'))
 var Worker = require('workers/container.network.attached')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
+var Isolation = require('models/mongo/isolation')
 var Hosts = require('models/redis/hosts')
 
 var TaskFatalError = require('ponos').TaskFatalError
@@ -54,17 +55,23 @@ describe('Workers: Isolation Kill', function () {
   }
   var mockInstance = {
     _id: '1234',
-    name: 'mockInstance'
+    name: 'mockInstance',
   }
   var mockModifiedInstance = {
     _id: '1234',
-    modified: true
+    modified: true,
+    isolated: 'isolatedId'
+  }
+  var mockIsolation = {
+    status: 'killing'
   }
   beforeEach(function (done) {
     sinon.stub(Instance, 'findOneByContainerIdAsync').resolves(mockInstance)
     sinon.stub(Hosts.prototype, 'upsertHostsForInstanceAsync').resolves(mockInstance)
     sinon.stub(InstanceService, 'modifyExistingContainerInspect').resolves(mockModifiedInstance)
     sinon.stub(InstanceService, 'emitInstanceUpdate').resolves({})
+    sinon.stub(InstanceService, 'killInstance').resolves({})
+    sinon.stub(Isolation, 'findOneAsync').resolves(mockIsolation)
     done()
   })
 
@@ -73,6 +80,8 @@ describe('Workers: Isolation Kill', function () {
     Hosts.prototype.upsertHostsForInstanceAsync.restore()
     InstanceService.modifyExistingContainerInspect.restore()
     InstanceService.emitInstanceUpdate.restore()
+    InstanceService.killInstance.restore()
+    Isolation.findOneAsync.restore()
     done()
   })
 
@@ -201,8 +210,30 @@ describe('Workers: Isolation Kill', function () {
   })
 
   it('should fail if emitInstanceUpdate fails', function (done) {
+    Isolation.findOneAsync.resolves({})
     var error = new Error('Mongodb error')
     InstanceService.emitInstanceUpdate.rejects(error)
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.exist()
+      expect(err.message).to.equal(error.message)
+      done()
+    })
+  })
+
+  it('should fail if Isolation.findOneASync fails', function (done) {
+    var error = new Error('Mongodb error')
+    Isolation.findOneAsync.rejects(error)
+    Worker(testData).asCallback(function (err) {
+      console.log(err);
+      expect(err).to.exist()
+      expect(err.message).to.equal(error.message)
+      done()
+    })
+  })
+
+  it('should fail if InstanceService.killInstance fails', function (done) {
+    var error = new Error('Mongodb error')
+    InstanceService.killInstance.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
@@ -249,7 +280,34 @@ describe('Workers: Isolation Kill', function () {
     })
   })
 
+  it('should call Isolation.findOneAsync', function (done) {
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.not.exist()
+      sinon.assert.calledOnce(Isolation.findOneAsync)
+      sinon.assert.calledWith(Isolation.findOneAsync, {_id: mockModifiedInstance.isolated})
+      done()
+    })
+  })
+
+  it('should call InstanceService.killInstance', function (done) {
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.not.exist()
+      sinon.assert.calledOnce(InstanceService.killInstance)
+      sinon.assert.calledWith(InstanceService.killInstance, mockModifiedInstance)
+      done()
+    })
+  })
+
+  it('should not call emitInstanceUpdate if instance was killed', function (done) {
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.not.exist()
+      sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
+      done()
+    })
+  })
+
   it('should call emitInstanceUpdate', function (done) {
+    Isolation.findOneAsync.resolves({})
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
