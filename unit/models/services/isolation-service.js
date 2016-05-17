@@ -1620,12 +1620,10 @@ describe('Isolation Services Model', function () {
           sinon.assert.calledOnce(Instance.findAsync)
           sinon.assert.calledWith(Instance.findAsync, {
             isolated: mockIsolationId,
-            'container.inspect.State.Stopping': {
-              $ne: true
-            },
-            'container.inspect.State.running': {
-              $ne: true
-            }
+            $or: [
+              { 'container.inspect.State.Stopping': true },
+              { 'container.inspect.State.running': true }
+            ]
           })
           done()
         })
