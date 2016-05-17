@@ -55,7 +55,7 @@ describe('Workers: Isolation Kill', function () {
   }
   var mockInstance = {
     _id: '1234',
-    name: 'mockInstance',
+    name: 'mockInstance'
   }
   var mockModifiedInstance = {
     _id: '1234',
@@ -224,7 +224,6 @@ describe('Workers: Isolation Kill', function () {
     var error = new Error('Mongodb error')
     Isolation.findOneAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
-      console.log(err);
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
