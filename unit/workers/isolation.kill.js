@@ -15,6 +15,7 @@ require('sinon-as-promised')(require('bluebird'))
 var Worker = require('workers/isolation.kill')
 var Isolation = require('models/mongo/isolation')
 var IsolationService = require('models/services/isolation-service')
+var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 
 var TaskFatalError = require('ponos').TaskFatalError
@@ -31,15 +32,6 @@ describe('Workers: Isolation Kill', function () {
   }
   var instancesToStop = [
     {
-      id: '123',
-      container: {
-        inspect: {
-          State: {
-            Starting: true
-          }
-        }
-      }
-    }, {
       id: '456',
       container: {
         inspect: {
@@ -61,15 +53,15 @@ describe('Workers: Isolation Kill', function () {
   ]
   beforeEach(function (done) {
     sinon.stub(Isolation, 'findOneAndUpdateAsync').resolves({})
-    sinon.stub(IsolationService, 'findInstancesNotStoppingWithContainers').resolves(instancesToStop)
     sinon.stub(InstanceService, 'killInstance').resolves()
     sinon.stub(IsolationService, 'redeployIfAllKilled').resolves()
+    sinon.stub(Instance, 'findAsync').returns(Promise.resolve(instancesToStop))
     done()
   })
 
   afterEach(function (done) {
     Isolation.findOneAndUpdateAsync.restore()
-    IsolationService.findInstancesNotStoppingWithContainers.restore()
+    Instance.findAsync.restore()
     InstanceService.killInstance.restore()
     IsolationService.redeployIfAllKilled.restore()
     done()
@@ -115,9 +107,9 @@ describe('Workers: Isolation Kill', function () {
     })
   })
 
-  it('should fail if findInstancesNotStoppingWithContainers failed', function (done) {
+  it('should fail if findInstanceAsync failed', function (done) {
     var error = new Error('Mongo error')
-    IsolationService.findInstancesNotStoppingWithContainers.rejects(error)
+    Instance.findAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
@@ -160,12 +152,30 @@ describe('Workers: Isolation Kill', function () {
       .asCallback(done)
   })
 
-  it('should only call kill instance on non starting instances', function (done) {
+  it('should should call Instance.findAsync with the right parameters', function (done) {
+    Worker(testData)
+      .then(function () {
+        sinon.assert.calledOnce(Instance.findAsync)
+        sinon.assert.calledWith(Instance.findAsync, {
+          isolated: testData.isolationId,
+          'container.inspect.State.Stopping': {
+            $ne: true
+          },
+          'container.inspect.State.Running': true,
+          'container.inspect.State.Starting': {
+            $ne: true
+          }
+        })
+      })
+      .asCallback(done)
+  })
+
+  it('should call kill on all instances', function (done) {
     Worker(testData)
       .then(function () {
         sinon.assert.calledTwice(InstanceService.killInstance)
+        sinon.assert.calledWith(InstanceService.killInstance, instancesToStop[0])
         sinon.assert.calledWith(InstanceService.killInstance, instancesToStop[1])
-        sinon.assert.calledWith(InstanceService.killInstance, instancesToStop[2])
       })
       .asCallback(done)
   })
