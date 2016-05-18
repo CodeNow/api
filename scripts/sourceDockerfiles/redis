@@ -1,0 +1,2 @@
+# Full list of versions available here: https://hub.docker.com/_/redis/
+FROM redis:3.2
