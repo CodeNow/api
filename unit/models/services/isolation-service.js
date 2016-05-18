@@ -1584,7 +1584,7 @@ describe('Isolation Services Model', function () {
             isolated: mockIsolationId,
             $or: [
               { 'container.inspect.State.Stopping': true },
-              { 'container.inspect.State.running': true }
+              { 'container.inspect.State.Running': true }
             ]
           })
           done()
