@@ -5,7 +5,6 @@
 
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
-var objectId = require('objectid')
 
 var omit = require('101/omit')
 var Code = require('code')
