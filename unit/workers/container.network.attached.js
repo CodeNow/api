@@ -220,7 +220,7 @@ describe('Workers: Isolation Kill', function () {
     })
   })
 
-  it('should fail if Isolation.findOneASync fails', function (done) {
+  it('should fail if Isolation.findOneAsync fails', function (done) {
     var error = new Error('Mongodb error')
     Isolation.findOneAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
