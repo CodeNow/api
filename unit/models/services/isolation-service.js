@@ -10,7 +10,6 @@ var afterEach = lab.afterEach
 var expect = require('code').expect
 var omit = require('101/omit')
 var pick = require('101/pick')
-var Promise = require('bluebird')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
