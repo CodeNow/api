@@ -9,6 +9,7 @@ var Code = require('code')
 var Lab = require('lab')
 var omit = require('101/omit')
 var sinon = require('sinon')
+var TaskError = require('ponos').TaskError
 var TaskFatalError = require('ponos').TaskFatalError
 
 var ContextVersion = require('models/mongo/context-version')
@@ -169,10 +170,10 @@ describe('Workers: Instance Start', function () {
     })
   })
 
-  it('should TaskFatalError if docker startContainer 404', function (done) {
+  it('should TaskError if docker startContainer 404', function (done) {
     Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskFatalError)
+      expect(err).to.be.an.instanceOf(TaskError)
       expect(err.message).to.contain('container does not exist')
       done()
     })
