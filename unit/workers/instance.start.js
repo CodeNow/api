@@ -9,8 +9,8 @@ var Code = require('code')
 var Lab = require('lab')
 var omit = require('101/omit')
 var sinon = require('sinon')
-var TaskFatalError = require('ponos').TaskFatalError
 var TaskError = require('ponos').TaskError
+var TaskFatalError = require('ponos').TaskFatalError
 
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
