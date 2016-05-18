@@ -1,7 +1,7 @@
 # Change version number to desired (i.e. 9.3, 9.4, 9.5)
 FROM runnable/postgres:9.4
 
-# Set recommended environment variables
+# Set desired environment variables
 # ENV POSTGRES_USER postgres
 # ENV POSTGRES_DB postgres
 
