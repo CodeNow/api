@@ -538,8 +538,8 @@ describe('InstanceService', function () {
       it('should not create new jobs if instances were not found', function (done) {
         sinon.stub(Instance, 'findForkedInstances')
           .yieldsAsync(null, [])
-        InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
-          function (err) {
+        InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master')
+          .asCallback(function (err) {
             expect(err).to.not.exist()
             expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
             done()
@@ -549,8 +549,8 @@ describe('InstanceService', function () {
       it('should error if the original instance wasnt found', function (done) {
         sinon.stub(Instance, 'findForkedInstances')
           .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
-        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-4', 'api', 'master',
-          function (err) {
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-4', 'api', 'master')
+          .asCallback(function (err) {
             expect(err).to.exist()
             expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
             done()
@@ -560,8 +560,8 @@ describe('InstanceService', function () {
       it('should create 2 jobs if 3 instances were found and 1 filtered', function (done) {
         sinon.stub(Instance, 'findForkedInstances')
           .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
-        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
-          function (err) {
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master')
+          .asCallback(function (err) {
             expect(err).to.not.exist()
             expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
             var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
@@ -578,8 +578,8 @@ describe('InstanceService', function () {
           {_id: 'inst-2'},
           {_id: 'inst-3'}
         ])
-        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
-          function (err) {
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master')
+          .asCallback(function (err) {
             expect(err).to.not.exist()
             expect(rabbitMQ.deleteInstance.callCount).to.equal(1)
             var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
@@ -594,8 +594,8 @@ describe('InstanceService', function () {
           {_id: 'inst-2', isolated: 'asdasdaer3'},
           {_id: 'inst-3'}
         ])
-        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master',
-          function (err) {
+        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master')
+          .asCallback(function (err) {
             expect(err).to.not.exist()
             expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
             done()
