@@ -10,7 +10,6 @@ var afterEach = lab.afterEach
 var expect = require('code').expect
 var omit = require('101/omit')
 var pick = require('101/pick')
-var Promise = require('bluebird')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
@@ -1469,48 +1468,157 @@ describe('Isolation Services Model', function () {
           IsolationService.createIsolationAndEmitInstanceUpdates,
           {
             master: 'foobar',
-            children: []
+            children: [],
+            redeployOnKilled: false
           },
           { user: 2 }
         )
         done()
       })
     })
+
+    it('should copy over redeployOnKilled flag', function (done) {
+      mockAIC.redeployOnKilled = true
+      AutoIsolationConfig.findOne.yieldsAsync(null, mockAIC)
+      IsolationService.autoIsolate(newInstances, pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(IsolationService.createIsolationAndEmitInstanceUpdates)
+          sinon.assert.calledWithExactly(
+            IsolationService.createIsolationAndEmitInstanceUpdates,
+            {
+              master: 'foobar',
+              children: [],
+              redeployOnKilled: true
+            },
+            { user: 2 }
+          )
+          done()
+        })
+    })
   })
 
-  describe('findInstancesNotStoppingWithContainers', function () {
+  describe('redeployIfAllKilled', function () {
+    var mockIsolation
     var mockInstances
+    var mockUpdatedIsolation
+    var mockIsolationId
 
     beforeEach(function (done) {
-      mockInstances = [{
-        id: 'mockInstance'
-      }]
-      sinon.stub(Instance, 'findAsync').returns(Promise.resolve(mockInstances))
+      mockIsolationId = 'mockIsolationId1234'
+      mockIsolation = {
+        _id: 'mockIsolationId'
+      }
+      mockUpdatedIsolation = {
+        _id: 'mockUpdatedIsolationId'
+      }
+      mockInstances = []
+      sinon.stub(Isolation, 'findOneAsync').resolves(mockIsolation)
+      sinon.stub(Instance, 'findAsync').resolves(mockInstances)
+      sinon.stub(Isolation, 'findOneAndUpdateAsync').resolves(mockUpdatedIsolation)
+      sinon.stub(rabbitMQ, 'redeployIsolation')
       done()
     })
 
     afterEach(function (done) {
+      Isolation.findOneAsync.restore()
       Instance.findAsync.restore()
+      Isolation.findOneAndUpdateAsync.restore()
+      rabbitMQ.redeployIsolation.restore()
       done()
     })
 
-    it('should query mongo for instances which should be stopped', function (done) {
-      var isolationId = '1234'
-      IsolationService.findInstancesNotStoppingWithContainers(isolationId)
-        .then(function (results) {
-          expect(results).to.equal(mockInstances)
+    it('should fail if Isolation.findOneAsync fails', function (done) {
+      var error = new Error('Mongo error')
+      Isolation.findOneAsync.rejects(error)
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+    })
+
+    it('should fail if Instance.findAsync fails', function (done) {
+      var error = new Error('Mongo error')
+      Instance.findAsync.rejects(error)
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+    })
+
+    it('should fail if Isolation.findOneAndUpdateAsync fails', function (done) {
+      var error = new Error('Mongo error')
+      Isolation.findOneAndUpdateAsync.rejects(error)
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+    })
+
+    it('should call Isolation.findOneAsync', function (done) {
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Isolation.findOneAsync)
+          sinon.assert.calledWith(Isolation.findOneAsync, {
+            _id: mockIsolationId,
+            redeployOnKilled: true,
+            state: 'killing'
+          })
+          done()
+        })
+    })
+
+    it('should call Instance.findAsync', function (done) {
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findAsync)
           sinon.assert.calledWith(Instance.findAsync, {
-            isolated: isolationId,
-            'container.inspect.State.Stopping': {
-              $ne: true
-            },
-            'container.inspect.State': {
-              $exists: true
+            isolated: mockIsolationId,
+            $or: [
+              { 'container.inspect.State.Stopping': true },
+              { 'container.inspect.State.Running': true }
+            ]
+          })
+          done()
+        })
+    })
+
+    it('should call Isolation.findOneAndUpdateAsync', function (done) {
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Isolation.findOneAndUpdateAsync)
+          sinon.assert.calledWith(Isolation.findOneAndUpdateAsync, {
+            _id: mockIsolationId,
+            redeployOnKilled: true,
+            state: 'killing'
+          }, {
+            $set: {
+              state: 'killed'
             }
           })
+          done()
         })
-        .asCallback(done)
+    })
+
+    it('should call rabbitMQ.redeployIsolation', function (done) {
+      IsolationService.redeployIfAllKilled(mockIsolationId)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(rabbitMQ.redeployIsolation)
+          sinon.assert.calledWith(rabbitMQ.redeployIsolation, {
+            isolationId: mockIsolationId
+          })
+          done()
+        })
     })
   })
 })

@@ -220,9 +220,7 @@ describe('Instance Model Tests ' + moduleName, function () {
         var query = {
           _id: mockInstance._id,
           'container.dockerContainer': 'container-id',
-          'container.inspect.State.Stopping': {
-            $exists: true
-          }
+          'container.inspect.State.Stopping': true
         }
         sinon.assert.calledWith(Instance.findOne, query)
         done()
@@ -231,7 +229,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     it('should return an error if mongo call failed', function (done) {
       var mongoError = new Error('Mongo error')
       Instance.findOne.yieldsAsync(mongoError)
-      Instance.findOneStopping(mockInstance._id, 'container-id', function (err, instance) {
+      Instance.findOneStopping(mockInstance._id, 'container-id', function (err) {
         expect(err).to.equal(mongoError)
         sinon.assert.calledOnce(Instance.findOne)
         done()
