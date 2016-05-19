@@ -8,6 +8,7 @@ var lab = exports.lab = Lab.script()
 
 var Code = require('code')
 var sinon = require('sinon')
+var omit = require('101/omit')
 
 var Promise = require('bluebird')
 
@@ -188,23 +189,6 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           .asCallback(function (err) {
             expect(err).to.be.instanceOf(TaskFatalError)
             expect(err.message).to.contain('Instance not found')
-            sinon.assert.calledOnce(Instance.findById)
-            done()
-          })
-      })
-    })
-
-    describe('instance container was not found', function () {
-      beforeEach(function (done) {
-        Instance.findById.yields(null, {})
-        done()
-      })
-
-      it('should callback with fatal error', function (done) {
-        Worker(testData)
-          .asCallback(function (err) {
-            expect(err).to.be.instanceOf(TaskFatalError)
-            expect(err.message).to.contain('Cannot redeploy an instance without a container')
             sinon.assert.calledOnce(Instance.findById)
             done()
           })
@@ -504,6 +488,22 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
               instance, testData.sessionUserGithubId, 'redeploy', true)
             done()
           })
+      })
+
+      describe('instance container was not found', function () {
+        beforeEach(function (done) {
+          Instance.findById.yields(null, new Instance(omit(ctx.mockInstance, 'container')))
+          done()
+        })
+
+        it('should resolve without calling deleteInstanceContainer', function (done) {
+          Worker(testData)
+            .asCallback(function (err) {
+              expect(err).to.not.exist()
+              sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
+              done()
+            })
+        })
       })
     })
   })
