@@ -482,8 +482,8 @@ describe('InstanceService', function () {
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
     it('should return if instanceId param is missing', function (done) {
       sinon.spy(Instance, 'findForkedInstances')
-      InstanceService.deleteForkedInstancesByRepoAndBranch(null, 'api', 'master',
-        function (err) {
+      InstanceService.deleteForkedInstancesByRepoAndBranch(null, 'api', 'master')
+        .asCallback(function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
           Instance.findForkedInstances.restore()
@@ -493,8 +493,8 @@ describe('InstanceService', function () {
 
     it('should return if repo param is missing', function (done) {
       sinon.spy(Instance, 'findForkedInstances')
-      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', null, 'master',
-        function (err) {
+      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', null, 'master')
+        .asCallback(function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
           Instance.findForkedInstances.restore()
@@ -504,8 +504,8 @@ describe('InstanceService', function () {
 
     it('should return if branch param is missing', function (done) {
       sinon.spy(Instance, 'findForkedInstances')
-      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', null,
-        function (err) {
+      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', null)
+        .asCallback(function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
           Instance.findForkedInstances.restore()
@@ -516,8 +516,8 @@ describe('InstanceService', function () {
     it('should return error if #findForkedInstances failed', function (done) {
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(new Error('Some error'))
-      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master',
-        function (err) {
+      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master')
+        .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal('Some error')
           Instance.findForkedInstances.restore()
