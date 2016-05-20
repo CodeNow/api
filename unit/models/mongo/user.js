@@ -110,7 +110,7 @@ describe('User ' + moduleName, function () {
     })
   })
 
-  describe('anonymousFindGithubUserByGithubId', function () {
+  describe('findGithubUserByGithubId', function () {
     var mockResponse = {
       login: 'nathan219',
       avatar_url: 'testingtesting123'
@@ -130,7 +130,7 @@ describe('User ' + moduleName, function () {
         login: '222'
       }
       sinon.stub(User, 'findOneAsync').resolves(user)
-      User.anonymousFindGithubUserByGithubId(user.accounts.github.id, function (err) {
+      user.findGithubUserByGithubId(user.accounts.github.id, function (err) {
         if (err) { return done(err) }
         sinon.assert.calledOnce(User.findOneAsync)
         sinon.assert.notCalled(Github.prototype.getUserById)
@@ -143,7 +143,7 @@ describe('User ' + moduleName, function () {
         login: '222'
       }
       sinon.stub(User, 'findOneAsync').resolves(user)
-      User.anonymousFindGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
+      user.findGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
         if (err) { return done(err) }
         expect(userFromDb.login, 'login').to.exist()
         expect(userFromDb.login, 'login').to.equal('222')
@@ -154,7 +154,7 @@ describe('User ' + moduleName, function () {
     })
     it('should just fetch the user from the database account.github', function (done) {
       sinon.stub(User, 'findOneAsync').resolves(user)
-      User.anonymousFindGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
+      user.findGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
         if (err) { return done(err) }
         expect(userFromDb.login, 'login').to.exist()
         expect(userFromDb.login, 'login').to.equal(username)
@@ -165,7 +165,7 @@ describe('User ' + moduleName, function () {
     })
     it('should fetch from github when the result isn\'t in the database', function (done) {
       sinon.stub(User, 'findOneAsync').resolves()
-      User.anonymousFindGithubUserByGithubId('123123123', function (err, userFromMock) {
+      user.findGithubUserByGithubId('123123123', function (err, userFromMock) {
         if (err) { return done(err) }
         sinon.assert.calledOnce(User.findOneAsync)
         sinon.assert.calledOnce(Github.prototype.getUserById)
@@ -175,7 +175,7 @@ describe('User ' + moduleName, function () {
     })
     it('should fetch from github when the database query fails', function (done) {
       sinon.stub(User, 'findOneAsync').rejects(new Error('hello'))
-      User.anonymousFindGithubUserByGithubId('123123123', function (err, userFromMock) {
+      user.findGithubUserByGithubId('123123123', function (err, userFromMock) {
         if (err) { return done(err) }
         sinon.assert.calledOnce(User.findOneAsync)
         sinon.assert.calledOnce(Github.prototype.getUserById)

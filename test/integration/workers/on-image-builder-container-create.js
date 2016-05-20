@@ -16,7 +16,6 @@ var dock = require('../../functional/fixtures/dock')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 var ContextVersion = require('models/mongo/context-version.js')
 var Instance = require('models/mongo/instance.js')
-var User = require('models/mongo/user.js')
 var messenger = require('socket/messenger')
 var objectId = require('objectid')
 var mockFactory = require('../fixtures/factory')
@@ -105,10 +104,6 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
 
         sinon.spy(messenger, 'emitContextVersionUpdate')
         sinon.spy(messenger, '_emitInstanceUpdateAction')
-        sinon.stub(User, 'anonymousFindGithubUserByGithubId').yieldsAsync(null, {
-          login: 'nathan219',
-          avatar_url: 'testingtesting123'
-        })
         done()
       })
       afterEach(function (done) {
@@ -128,7 +123,6 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
 
         messenger.emitContextVersionUpdate.restore()
         messenger._emitInstanceUpdateAction.restore()
-        User.anonymousFindGithubUserByGithubId.restore()
 
         done()
       })
