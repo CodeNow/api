@@ -1,9 +1,8 @@
 # Change version number to desired (i.e. 9.3, 9.4, 9.5)
 FROM runnable/postgres:9.4
 
-# Set desired environment variables
-# ENV POSTGRES_USER postgres
-# ENV POSTGRES_DB postgres
+ENV POSTGRES_USER postgres
+ENV POSTGRES_DB postgres
 
 # Uncomment the following ADD line to enable seeding the PostgreSQL DB
 # Make sure to upload a pg_dump file (i.e. pg_dump -Fc db_name -f seed.dump)
