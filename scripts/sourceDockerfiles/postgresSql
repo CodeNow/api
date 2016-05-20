@@ -1,9 +1,15 @@
-# Full list of versions available here: https://registry.hub.docker.com/_/postgres/tags/manage/
-FROM postgres:9.4
+# Change version number to desired (i.e. 9.3, 9.4, 9.5)
+FROM runnable/postgres:9.4
 
-# Set recommended environment variables
 ENV POSTGRES_USER postgres
-ENV POSTGRES_PASSWORD postgres
+ENV POSTGRES_DB postgres
 
-# Open port 5432 on the server
-EXPOSE 5432
+# Uncomment the following ADD line to enable seeding the PostgreSQL DB
+# Make sure to upload a pg_dump file (i.e. pg_dump -Fc db_name -f seed.dump)
+# ADD seed.dump /seed.dump
+
+# Run the initialization script
+RUN gosu postgres /init.sh \
+  # Uncomment the following line for a custom pg_restore command. Edit, as needed
+  # "pg_restore --no-acl --no-owner -c -v -d $POSTGRES_DB /seed.dump"
+  
