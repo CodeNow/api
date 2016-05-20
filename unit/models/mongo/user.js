@@ -18,8 +18,6 @@ var it = lab.it
 var expect = Code.expect
 var Faker = require('faker')
 var nock = require('nock')
-var sinon = require('sinon')
-var Github = require('models/apis/github')
 require('sinon-as-promised')(require('bluebird'))
 
 var User = require('models/mongo/user')
