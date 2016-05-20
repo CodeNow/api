@@ -1854,16 +1854,22 @@ describe('Instance Model Tests ' + moduleName, function () {
 
   describe('populateOwnerAndCreatedBy', function () {
     beforeEach(function (done) {
+      ctx.mockSessionUser = {
+        accounts: {
+          github: {
+            id: 1234
+          }
+        }
+      }
       ctx.instance = mongoFactory.createNewInstance()
       sinon.stub(ctx.instance, 'update').yieldsAsync(null)
-      sinon.stub(User, 'anonymousFindGithubUserByGithubId').yieldsAsync(null, {
+      ctx.mockSessionUser.findGithubUserByGithubId = sinon.stub().yieldsAsync(null, {
         login: 'TEST-login',
         avatar_url: 'TEST-avatar_url'
       })
       done()
     })
     afterEach(function (done) {
-      User.anonymousFindGithubUserByGithubId.restore()
       ctx.instance.update.restore()
       done()
     })
@@ -1880,9 +1886,9 @@ describe('Instance Model Tests ' + moduleName, function () {
           expect(ctx.instance.createdBy.username).to.equal('TEST-login')
           expect(ctx.instance.owner.gravatar).to.equal('TEST-avatar_url')
           expect(ctx.instance.createdBy.gravatar).to.equal('TEST-avatar_url')
-          sinon.assert.calledTwice(User.anonymousFindGithubUserByGithubId)
-          sinon.assert.calledWith(User.anonymousFindGithubUserByGithubId, ctx.instance.owner.github)
-          sinon.assert.calledWith(User.anonymousFindGithubUserByGithubId, ctx.instance.createdBy.github)
+          sinon.assert.calledTwice(ctx.mockSessionUser.findGithubUserByGithubId)
+          sinon.assert.calledWith(ctx.mockSessionUser.findGithubUserByGithubId, ctx.instance.owner.github)
+          sinon.assert.calledWith(ctx.mockSessionUser.findGithubUserByGithubId, ctx.instance.createdBy.github)
           done()
         })
       })
@@ -1890,7 +1896,7 @@ describe('Instance Model Tests ' + moduleName, function () {
     describe('when there is an error fetching github user by github id', function () {
       var testErr = new Error('Test Error!')
       beforeEach(function (done) {
-        User.anonymousFindGithubUserByGithubId.yieldsAsync(testErr)
+        ctx.mockSessionUser.findGithubUserByGithubId.yieldsAsync(testErr)
         done()
       })
       it('should pass through the error', function (done) {
@@ -1913,7 +1919,7 @@ describe('Instance Model Tests ' + moduleName, function () {
       it('should do nothing!', function (done) {
         ctx.instance.populateOwnerAndCreatedBy(ctx.mockSessionUser, function (err) {
           expect(err).to.not.exist()
-          sinon.assert.notCalled(User.anonymousFindGithubUserByGithubId)
+          sinon.assert.notCalled(ctx.mockSessionUser.findGithubUserByGithubId)
           done()
         })
       })
