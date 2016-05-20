@@ -2055,14 +2055,13 @@ describe('Instance Model Tests ' + moduleName, function () {
       done()
     })
     beforeEach(function (done) {
-      sinon.stub(User, 'anonymousFindGithubUserByGithubId').yieldsAsync(null, {
+      ctx.mockSessionUser.findGithubUserByGithubId = sinon.stub().yieldsAsync(null, {
         login: 'TEST-login',
         avatar_url: 'TEST-avatar_url'
       })
       done()
     })
     afterEach(function (done) {
-      User.anonymousFindGithubUserByGithubId.restore()
       done()
     })
 

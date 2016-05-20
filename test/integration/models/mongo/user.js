@@ -38,12 +38,12 @@ describe('User ' + moduleName, function () {
   var username
   var githubId
 
-  function createNewUser (done) {
+  function createNewUser(done) {
     email = Faker.Internet.email()
     name = Faker.Name.findName()
     username = Faker.Helpers.slugify(Faker.Internet.userName())
     githubId = randomInt()
-    function createNewUserModel () {
+    function createNewUserModel() {
       return new User({
         email: email,
         name: name,
@@ -53,6 +53,7 @@ describe('User ' + moduleName, function () {
         }
       })
     }
+
     user = createNewUserModel()
     user.save(done)
   }
@@ -66,41 +67,8 @@ describe('User ' + moduleName, function () {
     done()
   })
   after(mongooseControl.stop)
-
-  describe('anonymousFindGithubUserByGithubId', function () {
-    var mockResponse = {
-      login: 'nathan219',
-      avatar_url: 'testingtesting123'
-    }
-    beforeEach(function (done) {
-      sinon.stub(Github.prototype, 'getUserById').yieldsAsync(null, mockResponse)
-      done()
-    })
-    afterEach(function (done) {
-      Github.prototype.getUserById.restore()
-      done()
-    })
-    it('should just fetch the user from the database', function (done) {
-      User.anonymousFindGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
-        if (err) { return done(err) }
-        sinon.assert.notCalled(Github.prototype.getUserById)
-        expect(userFromDb.login, 'login').to.exist()
-        expect(userFromDb.login, 'login').to.equal(username)
-        expect(userFromDb.avatar_url, 'avatar_url').to.exist()
-        expect(userFromDb.avatar_url, 'avatar_url').to.equal('https://avatars.githubusercontent.com/u/160236?v=3')
-        done()
-      })
-    })
-    it('should fetch from github when the result isn\'t in the database', function (done) {
-      User.anonymousFindGithubUserByGithubId('123123123', function (err, userFromMock) {
-        if (err) { return done(err) }
-        sinon.assert.calledOnce(Github.prototype.getUserById)
-        expect(userFromMock).to.deep.equal(mockResponse)
-        done()
-      })
-    })
-  })
 })
+
 function getUserResult (userId, username) {
   return {
     'refreshToken': null,
