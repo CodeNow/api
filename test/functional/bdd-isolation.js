@@ -79,10 +79,31 @@ describe('BDD - Isolation', function () {
   })
 
   describe('isolation with children', function () {
-    it('should not let us make an isolation referencing the repo', function (done) {
+    it('should let us make an isolation by passing the instance id', function (done) {
       var count = createCount(2, done)
       primus.expectAction('redeploy', count.next)
       var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
+      var opts = {
+        master: ctx.webInstance.attrs._id.toString(),
+        children: [
+          {
+            instance: ctx.apiInstance.attrs._id.toString(),
+            branch: appCodeVersion.branch
+          }
+        ]
+      }
+      ctx.user.createIsolation(opts, function (err, isolation) {
+        if (err) { return count.next(err) }
+        expect(isolation).to.exist()
+        count.next()
+      })
+    })
+
+    it('should not let us make an isolation referencing the repo if one already exists', function (done) {
+      var count = createCount(2, done)
+      primus.expectAction('redeploy', count.next)
+      var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
+      // webInstance and apiInstance use the same repo
       var opts = {
         master: ctx.webInstance.attrs._id.toString(),
         children: [{
@@ -92,13 +113,14 @@ describe('BDD - Isolation', function () {
         }]
       }
       ctx.user.createIsolation(opts, function (err, isolation) {
-        if (err) { return count.next(err) }
-        expect(isolation).to.exist()
+        expect(err).to.exist()
+        expect(isolation).to.not.exist()
         count.next()
+        return done()
       })
     })
 
-    it('should let us make an isolation by passing the instance id', function (done) {
+    it('should let us make another isolation by passing the instance id', function (done) {
       var count = createCount(2, done)
       primus.expectAction('redeploy', count.next)
       var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
