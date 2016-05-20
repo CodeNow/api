@@ -67,7 +67,7 @@ describe('User ' + moduleName, function () {
   })
   after(mongooseControl.stop)
 
-  describe('anonymousFindGithubUserByGithubId', function () {
+  describe('findGithubUserByGithubId', function () {
     var mockResponse = {
       login: 'nathan219',
       avatar_url: 'testingtesting123'
@@ -81,7 +81,7 @@ describe('User ' + moduleName, function () {
       done()
     })
     it('should just fetch the user from the database', function (done) {
-      User.anonymousFindGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
+      User.findGithubUserByGithubId(user.accounts.github.id, function (err, userFromDb) {
         if (err) { return done(err) }
         sinon.assert.notCalled(Github.prototype.getUserById)
         expect(userFromDb.login, 'login').to.exist()
@@ -92,7 +92,7 @@ describe('User ' + moduleName, function () {
       })
     })
     it('should fetch from github when the result isn\'t in the database', function (done) {
-      User.anonymousFindGithubUserByGithubId('123123123', function (err, userFromMock) {
+      User.findGithubUserByGithubId('123123123', function (err, userFromMock) {
         if (err) { return done(err) }
         sinon.assert.calledOnce(Github.prototype.getUserById)
         expect(userFromMock).to.deep.equal(mockResponse)
