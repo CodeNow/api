@@ -3,7 +3,6 @@ var assign = require('101/assign')
 var multiline = require('multiline')
 
 module.exports = function (userId, username, opts) {
-  console.log('Nocking', userId, username);
   opts = assign({
     isActuallyAnOrg: false,
     fail: false,

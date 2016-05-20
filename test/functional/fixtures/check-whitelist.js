@@ -7,7 +7,6 @@ var expect = require('code').expect
 module.exports = function validateMongoWhitelist (names, cb) {
   UserWhitelist.find({}, function (err, docs) {
     if (err) { return cb(err) }
-    console.log(docs)
     expect(docs).to.have.length(names.length)
     if (names.length) {
       expect(docs.map(pluck('name'))).to.only.contain(names)

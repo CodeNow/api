@@ -54,11 +54,16 @@ describe('POST /auth/whitelist', function () {
       jar: ctx.j
     }
     var count = createCount(2, done)
+    var hasCreatedAlready = false
     rabbitMQ.hermesClient.subscribe('asg.create', function (data, cb) {
+      if (hasCreatedAlready) {
+        return
+      }
       expect(data.githubId).to.be.a.string()
       expect(data.githubId).to.equal(testId.toString())
       cb()
       count.next()
+      hasCreatedAlready = true
     })
     request(opts, function (err, res, body) {
       expect(err).to.be.null()
