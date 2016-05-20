@@ -2071,17 +2071,6 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
       done()
     })
-    beforeEach(function (done) {
-      // sinon.stub(User, 'anonymousFindGithubUserByGithubId').yieldsAsync(null, {
-      //   login: 'TEST-login',
-      //   avatar_url: 'TEST-avatar_url'
-      // })
-      done()
-    })
-    afterEach(function (done) {
-      // User.anonymousFindGithubUserByGithubId.restore()
-      done()
-    })
 
     describe('when instances are not all populated', function () {
       beforeEach(function (done) {
