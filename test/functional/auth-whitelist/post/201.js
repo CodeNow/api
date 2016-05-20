@@ -46,6 +46,7 @@ describe('POST /auth/whitelist', function () {
     var testOrg = 'Runnable'
     require('../../fixtures/mocks/github/user-orgs')(testId, testOrg)
     require('../../fixtures/mocks/github/users-username')(testId, testOrg)
+    require('../../fixtures/mocks/github/users-username')(testId, testOrg)
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
