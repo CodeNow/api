@@ -12,3 +12,4 @@ ENV POSTGRES_DB postgres
 RUN gosu postgres /init.sh \
   # Uncomment the following line for a custom pg_restore command. Edit, as needed
   # "pg_restore --no-acl --no-owner -c -v -d $POSTGRES_DB /seed.dump"
+  
