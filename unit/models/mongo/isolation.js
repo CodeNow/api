@@ -243,7 +243,8 @@ describe('Isolation Model', function () {
     beforeEach(function (done) {
       data = {
         master: 'masterInstanceId',
-        children: [ childRepo, childNonRepo ]
+        children: [ childRepo, childNonRepo ],
+        redeployOnKilled: true
       }
       sinon.stub(Isolation, 'create').yieldsAsync(null, mockIsolation)
       sinon.stub(Isolation, '_validateCreateData').resolves()
@@ -319,7 +320,8 @@ describe('Isolation Model', function () {
           Isolation.create,
           {
             owner: { github: 'ownerGithubId' },
-            createdBy: { github: 'createdByGithubId' }
+            createdBy: { github: 'createdByGithubId' },
+            redeployOnKilled: true
           },
           sinon.match.func
         )
