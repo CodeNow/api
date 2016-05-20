@@ -79,23 +79,7 @@ describe('BDD - Isolation', function () {
   })
 
   describe('isolation with children', function () {
-    it('should let us make an isolation', function (done) {
-      var count = createCount(2, done)
-      primus.expectAction('redeploy', count.next)
-      var opts = {
-        master: ctx.webInstance.attrs._id.toString(),
-        children: [
-          { instance: ctx.apiInstance.attrs._id.toString() }
-        ]
-      }
-      ctx.user.createIsolation(opts, function (err, isolation) {
-        if (err) { return count.next(err) }
-        expect(isolation).to.exist()
-        count.next()
-      })
-    })
-
-    it('should let us make an isolation referencing the repo', function (done) {
+    it('should not let us make an isolation referencing the repo', function (done) {
       var count = createCount(2, done)
       primus.expectAction('redeploy', count.next)
       var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
@@ -106,6 +90,26 @@ describe('BDD - Isolation', function () {
           org: appCodeVersion.repo.split('/').shift(),
           branch: appCodeVersion.branch
         }]
+      }
+      ctx.user.createIsolation(opts, function (err, isolation) {
+        if (err) { return count.next(err) }
+        expect(isolation).to.exist()
+        count.next()
+      })
+    })
+
+    it('should let us make an isolation by passing the instance id', function (done) {
+      var count = createCount(2, done)
+      primus.expectAction('redeploy', count.next)
+      var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
+      var opts = {
+        master: ctx.webInstance.attrs._id.toString(),
+        children: [
+          {
+            instance: ctx.apiInstance.attrs._id.toString(),
+            branch: appCodeVersion.branch
+          }
+        ]
       }
       ctx.user.createIsolation(opts, function (err, isolation) {
         if (err) { return count.next(err) }
