@@ -100,8 +100,6 @@ describe('BDD - Isolation', function () {
     })
 
     it('should not let us make an isolation referencing the repo if one already exists', function (done) {
-      var count = createCount(2, done)
-      primus.expectAction('redeploy', count.next)
       var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
       // webInstance and apiInstance use the same repo
       var opts = {
@@ -115,7 +113,6 @@ describe('BDD - Isolation', function () {
       ctx.user.createIsolation(opts, function (err, isolation) {
         expect(err).to.exist()
         expect(isolation).to.not.exist()
-        count.next()
         return done()
       })
     })
