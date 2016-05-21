@@ -927,4 +927,76 @@ describe('InstanceForkService', function () {
       })
     })
   })
+  describe('#forkMasterInstance', function () {
+    var mockSessionUser = {
+      accounts: {
+        github: {
+          id: 'mockGithubId'
+        }
+      }
+    }
+    afterEach(function (done) {
+      InstanceService.createInstance.restore()
+      done()
+    })
+    it('should create new instance with branch-masterName pattern', function (done) {
+      var master = {
+        shortHash: 'd1as6213a',
+        name: 'inst1',
+        _id: 'asdasdasd',
+        env: ['x=1'],
+        owner: { github: { id: 1 } }
+      }
+      sinon.stub(InstanceService, 'createInstance', function (inst) {
+        expect(inst.parent).to.equal(master.shortHash)
+        expect(inst.env).to.equal(master.env)
+        expect(inst.name).to.equal('feature-1-inst1')
+        expect(inst.owner.github.id).to.equal(master.owner.github.id)
+        expect(inst.build).to.equal('build1')
+        expect(inst.autoForked).to.equal(true)
+        expect(inst.masterPod).to.equal(false)
+        return Promise.resolve(master)
+      })
+      InstanceForkService.forkMasterInstance(master, 'build1', 'feature-1', mockSessionUser)
+        .asCallback(done)
+    })
+
+    it('should sanitize branch name', function (done) {
+      var master = {
+        shortHash: 'd1as6213a',
+        _id: 'asdasdasd',
+        name: 'inst1',
+        env: ['x=1'],
+        owner: { github: { id: 1 } }
+      }
+      sinon.stub(InstanceService, 'createInstance', function (inst) {
+        expect(inst.parent).to.equal(master.shortHash)
+        expect(inst.env).to.equal(master.env)
+        expect(inst.name).to.equal('a1-b2-c3-d4-e5-f6-g7-h7-inst1')
+        expect(inst.owner.github.id).to.equal(master.owner.github.id)
+        expect(inst.build).to.equal('build1')
+        expect(inst.autoForked).to.equal(true)
+        expect(inst.masterPod).to.equal(false)
+        return Promise.resolve(master)
+      })
+      InstanceForkService.forkMasterInstance(master, 'build1', 'a1/b2/c3-d4,e5.f6 g7_h7', mockSessionUser)
+        .asCallback(done)
+    })
+
+    it('should fail if instance create failed', function (done) {
+      var master = {
+        shortHash: 'd1as6213a',
+        name: 'inst1',
+        env: ['x=1'],
+        owner: { github: { id: 1 } }
+      }
+      sinon.stub(InstanceService, 'createInstance').rejects(new Error('Error happened'))
+      InstanceForkService.forkMasterInstance(master, 'build1', 'b1', mockSessionUser)
+        .catch(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal('Error happened')
+        })
+        .asCallback(done)
+    })
+  })
 })
