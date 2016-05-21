@@ -202,7 +202,6 @@ describe('Github - /actions/github', function () {
       function (done) {
         var login = ctx.user.attrs.accounts.github.login
         var githubId = ctx.user.attrs.accounts.github.id
-        require('./fixtures/mocks/github/users-username')(githubId, login)
         var data = {
           branch: 'some-branch',
           repo: 'some-repo',
@@ -214,7 +213,6 @@ describe('Github - /actions/github', function () {
           if (err) { return done(err) }
           expect(res.statusCode).to.equal(202)
           expect(body).to.equal('Nothing to deploy or fork')
-          sinon.assert.calledOnce(githubActions.checkCommitterIsRunnableUser)
           done()
         })
       })
@@ -236,6 +234,7 @@ describe('Github - /actions/github', function () {
         expect(body).to.match(/Repo owner is not registered on Runnable/i)
         sinon.assert.calledOnce(UserWhitelist.findOne)
         sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'anton' })
+        sinon.assert.calledOnce(githubActions.checkCommitterIsRunnableUser)
         done()
       })
     })
