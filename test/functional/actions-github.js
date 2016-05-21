@@ -189,10 +189,12 @@ describe('Github - /actions/github', function () {
     })
     beforeEach(function (done) {
       sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, { allowed: true })
+      sinon.stub(User, 'findOne').yieldsAsync(null, ctx.user)
       done()
     })
     afterEach(function (done) {
       UserWhitelist.findOne.restore()
+      User.findOne.restore()
       done()
     })
 
@@ -260,7 +262,6 @@ describe('Github - /actions/github', function () {
 
     describe('autofork', function () {
       beforeEach(function (done) {
-        sinon.stub(User, 'findOne').yieldsAsync(null)
         multi.createAndTailInstance(primus, function (err, instance, build, user, modelsArr) {
           if (err) { return done(err) }
           ctx.contextVersion = modelsArr[0]
@@ -271,13 +272,10 @@ describe('Github - /actions/github', function () {
           done()
         })
       })
-      afterEach(function (done) {
-        User.findOne.restore()
-        done()
-      })
 
       it('should send a 403 and not autofork if the committer is not a Runnable user',
         function (done) {
+          Use.findOne.yieldsAsync(null, null)
           var ownerGithubId = ctx.user.attrs.accounts.github.id
           var ownerUsername = ctx.user.attrs.accounts.github.login
           var committerUsername = 'thejsj'
