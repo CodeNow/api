@@ -28,7 +28,6 @@ var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
 var request = require('request')
 var rabbitMQ = require('models/rabbitmq')
-var User = require('models/mongo/user')
 var UserWhitelist = require('models/mongo/user-whitelist')
 var sinon = require('sinon')
 
@@ -189,12 +188,10 @@ describe('Github - /actions/github', function () {
     })
     beforeEach(function (done) {
       sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, { allowed: true })
-      sinon.stub(User, 'findOne').yieldsAsync(null, ctx.user)
       done()
     })
     afterEach(function (done) {
       UserWhitelist.findOne.restore()
-      User.findOne.restore()
       done()
     })
 
@@ -273,25 +270,23 @@ describe('Github - /actions/github', function () {
         })
       })
 
-      it('should send a 403 and not autofork if the committer is not a Runnable user',
+      it('should send a 403 and not autofork if the committer is not defined',
         function (done) {
-          User.findOne.yieldsAsync(null, null)
           var ownerGithubId = ctx.user.attrs.accounts.github.id
           var ownerUsername = ctx.user.attrs.accounts.github.login
-          var committerUsername = 'thejsj'
           var acv = ctx.contextVersion.attrs.appCodeVersions[0]
           var data = {
             branch: 'some-branch-that-doesnt-exist',
             repo: acv.repo,
             ownerId: ownerGithubId,
             owner: ownerUsername,
-            committer: committerUsername
+            committer: null
           }
           var options = hooks(data).push
           request.post(options, function (err, res, body) {
             if (err) { return done(err) }
             expect(res.statusCode).to.equal(403)
-            expect(body).to.match(/commit.*not.*runnable.*user/i)
+            expect(body).to.match(/committer.*username.*is.*empty/i)
             done()
           })
         })
