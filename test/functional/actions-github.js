@@ -275,7 +275,7 @@ describe('Github - /actions/github', function () {
 
       it('should send a 403 and not autofork if the committer is not a Runnable user',
         function (done) {
-          Use.findOne.yieldsAsync(null, null)
+          User.findOne.yieldsAsync(null, null)
           var ownerGithubId = ctx.user.attrs.accounts.github.id
           var ownerUsername = ctx.user.attrs.accounts.github.login
           var committerUsername = 'thejsj'
