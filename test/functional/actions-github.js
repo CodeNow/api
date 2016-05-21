@@ -212,6 +212,7 @@ describe('Github - /actions/github', function () {
           if (err) { return done(err) }
           expect(res.statusCode).to.equal(202)
           expect(body).to.equal('Nothing to deploy or fork')
+          sinon.assert.calledOnce(githubActions.checkCommitterIsRunnableUser)
           done()
         })
       })
@@ -254,7 +255,6 @@ describe('Github - /actions/github', function () {
         expect(body).to.match(/organization has been suspended/i)
         sinon.assert.calledOnce(UserWhitelist.findOne)
         sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'anton' })
-        sinon.assert.calledOnce(githubActions.checkCommitterIsRunnableUser)
         done()
       })
     })
