@@ -28,7 +28,6 @@ var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
 var Version = require('models/mongo/context-version')
-var User = require('models/mongo/user')
 var pubsub = require('models/redis/pubsub')
 var Promise = require('bluebird')
 
