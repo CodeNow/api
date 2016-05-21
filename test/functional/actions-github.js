@@ -188,12 +188,10 @@ describe('Github - /actions/github', function () {
     })
     beforeEach(function (done) {
       sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, { allowed: true })
-      // sinon.stub(User, 'findOne').yieldsAsync(null, new User(ctx.user.attrs))
       done()
     })
     afterEach(function (done) {
       UserWhitelist.findOne.restore()
-      // User.findOne.restore()
       done()
     })
 
