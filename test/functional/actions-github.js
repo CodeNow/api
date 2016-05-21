@@ -17,6 +17,7 @@ var it = lab.it
 
 var ContextVersion = require('models/mongo/context-version')
 var Mixpanel = require('models/apis/mixpanel')
+var githubActions = require('routes/actions/github')
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
@@ -188,10 +189,12 @@ describe('Github - /actions/github', function () {
     })
     beforeEach(function (done) {
       sinon.stub(UserWhitelist, 'findOne').yieldsAsync(null, { allowed: true })
+      sinon.spy(githubActions, 'checkCommitterIsRunnableUser')
       done()
     })
     afterEach(function (done) {
       UserWhitelist.findOne.restore()
+      githubActions.checkCommitterIsRunnableUser.restore()
       done()
     })
 
@@ -211,6 +214,7 @@ describe('Github - /actions/github', function () {
           if (err) { return done(err) }
           expect(res.statusCode).to.equal(202)
           expect(body).to.equal('Nothing to deploy or fork')
+          sinon.assert.calledOnce(githubActions.checkCommitterIsRunnableUser)
           done()
         })
       })
@@ -269,27 +273,6 @@ describe('Github - /actions/github', function () {
           done()
         })
       })
-
-      it('should send a 403 and not autofork if the committer is not defined',
-        function (done) {
-          var ownerGithubId = ctx.user.attrs.accounts.github.id
-          var ownerUsername = ctx.user.attrs.accounts.github.login
-          var acv = ctx.contextVersion.attrs.appCodeVersions[0]
-          var data = {
-            branch: 'some-branch-that-doesnt-exist',
-            repo: acv.repo,
-            ownerId: ownerGithubId,
-            owner: ownerUsername,
-            committer: null
-          }
-          var options = hooks(data).push
-          request.post(options, function (err, res, body) {
-            if (err) { return done(err) }
-            expect(res.statusCode).to.equal(403)
-            expect(body).to.match(/committer.*username.*is.*empty/i)
-            done()
-          })
-        })
 
       it('should send 202 and message if autoforking disabled', function (done) {
         var acv = ctx.contextVersion.attrs.appCodeVersions[0]

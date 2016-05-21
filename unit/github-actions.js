@@ -212,6 +212,7 @@ describe('GitHub Actions: ' + moduleName, function () {
         done()
       })
     })
+
     it('should next without error if everything worked', function (done) {
       githubActions.checkCommitterIsRunnableUser(req, {}, function (err) {
         expect(err).to.not.exist()
@@ -220,6 +221,7 @@ describe('GitHub Actions: ' + moduleName, function () {
         done()
       })
     })
+
     it('should respond with 403 if no whitelist found', function (done) {
       User.findOne.yieldsAsync(null, null)
       var errStub = sinon.stub()
@@ -237,7 +239,8 @@ describe('GitHub Actions: ' + moduleName, function () {
       }
       githubActions.checkCommitterIsRunnableUser(req, res, errStub)
     })
-    it('should respond with 403 if username wa not specified', function (done) {
+
+    it('should respond with 403 if username was not specified', function (done) {
       var errStub = sinon.stub()
       var callback = function (code, message) {
         expect(code).to.equal(403)
