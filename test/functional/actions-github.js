@@ -201,7 +201,6 @@ describe('Github - /actions/github', function () {
     it('should return 202 if there is neither autoDeploy nor autoLaunch is needed',
       function (done) {
         var login = ctx.user.attrs.accounts.github.login
-        var githubId = ctx.user.attrs.accounts.github.id
         var data = {
           branch: 'some-branch',
           repo: 'some-repo',
