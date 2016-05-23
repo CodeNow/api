@@ -86,7 +86,8 @@ describe('/auth/github with whitelist', function () {
       var Whitelist = require('models/mongo/user-whitelist')
       ctx.w = new Whitelist({
         name: ctx.username,
-        allowed: true
+        allowed: true,
+        githubId: 1234
       })
       ctx.w.save(done)
     })
@@ -117,7 +118,8 @@ describe('/auth/github with whitelist', function () {
       var Whitelist = require('models/mongo/user-whitelist')
       var w = new Whitelist({
         name: ctx.orgname,
-        allowed: true
+        allowed: true,
+        githubId: 1234
       })
       w.save(done)
     })

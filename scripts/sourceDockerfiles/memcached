@@ -1,1 +1,2 @@
-FROM memcached
+# For available versions see: https://hub.docker.com/_/memcached/
+FROM memcached:1.4

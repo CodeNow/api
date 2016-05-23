@@ -34,6 +34,7 @@ describe('GET /auth/whitelist/:name', function () {
   beforeEach(function (done) {
     require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
     ctx.name = randStr(5)
+    require('../../fixtures/mocks/github/users-username')(2828361, ctx.name)
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',

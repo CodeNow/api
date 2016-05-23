@@ -1,0 +1,5 @@
+# View more information about this dockerfile here: https://registry.hub.docker.com/u/spotify/cassandra/
+FROM spotify/cassandra
+
+# Open ports on server
+EXPOSE 7199 7000 7001 9160 9042 22 8012 61621

@@ -1,2 +1,2 @@
 # Full list of versions available here: https://registry.hub.docker.com/_/rethinkdb/tags/manage/
-FROM rethinkdb:2.3.0
+FROM rethinkdb:2.3
