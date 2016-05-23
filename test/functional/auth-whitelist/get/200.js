@@ -33,6 +33,7 @@ describe('GET /auth/whitelist/', function () {
       }
     }
     return Promise.all(orgNames.map(function (orgName) {
+      require('../../fixtures/mocks/github/users-username')(2828361, orgName)
       return Promise.fromCallback(function (cb) {
         return request(getOpts(orgName), cb)
       })

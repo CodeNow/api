@@ -105,7 +105,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
 
         sinon.spy(messenger, 'emitContextVersionUpdate')
         sinon.spy(messenger, '_emitInstanceUpdateAction')
-        sinon.stub(User, 'anonymousFindGithubUserByGithubId').yieldsAsync(null, {
+        sinon.stub(User.prototype, 'findGithubUserByGithubId').yieldsAsync(null, {
           login: 'nathan219',
           avatar_url: 'testingtesting123'
         })
@@ -128,7 +128,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
 
         messenger.emitContextVersionUpdate.restore()
         messenger._emitInstanceUpdateAction.restore()
-        User.anonymousFindGithubUserByGithubId.restore()
+        User.prototype.findGithubUserByGithubId.restore()
 
         done()
       })
