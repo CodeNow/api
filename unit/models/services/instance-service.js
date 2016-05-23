@@ -2456,7 +2456,7 @@ describe('InstanceService', function () {
     }
 
     typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
-      InstanceService.validateBody(body, true)
+      InstanceService.validateCreateOpts(body)
         .asCallback(cb)
     })
   })
