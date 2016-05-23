@@ -20,7 +20,7 @@ describe('ContextVersionService', function () {
   describe('checkOwnerAllowed', function () {
     var contextVersion = {
       owner: {
-        username: 'foobarcity'
+        github: 1337
       }
     }
 
@@ -38,7 +38,7 @@ describe('ContextVersionService', function () {
       ContextVersionService.checkOwnerAllowed({})
         .asCallback(function (err) {
           expect(err).to.exist()
-          expect(err.message).to.match(/version.*not.*org name/i)
+          expect(err.message).to.match(/version.*not.*owner github id/i)
           done()
         })
     })
