@@ -58,6 +58,7 @@ describe('Isolation Services Model', function () {
         org: orgName
       }
       sinon.stub(Instance, 'findMasterInstancesForRepo').yieldsAsync(null, [ mockInstance ])
+      sinon.stub(Instance, 'findById').yieldsAsync(null, mockInstance)
       sinon.stub(InstanceForkService, 'forkRepoInstance').resolves(mockNewInstance)
       sinon.stub(Github.prototype, 'getBranch').yieldsAsync(null, mockBranchInfo)
       done()
@@ -65,6 +66,7 @@ describe('Isolation Services Model', function () {
 
     afterEach(function (done) {
       Instance.findMasterInstancesForRepo.restore()
+      Instance.findById.restore()
       InstanceForkService.forkRepoInstance.restore()
       Github.prototype.getBranch.restore()
       done()
@@ -180,6 +182,16 @@ describe('Isolation Services Model', function () {
           }
         )
       })
+
+      it('should reject if created with repo name and mutliple instances of that repo exist', function (done) {
+        Instance.findMasterInstancesForRepo.yieldsAsync(null, [mockInstance, mockInstance])
+        IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash, mockIsolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/determine.*instance.*fork/i)
+            done()
+          })
+      })
     })
 
     it('should find our instance by repo and branch', function (done) {
@@ -246,6 +258,58 @@ describe('Isolation Services Model', function () {
           done()
         }
       )
+    })
+
+    it('should always use the repo name from the appCodeVersion in the instances', function (done) {
+      var orgName = 'orgName'
+      var repoName = 'wow'
+      mockInstance.contextVersion.appCodeVersions[0] = { repo: orgName + '/' + repoName }
+      IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash, mockIsolationId, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(InstanceForkService.forkRepoInstance)
+          sinon.assert.calledWithExactly(
+            InstanceForkService.forkRepoInstance,
+            mockInstance,
+            {
+              name: 'deadbeef--instanceName',
+              env: [ 'foo=bar' ],
+              isolated: mockIsolationId,
+              isIsolationGroupMaster: false,
+              repo: orgName + '/' + repoName,
+              branch: 'someBranch',
+              commit: 'beefisgood',
+              user: { id: mockSessionUser.accounts.github.id }
+            },
+            mockSessionUser
+          )
+          done()
+        }
+      )
+    })
+
+    describe('Create Instances By Instance Id', function () {
+      var mockInstanceChildInfo
+      beforeEach(function (done) {
+        mockInstanceChildInfo = {
+          instance: 'beef',
+          branch: 'someBranch'
+        }
+        Instance.findMasterInstancesForRepo.yieldsAsync(null, [mockInstance, mockInstance])
+        Instance.findById.yieldsAsync(null, mockInstance)
+        done()
+      })
+
+      it('should create an isolation by using the instance ID', function (done) {
+        IsolationService.forkRepoChild(mockInstanceChildInfo, mockMasterShortHash, mockIsolationId, mockSessionUser)
+          .asCallback(function (err) {
+            expect(err).to.not.exist()
+            sinon.assert.notCalled(Instance.findMasterInstancesForRepo)
+            sinon.assert.calledOnce(Instance.findById)
+            sinon.assert.calledWith(Instance.findById, mockInstanceChildInfo.instance)
+            done()
+          })
+      })
     })
   })
 
