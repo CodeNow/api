@@ -32,7 +32,8 @@ describe('POST /auth/whitelist - 409', function () {
   })
   beforeEach(function (done) {
     require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
-    ctx.name = randStr(5)
+    ctx.name = randStr(5).toLowerCase()
+    require('../../fixtures/mocks/github/users-username')(2828361, ctx.name)
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
@@ -46,6 +47,7 @@ describe('POST /auth/whitelist - 409', function () {
 
   it('should not add a duplicate name', function (done) {
     require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
+    require('../../fixtures/mocks/github/users-username')(2828361, ctx.name.toUpperCase())
     var opts = {
       method: 'POST',
       url: process.env.FULL_API_DOMAIN + '/auth/whitelist',

@@ -193,41 +193,43 @@ describe('GitHub Actions: ' + moduleName, function () {
       }
     }
     beforeEach(function (done) {
-      sinon.stub(User, 'findOneByGithubUsername').yieldsAsync(null, { _id: 'some-id' })
+      sinon.stub(User, 'findOne').yieldsAsync(null, { _id: 'some-id' })
       done()
     })
     afterEach(function (done) {
-      User.findOneByGithubUsername.restore()
+      User.findOne.restore()
       done()
     })
 
     it('should next with error if db call failed', function (done) {
       var mongoErr = new Error('Mongo error')
-      User.findOneByGithubUsername.yieldsAsync(mongoErr)
+      User.findOne.yieldsAsync(mongoErr)
       githubActions.checkCommitterIsRunnableUser(req, {}, function (err) {
         expect(err).to.equal(mongoErr)
-        sinon.assert.calledOnce(User.findOneByGithubUsername)
-        sinon.assert.calledWith(User.findOneByGithubUsername, username)
+        sinon.assert.calledOnce(User.findOne)
+        sinon.assert.calledWith(User.findOne, { 'accounts.github.username': username })
         expect(err).to.equal(mongoErr)
         done()
       })
     })
+
     it('should next without error if everything worked', function (done) {
       githubActions.checkCommitterIsRunnableUser(req, {}, function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(User.findOneByGithubUsername)
-        sinon.assert.calledWith(User.findOneByGithubUsername, username)
+        sinon.assert.calledOnce(User.findOne)
+        sinon.assert.calledWith(User.findOne, { 'accounts.github.username': username })
         done()
       })
     })
+
     it('should respond with 403 if no whitelist found', function (done) {
-      User.findOneByGithubUsername.yieldsAsync(null, null)
+      User.findOne.yieldsAsync(null, null)
       var errStub = sinon.stub()
       var callback = function (code, message) {
         expect(code).to.equal(403)
         expect(message).to.match(/commit.*author.*not.*runnable.*user/i)
-        sinon.assert.calledOnce(User.findOneByGithubUsername)
-        sinon.assert.calledWith(User.findOneByGithubUsername, username)
+        sinon.assert.calledOnce(User.findOne)
+        sinon.assert.calledWith(User.findOne, { 'accounts.github.username': username })
         done()
       }
       var res = {
@@ -237,12 +239,13 @@ describe('GitHub Actions: ' + moduleName, function () {
       }
       githubActions.checkCommitterIsRunnableUser(req, res, errStub)
     })
-    it('should respond with 403 if username wa not specified', function (done) {
+
+    it('should respond with 403 if username was not specified', function (done) {
       var errStub = sinon.stub()
       var callback = function (code, message) {
         expect(code).to.equal(403)
         expect(message).to.match(/Commit author\/committer username is empty/i)
-        sinon.assert.notCalled(User.findOneByGithubUsername)
+        sinon.assert.notCalled(User.findOne)
         done()
       }
       var res = {
