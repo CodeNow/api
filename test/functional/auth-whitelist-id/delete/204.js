@@ -40,6 +40,7 @@ describe('DELETE /auth/whitelist/:name', function () {
       body: { name: ctx.name },
       jar: ctx.j
     }
+    require('../../fixtures/mocks/github/users-username')(2828361, ctx.name)
     request(opts, done)
   })
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
