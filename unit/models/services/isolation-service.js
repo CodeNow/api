@@ -29,6 +29,7 @@ describe('Isolation Services Model', function () {
     var repoName = 'someRepo'
     var orgName = 'someOrg'
     var mockChildInfo
+    var mockInstanceChildInfo
     var mockInstance = {
       _id: 'beef',
       name: 'instanceName',
@@ -56,6 +57,10 @@ describe('Isolation Services Model', function () {
         repo: repoName,
         branch: 'someBranch',
         org: orgName
+      }
+      mockInstanceChildInfo = {
+        instance: 'beef',
+        branch: 'someBranch'
       }
       sinon.stub(Instance, 'findMasterInstancesForRepo').yieldsAsync(null, [ mockInstance ])
       sinon.stub(Instance, 'findById').yieldsAsync(null, mockInstance)
@@ -289,12 +294,7 @@ describe('Isolation Services Model', function () {
     })
 
     describe('Create Instances By Instance Id', function () {
-      var mockInstanceChildInfo
       beforeEach(function (done) {
-        mockInstanceChildInfo = {
-          instance: 'beef',
-          branch: 'someBranch'
-        }
         Instance.findMasterInstancesForRepo.yieldsAsync(null, [mockInstance, mockInstance])
         Instance.findById.yieldsAsync(null, mockInstance)
         done()
@@ -573,6 +573,7 @@ describe('Isolation Services Model', function () {
 
   describe('#createIsolationAndEmitInstanceUpdates', function () {
     var mockRepoInstance = { org: 'Runnable', repo: 'someRepo', branch: 'someBranch' }
+    var mockRepoInstanceWithInstanceId = { instance: '123', branch: 'someOtherBranch' }
     var mockNonRepoInstance = { instance: 'childNonRepo' }
     var mockInstance = { _id: 'deadbeef', shortHash: 'shorthash' }
     var mockNewChildInstance = { _id: 'newChildInstanceId' }
@@ -821,6 +822,23 @@ describe('Isolation Services Model', function () {
           sinon.assert.calledWithExactly(
             IsolationService.forkNonRepoChild,
             mockNonRepoInstance.instance,
+            mockInstance.shortHash,
+            mockNewIsolation._id,
+            mockSessionUser
+          )
+          done()
+        })
+    })
+
+    it('should fork any repo child instance created with an instanced ID', function (done) {
+      isolationConfig.children.push(mockRepoInstanceWithInstanceId)
+      IsolationService.createIsolationAndEmitInstanceUpdates(isolationConfig, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(IsolationService.forkRepoChild)
+          sinon.assert.calledWithExactly(
+            IsolationService.forkRepoChild,
+            mockRepoInstanceWithInstanceId,
             mockInstance.shortHash,
             mockNewIsolation._id,
             mockSessionUser
