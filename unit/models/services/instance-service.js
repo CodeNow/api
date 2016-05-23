@@ -334,14 +334,14 @@ describe('InstanceService', function () {
   describe('#updateBuild', function () {
     beforeEach(function (done) {
       ctx.mockGithubUserId = 12345
-      ctx.mockUser = new User({
+      ctx.mockUser = {
         _id: 'some-id',
         accounts: {
           github: {
             id: ctx.mockGithubUserId
           }
         }
-      })
+      }
       ctx.mockInstance = {
         _id: 123123,
         shortHash: 'ab1',
