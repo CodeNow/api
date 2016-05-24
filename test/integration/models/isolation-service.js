@@ -86,13 +86,13 @@ describe('Isolation Services Integration Tests', function () {
       createNewInstance(name, isolatedOpts, contextId)(cb)
     })
   }
-  beforeEach(createNewInstance('Frontend'))
-  beforeEach(createNewInstance('Api'))
-  beforeEach(createNewInstance('Link'))
-  beforeEach(createNewInstance('RabbitMQ'))
-  beforeEach(createNewInstance('MongoDB'))
-  beforeEach(createNewInstance('CodependentDatabase1'))
-  beforeEach(createNewInstance('CodependentDatabase2'))
+  beforeEach(createNewInstance('Frontend', { masterPod: true }))
+  beforeEach(createNewInstance('Api', { masterPod: true }))
+  beforeEach(createNewInstance('Link', { masterPod: true }))
+  beforeEach(createNewInstance('RabbitMQ', { masterPod: true }))
+  beforeEach(createNewInstance('MongoDB', { masterPod: true }))
+  beforeEach(createNewInstance('CodependentDatabase1', { masterPod: true }))
+  beforeEach(createNewInstance('CodependentDatabase2', { masterPod: true }))
   beforeEach(function (done) {
     sinon.stub(ctx.Frontend, 'getMainBranchName').returns('master')
     sinon.stub(ctx.Api, 'getMainBranchName').returns('master')
@@ -193,11 +193,11 @@ describe('Isolation Services Integration Tests', function () {
       } else {
         isolationOpts.isolated = forked[masterName]._id
       }
+      isolationOpts.branch = 'branch1'
       var name = ctx[masterName].shortHash + dashes + instanceName
       return createNewInstanceAsync(name, isolationOpts, ctx[instanceName].contextVersion.context)
         .then(function (instanceModel) {
           forked[instanceName] = instanceModel
-          sinon.stub(instanceModel, 'getMainBranchName').returns('branch1')
           return instanceModel
         })
     }
