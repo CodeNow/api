@@ -276,16 +276,7 @@ describe('Isolation Services Model', function () {
           sinon.assert.calledWithExactly(
             InstanceForkService.forkRepoInstance,
             mockInstance,
-            {
-              name: 'deadbeef--instanceName',
-              env: [ 'foo=bar' ],
-              isolated: mockIsolationId,
-              isIsolationGroupMaster: false,
-              repo: orgName + '/' + repoName,
-              branch: 'someBranch',
-              commit: 'beefisgood',
-              user: { id: mockSessionUser.accounts.github.id }
-            },
+            sinon.match.has('repo', orgName + '/' + repoName),
             mockSessionUser
           )
           done()
