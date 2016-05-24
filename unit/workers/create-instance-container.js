@@ -87,7 +87,7 @@ describe('createInstanceContainer', function () {
       beforeEach(function (done) {
         ContextVersionService.checkOwnerAllowed.restore()
         sinon.stub(ContextVersionService, 'checkOwnerAllowed', function () {
-          return Promise.reject(new Error('not allowed'))
+          return Promise.reject(new error.OrganizationNotAllowedError('not allowed'))
         })
         done()
       })

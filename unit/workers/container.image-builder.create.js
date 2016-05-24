@@ -20,6 +20,7 @@ var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
 var ContextVersionService = require('models/services/context-version-service')
 var Docker = require('models/apis/docker')
+var error = require('error')
 var joi = require('utils/joi')
 var Promise = require('bluebird')
 var TaskFatalError = require('ponos').TaskFatalError
@@ -261,7 +262,7 @@ describe('ContainerImageBuilderCreate', function () {
     beforeEach(function (done) {
       ContextVersionService.checkOwnerAllowed.restore()
       sinon.stub(ContextVersionService, 'checkOwnerAllowed', function () {
-        return Promise.reject(new Error('not allowed'))
+        return Promise.reject(new error.OrganizationNotAllowedError('not allowed'))
       })
       done()
     })
