@@ -19,6 +19,7 @@ var ContextVersion = require('models/mongo/context-version')
 var ContextVersionService = require('models/services/context-version-service')
 var createInstanceContainer = require('workers/create-instance-container')
 var error = require('error')
+var errors = require('errors')
 var InstanceService = require('models/services/instance-service')
 var rabbitmq = require('models/rabbitmq')
 
@@ -87,7 +88,7 @@ describe('createInstanceContainer', function () {
       beforeEach(function (done) {
         ContextVersionService.checkOwnerAllowed.restore()
         sinon.stub(ContextVersionService, 'checkOwnerAllowed', function () {
-          return Promise.reject(new error.OrganizationNotAllowedError('not allowed'))
+          return Promise.reject(new errors.OrganizationNotAllowedError('not allowed'))
         })
         done()
       })
@@ -96,7 +97,7 @@ describe('createInstanceContainer', function () {
         createInstanceContainer(ctx.job)
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.an.instanceof(TaskFatalError)
+            expect(err).to.be.an.instanceOf(TaskFatalError)
             done()
           })
       })
