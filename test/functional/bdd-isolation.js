@@ -106,24 +106,6 @@ describe('BDD - Isolation', function () {
       })
     })
 
-    it('should let us make an isolation with the repo and branch', function (done) {
-      var appCodeVersion = ctx.anotherInstance.attrs.contextVersion.appCodeVersions[0]
-      // webInstance and apiInstance use the same repo
-      var opts = {
-        master: ctx.webInstance.attrs._id.toString(),
-        children: [{
-          repo: appCodeVersion.repo.split('/').pop(),
-          org: appCodeVersion.repo.split('/').shift(),
-          branch: appCodeVersion.branch
-        }]
-      }
-      ctx.user.createIsolation(opts, function (err, isolation) {
-        expect(err).to.exist()
-        expect(isolation).to.not.exist()
-        return done()
-      })
-    })
-
     it('should not let us make an isolation referencing the repo if one already exists', function (done) {
       var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
       // webInstance and apiInstance use the same repo
