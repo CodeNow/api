@@ -12,9 +12,11 @@ var Code = require('code')
 var expect = Code.expect
 var Promise = require('bluebird')
 var sinon = require('sinon')
+require('sinon-as-promised')(Promise)
 
 var ContextVersionService = require('models/services/context-version-service')
 var UserWhitelist = require('models/mongo/user-whitelist')
+var User = require('models/mongo/user')
 
 describe('ContextVersionService', function () {
   describe('checkOwnerAllowed', function () {
@@ -26,11 +28,13 @@ describe('ContextVersionService', function () {
 
     beforeEach(function (done) {
       sinon.stub(UserWhitelist, 'findOneAsync')
+      sinon.stub(User, 'findByGithubIdAsync').resolves(null)
       done()
     })
 
     afterEach(function (done) {
       UserWhitelist.findOneAsync.restore()
+      User.findByGithubIdAsync.restore()
       done()
     })
 
