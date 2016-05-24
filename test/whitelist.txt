@@ -50,8 +50,6 @@
 ./test/functional/contexts/post/400.js
 ./test/functional/github-proxy.js
 ./test/functional/instance-dependency-health.js
-./test/functional/instances-id-actions-copy/post/400.js
-./test/functional/instances-id-actions-copy/post/index.js
 ./test/functional/instances-id-actions-redeploy/post/index.js
 ./test/functional/instances-id-actions-restart/put/index.js
 ./test/functional/instances-id-actions-start/put/index.js
