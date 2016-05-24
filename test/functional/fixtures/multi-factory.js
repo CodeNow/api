@@ -205,7 +205,7 @@ module.exports = {
         if (ownerId) { body.owner = { github: ownerId } }
 
         if (!ContextVersionService.checkOwnerAllowed.isSinonProxy) {
-          // Fuck it, we never need to restore this stub anyways right?
+          // Duck it, we never need to restore this stub anyways right?
           sinon.stub(ContextVersionService, 'checkOwnerAllowed').returns(Promise.resolve())
         }
 
