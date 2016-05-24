@@ -21,7 +21,7 @@ var randStr = require('randomstring').generate
 var ctx = {}
 describe('POST /auth/whitelist', function () {
   before(api.start.bind(ctx))
-
+  beforeEach(require('../../fixtures/clean-nock'))
   beforeEach(function (done) {
     ctx.name = randStr(5)
     done()
@@ -38,7 +38,7 @@ describe('POST /auth/whitelist', function () {
   })
 
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
-
+  afterEach(require('../../fixtures/clean-nock'))
   after(api.stop.bind(ctx))
 
   it('should add a name to the whitelist and add job to queue', function (done) {
