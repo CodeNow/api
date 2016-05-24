@@ -82,14 +82,10 @@ describe('BDD - Isolation', function () {
     it('should let us make an isolation by passing the instance id', function (done) {
       var count = createCount(2, done)
       primus.expectAction('redeploy', count.next)
-      var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
       var opts = {
         master: ctx.webInstance.attrs._id.toString(),
         children: [
-          {
-            instance: ctx.apiInstance.attrs._id.toString(),
-            branch: appCodeVersion.branch
-          }
+          { instance: ctx.apiInstance.attrs._id.toString() }
         ]
       }
       ctx.user.createIsolation(opts, function (err, isolation) {
@@ -117,7 +113,7 @@ describe('BDD - Isolation', function () {
       })
     })
 
-    it('should let us make another isolation by passing the instance id', function (done) {
+    it('should let us make another isolation by passing the instance id and branch', function (done) {
       var count = createCount(2, done)
       primus.expectAction('redeploy', count.next)
       var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
