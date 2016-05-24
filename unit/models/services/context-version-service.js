@@ -10,6 +10,7 @@ var it = lab.it
 
 var Code = require('code')
 var expect = Code.expect
+var errors = require('errors')
 var Promise = require('bluebird')
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
@@ -49,6 +50,7 @@ describe('ContextVersionService', function () {
       ContextVersionService.checkOwnerAllowed(contextVersion)
         .asCallback(function (err) {
           expect(err).to.exist()
+          expect(err).to.be.instanceOf(errors.OrganizationNotFoundError)
           expect(err.message).to.match(/organization not found/i)
           done()
         })
@@ -59,6 +61,7 @@ describe('ContextVersionService', function () {
       ContextVersionService.checkOwnerAllowed(contextVersion)
         .asCallback(function (err) {
           expect(err).to.exist()
+          expect(err).to.be.instanceOf(errors.OrganizationNotAllowedError)
           expect(err.message).to.match(/org.*not.*allowed/i)
           done()
         })
