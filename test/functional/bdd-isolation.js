@@ -118,7 +118,6 @@ describe('BDD - Isolation', function () {
         }]
       }
       ctx.user.createIsolation(opts, function (err, isolation) {
-        if (err) { return done(err) }
         expect(err).to.exist()
         expect(err.message).to.match(/determine.*instance.*fork/i)
         expect(isolation).to.not.exist()
