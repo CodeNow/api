@@ -25,7 +25,22 @@ var dockerMockEvents = require('./fixtures/docker-mock-events')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
+var InstanceService = require('models/services/instance-service')
 
+
+function cloneInstance (instance, user, cb) {
+  var body = {}
+  var parentInstance = instance
+  body.parent = parentInstance.shortHash
+  body.build = json.build._id.toString()
+  body.env = json.env || parentInstance.env
+  body.owner = json.owner || parentInstance.owner
+  body.masterPod = body.masterPod || parentInstance.masterPod
+  return User.findByIdAsync(user.attrs._id).then(function (sessionUser) {
+    return InstanceService.createInstance(body, ctx.user)
+      .asCallback(cb)
+  })
+}
 /**
  * This tests many of the different possibilities that can happen during build, namely when deduping
  * occurs
@@ -179,7 +194,7 @@ describe('Building - Context Version Deduping', function () {
         ], function (err) {
           if (err) { return done(err) }
           expect(instance.attrs.containers[0].inspect.State.Running).to.exist()
-          expect(forkedInstance.attrs.containers[0].inspect.State.Running).to.exist()
+          expect(forkedInstance.containers[0].inspect.State.Running).to.exist()
           done()
         })
       })
@@ -188,8 +203,9 @@ describe('Building - Context Version Deduping', function () {
       var forkedInstance
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
-        forkedInstance = instance.copy({ name: uuid() }, function (err) {
+        cloneInstance(instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
+          forkedInstance = inst
         })
       })
     })
