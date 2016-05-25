@@ -16,6 +16,7 @@ var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 var createCount = require('callback-count')
+var uuid = require('uuid')
 
 describe('Dependencies - /instances/:id/dependencies', function () {
   var ctx = {}
@@ -60,6 +61,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           masterPod: false
         }
         var depBody = {
+          name: uuid(),
           env: [
             'other=' + ctx.elasticHostname
           ],

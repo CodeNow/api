@@ -121,6 +121,7 @@ describe('PUT /instances/:id/actions/restart', function () {
       })
       beforeEach(function (done) {
         var body = {
+          name: uuid(),
           env: ['ENV=OLD'],
           build: ctx.build.id(),
           masterPod: true
@@ -145,6 +146,7 @@ describe('PUT /instances/:id/actions/restart', function () {
       })
       beforeEach(function (done) {
         var body = {
+          name: uuid(),
           build: ctx.build.id(),
           masterPod: true
         }
@@ -175,6 +177,7 @@ describe('PUT /instances/:id/actions/restart', function () {
       if (ctx.expectNoContainerErr) {
         ctx.build.build({ message: uuid() }, function () {
           var body = {
+            name: uuid(),
             build: ctx.build.id(),
             masterPod: true
           }

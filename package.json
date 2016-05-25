@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "7.7.0",
+  "version": "7.8.1",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -36,6 +36,7 @@
     "connect-redis": "^3.0.1",
     "cors": "^2.4.1",
     "csurf": "^1.8.3",
+    "custom-error": "^0.2.1",
     "dat-middleware": "^1.10.3",
     "deep-equal": "^1.0.1",
     "defaults": "^1.0.0",

@@ -102,7 +102,7 @@ describe('Building - Context Version Deduping', function () {
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         // Now fork that instance
-        forkedInstance = instance.copy(function (err) {
+        forkedInstance = instance.copy({ name: uuid() }, function (err) {
           if (err) { return done(err) }
           // Now tail both and make sure they both start
           dockerMockEvents.emitBuildComplete(ctx.cv)
@@ -115,7 +115,7 @@ describe('Building - Context Version Deduping', function () {
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         // Now fork that instance
-        var forkedInstance = instance.copy(function (err) {
+        var forkedInstance = instance.copy({ name: uuid() }, function (err) {
           if (err) { return done(err) }
           // since the build will fail we must rely on version complete, versus instance deploy socket event
           primus.onceVersionComplete(ctx.cv.id(), function () {
@@ -141,7 +141,7 @@ describe('Building - Context Version Deduping', function () {
         // Now wait for the finished build
         // since the build will fail we must rely on version complete, versus instance deploy socket event
         primus.onceVersionComplete(ctx.cv.id(), function () {
-          var forkedInstance = instance.copy(function (err) {
+          var forkedInstance = instance.copy({ name: uuid() }, function (err) {
             if (err) { return done(err) }
             var count = createCount(2, done)
             instance.fetch(assertInstanceHasNoContainers)
@@ -188,7 +188,7 @@ describe('Building - Context Version Deduping', function () {
       var forkedInstance
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
-        forkedInstance = instance.copy(function (err) {
+        forkedInstance = instance.copy({ name: uuid() }, function (err) {
           if (err) { return done(err) }
         })
       })

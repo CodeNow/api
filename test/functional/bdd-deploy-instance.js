@@ -30,6 +30,7 @@ var primus = require('./fixtures/primus')
 
 var sinon = require('sinon')
 var rabbitMQ = require('models/rabbitmq')
+var uuid = require('uuid')
 
 describe('BDD - Create Build and Deploy Instance', function () {
   var ctx = {}
@@ -402,7 +403,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
         multi.buildTheBuild(ctx.user, ctx.build, done)
       })
       beforeEach(function (done) {
-        ctx.instance = ctx.user.createInstance({ build: ctx.build.id(), masterPod: true }, done)
+        ctx.instance = ctx.user.createInstance({
+          build: ctx.build.id(),
+          masterPod: true,
+          name: uuid()
+        }, done)
       })
       // 5
       it('should deploy an instance with new context versions', function (done) {
@@ -483,7 +488,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
         multi.buildTheBuild(ctx.user, ctx.build, done)
       })
       beforeEach(function (done) {
-        ctx.instance = ctx.user.createInstance({ build: ctx.build.id(), masterPod: true }, done)
+        ctx.instance = ctx.user.createInstance({
+          build: ctx.build.id(),
+          masterPod: true,
+          name: uuid()
+        }, done)
       })
       // 6
       it('should deploy an instance with new context versions', function (done) {
