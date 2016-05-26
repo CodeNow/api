@@ -55,7 +55,6 @@
 ./test/functional/instances-id-actions-redeploy/post/index.js
 ./test/functional/instances-id-actions-restart/put/index.js
 ./test/functional/instances-id-actions-start/put/index.js
-./test/functional/instances-id-actions-stop/put/index.js
 ./test/functional/instances-id-containers-id-files-id.js
 ./test/functional/instances-id-containers-id-files.js
 ./test/functional/instances-id-dependencies-id/put/200.js
