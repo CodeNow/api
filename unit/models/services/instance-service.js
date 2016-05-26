@@ -1441,21 +1441,21 @@ describe('InstanceService', function () {
   })
 
   describe('emitInstanceUpdate', function () {
-    var instance
-
+    // var instance
+    //
     beforeEach(function (done) {
       sinon.stub(messenger, 'emitInstanceUpdate')
-      instance = {
-        createdBy: {
-          github: 123454
-        },
-        updateCvAsync: sinon.stub().returns(Promise.resolve()),
-        populateModelsAsync: sinon.stub().returns(Promise.resolve()),
-        populateOwnerAndCreatedByAsync: sinon.stub().returns(Promise.resolve())
-      }
+      // instance = {
+      //   createdBy: {
+      //     github: 123454
+      //   },
+      //   updateCvAsync: sinon.stub().returns(Promise.resolve()),
+      //   populateModelsAsync: sinon.stub().returns(Promise.resolve()),
+      //   populateOwnerAndCreatedByAsync: sinon.stub().returns(Promise.resolve())
+      // }
       done()
     })
-
+    //
     afterEach(function (done) {
       messenger.emitInstanceUpdate.restore()
       done()
