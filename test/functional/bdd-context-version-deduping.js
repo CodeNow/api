@@ -26,18 +26,18 @@ var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
 var InstanceService = require('models/services/instance-service')
+var User = require('models/mongo/user')
 
-
-function cloneInstance (instance, user, cb) {
+function cloneInstance (data, instance, user, cb) {
   var body = {}
   var parentInstance = instance
   body.parent = parentInstance.shortHash
-  body.build = json.build._id.toString()
-  body.env = json.env || parentInstance.env
-  body.owner = json.owner || parentInstance.owner
+  body.build = data.build._id.toString()
+  body.env = data.env || parentInstance.env
+  body.owner = data.owner || parentInstance.owner
   body.masterPod = body.masterPod || parentInstance.masterPod
   return User.findByIdAsync(user.attrs._id).then(function (sessionUser) {
-    return InstanceService.createInstance(body, ctx.user)
+    return InstanceService.createInstance(body, user)
       .asCallback(cb)
   })
 }
@@ -203,7 +203,7 @@ describe('Building - Context Version Deduping', function () {
       var forkedInstance
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
-        cloneInstance(instance, ctx.user, function (err, inst) {
+        cloneInstance(json, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
           forkedInstance = inst
         })
