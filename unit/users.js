@@ -56,20 +56,4 @@
 //     validation.urlValidationChecking(createNewUser, 'gravatar', 'gravatar')
 //   })
 //
-// //  describe('Accounts Validation', function() {
-// //    describe('Github Username Validation', function () {
-// //      validation.urlSafeNameValidationChecking(createNewUser, 'accounts.github.username',
-// //        schemaValidators.validationMessages.characters)
-// //      validation.requiredValidationChecking(createNewUser, 'accounts.github.username')
-// //    })
-// //    describe('Github Token Validation', function () {
-// //      validation.tokenValidationChecking(createNewUser, 'accounts.github.accessToken',
-// //        schemaValidators.validationMessages.characters)
-// //      validation.requiredValidationChecking(createNewUser, 'accounts.github.accessToken')
-// //    })
-// //    describe('Github Email Validation', function () {
-// //      validation.tokenValidationChecking(createNewUser, 'accounts.github.emails', true)
-// //      validation.requiredValidationChecking(createNewUser, 'accounts.github.emails')
-// //    })
-// //  })
 // })
