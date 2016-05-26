@@ -15,12 +15,10 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-var ContextVersion = require('models/mongo/context-version')
 var Mixpanel = require('models/apis/mixpanel')
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
-var dockerMockEvents = require('./fixtures/docker-mock-events')
 var generateKey = require('./fixtures/key-factory')
 var hooks = require('./fixtures/github-hooks')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
@@ -309,7 +307,7 @@ describe('Github - /actions/github', function () {
           expect(body).to.equal('Autoforking of instances on branch push is disabled for now')
           sinon.assert.calledOnce(UserWhitelist.findOne)
           sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: sinon.match.string })
-          finishAllIncompleteVersions(done)
+          done()
         })
       })
 
@@ -442,35 +440,3 @@ describe('Github - /actions/github', function () {
     })
   })
 })
-
-function finishAllIncompleteVersions (cb) {
-  var incompleteBuildsQuery = {
-    'build.started': { $exists: true },
-    'build.completed': { $exists: false }
-  }
-  var fields = null // all fields
-  var opts = { sort: ['build.started'] }
-  ContextVersion.find(incompleteBuildsQuery, fields, opts, function (err, versions) {
-    if (err) { return cb(err) }
-    var buildIds = []
-    versions
-      .filter(function (version) {
-        // filter versions by unique build ids
-        // a non unique build id would indicate a deduped build
-        var buildId = version.build._id.toString()
-        if (!~buildIds.indexOf(buildId)) {
-          buildIds.push(buildId)
-          return true
-        }
-      })
-      .forEach(function (version) {
-        // emit build complete events for each unique build
-        primus.expectActionCount('build_running', 1, function () {
-          dockerMockEvents.emitBuildComplete(version)
-        })
-      })
-    if (cb) {
-      cb()
-    }
-  })
-}
