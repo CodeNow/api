@@ -21,27 +21,6 @@ describe('400 POST /settings', function () {
   after(require('../../fixtures/mocks/api-client').clean)
 
   describe('create new settings', function () {
-    it('should not create setting without an owner', function (done) {
-      multi.createUser(function (err, runnable) {
-        if (err) { return done(err) }
-        var settings = {
-          notifications: {
-            slack: {
-              apiToken: 'xoxo-dasjdkasjdk243248392482394',
-              githubUsernameToSlackIdMap: {
-                'cheese': 'U023BECGF'
-              }
-            }
-          }
-        }
-        runnable.createSetting({json: settings}, function (err) {
-          expect(err.data.statusCode).to.equal(400)
-          expect(err.data.message).to.equal('Owner is mandatory')
-          done()
-        })
-      })
-    })
-
     it('should not be possible to create settings for the same owner twice', function (done) {
       multi.createUser(function (err, runnable) {
         if (err) { return done(err) }
