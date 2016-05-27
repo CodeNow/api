@@ -15,6 +15,13 @@ var Settings = require('models/mongo/settings')
 var SettingsService = require('models/services/settings-service')
 
 describe('SettingsService', function () {
+  var sessionUser = {
+    accounts: {
+      github: {
+        id: 1
+      }
+    }
+  }
   describe('createNew', function (done) {
     beforeEach(function (done) {
       sinon.stub(Settings, 'createAsync').returns({})
@@ -26,7 +33,7 @@ describe('SettingsService', function () {
     })
 
     it('should fail if payload is null', function (done) {
-      SettingsService.createNew(null)
+      SettingsService.createNew(sessionUser, null)
         .then(function () {
           done(new Error('Should fail'))
         })
@@ -37,7 +44,7 @@ describe('SettingsService', function () {
     })
 
     it('should fail if payload is empty {}', function (done) {
-      SettingsService.createNew({})
+      SettingsService.createNew(sessionUser, {})
         .then(function () {
           done(new Error('Should fail'))
         })
@@ -48,7 +55,7 @@ describe('SettingsService', function () {
     })
 
     it('should fail if owner.github is null', function (done) {
-      SettingsService.createNew({ owner: {} })
+      SettingsService.createNew(sessionUser, { owner: {} })
         .then(function () {
           done(new Error('Should fail'))
         })
@@ -59,7 +66,7 @@ describe('SettingsService', function () {
     })
 
     it('should fail if owner.github is string', function (done) {
-      SettingsService.createNew({ owner: { github: 'anton' } })
+      SettingsService.createNew(sessionUser, { owner: { github: 'anton' } })
         .then(function () {
           done(new Error('Should fail'))
         })
@@ -74,7 +81,7 @@ describe('SettingsService', function () {
         owner: { github: 1 },
         notifications: 'string'
       }
-      SettingsService.createNew(payload)
+      SettingsService.createNew(sessionUser, payload)
         .then(function () {
           done(new Error('Should fail'))
         })
@@ -91,7 +98,7 @@ describe('SettingsService', function () {
           slack: 'string'
         }
       }
-      SettingsService.createNew(payload)
+      SettingsService.createNew(sessionUser, payload)
         .then(function () {
           done(new Error('Should fail'))
         })
@@ -110,7 +117,7 @@ describe('SettingsService', function () {
           }
         }
       }
-      SettingsService.createNew(payload)
+      SettingsService.createNew(sessionUser, payload)
         .then(function () {
           done(new Error('Should fail'))
         })
@@ -125,12 +132,12 @@ describe('SettingsService', function () {
         owner: { github: 1 },
         ignoredHelpCards: 'string'
       }
-      SettingsService.createNew(payload)
+      SettingsService.createNew(sessionUser, payload)
         .then(function () {
           done(new Error('Should fail'))
         })
         .catch(function (err) {
-          expect(err.message).to.equal('"ignoredHelpCards" must be an object')
+          expect(err.message).to.equal('"ignoredHelpCards" must be an array')
           done()
         })
     })
@@ -143,9 +150,9 @@ describe('SettingsService', function () {
             apiToken: 'token'
           }
         },
-        ignoredHelpCards: {}
+        ignoredHelpCards: []
       }
-      SettingsService.createNew(payload).asCallback(done)
+      SettingsService.createNew(sessionUser, payload).asCallback(done)
     })
 
     it('should fail if db call failed', function (done) {
@@ -156,10 +163,10 @@ describe('SettingsService', function () {
             apiToken: 'token'
           }
         },
-        ignoredHelpCards: {}
+        ignoredHelpCards: []
       }
       Settings.createAsync.rejects(new Error('Mongo error'))
-      SettingsService.createNew(payload)
+      SettingsService.createNew(sessionUser, payload)
       .then(function () {
         done(new Error('Should fail'))
       })
@@ -177,9 +184,9 @@ describe('SettingsService', function () {
             apiToken: 'token'
           }
         },
-        ignoredHelpCards: {}
+        ignoredHelpCards: []
       }
-      SettingsService.createNew(payload)
+      SettingsService.createNew(sessionUser, payload)
         .tap(function () {
           sinon.assert.calledOnce(Settings.createAsync)
           sinon.assert.calledWith(Settings.createAsync, payload)
