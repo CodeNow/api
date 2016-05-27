@@ -6,7 +6,6 @@
 require('loadenv')()
 var Instances = require('models/mongo/instance')
 var ContextVersions = require('models/mongo/context-version')
-var keypather = require('keypather')()
 var mongoose = require('mongoose')
 mongoose.connect(process.env.MONGO)
 
@@ -26,7 +25,7 @@ Instances.findAsync({})
           'isNonRepoContainer': true
         }
       })
-   }
+    }
   })
   .then(function () {
     console.log('done.')

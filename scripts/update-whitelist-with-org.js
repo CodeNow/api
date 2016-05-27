@@ -5,7 +5,6 @@
  */
 require('loadenv')()
 var Whitelist = require('models/mongo/user-whitelist')
-var keypather = require('keypather')()
 var mongoose = require('mongoose')
 var Github = require('models/apis/github')
 mongoose.connect(process.env.MONGO)
@@ -35,7 +34,7 @@ Whitelist.findAsync({})
           var id = entry._id.toString()
           return Whitelist.findByIdAndUpdateAsync(id, {
             $set: {
-              'githubId': githubId,
+              'githubId': githubId
             }
           })
         }
