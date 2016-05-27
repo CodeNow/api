@@ -226,7 +226,7 @@ describe('BDD - Instance Dependencies', function () {
       })
 
       it('should allow recursive, flat deps, and should remove self from list', function (done) {
-        // asking web for dependencies recursivly and flat, we can expect to see ourselves in the
+        // asking web for dependencies recursivly and flat, we should not expect to see ourselves in the
         // top level when it's circular
         ctx.webInstance.fetchDependencies({ recurse: true, flatten: true }, function (err, deps) {
           if (err) { return done(err) }

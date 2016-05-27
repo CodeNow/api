@@ -1056,7 +1056,7 @@ describe('Instance Model Tests ' + moduleName, function () {
             })
           })
 
-          it('should not follow circles while flattening', function (done) {
+          it('should not follow circles while flattening, and should not list itself', function (done) {
             async.series([
               function (cb) {
                 instances[2].addDependency(instances[0], 'circlehost', cb)
@@ -1066,8 +1066,11 @@ describe('Instance Model Tests ' + moduleName, function () {
                 i.getDependencies({ recurse: true, flatten: true }, function (err, deps) {
                   if (err) { return done(err) }
                   expect(deps).to.be.an.array()
-                  expect(deps).to.have.length(3)
-                  expect(deps.map(pluck('id'))).to.only.include(instances.map(pluck('id')))
+                  expect(deps).to.have.length(2)
+                  expect(deps.map(pluck('id'))).to.include(instances[1]._id.toString())
+                  expect(deps.map(pluck('id'))).to.include(instances[2]._id.toString())
+                  // Should not include self
+                  expect(deps.map(pluck('id'))).to.not.include(instances[0]._id.toString())
                   cb()
                 })
               }
