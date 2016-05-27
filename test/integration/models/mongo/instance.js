@@ -12,10 +12,17 @@ var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
 var error = require('error')
+var objectId = require('objectid')
+var pluck = require('101/pluck')
+var mongoose = require('mongoose')
 
 var Instance = require('models/mongo/instance')
 var mongoFactory = require('../../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
+
+function newObjectId () {
+  return new mongoose.Types.ObjectId()
+}
 
 describe('Instance Model Integration Tests', function () {
   before(mongooseControl.start)
@@ -28,6 +35,366 @@ describe('Instance Model Integration Tests', function () {
   beforeEach(require('../../../functional/fixtures/clean-mongo').removeEverything)
   afterEach(require('../../../functional/fixtures/clean-mongo').removeEverything)
   after(mongooseControl.stop)
+
+  describe('remove', function () {
+    it('should not throw error if instance does not exist in db', function (done) {
+      var inst = mongoFactory.createNewInstance('api-anton-1')
+      inst.remove(function (err) {
+        expect(err).to.be.null()
+        done()
+      })
+    })
+  })
+  
+  describe('save', function () {
+    it('should not save an instance with the same (lower) name and owner', function (done) {
+      var instance = mongoFactory.createNewInstance('hello')
+      instance.save(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.exist()
+        var newInstance = mongoFactory.createNewInstance('Hello')
+        newInstance.save(function (err, instance) {
+          expect(instance).to.not.exist()
+          expect(err).to.exist()
+          expect(err.code).to.equal(11000)
+          done()
+        })
+      })
+    })
+  }) // end save
+
+  describe('modifyContainerCreateErr', function () {
+    var savedInstance = null
+    var instance = null
+    beforeEach(function (done) {
+      sinon.spy(error, 'log')
+      instance = mongoFactory.createNewInstance()
+      instance.save(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.exist()
+        savedInstance = instance
+        done()
+      })
+    })
+    afterEach(function (done) {
+      error.log.restore()
+      done()
+    })
+    it('should fail if error was not provided', function (done) {
+      var cvId = savedInstance.contextVersion._id
+      savedInstance.modifyContainerCreateErr(cvId, null, function (err) {
+        expect(err.output.statusCode).to.equal(500)
+        expect(err.message).to.equal('Create container error was not defined')
+        done()
+      })
+    })
+
+    it('should fail if error was empty object', function (done) {
+      var cvId = savedInstance.contextVersion._id
+      savedInstance.modifyContainerCreateErr(cvId, {}, function (err) {
+        expect(err.output.statusCode).to.equal(500)
+        expect(err.message).to.equal('Create container error was not defined')
+        done()
+      })
+    })
+
+    it('should pick message, stack and data fields if cvId is ObjectId', function (done) {
+      var appError = {
+        message: 'random message',
+        data: 'random data',
+        stack: 'random stack',
+        field: 'random field'
+      }
+      var cvId = objectId(savedInstance.contextVersion._id)
+      savedInstance.modifyContainerCreateErr(cvId, appError, function (err, newInst) {
+        if (err) { return done(err) }
+        expect(newInst.container.error.message).to.equal(appError.message)
+        expect(newInst.container.error.data).to.equal(appError.data)
+        expect(newInst.container.error.stack).to.equal(appError.stack)
+        expect(newInst.container.error.field).to.not.exist()
+        expect(error.log.callCount).to.equal(0)
+        done()
+      })
+    })
+
+    it('should pick message, stack and data fields if cvId is string', function (done) {
+      var appError = {
+        message: 'random message',
+        data: 'random data',
+        stack: 'random stack',
+        field: 'random field'
+      }
+      var cvId = savedInstance.contextVersion._id
+      savedInstance.modifyContainerCreateErr(cvId.toString(), appError, function (err, newInst) {
+        if (err) { return done(err) }
+        expect(newInst.container.error.message).to.equal(appError.message)
+        expect(newInst.container.error.data).to.equal(appError.data)
+        expect(newInst.container.error.stack).to.equal(appError.stack)
+        expect(newInst.container.error.field).to.not.exist()
+        expect(error.log.callCount).to.equal(0)
+        done()
+      })
+    })
+
+    it('should conflict if the contextVersion has changed and return same instance', function (done) {
+      var appError = {
+        message: 'random message',
+        data: 'random data',
+        stack: 'random stack',
+        field: 'random field'
+      }
+      var cvId = newObjectId()
+      savedInstance.modifyContainerCreateErr(cvId, appError, function (err, inst) {
+        expect(err).to.not.exist()
+        expect(savedInstance.container.error).to.not.exist()
+        expect(inst.container.error).to.not.exist()
+        expect(savedInstance).to.deep.equal(inst)
+        expect(error.log.callCount).to.equal(1)
+        var errArg = error.log.getCall(0).args[0]
+        expect(errArg.output.statusCode).to.equal(409)
+        done()
+      })
+    })
+  })
+
+  // describe('find instance by container id', function () {
+  //   var savedInstance = null
+  //   var instance = null
+  //   before(function (done) {
+  //     instance = mongoFactory.createNewInstance()
+  //     instance.save(function (err, instance) {
+  //       if (err) { return done(err) }
+  //       expect(instance).to.exist()
+  //       savedInstance = instance
+  //       done()
+  //     })
+  //   })
+  //
+  //   it('should find an instance', function (done) {
+  //     Instance.findOneByContainerId(savedInstance.container.dockerContainer, function (err, fetchedInstance) {
+  //       if (err) { return done(err) }
+  //       expect(fetchedInstance._id.toString()).to.equal(instance._id.toString())
+  //       expect(fetchedInstance.name).to.equal(instance.name)
+  //       expect(fetchedInstance.container.dockerContainer).to.equal(instance.container.dockerContainer)
+  //       expect(fetchedInstance.public).to.equal(instance.public)
+  //       expect(fetchedInstance.lowerName).to.equal(instance.lowerName)
+  //       expect(fetchedInstance.build.toString()).to.equal(instance.build.toString())
+  //       done()
+  //     })
+  //   })
+  // })
+
+  // describe('find by repo and branch', function () {
+  //   before(function (done) {
+  //     var instance = mongoFactory.createNewInstance('instance1')
+  //     instance.save(done)
+  //   })
+  //   before(function (done) {
+  //     var instance = mongoFactory.createNewInstance('instance2', { locked: false })
+  //     instance.save(done)
+  //   })
+  //   before(function (done) {
+  //     var instance = mongoFactory.createNewInstance('instance3', { locked: true, repo: 'podviaznikov/hello' })
+  //     instance.save(done)
+  //   })
+  //
+  //   it('should find instances using repo name and branch', function (done) {
+  //     Instance.findInstancesLinkedToBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, insts) {
+  //       if (err) { return done(err) }
+  //       expect(insts.length).to.equal(2)
+  //       insts.forEach(function (inst) {
+  //         expect([ 'instance1', 'instance2' ]).to.include(inst.name)
+  //       })
+  //       done()
+  //     })
+  //   })
+  //
+  //   it('should not find instance using repo name and branch if it was locked', function (done) {
+  //     Instance.findInstancesLinkedToBranch('podviaznikov/hello', 'master', function (err, insts) {
+  //       if (err) { return done(err) }
+  //       expect(insts.length).to.equal(0)
+  //       done()
+  //     })
+  //   })
+  // })
+
+  describe('findByContextVersionIds', function () {
+    var instance = null
+    var contextVersionId = newObjectId()
+    beforeEach(function (done) {
+      instance = mongoFactory.createNewInstance()
+      instance.save(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.exist()
+        done()
+      })
+    })
+    beforeEach(function (done) {
+      var instance = mongoFactory.createNewInstance('instance2')
+      instance.save(done)
+    })
+    beforeEach(function (done) {
+      var instance = mongoFactory.createNewInstance('instance3', { contextVersion: { _id: contextVersionId } })
+      instance.save(done)
+    })
+    it('should pass the array of contextVersion Ids to find', function (done) {
+      Instance.findByContextVersionIds([contextVersionId], function (err, results) {
+        expect(err).to.not.exist()
+        expect(results).to.be.an.array()
+        expect(results.length).to.equal(1)
+        expect(results[0]).to.be.an.object()
+        expect(results[0].name).to.equal('instance3')
+        expect(results[0].contextVersion._id.toString()).to.equal(contextVersionId.toString())
+        done()
+      })
+    })
+    it('should return an empty array if no contextVersions are found', function (done) {
+      Instance.findByContextVersionIds([newObjectId()], function (err, results) {
+        expect(err).to.not.exist()
+        expect(results).to.be.an.array()
+        expect(results.length).to.equal(0)
+        done()
+      })
+    })
+  })
+
+  describe('#findInstancesByParent', function () {
+    it('should return empty [] for if no children were found', function (done) {
+      Instance.findInstancesByParent('a5agn3', function (err, instances) {
+        expect(err).to.be.null()
+        expect(instances.length).to.equal(0)
+        done()
+      })
+    })
+
+    it('should return empty [] for if no autoForked was false', function (done) {
+      var repo = 'podviaznikov/hello-2'
+      var opts = {
+        autoForked: false,
+        masterPod: false,
+        repo: repo,
+        parent: 'a1b2c4'
+      }
+      var instance = mongoFactory.createNewInstance('instance-name-325', opts)
+      instance.save(function (err) {
+        if (err) { return done(err) }
+        Instance.findInstancesByParent('a1b2c4', function (err, instances) {
+          expect(err).to.be.null()
+          expect(instances.length).to.equal(0)
+          done()
+        })
+      })
+    })
+
+    it('should return array with instance that has matching parent', function (done) {
+      var repo = 'podviaznikov/hello-2'
+      var opts = {
+        autoForked: true,
+        masterPod: false,
+        repo: repo,
+        parent: 'a1b2c3'
+      }
+      var instance = mongoFactory.createNewInstance('instance-name-324', opts)
+      instance.save(function (err) {
+        if (err) { return done(err) }
+        Instance.findInstancesByParent('a1b2c3', function (err, instances) {
+          expect(err).to.be.null()
+          expect(instances.length).to.equal(1)
+          done()
+        })
+      })
+    })
+  })
+
+  describe('#findForkableMasterInstances', function () {
+    it('should return empty [] for repo that has no instances', function (done) {
+      Instance.findForkableMasterInstances('anton/node', 'master', function (err, instances) {
+        expect(err).to.be.null()
+        expect(instances.length).to.equal(0)
+        done()
+      })
+    })
+
+    describe('non-masterPod instances', function () {
+      var ctx = {}
+      before(function (done) {
+        var instance = mongoFactory.createNewInstance('instance-name', { locked: true, repo: 'podviaznikov/hello' })
+        instance.save(function (err, instance) {
+          if (err) { return done(err) }
+          expect(instance).to.exist()
+          ctx.savedInstance = instance
+          done()
+        })
+      })
+      it('should return empty [] for repo that has no master instances', function (done) {
+        var repo = 'podviaznikov/hello'
+        Instance.findForkableMasterInstances(repo, 'develop', function (err, instances) {
+          expect(err).to.be.null()
+          expect(instances.length).to.equal(0)
+          done()
+        })
+      })
+    })
+
+    describe('masterPod instances', function () {
+      var ctx = {}
+      beforeEach(function (done) {
+        var opts = {
+          locked: true,
+          masterPod: true,
+          repo: 'podviaznikov/hello-2',
+          branch: 'master',
+          defaultBranch: 'master'
+        }
+        var instance = mongoFactory.createNewInstance('instance-name-2', opts)
+        instance.save(function (err, instance) {
+          if (err) { return done(err) }
+          expect(instance).to.exist()
+          ctx.savedInstance = instance
+          done()
+        })
+      })
+      it('should return array with instance that has masterPod=true', function (done) {
+        var repo = 'podviaznikov/hello-2'
+        Instance.findForkableMasterInstances(repo, 'feature1', function (err, instances) {
+          expect(err).to.be.null()
+          expect(instances.length).to.equal(1)
+          expect(instances[0].shortHash).to.equal(ctx.savedInstance.shortHash)
+          done()
+        })
+      })
+      it('should return [] when branch equals masterPod branch', function (done) {
+        var repo = 'podviaznikov/hello-2'
+        Instance.findForkableMasterInstances(repo, 'master', function (err, instances) {
+          expect(err).to.be.null()
+          expect(instances.length).to.equal(0)
+          done()
+        })
+      })
+      it('should return array with instances that has masterPod=true', function (done) {
+        var repo = 'podviaznikov/hello-2'
+        var opts = {
+          locked: true,
+          masterPod: true,
+          repo: repo
+        }
+        var instance2 = mongoFactory.createNewInstance('instance-name-3', opts)
+        instance2.save(function (err, instance) {
+          if (err) { return done(err) }
+          Instance.findForkableMasterInstances(repo, 'feature1', function (err, instances) {
+            expect(err).to.be.null()
+            expect(instances.length).to.equal(2)
+            expect(instances.map(pluck('shortHash'))).to.only.contain([
+              ctx.savedInstance.shortHash,
+              instance.shortHash
+            ])
+            done()
+          })
+        })
+      })
+    })
+  })
+
 
   describe('markAsStopping', function () {
     it('should not set container state to Stopping if container on instance has changed', function (done) {
