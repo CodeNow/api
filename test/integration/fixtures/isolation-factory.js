@@ -1,6 +1,6 @@
 'use strict'
 
-var validation = require('../fixtures/validation')(null)
+var validation = require('./validation')(null)
 
 var Isolation = require('models/mongo/isolation')
 

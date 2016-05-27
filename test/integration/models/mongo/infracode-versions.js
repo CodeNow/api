@@ -5,22 +5,28 @@ var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
 var before = lab.before
+var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 
-var validation = require('./fixtures/validation')(lab)
+var validation = require('../../fixtures/validation')(lab)
+var mongooseControl = require('models/mongo/mongoose-control.js')
 
-var InfracodeVersion = require('../lib/models/mongo/infra-code-version')
+var InfracodeVersion = require('models/mongo/infra-code-version')
 var Boom = require('dat-middleware').Boom
 var sinon = require('sinon')
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
+describe('InfraCodeVersion Model Integration Tests', function () {
+  before(mongooseControl.start)
+  afterEach(function (done) {
+    InfracodeVersion.remove({}, done)
+  })
 
-describe('Infracode Versions: ' + moduleName, function () {
-  before(require('./fixtures/mongo').connect)
-  afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything)
+  after(function (done) {
+    InfracodeVersion.remove({}, done)
+  })
+  after(mongooseControl.stop)
 
   function createNewInfracodeVersion () {
     return new InfracodeVersion({

@@ -16,7 +16,7 @@ var Instance = require('models/mongo/instance')
 
 var Isolation = require('models/mongo/isolation')
 
-describe('Isolation Model', function () {
+describe('Isolation Model Integration Tests', function () {
   describe('#_validateCreateData', function () {
     var data
 

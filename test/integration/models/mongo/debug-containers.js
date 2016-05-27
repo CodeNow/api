@@ -6,7 +6,7 @@ var describe = lab.describe
 var it = lab.it
 var before = lab.before
 var beforeEach = lab.beforeEach
-// var after = lab.after
+var after = lab.after
 var afterEach = lab.afterEach
 var expect = require('code').expect
 var sinon = require('sinon')
@@ -18,15 +18,15 @@ var Context = require('models/mongo/context')
 var Instance = require('models/mongo/instance')
 var ContextVersion = require('models/mongo/context-version')
 
+var mongooseControl = require('models/mongo/mongoose-control.js')
+
 var ctx = {}
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('Debug Containers: ' + moduleName, function () {
-  before(require('../../fixtures/mongo').connect)
-  beforeEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
-  afterEach(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
+describe('Debug Containers Integration Tests', function () {
+  before(mongooseControl.start)
+  beforeEach(require('../../../functional/fixtures/clean-mongo').removeEverything)
+  afterEach(require('../../../functional/fixtures/clean-mongo').removeEverything)
+  after(mongooseControl.stop)
 
   beforeEach(function (done) {
     var c = new Context({

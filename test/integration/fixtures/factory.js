@@ -352,7 +352,7 @@ var factory = module.exports = {
   },
 
   createNewInstance: function (name, opts) {
-    // jshint maxcomplexity:12
+    // jshint maxcomplexity:10
     opts = opts || {}
     var container = {
       dockerContainer: opts.containerId || VALID_OBJECT_ID,
@@ -390,6 +390,9 @@ var factory = module.exports = {
       network: {
         hostIp: '1.1.1.100'
       },
+      env: opts.env || [],
+      isolated: opts.isolated,
+      isIsolationGroupMaster: opts.isIsolationGroupMaster,
       imagePull: opts.imagePull || null
     })
   }

@@ -5,21 +5,29 @@ var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
 var before = lab.before
+var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 
-var schemaValidators = require('../lib/models/mongo/schemas/schema-validators')
+var schemaValidators = require('models/mongo/schemas/schema-validators')
 var ContextVersion = require('models/mongo/context-version')
-var validation = require('./fixtures/validation')(lab)
+var validation = require('../../../fixtures/validation')(lab)
 var Version = require('models/mongo/context-version')
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
+var mongooseControl = require('models/mongo/mongoose-control.js')
 
-describe('Versions: ' + moduleName, function () {
-  before(require('./fixtures/mongo').connect)
-  afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything)
+describe('CV Schema Integration Tests', function () {
+  before(mongooseControl.start)
+
+  afterEach(function (done) {
+    ContextVersion.remove({}, done)
+  })
+
+  after(function (done) {
+    ContextVersion.remove({}, done)
+  })
+  after(mongooseControl.stop)
 
   function createNewVersion (acv) {
     acv = acv || {}
@@ -156,32 +164,6 @@ describe('Versions: ' + moduleName, function () {
     describe('Branch', function () {
       validation.requiredValidationChecking(createNewVersion, 'appCodeVersions.0.branch')
       validation.stringLengthValidationChecking(createNewVersion, 'appCodeVersions.0.branch', 200)
-    })
-  })
-
-  describe('findAllRepos', function () {
-    it('should return two repos', function (done) {
-      var version = createNewVersion()
-      version.save(function (err) {
-        if (err) { return done(err) }
-        var version2 = createNewVersion({
-          repo: 'podviaznikov/hellonode',
-          lowerRepo: 'podviaznikov/hellonode'
-        })
-        version2.save(function (err) {
-          if (err) { return done(err) }
-          ContextVersion.findAllRepos(function (err, repos) {
-            if (err) { return done(err) }
-            var names = ['podviaznikov/hellonode', 'bkendall/flaming-octo-nemisis._']
-            expect(repos.length).to.equal(2)
-            expect(names).to.include(repos[0]._id)
-            expect(names).to.include(repos[1]._id)
-            expect(repos[0].creators[0]).to.equal(validation.VALID_GITHUB_ID)
-            expect(repos[1].creators[0]).to.equal(validation.VALID_GITHUB_ID)
-            done()
-          })
-        })
-      })
     })
   })
 })

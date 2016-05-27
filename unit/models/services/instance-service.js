@@ -29,7 +29,6 @@ var messenger = require('socket/messenger')
 var ObjectId = require('mongoose').Types.ObjectId
 
 var mongoFactory = require('../../factories/mongo')
-var typesTests = require('../../../test/functional/fixtures/types-test-util')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -1445,6 +1444,7 @@ describe('InstanceService', function () {
 
     beforeEach(function (done) {
       sinon.stub(messenger, 'emitInstanceUpdate')
+      sinon.stub(User, 'findByGithubIdAsync').returns(Promise.resolve({_id: '1'}))
       instance = {
         createdBy: {
           github: 123454
@@ -1455,8 +1455,9 @@ describe('InstanceService', function () {
       }
       done()
     })
-
+    //
     afterEach(function (done) {
+      User.findByGithubIdAsync.restore()
       messenger.emitInstanceUpdate.restore()
       done()
     })
@@ -2354,85 +2355,6 @@ describe('InstanceService', function () {
             .asCallback(done)
         })
       })
-    })
-  })
-  describe('validateBody', function () {
-    var ctx = {}
-    ctx.mockSessionUser = {
-      findGithubUserByGithubIdAsync: sinon.spy(function (id) {
-        var login = (id === ctx.mockSessionUser.accounts.github.id) ? 'user' : 'owner'
-        return Promise.resolve({
-          login: login,
-          avatar_url: 'TEST-avatar_url'
-        })
-      }),
-      gravatar: 'sdasdasdasdasdasd',
-      accounts: {
-        github: {
-          id: 1234,
-          username: 'user'
-        }
-      }
-    }
-    var def = {
-      action: 'create an instance',
-      requiredParams: [
-        {
-          name: 'build',
-          type: 'string'
-        }, {
-          name: 'name',
-          type: 'string'
-        }
-      ],
-      optionalParams: [
-        {
-          name: 'parent',
-          type: 'string'
-        }, {
-          name: 'ipWhitelist',
-          type: 'object',
-          keys: [
-            {
-              name: 'enabled',
-              type: 'boolean'
-            }
-          ]
-        }, {
-          name: 'isolated',
-          type: 'string'
-        }, {
-          name: 'masterPod',
-          type: 'boolean'
-        }, {
-          name: 'public',
-          type: 'boolean'
-        }, {
-          name: 'env',
-          type: 'array',
-          itemType: 'string',
-          itemRegExp: /^([A-z]+[A-z0-9_]*)=.*$/,
-          itemValues: [
-            'string1',
-            '1=X',
-            'a!=x'
-          ]
-        }, {
-          name: 'owner',
-          type: 'object',
-          keys: [
-            {
-              name: 'github',
-              type: 'string, number'
-            }
-          ]
-        }
-      ]
-    }
-
-    typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
-      InstanceService.validateCreateOpts(body)
-        .asCallback(cb)
     })
   })
 })
