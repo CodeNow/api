@@ -15,6 +15,11 @@ var error = require('error')
 var objectId = require('objectid')
 var pluck = require('101/pluck')
 var mongoose = require('mongoose')
+var find = require('101/find')
+var Graph = require('models/apis/graph')
+var async = require('async')
+var hasProps = require('101/has-properties')
+var pick = require('101/pick')
 
 var Instance = require('models/mongo/instance')
 var mongoFactory = require('../../fixtures/factory')
@@ -45,7 +50,7 @@ describe('Instance Model Integration Tests', function () {
       })
     })
   })
-  
+
   describe('save', function () {
     it('should not save an instance with the same (lower) name and owner', function (done) {
       var instance = mongoFactory.createNewInstance('hello')
@@ -394,7 +399,6 @@ describe('Instance Model Integration Tests', function () {
       })
     })
   })
-
 
   describe('markAsStopping', function () {
     it('should not set container state to Stopping if container on instance has changed', function (done) {
@@ -942,6 +946,360 @@ describe('Instance Model Integration Tests', function () {
               expect(err).to.exist()
               done()
             })
+          })
+        })
+      })
+    })
+  })
+
+  describe('dependencies', { timeout: 10000 }, function () {
+    var instances = []
+    beforeEach(function (done) {
+      var names = [ 'A', 'B', 'C' ]
+      while (instances.length < names.length) {
+        instances.push(mongoFactory.createNewInstance(names[instances.length]))
+      }
+      done()
+    })
+
+    beforeEach(function (done) {
+      // this deletes all the things out of the graph
+      var graph = new Graph()
+      graph.graph
+        .cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
+        .on('end', done)
+        .resume()
+    })
+
+    it('should be able to generate a graph node data structure', function (done) {
+      var generated = instances[0].generateGraphNode()
+      var expected = {
+        label: 'Instance',
+        props: {
+          id: instances[0].id.toString(),
+          shortHash: instances[0].shortHash.toString(),
+          name: instances[0].name,
+          lowerName: instances[0].lowerName,
+          'owner_github': instances[0].owner.github, // eslint-disable-line quote-props
+          'contextVersion_context': // eslint-disable-line quote-props
+          instances[0].contextVersion.context.toString()
+        }
+      }
+      expect(generated).to.deep.equal(expected)
+      done()
+    })
+
+    it('should be able to put an instance in the graph db', function (done) {
+      var i = instances[0]
+      i.upsertIntoGraph(function (err) {
+        expect(err).to.be.null()
+        i.getSelfFromGraph(function (err, selfNode) {
+          expect(err).to.be.null()
+          expect(selfNode.id).to.equal(i.id.toString())
+          done()
+        })
+      })
+    })
+
+    it('should upsert, not created duplicate', function (done) {
+      var graph = new Graph()
+      var i = instances[0]
+      i.upsertIntoGraph(function (err) {
+        expect(err).to.be.null()
+        i.lowerName = 'new-' + i.lowerName
+        i.upsertIntoGraph(function (err) {
+          expect(err).to.be.null()
+          // have to manually check the db
+          var nodes = {}
+          graph.graph
+            .cypher('MATCH (n:Instance) RETURN n')
+            .on('data', function (d) {
+              if (!nodes[d.n.id]) {
+                nodes[d.n.id] = d.n
+              } else {
+                err = new Error('duplicate node ' + d.n.id)
+              }
+            })
+            .on('end', function () {
+              expect(err).to.be.null()
+              expect(Object.keys(nodes)).to.have.length(1)
+              expect(nodes[i.id.toString()].lowerName).to.equal('new-a')
+              done()
+            })
+            .on('error', done)
+        })
+      })
+    })
+
+    describe('with instances in the graph', function () {
+      var nodeFields = [
+        'contextVersion',
+        'hostname',
+        'id',
+        'lowerName',
+        'name',
+        'owner',
+        'shortHash'
+      ]
+      beforeEach(function (done) {
+        async.forEach(
+          instances,
+          function (i, cb) { i.upsertIntoGraph(cb) },
+          done)
+      })
+
+      it('should give us the count of instance in the graph', function (done) {
+        Instance.getGraphNodeCount(function (err, count) {
+          expect(err).to.be.null()
+          expect(count).to.equal(3)
+          done()
+        })
+      })
+
+      it('should give us no dependencies when none are defined', function (done) {
+        var i = instances[0]
+        i.getDependencies(function (err, deps) {
+          expect(err).to.be.null()
+          expect(deps).to.be.an.array()
+          expect(deps).to.have.length(0)
+          done()
+        })
+      })
+
+      it('should allow us to add first dependency', function (done) {
+        var i = instances[0]
+        var d = instances[1]
+        var shortD = pick(d.toJSON(), nodeFields)
+        shortD.hostname = 'somehostname'
+        shortD.contextVersion = {
+          context: shortD.contextVersion.context.toString()
+        }
+        i.addDependency(d, 'somehostname', function (err, limitedInstance) {
+          expect(err).to.be.null()
+          expect(limitedInstance).to.exist()
+          expect(Object.keys(limitedInstance)).to.only.contain(nodeFields)
+          expect(limitedInstance).to.deep.equal(shortD)
+          i.getDependencies(function (err, deps) {
+            expect(err).to.be.null()
+            expect(deps).to.be.an.array()
+            expect(deps).to.have.length(1)
+            expect(Object.keys(deps[0])).to.contain(nodeFields)
+            expect(deps[0]).to.deep.equal(shortD)
+            done()
+          })
+        })
+      })
+
+      describe('with a dependency attached', function () {
+        beforeEach(function (done) {
+          instances[0].addDependency(instances[1], 'somehostname', done)
+        })
+
+        it('should give the network for a dependency', function (done) {
+          var network = { hostIp: '1.2.3.4' }
+          sinon.stub(Instance, 'findById').yieldsAsync(null, { network: network })
+          var i = instances[0]
+          i.getDependencies(function (err, deps) {
+            if (err) { return done(err) }
+            expect(deps[0].network).to.deep.equal(network)
+            Instance.findById.restore()
+            done()
+          })
+        })
+
+        it('should allow us to remove the dependency', function (done) {
+          var i = instances[0]
+          var d = instances[1]
+          i.removeDependency(d, function (err) {
+            expect(err).to.be.null()
+            i.getDependencies(function (err, deps) {
+              expect(err).to.be.null()
+              expect(deps).to.be.an.array()
+              expect(deps).to.have.length(0)
+              done()
+            })
+          })
+        })
+
+        it('should be able to add a second dependency', function (done) {
+          var i = instances[0]
+          var d = instances[2]
+          var shortD = pick(d.toJSON(), nodeFields)
+          shortD.contextVersion = {
+            context: shortD.contextVersion.context.toString()
+          }
+          shortD.hostname = 'somehostname'
+          i.addDependency(d, 'somehostname', function (err, limitedInstance) {
+            expect(err).to.be.null()
+            expect(limitedInstance).to.exist()
+            expect(Object.keys(limitedInstance)).to.contain(nodeFields)
+            expect(limitedInstance).to.deep.equal(shortD)
+            i.getDependencies(function (err, deps) {
+              expect(err).to.be.null()
+              expect(deps).to.be.an.array()
+              expect(deps).to.have.length(2)
+              expect(Object.keys(deps[1])).to.contain(nodeFields)
+              expect(deps).to.deep.contain(shortD)
+              done()
+            })
+          })
+        })
+
+        it('should be able to get dependent', function (done) {
+          var dependent = instances[0]
+          var dependency = instances[1]
+          var shortD = pick(dependent.toJSON(), nodeFields)
+          shortD.contextVersion = {
+            context: shortD.contextVersion.context.toString()
+          }
+          shortD.hostname = 'somehostname'
+          dependency.getDependents(function (err, dependents) {
+            expect(err).to.be.null()
+            expect(dependents).to.be.an.array()
+            expect(dependents).to.have.length(1)
+            expect(Object.keys(dependents[0])).to.contain(nodeFields)
+            expect(shortD).to.deep.contain(dependents[0])
+            done()
+          })
+        })
+
+        it('should be able to chain dependencies', function (done) {
+          var i = instances[1]
+          var d = instances[2]
+          var shortD = pick(d, nodeFields)
+          shortD.contextVersion = {
+            context: shortD.contextVersion.context.toString()
+          }
+          shortD.hostname = 'somehostname'
+          i.addDependency(d, 'somehostname', function (err, limitedInstance) {
+            expect(err).to.be.null()
+            expect(limitedInstance).to.exist()
+            expect(Object.keys(limitedInstance)).to.contain(nodeFields)
+            expect(limitedInstance).to.deep.equal(shortD)
+            i.getDependencies(function (err, deps) {
+              expect(err).to.be.null()
+              expect(deps).to.be.an.array()
+              expect(deps).to.have.length(1)
+              expect(Object.keys(deps[0])).to.contain(nodeFields)
+              expect(deps[0]).to.deep.equal(shortD)
+              instances[0].getDependencies(function (err, deps) {
+                expect(err).to.be.null()
+                expect(deps).to.be.an.array()
+                expect(deps).to.have.length(1)
+                done()
+              })
+            })
+          })
+        })
+
+        describe('instance with 2 dependents', function () {
+          beforeEach(function (done) {
+            instances[2].addDependency(instances[1], 'somehostname', done)
+          })
+          it('should be able to get dependents', function (done) {
+            var dependent1 = instances[0]
+            var dependent2 = instances[2]
+            var dependency = instances[1]
+            var shortD1 = pick(dependent1.toJSON(), nodeFields)
+            shortD1.contextVersion = {
+              context: shortD1.contextVersion.context.toString()
+            }
+            shortD1.hostname = 'somehostname'
+            var shortD2 = pick(dependent2.toJSON(), nodeFields)
+            shortD2.contextVersion = {
+              context: shortD2.contextVersion.context.toString()
+            }
+            shortD2.hostname = 'somehostname'
+            dependency.getDependents(function (err, dependents) {
+              expect(err).to.be.null()
+              expect(dependents).to.be.an.array()
+              expect(dependents).to.have.length(2)
+              expect(Object.keys(dependents[0])).to.contain(nodeFields)
+              expect(Object.keys(dependents[1])).to.contain(nodeFields)
+              expect(dependents).to.deep.contain(shortD1)
+              expect(dependents).to.deep.contain(shortD2)
+              done()
+            })
+          })
+        })
+
+        describe('with chained depedencies', function () {
+          beforeEach(function (done) {
+            instances[1].addDependency(instances[2], 'somehostname2', done)
+          })
+
+          it('should be able to recurse dependencies', function (done) {
+            var i = instances[0]
+            i.getDependencies({ recurse: true }, function (err, deps) {
+              if (err) { return done(err) }
+              expect(deps).to.be.an.array()
+              expect(deps).to.have.length(1)
+              expect(deps[0].id).to.equal(instances[1].id.toString())
+              expect(deps[0].dependencies).to.be.an.array()
+              expect(deps[0].dependencies).to.have.length(1)
+              expect(deps[0].dependencies[0].id).to.equal(instances[2].id.toString())
+              done()
+            })
+          })
+
+          it('should be able to flatten recursed dependencies', function (done) {
+            var i = instances[0]
+            i.getDependencies({ recurse: true, flatten: true }, function (err, deps) {
+              if (err) { return done(err) }
+              expect(deps).to.be.an.array()
+              expect(deps).to.have.length(2)
+              expect(deps.map(pluck('id'))).to.only.include([
+                instances[1].id.toString(),
+                instances[2].id.toString()
+              ])
+              var dep1 = find(deps, hasProps({ id: instances[1].id.toString() }))
+              var dep2 = find(deps, hasProps({ id: instances[2].id.toString() }))
+              expect(dep1.dependencies).to.have.length(1)
+              expect(dep1.dependencies[0].id).to.equal(instances[2].id.toString())
+              expect(dep2.dependencies).to.have.length(0)
+              done()
+            })
+          })
+
+          it('should not follow circles while flattening', function (done) {
+            async.series([
+              function (cb) {
+                instances[2].addDependency(instances[0], 'circlehost', cb)
+              },
+              function (cb) {
+                var i = instances[0]
+                i.getDependencies({ recurse: true, flatten: true }, function (err, deps) {
+                  if (err) { return done(err) }
+                  expect(deps).to.be.an.array()
+                  expect(deps).to.have.length(3)
+                  expect(deps.map(pluck('id'))).to.only.include(instances.map(pluck('id')))
+                  cb()
+                })
+              }
+            ], done)
+          })
+
+          it('should not follow circles', function (done) {
+            async.series([
+              function (cb) {
+                instances[2].addDependency(instances[0], 'circlehost', cb)
+              },
+              function (cb) {
+                var i = instances[0]
+                i.getDependencies({ recurse: true }, function (err, deps) {
+                  if (err) { return done(err) }
+                  expect(deps).to.be.an.array()
+                  expect(deps).to.have.length(1)
+                  expect(deps[0].id).to.equal(instances[1].id.toString())
+                  expect(deps[0].dependencies).to.be.an.array()
+                  expect(deps[0].dependencies).to.have.length(1)
+                  expect(deps[0].dependencies[0].id).to.equal(instances[2].id.toString())
+                  expect(deps[0].dependencies[0].dependencies)
+                    .to.be.an.array(instances[0].id.toString())
+                  cb()
+                })
+              }
+            ], done)
           })
         })
       })
