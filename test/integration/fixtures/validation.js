@@ -4,7 +4,7 @@ var Code = require('code')
 var expect = Code.expect
 
 var Faker = require('faker')
-var schemaValidators = require('../../lib/models/mongo/schemas/schema-validators')
+var schemaValidators = require('models/mongo/schemas/schema-validators')
 var keypath = require('keypather')()
 
 var OBJECT_ID = '507c7f79bcf86cd7994f6c0e'

@@ -5,7 +5,6 @@
 
 var Code = require('code')
 var Lab = require('lab')
-var path = require('path')
 
 var lab = exports.lab = Lab.script()
 
@@ -21,17 +20,16 @@ var nock = require('nock')
 require('sinon-as-promised')(require('bluebird'))
 
 var User = require('models/mongo/user')
-var githubAPIUsernameQueryMock = require('../../../test/functional/fixtures/mocks/github/users-username')
-var githubAPIOrgMembersMock = require('../../../test/functional/fixtures/mocks/github/org-members')
-require('../../../lib/models/redis')
-
-var moduleName = path.relative(process.cwd(), __filename)
+var githubAPIUsernameQueryMock = require('../../../functional/fixtures/mocks/github/users-username')
+var githubAPIOrgMembersMock = require('../../../functional/fixtures/mocks/github/org-members')
+require('models/redis')
 
 var randomInt = function () {
   return Math.floor(Math.random() * 1000)
 }
 
-describe('User ' + moduleName, function () {
+var mongooseControl = require('models/mongo/mongoose-control.js')
+describe('User Integration Tests', function () {
   var user
   var email
   var name
@@ -67,14 +65,17 @@ describe('User ' + moduleName, function () {
     user.save(done)
   }
 
-  before(require('../../fixtures/mongo').connect)
-  after(require('../../../test/functional/fixtures/clean-mongo').removeEverything)
+  before(mongooseControl.start)
+
+  after(require('../../../functional/fixtures/clean-mongo').removeEverything)
 
   beforeEach(createNewUser)
   afterEach(function (done) {
     nock.cleanAll()
     done()
   })
+
+  after(mongooseControl.stop)
 
   describe('findByGithubUsername', function () {
     it('should have a `findByGithubUsername`', function (done) {

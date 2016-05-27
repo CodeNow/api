@@ -5,20 +5,27 @@ var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
 var before = lab.before
+var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 
-var validation = require('./fixtures/validation')(lab)
-var schemaValidators = require('../lib/models/mongo/schemas/schema-validators')
+var validation = require('../../fixtures/validation')(lab)
+var mongooseControl = require('models/mongo/mongoose-control.js')
+
+var schemaValidators = require('models/mongo/schemas/schema-validators')
 var Context = require('models/mongo/context')
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
+describe('Context Model Integration Tests', function () {
+  before(mongooseControl.start)
+  afterEach(function (done) {
+    Context.remove({}, done)
+  })
 
-describe('Context Unit Testing: ' + moduleName, function () {
-  before(require('./fixtures/mongo').connect)
-  afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything)
+  after(function (done) {
+    Context.remove({}, done)
+  })
+  after(mongooseControl.stop)
 
   function createNewContext () {
     return new Context({

@@ -1444,6 +1444,7 @@ describe('InstanceService', function () {
 
     beforeEach(function (done) {
       sinon.stub(messenger, 'emitInstanceUpdate')
+      sinon.stub(User, 'findByGithubIdAsync').returns(Promise.resolve({_id: '1'}))
       instance = {
         createdBy: {
           github: 123454
@@ -1454,8 +1455,9 @@ describe('InstanceService', function () {
       }
       done()
     })
-
+    //
     afterEach(function (done) {
+      User.findByGithubIdAsync.restore()
       messenger.emitInstanceUpdate.restore()
       done()
     })

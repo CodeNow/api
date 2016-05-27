@@ -5,19 +5,28 @@ var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
 var before = lab.before
+var after = lab.after
 var afterEach = lab.afterEach
 
 var validation = require('../../../fixtures/validation')(lab)
 var schemaValidators = require('models/mongo/schemas/schema-validators')
 
-var mongoFactory = require('../../../factories/mongo')
+var mongoFactory = require('../../../fixtures/factory')
+var mongooseControl = require('models/mongo/mongoose-control.js')
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
+var Instance = require('models/mongo/instance')
 
-describe('Instance Schema Isolation Tests: ' + moduleName, function () {
-  before(require('../../../fixtures/mongo').connect)
-  afterEach(require('../../../../test/functional/fixtures/clean-mongo').removeEverything)
+describe('Instance Schema Integration Tests', function () {
+  before(mongooseControl.start)
+
+  afterEach(function (done) {
+    Instance.remove({}, done)
+  })
+
+  after(function (done) {
+    Instance.remove({}, done)
+  })
+  after(mongooseControl.stop)
 
   describe('Name Validation', function () {
     validation.NOT_ALPHA_NUM_SAFE.forEach(function (string) {
@@ -52,7 +61,7 @@ describe('Instance Schema Isolation Tests: ' + moduleName, function () {
     validation.requiredValidationChecking(mongoFactory.createNewInstance, 'createdBy')
   })
 
-  describe('Isoalted Validation', function () {
+  describe('Isolated Validation', function () {
     validation.objectIdValidationChecking(mongoFactory.createNewInstance, 'isolated')
   })
 })

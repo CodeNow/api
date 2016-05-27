@@ -5,18 +5,25 @@ var lab = exports.lab = Lab.script()
 var describe = lab.describe
 var it = lab.it
 var before = lab.before
+var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 
 var Settings = require('models/mongo/settings')
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
+var mongooseControl = require('models/mongo/mongoose-control.js')
 
-describe('Settings: ' + moduleName, function () {
-  before(require('./fixtures/mongo').connect)
-  afterEach(require('../test/functional/fixtures/clean-mongo').removeEverything)
+describe('Settings Model Integration Tests', function () {
+  before(mongooseControl.start)
+  afterEach(function (done) {
+    Settings.remove({}, done)
+  })
+
+  after(function (done) {
+    Settings.remove({}, done)
+  })
+  after(mongooseControl.stop)
 
   describe('find by owner github id', function () {
     var savedSettings = null
