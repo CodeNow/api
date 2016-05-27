@@ -18,6 +18,7 @@ var expects = require('../../fixtures/expects')
 var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
+var uuid = require('uuid')
 
 describe('POST /instances/:id/actions/copy', function () {
   var ctx = {}
@@ -88,7 +89,7 @@ describe('POST /instances/:id/actions/copy', function () {
         }
         require('../../fixtures/mocks/github/user')(ctx.user)
         primus.expectActionCount('start', 1, count.next)
-        ctx.instance.copy(expects.success(201, expected, count.next))
+        ctx.instance.copy({ name: uuid() }, expects.success(201, expected, count.next))
       })
       it('should copy the instance, and give it the same build, with a new name!', function (done) {
         var count = createCount(2, done)
@@ -109,9 +110,7 @@ describe('POST /instances/:id/actions/copy', function () {
         require('../../fixtures/mocks/github/user')(ctx.user)
         primus.expectActionCount('start', 1, count.next)
         ctx.instance.copy({
-          json: {
-            name: 'new-name-fo-shizzle'
-          }
+          name: 'new-name-fo-shizzle'
         }, expects.success(201, expected, count.next))
       })
       describe('parent has env', function () {
@@ -137,7 +136,7 @@ describe('POST /instances/:id/actions/copy', function () {
           }
           require('../../fixtures/mocks/github/user')(ctx.user)
           primus.expectActionCount('start', 1, count.next)
-          ctx.instance.copy(expects.success(201, expected, count.next))
+          ctx.instance.copy({ name: uuid() }, expects.success(201, expected, count.next))
         })
         it('should accept new envs if they are sent with the copy', function (done) {
           var count = createCount(2, done)
@@ -158,6 +157,7 @@ describe('POST /instances/:id/actions/copy', function () {
           }
           require('../../fixtures/mocks/github/user')(ctx.user)
           var body = {
+            name: uuid(),
             env: expected.env
           }
           primus.expectActionCount('start', 1, count.next)
@@ -200,7 +200,15 @@ describe('POST /instances/:id/actions/copy', function () {
         require('../../fixtures/mocks/github/user')(ctx.user)
         primus.expectActionCount('start', 1, count.next)
         ctx.user.copyInstance(
-          ctx.instance.attrs.shortHash, {owner: {github: ctx.orgId}}, expects.success(201, expected, count.next))
+          ctx.instance.attrs.shortHash,
+          {
+            owner: {
+              github: ctx.orgId
+            },
+            name: uuid()
+          },
+          expects.success(201, expected, count.next)
+        )
       })
       describe('Same org, different user', function () {
         beforeEach(function (done) {
@@ -216,7 +224,7 @@ describe('POST /instances/:id/actions/copy', function () {
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable')
           require('../../fixtures/mocks/github/user')(ctx.nonOwner)
           primus.expectActionCount('start', 1, count.next)
-          ctx.otherInstance = ctx.user.copyInstance(ctx.instance.attrs.shortHash, count.next)
+          ctx.otherInstance = ctx.user.copyInstance(ctx.instance.attrs.shortHash, { name: uuid() }, count.next)
         })
         it('should copy the instance when part of the same org as the owner', function (done) {
           var count = createCount(2, done)
@@ -239,7 +247,7 @@ describe('POST /instances/:id/actions/copy', function () {
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable')
           require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, 'Runnable')
           primus.expectActionCount('start', 1, count.next)
-          ctx.nonOwner.copyInstance(ctx.otherInstance.id(), expects.success(201, expected, count.next))
+          ctx.nonOwner.copyInstance(ctx.otherInstance.id(), { name: uuid() }, expects.success(201, expected, count.next))
         })
       })
     })
@@ -250,7 +258,7 @@ describe('POST /instances/:id/actions/copy', function () {
       })
       it('should not copy a private instance', function (done) {
         var instance = ctx.nonOwner.newInstance(ctx.instance.attrs.shortHash)
-        instance.copy(expects.errorStatus(403, done))
+        instance.copy({ name: uuid() }, expects.errorStatus(403, done))
       })
       describe('public instance', function () {
         beforeEach(function (done) {
@@ -274,7 +282,7 @@ describe('POST /instances/:id/actions/copy', function () {
           require('../../fixtures/mocks/github/user')(ctx.user)
           var count = createCount(2, done)
           primus.expectActionCount('start', 1, count.next)
-          ctx.instance.copy(expects.success(201, expected, count.next))
+          ctx.instance.copy({ name: uuid() }, expects.success(201, expected, count.next))
         })
       })
     })

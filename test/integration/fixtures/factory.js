@@ -16,6 +16,7 @@ var InfraCodeVersion = require('models/mongo/infra-code-version.js')
 var Instance = require('models/mongo/instance.js')
 var ObjectId = mongoose.Types.ObjectId
 var User = require('models/mongo/user.js')
+var sinon = require('sinon')
 
 var VALID_GITHUB_ID = 1
 var VALID_OBJECT_ID = '507c7f79bcf86cd7994f6c0e'
@@ -37,16 +38,41 @@ var factory = module.exports = {
       }
     }, cb)
   },
-  createInstanceWithProps: function (ownerGithubId, props, cb) {
+  createInstanceWithProps: function (owner, props, cb) {
     if (isFunction(props)) {
       cb = props
       props = null
     }
+    var username = (typeof owner === 'string' || typeof owner === 'number')
+      ? 'owner'
+      : owner.accounts.github.username
+    var ownerGithubId = (typeof owner === 'string' || typeof owner === 'number')
+      ? owner
+      : owner.accounts.github.id
     var count = createCount(1, function () {
       var data = factory.instanceTemplate(ownerGithubId, props)
       Instance.create(data, function (err, instance) {
-        if (err) { return cb(err) }
-        cb(null, instance, props.build, props.cv)
+        if (err) {
+          return cb(err)
+        }
+        if (props.branch) {
+          sinon.stub(instance, 'getMainBranchName').returns('branch1')
+        }
+        var hostname = instance.getElasticHostname(username).toLowerCase()
+        instance.set({
+          elasticHostname: hostname,
+          hostname: hostname
+        }, function (err, instance) {
+          if (err) {
+            return cb(err)
+          }
+          instance.save(function (err, instance) {
+            if (err) {
+              return cb(err)
+            }
+            cb(null, instance, props.build, props.cv)
+          })
+        })
       })
     })
     if (!props.build) {

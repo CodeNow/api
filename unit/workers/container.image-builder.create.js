@@ -18,7 +18,9 @@ var sinon = require('sinon')
 
 var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
+var ContextVersionService = require('models/services/context-version-service')
 var Docker = require('models/apis/docker')
+var errors = require('errors')
 var joi = require('utils/joi')
 var Promise = require('bluebird')
 var TaskFatalError = require('ponos').TaskFatalError
@@ -67,6 +69,8 @@ describe('ContainerImageBuilderCreate', function () {
       .returns(Promise.resolve(mockContainer))
     sinon.stub(Docker, 'getDockerTag')
       .returns(mockDockerTag)
+    sinon.stub(ContextVersionService, 'checkOwnerAllowed')
+      .returns(Promise.resolve())
     done()
   })
 
@@ -79,6 +83,7 @@ describe('ContainerImageBuilderCreate', function () {
     mockContextVersion.populateAsync.restore()
     Docker.prototype.createImageBuilderAsync.restore()
     Docker.getDockerTag.restore()
+    ContextVersionService.checkOwnerAllowed.restore()
     done()
   })
 
@@ -252,6 +257,24 @@ describe('ContainerImageBuilderCreate', function () {
         })
     })
   }) // end 'validations'
+
+  describe('checkAllowed', function () {
+    beforeEach(function (done) {
+      ContextVersionService.checkOwnerAllowed.restore()
+      sinon.stub(ContextVersionService, 'checkOwnerAllowed', function () {
+        return Promise.reject(new errors.OrganizationNotAllowedError('not allowed'))
+      })
+      done()
+    })
+
+    it('should fatally reject if owner is not allowed', function (done) {
+      ContainerImageBuilderCreate(validJob)
+        .asCallback(function (err) {
+          expect(err).to.be.an.instanceOf(TaskFatalError)
+          done()
+        })
+    })
+  }) // end 'checkAllowed'
 
   describe('fetchRequiredModels', function () {
     var expectedCVQuery = {

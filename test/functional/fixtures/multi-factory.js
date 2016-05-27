@@ -7,10 +7,13 @@ var EventEmitter = require('events').EventEmitter
 var createCount = require('callback-count')
 var isFunction = require('101/is-function')
 var isObject = require('101/is-object')
+var Promise = require('bluebird')
 var randStr = require('randomstring').generate
+var sinon = require('sinon')
 var uuid = require('uuid')
 var defaults = require('101/defaults')
 
+var ContextVersionService = require('models/services/context-version-service')
 var MongoUser = require('models/mongo/user')
 var dockerMockEvents = require('./docker-mock-events')
 var generateKey = require('./key-factory')
@@ -200,6 +203,12 @@ module.exports = {
         if (err) { return cb(err) }
         var body = { name: randStr(5) }
         if (ownerId) { body.owner = { github: ownerId } }
+
+        if (!ContextVersionService.checkOwnerAllowed.isSinonProxy) {
+          // Duck it, we never need to restore this stub anyways right?
+          sinon.stub(ContextVersionService, 'checkOwnerAllowed').returns(Promise.resolve())
+        }
+
         var build = user.createBuild(body, function (err) {
           cb(err, build, context, user, [srcContextVersion, srcContext, moderator])
         })
