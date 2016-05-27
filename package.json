@@ -13,7 +13,7 @@
     ]
   },
   "dependencies": {
-    "101": "^1.2.0",
+    "101": "^1.5.0",
     "@runnable/api-client": "^7.0.2",
     "@runnable/hostname": "^3.0.0",
     "@runnable/orion": "^1.0.4",
