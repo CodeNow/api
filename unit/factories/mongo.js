@@ -102,6 +102,7 @@ var factory = module.exports = {
       network: {
         hostIp: '1.1.1.100'
       },
+      hostname: opts.hostname || name + '-staging-owner.' + process.env.USER_CONTENT_DOMAIN,
       env: opts.env || [],
       isolated: opts.isolated,
       isIsolationGroupMaster: opts.isIsolationGroupMaster,

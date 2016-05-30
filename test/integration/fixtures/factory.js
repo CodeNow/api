@@ -275,6 +275,7 @@ var factory = module.exports = {
         github: ownerGithubId,
         username: props.username || ownerGithubId.toString()
       },
+      isNonRepoContainer: props.isNonRepoContainer || true,
       isolated: props.isolated,
       isIsolationGroupMaster: props.isIsolationGroupMaster,
       parent: 'sdf',
@@ -390,6 +391,7 @@ var factory = module.exports = {
       network: {
         hostIp: '1.1.1.100'
       },
+      isNonRepoContainer: true,
       env: opts.env || [],
       isolated: opts.isolated,
       isIsolationGroupMaster: opts.isIsolationGroupMaster,
