@@ -493,7 +493,7 @@ describe('Instance Model Integration Tests', function () {
   })
   function createNewInstance (name, opts) {
     return function (done) {
-      mongoFactory.createInstanceWithProps(ctx.mockSessionUser._id, opts, function (err, instance) {
+      mongoFactory.createInstanceWithProps(ctx.mockSessionUser, opts, function (err, instance) {
         if (err) {
           return done(err)
         }
@@ -534,7 +534,6 @@ describe('Instance Model Integration Tests', function () {
   describe('setDependenciesFromEnvironment', function () {
     var ownerName = 'someowner'
     beforeEach(function (done) {
-      ctx.mockUsername = 'TEST-login'
       ctx.mockSessionUser = {
         _id: 1234,
         findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
@@ -544,7 +543,7 @@ describe('Instance Model Integration Tests', function () {
         accounts: {
           github: {
             id: 1234,
-            username: ctx.mockUsername
+            username: ownerName
           }
         }
       }
@@ -553,13 +552,6 @@ describe('Instance Model Integration Tests', function () {
     })
 
     describe('Testing changes in connections', function () {
-      beforeEach(createNewInstance('hello', {
-        name: 'hello',
-        masterPod: true,
-        env: [
-          'df=adelle-staging-' + ownerName + '.runnableapp.com'
-        ]
-      }))
       beforeEach(createNewInstance('adelle', {
         name: 'adelle',
         masterPod: true
@@ -567,6 +559,13 @@ describe('Instance Model Integration Tests', function () {
       beforeEach(createNewInstance('goodbye', {
         name: 'goodbye',
         masterPod: true
+      }))
+      beforeEach(createNewInstance('hello', {
+        name: 'hello',
+        masterPod: true,
+        env: [
+          'df=adelle-staging-' + ownerName + '.runnableapp.com'
+        ]
       }))
       describe('Masters', function () {
         beforeEach(function (done) {

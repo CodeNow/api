@@ -588,7 +588,7 @@ describe('Instance Model Tests', function () {
   })
 
   describe('setDependenciesFromEnvironment', function () {
-    var ownerName = 'someowner'
+    var ownerName = 'owner'
     var instance
 
     beforeEach(function (done) {
@@ -626,8 +626,14 @@ describe('Instance Model Tests', function () {
       var masterInstances
       beforeEach(function (done) {
         masterInstances = [
-          mongoFactory.createNewInstance('hello', {masterPod: true}),
-          mongoFactory.createNewInstance('adelle', {masterPod: true})
+          mongoFactory.createNewInstance('hello', {
+            masterPod: true,
+            hostname: 'hello-staging-' + ownerName + '.runnableapp.com'
+          }),
+          mongoFactory.createNewInstance('adelle', {
+            masterPod: true,
+            hostname: 'hello-staging-' + ownerName + '.runnableapp.com'
+          })
         ]
         sinon.stub(Instance, 'find').yieldsAsync(null, masterInstances)
         sinon.stub(instance, 'addDependency').yieldsAsync()
@@ -887,7 +893,9 @@ describe('Instance Model Tests', function () {
       })
       describe('Working with both envs and FnR', function () {
         it('should remove the existing one, and add the new one', function (done) {
-          masterInstances.push(mongoFactory.createNewInstance('cheese', {masterPod: true}))   // 2
+          masterInstances.push(mongoFactory.createNewInstance('cheese', {
+            masterPod: true
+          }))   // 2
           masterInstances.push(mongoFactory.createNewInstance('chicken', {masterPod: true}))  // 3
           masterInstances.push(mongoFactory.createNewInstance('beef', {masterPod: true}))     // 4
           masterInstances.push(mongoFactory.createNewInstance('potatoes', {masterPod: true})) // 5
