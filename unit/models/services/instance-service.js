@@ -70,10 +70,7 @@ describe('InstanceService', function () {
           appCodeVersions: [
             {
               lowerBranch: 'master',
-              additionalRepo: false,
-              branch: 'branchName',
-              repo: 'superRepoName',
-              commitHash: '46409ea4999d1472844e36640375962a0fa1f3b1'
+              additionalRepo: false
             }
           ]
         }
