@@ -2468,4 +2468,83 @@ describe('Instance Model Tests ' + moduleName, function () {
       })
     })
   })
+
+  describe('findIsolationMaster', function () {
+    var id = '571b39b9d35173300021667d'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOne.restore()
+      done()
+    })
+
+    it('should query the database', function (done) {
+      Instance.findIsolationMaster(id, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(
+          Instance.findOne,
+          {
+            isolated: id,
+            isIsolationGroupMaster: true
+          }
+        )
+        done()
+      })
+    })
+
+    it('should return any errors', function (done) {
+      var dbErr = new Error('MongoErr')
+      Instance.findOne.yieldsAsync(dbErr)
+      Instance.findIsolationMaster(id, function (err) {
+        expect(err).to.exist()
+        expect(err).to.equal(dbErr)
+        done()
+      })
+    })
+  })
+
+  describe('findIsolationChildrenWithRepo', function () {
+    var id = '571b39b9d35173300021667d'
+    var repo = 'repoName'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'find').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.find.restore()
+      done()
+    })
+
+    it('should query the database', function (done) {
+      Instance.findIsolationChildrenWithRepo(id, repo, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(
+          Instance.find,
+          {
+            isolated: id,
+            isIsolationGroupMaster: { $ne: true },
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          }
+        )
+        done()
+      })
+    })
+
+    it('should throw any database errors', function (done) {
+      var dbErr = new Error('MongoErr')
+      Instance.find.yieldsAsync(dbErr)
+      Instance.findIsolationChildrenWithRepo(id, repo, function (err) {
+        expect(err).to.exist()
+        expect(err).to.equal(dbErr)
+        done()
+      })
+    })
+  })
 })
