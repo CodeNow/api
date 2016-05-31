@@ -2713,7 +2713,7 @@ describe('InstanceService', function () {
       })
     })
     //
-    //describe('errors', function () {
+    // describe('errors', function () {
     //  var validBody = {
     //    name: 'asdasdasd',
     //    build: '507f1f77bcf86cd799439011'
@@ -2845,6 +2845,6 @@ describe('InstanceService', function () {
     //        .asCallback(done)
     //    })
     //  })
-    //})
+    // })
   })
 })
