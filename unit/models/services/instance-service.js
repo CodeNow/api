@@ -16,7 +16,6 @@ var Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
 
 var Build = require('models/mongo/build')
-var BuildService = require('models/services/build-service')
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var InstanceService = require('models/services/instance-service')
