@@ -3,10 +3,9 @@
 /**
  * @module unit/models/services/instance-service
  */
-var assign = require('101/assign')
 var clone = require('101/clone')
 var put = require('101/put')
-var keypather = require('keypather')()
+// var keypather = require('keypather')()
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var sinon = require('sinon')
@@ -50,7 +49,7 @@ describe('InstanceService', function () {
     done()
   })
   //
-  //describe('updateInstanceBuild', function () {
+  // describe('updateInstanceBuild', function () {
   //  var instance
   //  beforeEach(function (done) {
   //    instance = {
@@ -271,7 +270,7 @@ describe('InstanceService', function () {
   //        done()
   //      })
   //  })
-  //})
+  // })
 
   describe('#deleteInstanceContainer', function () {
     beforeEach(function (done) {
