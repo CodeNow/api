@@ -16,6 +16,7 @@ var Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
 
 var Build = require('models/mongo/build')
+var BuildService = require('models/services/build-service')
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var InstanceService = require('models/services/instance-service')
@@ -69,7 +70,10 @@ describe('InstanceService', function () {
           appCodeVersions: [
             {
               lowerBranch: 'master',
-              additionalRepo: false
+              additionalRepo: false,
+              branch: 'branchName',
+              repo: 'superRepoName',
+              commitHash: '46409ea4999d1472844e36640375962a0fa1f3b1'
             }
           ]
         }
@@ -2356,6 +2360,197 @@ describe('InstanceService', function () {
       })
     })
   })
+
+  describe('updateInstanceCommitToNewCommit', function () {
+    var instance
+    var build
+    var contextVersion
+    var commit = 'b11410762bf274002fc7f147475525f20ccda91e'
+    var sessionUser
+    var sessionUserId = '234'
+    var branchName = 'branchName'
+    var repoName = 'superReponame'
+    var contextVersionId = 'context_version_id'
+    beforeEach(function (done) {
+      instance = {
+        _id: 'instance_id_1',
+        name: 'hellonode',
+        contextVersion: {
+          _id: contextVersionId,
+          appCodeVersions: [
+            {
+              branch: branchName,
+              repo: repoName,
+              commitHash: '46409ea4999d1472844e36640375962a0fa1f3b1'
+            }
+          ]
+        }
+      }
+      build = {
+        _id: 'build_id_1',
+        successful: true,
+        contextVersions: [
+          contextVersionId
+        ]
+      }
+      contextVersion = {
+        id: contextVersionId,
+        toJSON: function () {
+          return this
+        }
+      }
+      sessionUser = {
+        accounts: {
+          github: {
+            id: sessionUserId
+          }
+        }
+      }
+      sinon.stub(BuildService, 'createAndBuildContextVersion').resolves({
+        build: build,
+        contextVersion: {}
+      })
+      sinon.stub(ContextVersion, 'findByIdAsync').resolves(contextVersion)
+      sinon.stub(InstanceService, 'updateInstanceBuild').resolves(instance)
+      sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      BuildService.createAndBuildContextVersion.restore()
+      ContextVersion.findByIdAsync.restore()
+      InstanceService.updateInstanceBuild.restore()
+      InstanceService.emitInstanceUpdate.restore()
+      done()
+    })
+
+    describe('Errors', function () {
+      it('should throw an error if there is no repo or branch', function (done) {
+        instance.contextVersion.appCodeVersions[0].repo = undefined
+        InstanceService.updateInstanceCommitToNewCommit(instance, commit, sessionUser)
+          .asCallback(function (err, res) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/contextversion has no repo.*branch/i)
+            done()
+          })
+      })
+
+      it('should throw an error if there is no new build or new contextVersion', function (done) {
+        BuildService.createAndBuildContextVersion.resolves({
+          build: null,
+          contextVersion: null
+        })
+        InstanceService.updateInstanceCommitToNewCommit(instance, commit, sessionUser)
+          .asCallback(function (err, res) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/build and context version id required/i)
+            done()
+          })
+      })
+
+      it('should throw an error if it fails to create the build and contextVersion', function (done) {
+        var err = new Error('Youre an error')
+        BuildService.createAndBuildContextVersion.rejects(err)
+        InstanceService.updateInstanceCommitToNewCommit(instance, commit, sessionUser)
+          .asCallback(function (err, res) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            done()
+          })
+      })
+
+      it('should throw an error if it fails to fetch the contextVersion', function (done) {
+        var err = new Error('Youre an error')
+        ContextVersion.findByIdAsync.rejects(err)
+        InstanceService.updateInstanceCommitToNewCommit(instance, commit, sessionUser)
+          .asCallback(function (err, res) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            done()
+          })
+      })
+
+      it('should throw an error if it fails to update the instance build', function (done) {
+        var err = new Error('Youre an error')
+        InstanceService.updateInstanceBuild.rejects(err)
+        InstanceService.updateInstanceCommitToNewCommit(instance, commit, sessionUser)
+          .asCallback(function (err, res) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            done()
+          })
+      })
+    })
+
+    describe('Behaviors', function () {
+      it('should create and build the context version', function (done) {
+        InstanceService.updateInstanceCommitToNewCommit(instance, commit, sessionUser)
+          .asCallback(function (err, res) {
+            expect(err).to.not.exist()
+            sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)
+            sinon.assert.calledWithExactly(
+              BuildService.createAndBuildContextVersion,
+              instance,
+              {
+                repo: repoName,
+                branch: branchName,
+                commit: commit,
+                user: { id: sessionUserId }
+              },
+              'isolate'
+            )
+            done()
+          })
+      })
+
+      it('should find the context version by id', function (done) {
+        InstanceService.updateInstanceCommitToNewCommit(instance, commit, sessionUser)
+          .asCallback(function (err, res) {
+            expect(err).to.not.exist()
+            sinon.assert.calledOnce(ContextVersion.findByIdAsync)
+            sinon.assert.calledWith(
+              ContextVersion.findByIdAsync,
+              contextVersionId
+            )
+            done()
+          })
+      })
+
+      it('should update the instance build', function (done) {
+        InstanceService.updateInstanceCommitToNewCommit(instance, commit, sessionUser)
+          .asCallback(function (err, res) {
+            expect(err).to.not.exist()
+            sinon.assert.calledOnce(InstanceService.updateInstanceBuild)
+            sinon.assert.calledWithExactly(
+              InstanceService.updateInstanceBuild,
+              instance,
+              {
+                build: build._id,
+                contextVersion: contextVersion
+              },
+              sessionUserId
+            )
+            done()
+          })
+      })
+
+      it('should emit and instance update', function (done) {
+        InstanceService.updateInstanceCommitToNewCommit(instance, commit, sessionUser)
+          .asCallback(function (err, res) {
+            expect(err).to.not.exist()
+            sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
+            sinon.assert.calledWithExactly(
+              InstanceService.emitInstanceUpdate,
+              instance,
+              sessionUserId,
+              'patch',
+              true
+            )
+            done()
+          })
+      })
+    })
+  })
+
   describe('validateBody', function () {
     var ctx = {}
     ctx.mockSessionUser = {
