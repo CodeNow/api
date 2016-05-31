@@ -51,7 +51,7 @@ describe('Settings Model Integration Tests', function () {
     })
 
     it("should be possible to find settings by owner's github id", function (done) {
-      Settings.findOneAsync({ 'owner.github': savedSettings.owner.github})
+      Settings.findOneAsync({ 'owner.github': savedSettings.owner.github })
       .asCallback(function (err, settings) {
         if (err) { return done(err) }
         expect(String(settings._id)).to.equal(String(savedSettings._id))
