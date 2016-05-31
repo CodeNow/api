@@ -4,23 +4,32 @@
 'use strict'
 
 var Lab = require('lab')
-var path = require('path')
 
 var lab = exports.lab = Lab.script()
 var Faker = require('faker')
 
 var describe = lab.describe
 var before = lab.before
+var after = lab.after
 var afterEach = lab.afterEach
 
 var validation = require('../../../fixtures/validation')(lab)
 
+var mongooseControl = require('models/mongo/mongoose-control.js')
+
 var TeammateInvitation = require('models/mongo/teammate-invitation')
 
-var moduleName = path.relative(process.cwd(), __filename)
-describe('TeammateInvitation Schema: ' + moduleName, function () {
-  before(require('../../../fixtures/mongo').connect)
-  afterEach(require('../../../../test/functional/fixtures/clean-mongo').removeEverything)
+describe('TeammateInvitation Schema Integration Tests', function () {
+  before(mongooseControl.start)
+
+  afterEach(function (done) {
+    TeammateInvitation.remove({}, done)
+  })
+
+  after(function (done) {
+    TeammateInvitation.remove({}, done)
+  })
+  after(mongooseControl.stop)
 
   function createNewInvite () {
     return new TeammateInvitation({

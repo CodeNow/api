@@ -11,7 +11,6 @@ var expect = Code.expect
 
 var api = require('../../fixtures/api-control')
 var multi = require('../../fixtures/multi-factory')
-var typesTests = require('../../fixtures/types-test-util')
 
 describe('400 POST /settings', function () {
   var ctx = {}
@@ -76,31 +75,6 @@ describe('400 POST /settings', function () {
             expect(err.data.message).to.contain('setting')
             done()
           })
-        })
-      })
-    })
-
-    describe('invalid types', function () {
-      var def = {
-        action: 'create a setting',
-        requiredParams: [
-          {
-            name: 'owner',
-            type: 'object',
-            keys: [
-              {
-                name: 'github',
-                type: 'number'
-              }
-            ]
-          }
-        ]
-      }
-
-      typesTests.makeTestFromDef(def, ctx, lab, function (body, cb) {
-        multi.createUser(function (err, runnable) {
-          if (err) { return cb(err) }
-          runnable.createSetting({json: body}, cb)
         })
       })
     })
