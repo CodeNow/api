@@ -18,7 +18,6 @@ var expect = Code.expect
 var async = require('async')
 var createCount = require('callback-count')
 var equals = require('101/equals')
-var exists = require('101/exists')
 var extend = require('extend')
 var nock = require('nock')
 var noop = require('101/noop')
@@ -210,7 +209,7 @@ describe('Instance - PATCH /instances/:id', function () {
                 // this represents a new docker container! :)
                 // 'containers[0].dockerContainer': not(equals(ctx.instance.json().containers[0].dockerContainer))
                 }
-                var oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer
+                var oldDockerContainer = ctx.instance.attrs.container
                 require('../../fixtures/mocks/github/user')(ctx.user)
                 require('../../fixtures/mocks/github/user')(ctx.user)
                 require('../../fixtures/mocks/github/user')(ctx.user)
@@ -453,13 +452,10 @@ describe('Instance - PATCH /instances/:id', function () {
               require('../../fixtures/mocks/github/user')(ctx.user)
               require('../../fixtures/mocks/github/user')(ctx.user)
 
-              var oldCvId = ctx.instance.contextVersion.id()
               var expected = {
                 // Since the containers are not removed until the otherBuild has finished, we should
                 // still see them running
                 // 'containers[0].inspect.State.Running': true,
-                'lastBuiltSimpleContextVersion.id': oldCvId,
-                'lastBuiltSimpleContextVersion.created': exists,
                 'build._id': ctx.otherBuild.id()
               }
 

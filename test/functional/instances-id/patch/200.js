@@ -138,13 +138,7 @@ describe('200 PATCH /instances/:id', function () {
         sinon.spy(InstanceService, 'deleteForkedInstancesByRepoAndBranch')
         // Original patch from the update route, then the one at the end of the on-build-die
         primus.expectAction('start', {}, function () {
-          expect(InstanceService.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1)
-          var acv = ctx.cv.appCodeVersions.models[0].attrs
-          var args = InstanceService.deleteForkedInstancesByRepoAndBranch.getCall(0).args
-          expect(args[0].toString()).to.equal(ctx.instance.id().toString())
-          expect(args[1]).to.equal(acv.lowerRepo)
-          expect(args[2]).to.equal(acv.lowerBranch)
-          InstanceService.deleteForkedInstancesByRepoAndBranch.restore()
+          expect(InstanceService.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(0)
           count.next()
         })
         ctx.instance.update({
