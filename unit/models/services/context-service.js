@@ -156,12 +156,12 @@ describe('ContextService Unit Test', function () {
         }
       }
       ContextService.createNew(ctx.sessionUser, clone(payload))
-      .then(function () {
+      .tap(function () {
         sinon.assert.calledOnce(PermisionService.isOwnerOf)
         sinon.assert.calledWith(PermisionService.isOwnerOf, ctx.sessionUser, payload)
         done()
       })
-      .catch(done)
+      .asCallback(done)
     })
 
     it('should use sessionUser data for owner if not supplied', function (done) {
@@ -169,7 +169,7 @@ describe('ContextService Unit Test', function () {
         name: 'code'
       }
       ContextService.createNew(ctx.sessionUser, clone(payload))
-      .then(function () {
+      .tap(function () {
         sinon.assert.calledOnce(PermisionService.isOwnerOf)
         payload.owner = {
           github: ctx.sessionUser.accounts.github.id
@@ -177,7 +177,7 @@ describe('ContextService Unit Test', function () {
         sinon.assert.calledWith(PermisionService.isOwnerOf, ctx.sessionUser, payload)
         done()
       })
-      .catch(done)
+      .asCallback(done)
     })
 
     it('should call mongo with correct payload', function (done) {
@@ -185,15 +185,14 @@ describe('ContextService Unit Test', function () {
         name: 'code'
       }
       ContextService.createNew(ctx.sessionUser, clone(payload))
-      .then(function () {
+      .tap(function () {
         sinon.assert.calledOnce(Context.createAsync)
         payload.owner = {
           github: ctx.sessionUser.accounts.github.id
         }
         sinon.assert.calledWith(Context.createAsync, payload)
-        done()
       })
-      .catch(done)
+      .asCallback(done)
     })
 
     it('should not include isSource for non moderator', function (done) {
@@ -202,16 +201,15 @@ describe('ContextService Unit Test', function () {
         isSource: true
       }
       ContextService.createNew(ctx.sessionUser, clone(payload))
-      .then(function () {
+      .tap(function () {
         sinon.assert.calledOnce(Context.createAsync)
         payload.owner = {
           github: ctx.sessionUser.accounts.github.id
         }
         delete payload.isSource
         sinon.assert.calledWith(Context.createAsync, payload)
-        done()
       })
-      .catch(done)
+      .asCallback(done)
     })
 
     it('should include isSource for moderator', function (done) {
@@ -222,15 +220,30 @@ describe('ContextService Unit Test', function () {
       var sessionUser = clone(ctx.sessionUser)
       sessionUser.isModerator = true
       ContextService.createNew(sessionUser, clone(payload))
-      .then(function () {
+      .tap(function () {
         sinon.assert.calledOnce(Context.createAsync)
         payload.owner = {
           github: ctx.sessionUser.accounts.github.id
         }
         sinon.assert.calledWith(Context.createAsync, payload)
-        done()
       })
-      .catch(done)
+      .asCallback(done)
+    })
+
+    it('should call functions in order', function (done) {
+      var payload = {
+        name: 'code',
+        owner: {
+          github: 2
+        }
+      }
+      ContextService.createNew(ctx.sessionUser, clone(payload))
+      .tap(function () {
+        sinon.assert.callOrder(
+          PermisionService.isOwnerOf,
+          Context.createAsync)
+      })
+      .asCallback(done)
     })
   })
 
