@@ -12,7 +12,6 @@ var sinon = require('sinon')
 var keypather = require('keypather')()
 
 var Neo4j = require('runna4j')
-var async = require('async')
 var error = require('error')
 var mongoose = require('mongoose')
 var assign = require('101/assign')
@@ -958,31 +957,6 @@ describe('Instance Model Tests', function () {
     })
   })
 
-  describe('addDependency', function () {
-    var instance = mongoFactory.createNewInstance('goooush')
-    var dependant = mongoFactory.createNewInstance('splooosh')
-
-    beforeEach(function (done) {
-      sinon.spy(instance, 'invalidateContainerDNS')
-      sinon.stub(async, 'series').yieldsAsync()
-      done()
-    })
-
-    afterEach(function (done) {
-      instance.invalidateContainerDNS.restore()
-      async.series.restore()
-      done()
-    })
-
-    it('should invalidate dns cache entries', function (done) {
-      instance.addDependency(dependant, 'wooo.com', function (err) {
-        if (err) { done(err) }
-        expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
-        done()
-      })
-    })
-  })
-
   describe('removeDependency', function () {
     var instance = mongoFactory.createNewInstance('boooush')
     var dependant = mongoFactory.createNewInstance('mighty')
@@ -1752,6 +1726,85 @@ describe('Instance Model Tests', function () {
       Instance.markAsStopping('some-id', 'container-id', function (err, instance) {
         expect(err).to.equal(mongoError)
         sinon.assert.calledWith(Instance.findOneAndUpdate, query, update)
+        done()
+      })
+    })
+  })
+
+  describe('findIsolationMaster', function () {
+    var id = '571b39b9d35173300021667d'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOne').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findOne.restore()
+      done()
+    })
+
+    it('should query the database', function (done) {
+      Instance.findIsolationMaster(id, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(
+          Instance.findOne,
+          {
+            isolated: id,
+            isIsolationGroupMaster: true
+          }
+        )
+        done()
+      })
+    })
+
+    it('should return any errors', function (done) {
+      var dbErr = new Error('MongoErr')
+      Instance.findOne.yieldsAsync(dbErr)
+      Instance.findIsolationMaster(id, function (err) {
+        expect(err).to.exist()
+        expect(err).to.equal(dbErr)
+        done()
+      })
+    })
+  })
+
+  describe('findIsolationChildrenWithRepo', function () {
+    var id = '571b39b9d35173300021667d'
+    var repo = 'repoName'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'find').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.find.restore()
+      done()
+    })
+
+    it('should query the database', function (done) {
+      Instance.findIsolationChildrenWithRepo(id, repo, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(
+          Instance.find,
+          {
+            isolated: id,
+            isIsolationGroupMaster: { $ne: true },
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          }
+        )
+        done()
+      })
+    })
+
+    it('should throw any database errors', function (done) {
+      var dbErr = new Error('MongoErr')
+      Instance.find.yieldsAsync(dbErr)
+      Instance.findIsolationChildrenWithRepo(id, repo, function (err) {
+        expect(err).to.exist()
+        expect(err).to.equal(dbErr)
         done()
       })
     })
