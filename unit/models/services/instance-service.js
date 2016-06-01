@@ -1747,6 +1747,19 @@ describe('InstanceService', function () {
     })
   })
 
+  describe('_saveInstanceAndEmitUpdate', function () {
+    beforeEach(function (done) {
+      sinon.stub(rabbitMQ, 'instanceDeployed')
+      sinon.stub(rabbitMQ, 'createInstanceContainer')
+      done()
+    })
+    afterEach(function (done) {
+      rabbitMQ.instanceDeployed.restore()
+      rabbitMQ.createInstanceContainer.restore()
+      done()
+    })
+  })
+
   describe('createInstance', function () {
     var ctx = {}
     beforeEach(function (done) {
