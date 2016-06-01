@@ -2712,139 +2712,100 @@ describe('InstanceService', function () {
         })
       })
     })
-    //
-    // describe('errors', function () {
-    //  var validBody = {
-    //    name: 'asdasdasd',
-    //    build: '507f1f77bcf86cd799439011'
-    //  }
-    //  var error = new Error('oh shit')
-    //  describe('fetch build errors', function () {
-    //    afterEach(function (done) {
-    //      Build.findByIdAsync.restore()
-    //      done()
-    //    })
-    //    it('should throw error when the build fails to fetch', function (done) {
-    //      sinon.stub(Build, 'findByIdAsync').rejects(error)
-    //      InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
-    //        .catch(function (err) {
-    //          expect(err.message).to.equal(error.message)
-    //        })
-    //        .asCallback(done)
-    //    })
-    //    it('should throw error when the build fetch doesn\'t return anythin', function (done) {
-    //      sinon.stub(Build, 'findByIdAsync').resolves()
-    //      InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
-    //        .catch(function (err) {
-    //          expect(err.message).to.equal('build not found')
-    //        })
-    //        .asCallback(done)
-    //    })
-    //  })
-    //  describe('fetch cv errors', function () {
-    //    beforeEach(function (done) {
-    //      sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
-    //      sinon.stub(InstanceCounter, 'nextHashAsync').resolves('dsafsd')
-    //      sinon.stub(Instance, 'createAsync').resolves(ctx.mockInstance)
-    //      sinon.stub(ContextVersion, 'findByIdAsync')
-    //      done()
-    //    })
-    //    afterEach(function (done) {
-    //      Build.findByIdAsync.restore()
-    //      ContextVersion.findByIdAsync.restore()
-    //      InstanceCounter.nextHashAsync.restore()
-    //      Instance.createAsync.restore()
-    //      done()
-    //    })
-    //    describe('first fetch', function () {
-    //      it('should throw error when the cv fetch fails', function (done) {
-    //        ContextVersion.findByIdAsync.onFirstCall().rejects(error)
-    //        InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
-    //          .catch(function (err) {
-    //            expect(err.message).to.equal(error.message)
-    //          })
-    //          .asCallback(done)
-    //      })
-    //      it('should throw error when the cv fetch returns nothing', function (done) {
-    //        ContextVersion.findByIdAsync.onFirstCall().resolves()
-    //        InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
-    //          .catch(function (err) {
-    //            expect(err.message).to.equal('contextVersion not found')
-    //          })
-    //          .asCallback(done)
-    //      })
-    //      it('should throw error when the cv hasn\'t started building', function (done) {
-    //        ContextVersion.findByIdAsync.onFirstCall().resolves(ctx.unstartedMockCv)
-    //        InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
-    //          .catch(function (err) {
-    //            expect(err.message).to.equal('Cannot attach a build to an instance with context ' +
-    //              'versions that have not started building')
-    //          })
-    //          .asCallback(done)
-    //      })
-    //    })
-    //    describe('second fetch', function () {
-    //      beforeEach(function (done) {
-    //        ContextVersion.findByIdAsync.onFirstCall().resolves(ctx.mockCv)
-    //        done()
-    //      })
-    //      it('should throw error when the cv fetch fails', function (done) {
-    //        ContextVersion.findByIdAsync.onSecondCall().rejects(error)
-    //        InstanceService.createInstance(validBody, ctx.mockSessionUser)
-    //          .catch(function (err) {
-    //            expect(err.message).to.equal(error.message)
-    //          })
-    //          .asCallback(done)
-    //      })
-    //      it('should throw error when the cv fetch returns nothing', function (done) {
-    //        ContextVersion.findByIdAsync.onSecondCall().resolves()
-    //        InstanceService.createInstance(validBody, ctx.mockSessionUser)
-    //          .catch(function (err) {
-    //            expect(err.message).to.equal('contextVersion not found the second time')
-    //          })
-    //          .asCallback(done)
-    //      })
-    //    })
-    //  })
-    //  describe('instance errors', function () {
-    //    beforeEach(function (done) {
-    //      sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
-    //      sinon.stub(Instance, 'createAsync').resolves(ctx.mockInstance)
-    //      sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
-    //      done()
-    //    })
-    //    afterEach(function (done) {
-    //      Build.findByIdAsync.restore()
-    //      ContextVersion.findByIdAsync.restore()
-    //      InstanceCounter.nextHashAsync.restore()
-    //      Instance.createAsync.restore()
-    //      done()
-    //    })
-    //    it('should throw error when create fails', function (done) {
-    //      Instance.createAsync.rejects(error)
-    //      InstanceService.createInstance(validBody, ctx.mockSessionUser)
-    //        .catch(function (err) {
-    //          expect(err.message).to.equal(error.message)
-    //        })
-    //        .asCallback(done)
-    //    })
-    //    it('should throw error when set fails', function (done) {
-    //      ctx.mockInstance.setAsync = sinon.stub().rejects(error)
-    //      InstanceService.createInstance(validBody, ctx.mockSessionUser)
-    //        .catch(function (err) {
-    //          expect(err.message).to.equal(error.message)
-    //        })
-    //        .asCallback(done)
-    //    })
-    //    it('should throw error when save fails', function (done) {
-    //      ctx.mockInstance.saveAsync = sinon.stub().rejects(error)
-    //      InstanceService.createInstance(validBody, ctx.mockSessionUser)
-    //        .catch(function (err) {
-    //          expect(err.message).to.equal(error.message)
-    //        })
-    //        .asCallback(done)
-    //    })
-    //  })
-    // })
+
+    describe('errors', function () {
+      var validBody = {
+        build: '507f1f77bcf86cd799439011'
+      }
+      var error = new Error('oh shit')
+      describe('fetch build errors', function () {
+        afterEach(function (done) {
+          Build.findByIdAsync.restore()
+          done()
+        })
+        it('should throw error when the build fails to fetch', function (done) {
+          sinon.stub(Build, 'findByIdAsync').rejects(error)
+          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal(error.message)
+            })
+            .asCallback(done)
+        })
+        it('should throw error when the build fetch doesn\'t return anything', function (done) {
+          sinon.stub(Build, 'findByIdAsync').resolves()
+          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal('build not found')
+            })
+            .asCallback(done)
+        })
+      })
+      describe('fetch cv errors', function () {
+        beforeEach(function (done) {
+          sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
+          sinon.stub(ContextVersion, 'findByIdAsync')
+          done()
+        })
+        afterEach(function (done) {
+          Build.findByIdAsync.restore()
+          ContextVersion.findByIdAsync.restore()
+          done()
+        })
+        it('should throw error when the cv fetch fails', function (done) {
+          ContextVersion.findByIdAsync.rejects(error)
+          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal(error.message)
+            })
+            .asCallback(done)
+        })
+        it('should throw error when the cv fetch returns nothing', function (done) {
+          ContextVersion.findByIdAsync.resolves()
+          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal('contextVersion not found')
+            })
+            .asCallback(done)
+        })
+        it('should throw error when the cv hasn\'t started building', function (done) {
+          ContextVersion.findByIdAsync.resolves(ctx.unstartedMockCv)
+          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.contains('Cannot attach a build to an instance with context ' +
+                'versions that have not started building')
+            })
+            .asCallback(done)
+        })
+      })
+      describe('instance errors', function () {
+        beforeEach(function (done) {
+          sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
+          sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
+          done()
+        })
+        afterEach(function (done) {
+          Build.findByIdAsync.restore()
+          ContextVersion.findByIdAsync.restore()
+          done()
+        })
+        it('should throw error when set fails', function (done) {
+          ctx.mockInstance.setAsync = sinon.stub().rejects(error)
+          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal(error.message)
+            })
+            .asCallback(done)
+        })
+        it('should throw error when save fails', function (done) {
+          ctx.mockInstance.setAsync = sinon.stub().resolves()
+          ctx.mockInstance.saveAsync = sinon.stub().rejects(error)
+          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
+            .catch(function (err) {
+              expect(err.message).to.equal(error.message)
+            })
+            .asCallback(done)
+        })
+      })
+    })
   })
 })
