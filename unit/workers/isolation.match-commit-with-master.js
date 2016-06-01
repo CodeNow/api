@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/instance.container.delete
+ * @module lib/workers/isolation.match-commit-with-master
  */
 'use strict'
 
