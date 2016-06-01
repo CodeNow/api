@@ -159,7 +159,6 @@ describe('ContextService Unit Test', function () {
       .tap(function () {
         sinon.assert.calledOnce(PermisionService.isOwnerOf)
         sinon.assert.calledWith(PermisionService.isOwnerOf, ctx.sessionUser, payload)
-        done()
       })
       .asCallback(done)
     })
