@@ -1,5 +1,5 @@
 /**
- * @module lib/workers/isolation.match-commit-with-master
+ * @module unit/workers/isolation.match-commit-with-master
  */
 'use strict'
 
