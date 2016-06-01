@@ -12,7 +12,6 @@ var sinon = require('sinon')
 var keypather = require('keypather')()
 
 var Neo4j = require('runna4j')
-var async = require('async')
 var error = require('error')
 var mongoose = require('mongoose')
 var assign = require('101/assign')
@@ -939,31 +938,6 @@ describe('Instance Model Tests', function () {
             done()
           })
         })
-      })
-    })
-  })
-
-  describe('addDependency', function () {
-    var instance = mongoFactory.createNewInstance('goooush')
-    var dependant = mongoFactory.createNewInstance('splooosh')
-
-    beforeEach(function (done) {
-      sinon.spy(instance, 'invalidateContainerDNS')
-      sinon.stub(async, 'series').yieldsAsync()
-      done()
-    })
-
-    afterEach(function (done) {
-      instance.invalidateContainerDNS.restore()
-      async.series.restore()
-      done()
-    })
-
-    it('should invalidate dns cache entries', function (done) {
-      instance.addDependency(dependant, 'wooo.com', function (err) {
-        if (err) { done(err) }
-        expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
-        done()
       })
     })
   })
