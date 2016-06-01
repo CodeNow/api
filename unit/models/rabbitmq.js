@@ -845,7 +845,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
   }) // end publishDockRemoved
 
-  describe('updateContainerMemory', function () {
+  describe('clearContainerMemory', function () {
     beforeEach(function (done) {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
       done()
@@ -858,32 +858,24 @@ describe('RabbitMQ Model: ' + moduleName, function () {
 
     it('should publish the job with the correct payload', function (done) {
       var data = {
-        containerId: 'abcd',
-        memoryInBytes: 12345
+        containerId: 'abcd'
       }
-      ctx.rabbitMQ.updateContainerMemory(data)
+      ctx.rabbitMQ.clearContainerMemory(data)
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
       sinon.assert.calledWith(
         ctx.rabbitMQ.hermesClient.publish,
-        'container.resource.update',
+        'container.resource.clear',
         data)
       done()
     })
 
-    it('should throw an error when host is missing', function (done) {
-      var data = { containerId: 'abcd' }
-      expect(ctx.rabbitMQ.updateContainerMemory.bind(ctx.rabbitMQ, data))
+    it('should throw an error when containerId is missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.clearContainerMemory.bind(ctx.rabbitMQ, data))
         .to.throw(Error, /^Validation failed/)
       done()
     })
-
-    it('should throw an error when githubId is missing', function (done) {
-      var data = { memoryInBytes: 12345 }
-      expect(ctx.rabbitMQ.updateContainerMemory.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
-    })
-  }) // end updateContainerMemory
+  }) // end clearContainerMemory
 
   describe('killInstanceContainer', function () {
     beforeEach(function (done) {

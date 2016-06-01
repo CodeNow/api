@@ -645,46 +645,23 @@ describe('ContextVersion ModelIntegration Tests', function () {
 
     describe('getUserContainerMemoryLimit', function () {
       var testCv
+      var testMem = 123456789
       beforeEach(function (done) {
-        testCv = new ContextVersion({
-          appCodeVersions: [{test: 1}]
-        })
-        sinon.stub(ContextVersion, 'getMainAppCodeVersion')
-        done()
-      })
-
-      afterEach(function (done) {
-        ContextVersion.getMainAppCodeVersion.restore()
+        testCv = new ContextVersion()
         done()
       })
 
       it('should get overriden memory limit', function (done) {
-        testCv.userContainerMemoryInBytes = 512000002
+        testCv.userContainerMemoryInBytes = testMem
         var out = testCv.getUserContainerMemoryLimit()
-        expect(out).to.equal(testCv.userContainerMemoryInBytes)
-        sinon.assert.notCalled(ContextVersion.getMainAppCodeVersion)
+        expect(out).to.equal(testMem)
         done()
       })
 
-      it('should get repo memory limit', function (done) {
-        ContextVersion.getMainAppCodeVersion.returns({some: 'thing'})
-
+      it('should get soft memory limit', function (done) {
         var out = testCv.getUserContainerMemoryLimit()
 
-        expect(out).to.equal(process.env.CONTAINER_REPO_MEMORY_LIMIT_BYTES)
-        sinon.assert.calledOnce(ContextVersion.getMainAppCodeVersion)
-        sinon.assert.calledWith(ContextVersion.getMainAppCodeVersion, testCv.appCodeVersions)
-        done()
-      })
-
-      it('should get non-repo memory limit', function (done) {
-        ContextVersion.getMainAppCodeVersion.returns(null)
-
-        var out = testCv.getUserContainerMemoryLimit()
-
-        expect(out).to.equal(process.env.CONTAINER_NON_REPO_MEMORY_LIMIT_BYTES)
-        sinon.assert.calledOnce(ContextVersion.getMainAppCodeVersion)
-        sinon.assert.calledWith(ContextVersion.getMainAppCodeVersion, testCv.appCodeVersions)
+        expect(out).to.equal(process.env.CONTAINER_SOFT_MEMORY_LIMIT_BYTES)
         done()
       })
     }) // end getUserContainerMemoryLimit
