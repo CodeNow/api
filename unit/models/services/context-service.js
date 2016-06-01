@@ -174,7 +174,6 @@ describe('ContextService Unit Test', function () {
           github: ctx.sessionUser.accounts.github.id
         }
         sinon.assert.calledWith(PermisionService.isOwnerOf, ctx.sessionUser, payload)
-        done()
       })
       .asCallback(done)
     })
