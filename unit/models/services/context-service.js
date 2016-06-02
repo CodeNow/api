@@ -108,7 +108,9 @@ describe('ContextService Unit Test', function () {
         name: 'code',
         isSource: {}
       }
-      ContextService.createNew(ctx.sessionUser, payload)
+      var sessionUser = clone(ctx.sessionUser)
+      sessionUser.isModerator = true
+      ContextService.createNew(sessionUser, payload)
       .then(function () {
         done(new Error('Should failed'))
       })
@@ -189,6 +191,24 @@ describe('ContextService Unit Test', function () {
           github: ctx.sessionUser.accounts.github.id
         }
         sinon.assert.calledWith(Context.createAsync, payload)
+      })
+      .asCallback(done)
+    })
+
+    it('should ignore not whitelisted fields', function (done) {
+      var payload = {
+        name: 'code',
+        some: 'field',
+        owner: {
+          github: 2
+        }
+      }
+      ContextService.createNew(ctx.sessionUser, clone(payload))
+      .tap(function () {
+        var finalPayload = clone(payload)
+        delete finalPayload['some']
+        sinon.assert.calledWith(PermisionService.isOwnerOf, ctx.sessionUser, finalPayload)
+        sinon.assert.calledWith(Context.createAsync, finalPayload)
       })
       .asCallback(done)
     })
