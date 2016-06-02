@@ -123,6 +123,7 @@ module.exports.getContainerInspect = function (instance) {
         VolumesFrom: '',
         Dns: null,
         Memory: 1000000000,
+        MemoryReservation: 512,
         Binds: [
           '/var/run/docker.sock:/var/run/docker.sock',
           '/git-cache:/cache:rw',
