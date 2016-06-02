@@ -1304,5 +1304,30 @@ describe('Instance Model Integration Tests', function () {
         })
       })
     })
+
+    describe('addDependency', function () {
+      var instance = mongoFactory.createNewInstance('goooush')
+      var dependant = mongoFactory.createNewInstance('splooosh')
+
+      beforeEach(function (done) {
+        sinon.spy(instance, 'invalidateContainerDNS')
+        sinon.stub(async, 'series').yieldsAsync()
+        done()
+      })
+
+      afterEach(function (done) {
+        instance.invalidateContainerDNS.restore()
+        async.series.restore()
+        done()
+      })
+
+      it('should invalidate dns cache entries', function (done) {
+        instance.addDependency(dependant, 'wooo.com', function (err) {
+          if (err) { done(err) }
+          expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
+          done()
+        })
+      })
+    })
   })
 })
