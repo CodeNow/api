@@ -15,6 +15,7 @@ module.exports = function (contextVersion) {
     inspectData: {
       Id: '59a9e9ce232b5b08f198b5730ebd087e0ad1e36cf638e5076275f62ece7facd5',
       Memory: 0,
+      MemoryReservation: 0,
       MemorySwap: 0,
       Image: 'registry.runnable.com/runnable/image-builder:d1.6.2-v4.0.1',
       Config: {
