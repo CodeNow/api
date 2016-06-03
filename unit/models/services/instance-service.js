@@ -2552,7 +2552,9 @@ describe('InstanceService', function () {
                   container: undefined
                 }))
                 sinon.assert.calledWith(ctx.mockInstance.setAsync, {
-                  build: ctx.builtBuild._id
+                  build: ctx.builtBuild._id,
+                  contextVersion: ctx.builtCv.toJSON(),
+                  container: undefined
                 })
               })
               .asCallback(done)
@@ -2581,7 +2583,7 @@ describe('InstanceService', function () {
                   InstanceService._saveInstanceAndEmitUpdate,
                   ctx.mockInstance,
                   ctx.builtCv,
-                  { build: ctx.builtBuild._id },
+                  {},
                   ctx.mockSessionUser
                 )
               })
@@ -2601,7 +2603,6 @@ describe('InstanceService', function () {
                   ctx.mockInstance,
                   ctx.builtCv,
                   {
-                    build: ctx.builtBuild._id,
                     env: ['hello=asdasdasd']
                   },
                   ctx.mockSessionUser
@@ -2662,9 +2663,7 @@ describe('InstanceService', function () {
                   contextVersion: sinon.match.has('id', ctx.buildingCv._id.toString()),
                   container: sinon.match.undefined
                 }))
-                sinon.assert.calledWith(ctx.mockInstance.setAsync, {
-                  build: ctx.buildingBuild._id
-                })
+                sinon.assert.calledWith(ctx.mockInstance.setAsync, {})
               })
               .asCallback(done)
           })
@@ -2692,7 +2691,7 @@ describe('InstanceService', function () {
                   InstanceService._saveInstanceAndEmitUpdate,
                   ctx.mockInstance,
                   ctx.buildingCv,
-                  { build: ctx.buildingBuild._id },
+                  {},
                   ctx.mockSessionUser
                 )
               })
