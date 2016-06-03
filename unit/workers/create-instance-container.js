@@ -31,7 +31,8 @@ describe('createInstanceContainer', function () {
       job: {
         contextVersionId: '123456789012345678901234',
         instanceId: '123456789012345678901234',
-        ownerUsername: 'runnable'
+        ownerUsername: 'runnable',
+        sessionUserGithubId: 'id'
       },
       contextVersion: {
         build: {
@@ -64,7 +65,7 @@ describe('createInstanceContainer', function () {
     it('should call InstanceService.createContainer', function (done) {
       createInstanceContainer(ctx.job)
         .asCallback(function (err) {
-          expect(err).to.not.exist()
+          if (err) { return done(err) }
           sinon.assert.calledWith(InstanceService.createContainer, ctx.job)
           done()
         })
@@ -83,6 +84,48 @@ describe('createInstanceContainer', function () {
       error.log.restore()
       done()
     })
+
+    describe('validation err', function () {
+      it('should throw fatal error if missing instanceId', function (done) {
+        delete ctx.job.instanceId
+        createInstanceContainer(ctx.job).asCallback(function (err) {
+          expect(err).to.be.an.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('validation failed')
+          expect(err.data.err.message).to.match(/instanceId.*is required/)
+          done()
+        })
+      })
+
+      it('should throw fatal error if missing contextVersionId', function (done) {
+        delete ctx.job.contextVersionId
+        createInstanceContainer(ctx.job).asCallback(function (err) {
+          expect(err).to.be.an.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('validation failed')
+          expect(err.data.err.message).to.match(/contextVersionId.*is required/)
+          done()
+        })
+      })
+
+      it('should throw fatal error if missing ownerUsername', function (done) {
+        delete ctx.job.ownerUsername
+        createInstanceContainer(ctx.job).asCallback(function (err) {
+          expect(err).to.be.an.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('validation failed')
+          expect(err.data.err.message).to.match(/ownerUsername.*is required/)
+          done()
+        })
+      })
+
+      it('should throw fatal error if missing sessionUserGithubId', function (done) {
+        delete ctx.job.sessionUserGithubId
+        createInstanceContainer(ctx.job).asCallback(function (err) {
+          expect(err).to.be.an.instanceOf(TaskFatalError)
+          expect(err.message).to.contain('validation failed')
+          expect(err.data.err.message).to.match(/sessionUserGithubId.*is required/)
+          done()
+        })
+      })
+    }) // end validation err
 
     describe('owner not allowed', function () {
       beforeEach(function (done) {
@@ -169,7 +212,7 @@ describe('createInstanceContainer', function () {
       it('should trigger a re-build of the instance', function (done) {
         createInstanceContainer(ctx.job)
           .asCallback(function (err) {
-            expect(err).to.not.exist()
+            if (err) { return done(err) }
             sinon.assert.calledOnce(ContextVersion.findById)
             sinon.assert.calledWith(
               ContextVersion.findById,
