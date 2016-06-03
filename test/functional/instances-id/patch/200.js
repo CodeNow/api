@@ -141,7 +141,7 @@ describe('200 PATCH /instances/:id', function () {
           expect(InstanceService.deleteForkedInstancesByRepoAndBranch.callCount).to.equal(1)
           var acv = ctx.cv.appCodeVersions.models[0].attrs
           var args = InstanceService.deleteForkedInstancesByRepoAndBranch.getCall(0).args
-          expect(args[0].toString()).to.equal(ctx.instance.id().toString())
+          expect(args[0]._id.toString()).to.equal(ctx.instance.id().toString())
           expect(args[1]).to.equal(acv.lowerRepo)
           expect(args[2]).to.equal(acv.lowerBranch)
           InstanceService.deleteForkedInstancesByRepoAndBranch.restore()
