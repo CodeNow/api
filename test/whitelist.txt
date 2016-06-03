@@ -37,7 +37,6 @@
 ./test/functional/contexts-id-versions-id.js
 ./test/functional/contexts-id-versions-id/patch/200.js
 ./test/functional/contexts-id-versions.js
-./test/functional/contexts.js
 ./test/functional/csrf-validation.js
 ./test/functional/github-proxy.js
 ./test/functional/instance-dependency-health.js
