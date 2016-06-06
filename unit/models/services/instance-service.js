@@ -22,7 +22,6 @@ var InstanceService = require('models/services/instance-service')
 var InstanceCounter = require('models/mongo/instance-counter')
 var Instance = require('models/mongo/instance')
 var User = require('models/mongo/user')
-var joi = require('utils/joi')
 var rabbitMQ = require('models/rabbitmq')
 var Runnable = require('models/apis/runnable')
 var messenger = require('socket/messenger')
@@ -764,15 +763,11 @@ describe('InstanceService', function () {
       InstanceService._findInstanceAndContextVersion.restore()
       InstanceService._createDockerContainer.restore()
       Instance.findOneByShortHash.restore()
-      joi.validateOrBoom.restore()
       done()
     })
 
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
-          cb(null, data)
-        })
         InstanceService._findInstanceAndContextVersion.yieldsAsync(null, ctx.mockMongoData)
         InstanceService._createDockerContainer.yieldsAsync(null, ctx.mockContainer)
         done()
@@ -781,10 +776,6 @@ describe('InstanceService', function () {
       it('should create a container', function (done) {
         InstanceService.createContainer(ctx.opts, function (err, container) {
           if (err) { return done(err) }
-          // assertions
-          sinon.assert.calledWith(
-            joi.validateOrBoom, ctx.opts, sinon.match.object, sinon.match.func
-          )
           sinon.assert.calledWith(
             InstanceService._findInstanceAndContextVersion,
             ctx.opts,
@@ -811,22 +802,8 @@ describe('InstanceService', function () {
         done()
       })
 
-      describe('validateOrBoom error', function () {
-        beforeEach(function (done) {
-          sinon.stub(joi, 'validateOrBoom').yieldsAsync(ctx.err)
-          done()
-        })
-
-        it('should callback the error', function (done) {
-          InstanceService.createContainer(ctx.opts, expectErr(ctx.err, done))
-        })
-      })
-
       describe('_findInstanceAndContextVersion error', function () {
         beforeEach(function (done) {
-          sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
-            cb(null, data)
-          })
           InstanceService._findInstanceAndContextVersion.yieldsAsync(ctx.err)
           done()
         })
@@ -838,9 +815,6 @@ describe('InstanceService', function () {
 
       describe('_createDockerContainer error', function () {
         beforeEach(function (done) {
-          sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
-            cb(null, data)
-          })
           InstanceService._findInstanceAndContextVersion.yieldsAsync(null, ctx.mockMongoData)
           InstanceService._createDockerContainer.yieldsAsync(ctx.err)
           done()
