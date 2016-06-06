@@ -7,13 +7,18 @@ var it = lab.it
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 
+var Promise = require('bluebird')
 var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
 
+var BuildService = require('models/services/build-service')
 var githubActions = require('routes/actions/github')
-var UserWhitelist = require('models/mongo/user-whitelist')
+var InstanceService = require('models/services/instance-service')
 var User = require('models/mongo/user')
+var UserWhitelist = require('models/mongo/user-whitelist')
+
+require('sinon-as-promised')(Promise)
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
@@ -259,6 +264,150 @@ describe('GitHub Actions: ' + moduleName, function () {
         }
       }
       githubActions.checkCommitterIsRunnableUser(req, res, errStub)
+    })
+  })
+
+  describe('autoDeploy', function () {
+    var mockReq
+    var mockRes
+    var mockNext
+    var mockInstance
+    var mockInstance2
+    var mockBuildResults
+    var mockContextVersion
+
+    beforeEach(function (done) {
+      mockInstance = {
+        _id: 'mockInstanceId',
+        name: 'Mock Instance',
+        contextVersion: {
+          _id: 'mock instance cv id'
+        }
+      }
+      mockInstance2 = {
+        _id: 'mockInstanceId2',
+        name: 'Mock Instance 2',
+        contextVersion: {
+          _id: 'mock instance 2 cv id',
+          advanced: false
+        },
+        isTesting: true,
+        emitInstanceUpdateAsync: sinon.stub().resolves()
+      }
+      mockReq = {
+        instances: [mockInstance, mockInstance2],
+        githubPushInfo: {
+          id: 'mockGithubPushInfo'
+        }
+      }
+      mockRes = {
+        status: sinon.stub(),
+        send: sinon.stub(),
+        json: sinon.stub()
+      }
+      mockNext = sinon.stub()
+      mockBuildResults = {
+        build: {
+          _id: 'build results id'
+        },
+        contextVersion: {
+          toJSON: sinon.stub().returns(mockContextVersion),
+          _id: 'mock cv id'
+        },
+        user: {
+          accounts: {
+            github: {
+              id: 'fake user githubID'
+            }
+          }
+        }
+      }
+      mockContextVersion = {
+        id: 'mock context version'
+      }
+      done()
+    })
+
+    beforeEach(function (done) {
+      sinon.stub(BuildService, 'createAndBuildContextVersion').resolves(mockBuildResults)
+      sinon.stub(InstanceService, 'updateInstanceBuild').resolves()
+      done()
+    })
+
+    afterEach(function (done) {
+      BuildService.createAndBuildContextVersion.restore()
+      InstanceService.updateInstanceBuild.restore()
+      done()
+    })
+
+    it('should do nothing if no unlocked instances were found', function (done) {
+      mockRes.send = function () {
+        setTimeout(function () {
+          sinon.assert.notCalled(mockNext)
+          sinon.assert.calledWith(mockRes.status, 202)
+          done()
+        }, 0)
+      }
+      mockInstance.locked = true
+      mockInstance2.locked = true
+      githubActions._autoDeploy(mockReq, mockRes, mockNext)
+    })
+
+    it('should create and build a context version for each instance', function (done) {
+      mockRes.json = function () {
+        setTimeout(function () {
+          sinon.assert.notCalled(mockNext)
+          sinon.assert.calledTwice(BuildService.createAndBuildContextVersion)
+          sinon.assert.calledWith(BuildService.createAndBuildContextVersion, mockInstance, mockReq.githubPushInfo, 'autodeploy')
+          sinon.assert.calledWith(BuildService.createAndBuildContextVersion, mockInstance2, mockReq.githubPushInfo, 'autodeploy')
+          done()
+        }, 0)
+      }
+      githubActions._autoDeploy(mockReq, mockRes, mockNext)
+    })
+
+    it('should update the instance build if testing', function (done) {
+      mockRes.json = function () {
+        setTimeout(function () {
+          sinon.assert.notCalled(mockNext)
+          sinon.assert.calledOnce(InstanceService.updateInstanceBuild)
+          sinon.assert.calledWith(InstanceService.updateInstanceBuild, mockInstance2, {
+            build: mockBuildResults.build._id,
+            contextVersion: mockContextVersion,
+            lastBuiltSimpleContextVersion: {
+              id: mockInstance2.contextVersion._id,
+              created: sinon.match.number
+            }
+          }, mockBuildResults.user.accounts.github.id)
+          done()
+        }, 0)
+      }
+      githubActions._autoDeploy(mockReq, mockRes, mockNext)
+    })
+
+    it('should emit instance update after build', function (done) {
+      mockRes.json = function () {
+        setTimeout(function () {
+          sinon.assert.notCalled(mockNext)
+          sinon.assert.calledOnce(mockInstance2.emitInstanceUpdateAsync)
+          sinon.assert.calledWith(mockInstance2.emitInstanceUpdateAsync, mockBuildResults.user.accounts.github.id, 'patch')
+          done()
+        }, 0)
+      }
+      githubActions._autoDeploy(mockReq, mockRes, mockNext)
+    })
+
+    it('should return a list of context version ids', function (done) {
+      mockRes.json = function (results) {
+        setTimeout(function () {
+          sinon.assert.notCalled(mockNext)
+          sinon.assert.calledOnce(mockRes.status)
+          sinon.assert.calledWith(mockRes.status, 200)
+          expect(results).to.deep.equal([ mockBuildResults.contextVersion._id, mockBuildResults.contextVersion._id ])
+          done()
+        }, 0)
+      }
+      githubActions._autoDeploy(mockReq, mockRes, mockNext)
     })
   })
 })
