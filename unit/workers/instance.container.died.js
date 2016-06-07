@@ -121,6 +121,15 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
         done()
       })
     })
+
+    it('should not clear container memory if not a testing container', function (done) {
+      ctx.mockInstance.isTesting = false
+      InstanceContainerDied(ctx.data).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.notCalled(rabbitMQ.clearContainerMemory)
+        done()
+      })
+    })
   })
   describe('failure', function () {
     it('should fail if validation failed: null', function (done) {
