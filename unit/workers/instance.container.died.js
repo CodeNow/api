@@ -15,6 +15,7 @@ var InstanceContainerDied = require('workers/instance.container.died')
 var InstanceService = require('models/services/instance-service')
 var IsolationService = require('models/services/isolation-service')
 var Promise = require('bluebird')
+var rabbitMQ = require('models/rabbitmq')
 var TaskFatalError = require('ponos').TaskFatalError
 
 var afterEach = lab.afterEach
@@ -48,7 +49,8 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
       network: {
         hostIp: '0.0.0.0'
       },
-      isolated: 'isolatedId'
+      isolated: 'isolatedId',
+      isTesting: true
     }
     ctx.instanceId = '5633e9273e2b5b0c0077fd41'
     ctx.sessionUserGithubId = 111987
@@ -90,26 +92,41 @@ describe('InstanceContainerDiedWorker: ' + moduleName, function () {
     sinon.stub(InstanceService, 'modifyExistingContainerInspect').resolves(ctx.mockInstance)
     sinon.stub(InstanceService, 'emitInstanceUpdate').returns()
     sinon.stub(IsolationService, 'redeployIfAllKilled').resolves()
+    sinon.stub(rabbitMQ, 'clearContainerMemory')
     done()
   })
   afterEach(function (done) {
     InstanceService.modifyExistingContainerInspect.restore()
     InstanceService.emitInstanceUpdate.restore()
     IsolationService.redeployIfAllKilled.restore()
+    rabbitMQ.clearContainerMemory.restore()
     done()
   })
   describe('success', function () {
-    it('should call 2 methods', function (done) {
+    it('should call the proper methods', function (done) {
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.calledWith(InstanceService.modifyExistingContainerInspect,
           ctx.mockInstance._id, ctx.data.id, ctx.data.inspectData)
+        sinon.assert.calledOnce(rabbitMQ.clearContainerMemory)
+        sinon.assert.calledWith(rabbitMQ.clearContainerMemory, {
+          containerId: ctx.data.id
+        })
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
           ctx.mockInstance, ctx.sessionUserGithubId, 'update', true)
         sinon.assert.calledOnce(IsolationService.redeployIfAllKilled)
         sinon.assert.calledWith(IsolationService.redeployIfAllKilled, ctx.mockInstance.isolated)
+        done()
+      })
+    })
+
+    it('should not clear container memory if not a testing container', function (done) {
+      ctx.mockInstance.isTesting = false
+      InstanceContainerDied(ctx.data).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.notCalled(rabbitMQ.clearContainerMemory)
         done()
       })
     })
