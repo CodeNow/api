@@ -63,6 +63,17 @@ describe('BDD - Isolation', function () {
         })
       })
   })
+  beforeEach(function (done) {
+    multi.createAndTailInstance(
+      primus,
+      { name: 'another-instance' },
+      function (err, instance) {
+        if (err) { return done(err) }
+        ctx.anotherInstance = instance
+        done()
+      }
+    )
+  })
 
   it('should let us make an isolation', function (done) {
     var opts = {
@@ -79,7 +90,7 @@ describe('BDD - Isolation', function () {
   })
 
   describe('isolation with children', function () {
-    it('should let us make an isolation', function (done) {
+    it('should let us make an isolation by passing the instance id', function (done) {
       var count = createCount(2, done)
       primus.expectAction('redeploy', count.next)
       var opts = {
@@ -95,10 +106,9 @@ describe('BDD - Isolation', function () {
       })
     })
 
-    it('should let us make an isolation referencing the repo', function (done) {
-      var count = createCount(2, done)
-      primus.expectAction('redeploy', count.next)
+    it('should not let us make an isolation referencing the repo if one already exists', function (done) {
       var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
+      // webInstance and apiInstance use the same repo
       var opts = {
         master: ctx.webInstance.attrs._id.toString(),
         children: [{
@@ -106,6 +116,28 @@ describe('BDD - Isolation', function () {
           org: appCodeVersion.repo.split('/').shift(),
           branch: appCodeVersion.branch
         }]
+      }
+      ctx.user.createIsolation(opts, function (err, isolation) {
+        expect(err).to.exist()
+        expect(err.message).to.match(/determine.*instance.*fork/i)
+        expect(isolation).to.not.exist()
+        return done()
+      })
+    })
+
+    it('should let us make another isolation by passing the instance id and branch', function (done) {
+      require('./fixtures/mocks/github/repos-username-repo-branches-branch')(ctx.apiInstance.attrs.contextVersion)
+      var count = createCount(2, done)
+      primus.expectAction('redeploy', count.next)
+      var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
+      var opts = {
+        master: ctx.webInstance.attrs._id.toString(),
+        children: [
+          {
+            instance: ctx.apiInstance.attrs._id.toString(),
+            branch: appCodeVersion.branch
+          }
+        ]
       }
       ctx.user.createIsolation(opts, function (err, isolation) {
         if (err) { return count.next(err) }

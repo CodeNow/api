@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "7.8.1",
+  "version": "7.12.8",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -13,7 +13,7 @@
     ]
   },
   "dependencies": {
-    "101": "^1.2.0",
+    "101": "^1.5.0",
     "@runnable/api-client": "^7.0.2",
     "@runnable/hostname": "^3.0.0",
     "@runnable/orion": "^1.0.4",
@@ -143,6 +143,7 @@
     "bdd-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -a code -v -l --context-timeout 80000 --timeout 80000 -e test `cat test/whitelist.txt`",
     "bdd-watch": "killall node; nodemon -w package.json -w test -w lib -w node_modules/runnable/lib/models -w node_modules/runnable/lib/collections --exec 'npm run' bdd-whitelist",
     "bdd-whitelist": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab  --context-timeout 80000 --timeout 80000 --assert code --verbose --leaks `cat test/whitelist.txt`",
+    "integration": "npm run clear; NODE_PATH=./lib NODE_ENV=test lab  --context-timeout 80000 --timeout 80000 --assert code --verbose --leaks test/integration",
     "clean": "rm -rf docs coverage.html node_modules",
     "clear": "echo -ne \"\\033]50;ClearScrollback\\a\";",
     "client-version": "node ./scripts/client-version-bump.js",
