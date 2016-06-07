@@ -41,8 +41,7 @@ var User = require('models/mongo/user.js')
 describe('ContextVersion ModelIntegration Tests', function () {
   before(mongooseControl.start)
   var ctx
-  var contextId
-  contextId = new ObjectId()
+  var contextId = new ObjectId()
   beforeEach(function (done) {
     ctx = {}
     ctx.mockSessionUser = {
