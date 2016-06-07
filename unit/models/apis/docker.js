@@ -404,7 +404,7 @@ describe('docker: ' + moduleName, function () {
 
       it('should create an image builder container with more memory than the max memory', function (done) {
         var newMemory = process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES + 10000
-        ctx.mockContextVersions.getUserContainerMemoryLimit.returns(newMemory)
+        ctx.mockContextVersion.getUserContainerMemoryLimit.returns(newMemory)
         var opts = {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
