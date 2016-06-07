@@ -396,6 +396,10 @@ describe('InstanceService', function () {
       ctx.build = {
         _id: '1233'
       }
+      ctx.contextVersion = {
+        _id: '123123',
+        context: '56789'
+      }
       ctx.instances = [
         {
           _id: 1
@@ -418,7 +422,7 @@ describe('InstanceService', function () {
     it('should fail if build lookup failed', function (done) {
       var mongoError = new Error('Mongo error')
       Build.findByContextVersionIdsAsync.rejects(mongoError)
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextxVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(mongoError.message)
@@ -428,7 +432,7 @@ describe('InstanceService', function () {
     it('should fail if instances lookup failed', function (done) {
       var mongoError = new Error('Mongo error')
       Instance.findInstancesLinkedToBranchAsync.rejects(mongoError)
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(mongoError.message)
@@ -438,7 +442,7 @@ describe('InstanceService', function () {
     it('should fail if build update failed', function (done) {
       var mongoError = new Error('Mongo error')
       InstanceService.updateBuild.rejects(mongoError)
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(mongoError.message)
@@ -446,7 +450,7 @@ describe('InstanceService', function () {
         })
     })
     it('should call find build', function (done) {
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Build.findByContextVersionIdsAsync)
@@ -455,7 +459,7 @@ describe('InstanceService', function () {
         })
     })
     it('should call find instances', function (done) {
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findInstancesLinkedToBranchAsync)
@@ -465,7 +469,7 @@ describe('InstanceService', function () {
     })
     it('should not call find instances if builds was not found', function (done) {
       Build.findByContextVersionIdsAsync.resolves([])
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.notCalled(Instance.findInstancesLinkedToBranchAsync)
@@ -473,7 +477,7 @@ describe('InstanceService', function () {
         })
     })
     it('should call update builds', function (done) {
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(InstanceService.updateBuild)
