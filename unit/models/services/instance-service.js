@@ -383,7 +383,7 @@ describe('InstanceService', function () {
           sinon.assert.calledWith(
             InstanceService.updateInstance,
             ctx.mockInstance,
-            { build: ctx.mockBuild._id },
+            { build: ctx.mockBuild._id.toString() },
             ctx.mockUser
           )
           done()
