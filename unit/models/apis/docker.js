@@ -402,6 +402,36 @@ describe('docker: ' + moduleName, function () {
         })
       })
 
+      it('should create an image builder container with more memory than the max memory', function (done) {
+        var newMemory = process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES + 10000
+        ctx.mockContextVersions.getUserContainerMemoryLimit.returns(newMemory)
+        var opts = {
+          manualBuild: true,
+          sessionUser: ctx.mockSessionUser,
+          contextVersion: ctx.mockContextVersion,
+          noCache: false,
+          tid: '000-0000-0000-0000'
+        }
+        model.createImageBuilder(opts, function (err) {
+          if (err) { return done(err) }
+          var expected = {
+            Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
+            Env: ctx.mockEnv,
+            HostConfig: {
+              Binds: ['/var/run/docker.sock:/var/run/docker.sock'],
+              CapDrop: process.env.CAP_DROP.split(','),
+              Memory: newMemory,
+              MemoryReservation: newMemory
+            },
+            Labels: ctx.mockLabels
+          }
+
+          sinon.assert.calledOnce(Docker.prototype.createContainer)
+          sinon.assert.calledWith(Docker.prototype.createContainer, expected)
+          done()
+        })
+      })
+
       it('should handle error if createContainer failed', function (done) {
         Docker.prototype.createContainer.yieldsAsync(new Error('boo'))
 
@@ -1305,6 +1335,42 @@ describe('docker: ' + moduleName, function () {
               PublishAllPorts: true,
               Memory: process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES,
               MemoryReservation: testMemory
+            }
+          }
+
+          sinon.assert.calledOnce(ctx.mockContextVersion.getUserContainerMemoryLimit)
+          sinon.assert.calledWith(
+            Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
+          )
+
+          expect(container).to.equal(ctx.mockContainer)
+          done()
+        })
+      })
+
+      it('should create a container with more than the maximum allowed memory', function (done) {
+        var newMemoryLimit = process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES + 1000
+        ctx.mockContextVersion.getUserContainerMemoryLimit.returns(newMemoryLimit)
+
+        model.createUserContainer(ctx.opts, function (err, container) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Docker.prototype._createUserContainerLabels, ctx.opts, sinon.match.func
+          )
+          var expectedCreateOpts = {
+            Labels: ctx.mockLabels,
+            Env: [
+              'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash,
+              'FOO=1',
+              'URL=' + ctx.mockInstance.shortHash + '-1.runnableapp.com',
+              'BAR=' + ctx.mockInstance.shortHash + '-1.runnableapp.com'
+            ],
+            Image: ctx.mockContextVersion.build.dockerTag,
+            HostConfig: {
+              CapDrop: process.env.CAP_DROP.split(','),
+              PublishAllPorts: true,
+              Memory: newMemoryLimit,
+              MemoryReservation: newMemoryLimit
             }
           }
 
