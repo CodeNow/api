@@ -1794,4 +1794,90 @@ describe('Instance Model Tests', function () {
       })
     })
   })
+
+  describe('findInstancesLinkedToBranch', function () {
+    var repo = 'repoName'
+    var branch = 'branchName'
+    var contextId = newObjectId()
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'find').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.find.restore()
+      done()
+    })
+
+    it('should query the database', function (done) {
+      Instance.findInstancesLinkedToBranch(repo, branch, contextId, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
+          Instance.find,
+          {
+            'contextVersion.context': contextId,
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                lowerBranch: branch.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          }
+        )
+        done()
+      })
+    })
+
+    it('should not add the context ID if not passed', function (done) {
+      Instance.findInstancesLinkedToBranch(repo, branch, null, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
+          Instance.find,
+          {
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                lowerBranch: branch.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          }
+        )
+        done()
+      })
+    })
+
+    it('should handle the context ID being a string', function (done) {
+      Instance.findInstancesLinkedToBranch(repo, branch, contextId.toString(), function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
+          Instance.find,
+          {
+            'contextVersion.context': contextId,
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                lowerBranch: branch.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          }
+        )
+        done()
+      })
+    })
+
+    it('should throw any database errors', function (done) {
+      var dbErr = new Error('MongoErr')
+      Instance.find.yieldsAsync(dbErr)
+      Instance.findInstancesLinkedToBranch(repo, branch, contextId, function (err) {
+        expect(err).to.exist()
+        expect(err).to.equal(dbErr)
+        done()
+      })
+    })
+  })
 })
