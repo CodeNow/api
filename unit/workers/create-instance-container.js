@@ -127,6 +127,22 @@ describe('createInstanceContainer', function () {
       })
     }) // end validation err
 
+    describe('context version not found', function () {
+      beforeEach(function (done) {
+        ContextVersion.findById.onCall(0).yieldsAsync()
+        done()
+      })
+
+      it('should fatally error', function (done) {
+        createInstanceContainer(ctx.job)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.be.an.instanceOf(TaskFatalError)
+            done()
+          })
+      })
+    }) // end context version not found
+
     describe('owner not allowed', function () {
       beforeEach(function (done) {
         ContextVersionService.checkOwnerAllowed.restore()
