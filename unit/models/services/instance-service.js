@@ -1824,19 +1824,6 @@ describe('InstanceService', function () {
     })
   })
 
-  describe('_saveInstanceAndEmitUpdate', function () {
-    beforeEach(function (done) {
-      sinon.stub(rabbitMQ, 'instanceDeployed')
-      sinon.stub(rabbitMQ, 'createInstanceContainer')
-      done()
-    })
-    afterEach(function (done) {
-      rabbitMQ.instanceDeployed.restore()
-      rabbitMQ.createInstanceContainer.restore()
-      done()
-    })
-  })
-
   describe('createInstance', function () {
     var ctx = {}
     beforeEach(function (done) {
@@ -2896,5 +2883,209 @@ describe('InstanceService', function () {
         })
       })
     })
+  })
+
+  describe('_saveInstanceAndEmitUpdate', function () {
+    var instance
+    var instanceId = new ObjectId()
+    var ownerUsername = 'hiphipjorge'
+    var contextVersion
+    var contextVersionId = new ObjectId()
+    var sessionUser
+    var opts
+    beforeEach(function (done) {
+      instance = {
+        _id: instanceId,
+        owner: {
+          username: ownerUsername
+        },
+        upsertIntoGraphAsync: sinon.stub().resolves(true),
+        setDependenciesFromEnvironmentAsync: sinon.stub().resolves(true),
+        emitInstanceUpdateAsync: sinon.stub().resolves(true)
+      }
+      instance.saveAsync = sinon.stub().resolves(instance)
+      contextVersion = {
+        _id: contextVersionId,
+        build: {
+          triggeredAction: {}
+        },
+        isBuildSuccessful: true
+      }
+      opts = {
+        env: [
+          'HELLO=1',
+          'WOW=1'
+        ]
+      }
+      sessionUser = {
+        accounts: {
+          github: {
+            id: 12345
+          }
+        }
+      }
+      sinon.stub(rabbitMQ, 'instanceDeployed')
+      sinon.stub(rabbitMQ, 'createInstanceContainer')
+      done()
+    })
+    afterEach(function (done) {
+      rabbitMQ.instanceDeployed.restore()
+      rabbitMQ.createInstanceContainer.restore()
+      done()
+    })
+
+    describe('Return Values', function () {
+      it('should return the instance', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function (_instance) {
+            expect(_instance).to.equal(instance)
+          })
+          .asCallback(done)
+      })
+    })
+
+    describe('Actions', function () {
+      it('should save the instance', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(instance.saveAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should upsert the dependencies into graph', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(instance.upsertIntoGraphAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should set dependencies from environment, if there are any new envs', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(instance.setDependenciesFromEnvironmentAsync)
+            sinon.assert.calledWith(instance.setDependenciesFromEnvironmentAsync, ownerUsername)
+          })
+          .asCallback(done)
+      })
+
+      it('should not set dependencies from environment, if there are no new envs', function (done) {
+        delete opts.env
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+        .then(function () {
+          sinon.assert.notCalled(instance.setDependenciesFromEnvironmentAsync)
+        })
+        .asCallback(done)
+      })
+
+      it('should emit an `instanceDeployed` event if it was not manually triggered actions', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(rabbitMQ.instanceDeployed)
+            sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
+              instanceId: instanceId.toString(),
+              cvId: contextVersionId.toString()
+            })
+          })
+          .asCallback(done)
+      })
+
+      it('should emit an `instanceDeployed` event if it was not a manually triggered action', function (done) {
+        contextVersion.build.triggeredAction.manual = true
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(rabbitMQ.instanceDeployed)
+          })
+          .asCallback(done)
+      })
+
+      it('should create an instance container if the build is succseful', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
+            sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
+              instanceId: instanceId.toString(),
+              contextVersionId: contextVersionId.toString(),
+              sessionUserGithubId: 12345,
+              ownerUsername: ownerUsername
+            })
+          })
+          .asCallback(done)
+      })
+
+      it('should not create an instance container if the build is not succseful', function (done) {
+        contextVersion.isBuildSuccessful = false
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+          })
+          .asCallback(done)
+      })
+
+      it('should emit an instance update', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+        .then(function () {
+          sinon.assert.calledOnce(instance.emitInstanceUpdateAsync)
+        })
+        .asCallback(done)
+      })
+    })
+
+    describe('Errors', function () {
+      it('should throw an error if the instance cannot be saved', function (done) {
+        var err = new Error('dbErr')
+        instance.saveAsync.rejects(err)
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.notCalled(instance.upsertIntoGraphAsync)
+            sinon.assert.notCalled(instance.emitInstanceUpdateAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw a notFound error if no instances is found', function (done) {
+        instance.saveAsync.resolves(null)
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/instance.*not.*found/i)
+            sinon.assert.notCalled(instance.upsertIntoGraphAsync)
+            sinon.assert.notCalled(instance.emitInstanceUpdateAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should not create an instance container if it cannot set dependencies', function (done) {
+        var err = new Error('dbErr')
+        instance.setDependenciesFromEnvironmentAsync.rejects(err)
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.calledOnce(instance.upsertIntoGraphAsync)
+            sinon.assert.notCalled(instance.emitInstanceUpdateAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should not emit instance update if it cant create the instance container', function (done) {
+        var err = new Error('dbErr')
+        rabbitMQ.createInstanceContainer.rejects(err)
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
+            sinon.assert.notCalled(instance.emitInstanceUpdateAsync)
+          })
+          .asCallback(done)
+      })
+    })
+  })
+
+  describe('_setNewContextVersionOnInstance', function () {
   })
 })
