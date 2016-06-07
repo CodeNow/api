@@ -41,6 +41,8 @@ var User = require('models/mongo/user.js')
 describe('ContextVersion ModelIntegration Tests', function () {
   before(mongooseControl.start)
   var ctx
+  var contextId
+  contextId = new ObjectId()
   beforeEach(function (done) {
     ctx = {}
     ctx.mockSessionUser = {
@@ -1216,8 +1218,21 @@ describe('ContextVersion ModelIntegration Tests', function () {
 
       beforeEach(function (done) {
         query = {infraCodeVersion: infraCodeVersion}
-        cv = new ContextVersion({appCodeVersions: appCodeVersions})
-        cvNoAppCodeVersions = new ContextVersion({appCodeVersions: []})
+        cv = new ContextVersion({appCodeVersions: appCodeVersions, context: contextId})
+        cvNoAppCodeVersions = new ContextVersion({appCodeVersions: [], context: contextId})
+        done()
+      })
+
+      it('should include the context in the query', function (done) {
+        var result = ContextVersion.addAppCodeVersionQuery(cv, query)
+        expect(result.context.toString()).to.equal(contextId.toString())
+        done()
+      })
+
+      it('should not include the context in the query, if it doesnt exist', function (done) {
+        cv.context = null
+        var result = ContextVersion.addAppCodeVersionQuery(cv, query)
+        expect(result.context).to.not.exist()
         done()
       })
 
@@ -2013,46 +2028,47 @@ describe('ContextVersion ModelIntegration Tests', function () {
     var data = cvTemplate(props.build.hash, props.build.started, props.build.completed)
     ContextVersion.create(data, cb)
   }
-})
-function cvTemplate (hash, started, completed) {
-  started = started || new Date()
-  var cv = {
-    infraCodeVersion: new ObjectId(),
-    createdBy: {
-      github: 2
-    },
-    context: new ObjectId(),
-    owner: {
-      github: 1
-    },
-    build: {
-      triggeredAction: {
-        manual: true
-      },
-      _id: new ObjectId(),
-      triggeredBy: {
+  function cvTemplate (hash, started, completed) {
+    started = started || new Date()
+    var cv = {
+      infraCodeVersion: new ObjectId(),
+      createdBy: {
         github: 2
       },
-      started: started,
-      hash: hash,
-      network: {
-        hostIp: '10.250.197.190'
-      }
-    },
-    advanced: true,
-    appCodeVersions: [],
-    created: new Date(started - 60 * 1000),
-    __v: 0,
-    containerId: '55dbd00c5f899e0e0004b12d',
-    dockerHost: 'http://10.0.1.79:4242'
+      context: contextId,
+      owner: {
+        github: 1
+      },
+      build: {
+        triggeredAction: {
+          manual: true
+        },
+        _id: new ObjectId(),
+        triggeredBy: {
+          github: 2
+        },
+        started: started,
+        hash: hash,
+        network: {
+          hostIp: '10.250.197.190'
+        }
+      },
+      advanced: true,
+      appCodeVersions: [],
+      created: new Date(started - 60 * 1000),
+      __v: 0,
+      containerId: '55dbd00c5f899e0e0004b12d',
+      dockerHost: 'http://10.0.1.79:4242'
+    }
+    if (completed) {
+      assign(cv.build, {
+        dockerTag: 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
+        dockerContainer: '1234567890123456789012345678901234567890123456789012345678901234',
+        dockerImage: 'bbbd03498dab',
+        completed: completed
+      })
+    }
+    return cv
   }
-  if (completed) {
-    assign(cv.build, {
-      dockerTag: 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
-      dockerContainer: '1234567890123456789012345678901234567890123456789012345678901234',
-      dockerImage: 'bbbd03498dab',
-      completed: completed
-    })
-  }
-  return cv
-}
+})
+
