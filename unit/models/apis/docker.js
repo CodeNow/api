@@ -147,9 +147,7 @@ describe('docker: ' + moduleName, function () {
             privateKey: 'private2'
           }
         ],
-        getUserContainerMemoryLimit: function () {
-          return testMemory
-        },
+        getUserContainerMemoryLimit: sinon.stub().returns(testMemory),
         toJSON: function () {
           var json = clone(ctx.mockContextVersion)
           delete json.toJSON
