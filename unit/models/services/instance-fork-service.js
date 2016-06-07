@@ -945,7 +945,8 @@ describe('InstanceForkService', function () {
         name: 'inst1',
         _id: 'asdasdasd',
         env: ['x=1'],
-        owner: { github: { id: 1 } }
+        owner: { github: { id: 1 } },
+        isTesting: true
       }
       sinon.stub(InstanceService, 'createInstance', function (inst) {
         expect(inst.parent).to.equal(master.shortHash)
@@ -955,6 +956,7 @@ describe('InstanceForkService', function () {
         expect(inst.build).to.equal('build1')
         expect(inst.autoForked).to.equal(true)
         expect(inst.masterPod).to.equal(false)
+        expect(inst.isTesting).to.equal(true)
         return Promise.resolve(master)
       })
       InstanceForkService.forkMasterInstance(master, 'build1', 'feature-1', mockSessionUser)

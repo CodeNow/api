@@ -225,21 +225,18 @@ describe('BDD - Instance Dependencies', function () {
         })
       })
 
-      it('should allow recursive, flat deps', function (done) {
-        // asking web for dependencies recursivly and flat, we can expect to see ourselves in the
+      it('should allow recursive, flat deps, and should remove self from list', function (done) {
+        // asking web for dependencies recursivly and flat, we should not expect to see ourselves in the
         // top level when it's circular
         ctx.webInstance.fetchDependencies({ recurse: true, flatten: true }, function (err, deps) {
           if (err) { return done(err) }
-          expect(deps).to.have.length(2)
+          expect(deps).to.have.length(1)
           expect(deps.map(pluck('lowerName'))).to.only.contain([
-            ctx.apiInstance.attrs.lowerName,
-            ctx.webInstance.attrs.lowerName
+            ctx.apiInstance.attrs.lowerName
           ])
           var apiDep = find(deps, hasProps({ id: ctx.apiInstance.attrs.id.toString() }))
-          var webDep = find(deps, hasProps({ id: ctx.webInstance.attrs.id.toString() }))
           expect(apiDep.dependencies).to.have.length(1)
           expect(apiDep.dependencies[0].id).to.equal(ctx.webInstance.attrs.id.toString())
-          expect(webDep.dependencies).to.have.length(0)
           done()
         })
       })

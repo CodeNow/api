@@ -665,6 +665,21 @@ describe('Instance Model Tests', function () {
             done()
           })
         })
+        it('should not allow it to add itself', function (done) {
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
+          instance.hostname = 'hello-staging-' + ownerName + '.runnableapp.com'
+          instance.env = [
+            'as=hello-staging-' + ownerName + '.runnableapp.com'
+          ]
+          instance.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              done(err)
+            }
+            sinon.assert.calledOnce(instance.invalidateContainerDNS)
+            sinon.assert.notCalled(instance.addDependency)
+            done()
+          })
+        })
         it('should add 1 new dep, and keep the existing one', function (done) {
           sinon.stub(instance, 'getDependencies').yieldsAsync(null, [masterInstances[1]])
           instance.env = [

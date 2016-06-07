@@ -21,7 +21,6 @@ var InstanceService = require('models/services/instance-service')
 var InstanceCounter = require('models/mongo/instance-counter')
 var Instance = require('models/mongo/instance')
 var User = require('models/mongo/user')
-var joi = require('utils/joi')
 var rabbitMQ = require('models/rabbitmq')
 var messenger = require('socket/messenger')
 var ObjectId = require('mongoose').Types.ObjectId
@@ -485,7 +484,64 @@ describe('InstanceService', function () {
     })
   })
 
+  describe('#doInstancesShareSameMasterPod', function () {
+    var instance1
+    var instance2
+    beforeEach(function (done) {
+      instance1 = {
+        _id: 'instance-id',
+        masterPod: true,
+        shortHash: '12345',
+        parent: null
+      }
+      instance2 = {
+        _id: 'inst-2',
+        masterPod: false,
+        shortHash: '23439',
+        parent: '12345'
+      }
+      done()
+    })
+
+    it('it should return true if instanceA is instanceB\'s parent', function (done) {
+      expect(InstanceService.doInstancesShareSameMasterPod(instance1, instance2)).to.equal(true)
+      expect(InstanceService.doInstancesShareSameMasterPod(instance2, instance1)).to.equal(true)
+      done()
+    })
+
+    it('it should return false if they\'re both masterpods', function (done) {
+      instance2.masterPod = true
+      expect(InstanceService.doInstancesShareSameMasterPod(instance1, instance2)).to.equal(false)
+      expect(InstanceService.doInstancesShareSameMasterPod(instance2, instance1)).to.equal(false)
+      done()
+    })
+
+    it('it should return false if they dont share the same parent', function (done) {
+      instance2.parent = '345354'
+      expect(InstanceService.doInstancesShareSameMasterPod(instance1, instance2)).to.equal(false)
+      expect(InstanceService.doInstancesShareSameMasterPod(instance2, instance1)).to.equal(false)
+      done()
+    })
+  })
+
   describe('#deleteForkedInstancesByRepoAndBranch', function () {
+    var instance
+    var instance2
+    beforeEach(function (done) {
+      instance = {
+        _id: 'instance-id'
+      }
+      instance2 = {
+        _id: 'inst-2'
+      }
+      sinon.stub(InstanceService, 'doInstancesShareSameMasterPod').returns(true)
+      done()
+    })
+    afterEach(function (done) {
+      InstanceService.doInstancesShareSameMasterPod.restore()
+      done()
+    })
+
     it('should return if instanceId param is missing', function (done) {
       sinon.spy(Instance, 'findForkedInstances')
       InstanceService.deleteForkedInstancesByRepoAndBranch(null, 'api', 'master')
@@ -499,7 +555,7 @@ describe('InstanceService', function () {
 
     it('should return if repo param is missing', function (done) {
       sinon.spy(Instance, 'findForkedInstances')
-      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', null, 'master')
+      InstanceService.deleteForkedInstancesByRepoAndBranch(instance, null, 'master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
@@ -510,7 +566,7 @@ describe('InstanceService', function () {
 
     it('should return if branch param is missing', function (done) {
       sinon.spy(Instance, 'findForkedInstances')
-      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', null)
+      InstanceService.deleteForkedInstancesByRepoAndBranch(instance, 'api', null)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           expect(Instance.findForkedInstances.callCount).to.equal(0)
@@ -522,7 +578,7 @@ describe('InstanceService', function () {
     it('should return error if #findForkedInstances failed', function (done) {
       sinon.stub(Instance, 'findForkedInstances')
         .yieldsAsync(new Error('Some error'))
-      InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master')
+      InstanceService.deleteForkedInstancesByRepoAndBranch(instance, 'api', 'master')
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal('Some error')
@@ -544,7 +600,7 @@ describe('InstanceService', function () {
       it('should not create new jobs if instances were not found', function (done) {
         sinon.stub(Instance, 'findForkedInstances')
           .yieldsAsync(null, [])
-        InstanceService.deleteForkedInstancesByRepoAndBranch('instance-id', 'api', 'master')
+        InstanceService.deleteForkedInstancesByRepoAndBranch(instance, 'api', 'master')
           .asCallback(function (err) {
             expect(err).to.not.exist()
             expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
@@ -552,10 +608,52 @@ describe('InstanceService', function () {
           })
       })
 
+      it('should not create new jobs if instances dont share master pods', function (done) {
+        InstanceService.doInstancesShareSameMasterPod.returns(false)
+        sinon.stub(Instance, 'findForkedInstances')
+          .yieldsAsync(null, [
+            {_id: 'inst-1'},
+            {_id: 'inst-2'},
+            {_id: 'inst-3'}
+          ])
+        InstanceService.deleteForkedInstancesByRepoAndBranch(instance, 'api', 'master')
+          .asCallback(function (err) {
+            expect(err).to.not.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(0)
+            done()
+          })
+      })
+
+      it('should only create new jobs if instances share master pods', function (done) {
+        InstanceService.doInstancesShareSameMasterPod.returns(true)
+          .onFirstCall().returns(true)
+          .onSecondCall().returns(false)
+        sinon.stub(Instance, 'findForkedInstances')
+          .yieldsAsync(null, [
+            {_id: 'inst-1'},
+            {_id: 'inst-2'},
+            {_id: 'inst-3'}
+          ])
+        InstanceService.deleteForkedInstancesByRepoAndBranch(instance, 'api', 'master')
+          .asCallback(function (err) {
+            expect(err).to.not.exist()
+            expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
+            var arg1 = rabbitMQ.deleteInstance.getCall(0).args[0]
+            expect(arg1.instanceId).to.equal('inst-1')
+            var arg2 = rabbitMQ.deleteInstance.getCall(1).args[0]
+            expect(arg2.instanceId).to.equal('inst-3')
+            done()
+          })
+      })
+
       it('should create 2 jobs if 3 instances were found and 1 filtered', function (done) {
         sinon.stub(Instance, 'findForkedInstances')
-          .yieldsAsync(null, [{_id: 'inst-1'}, {_id: 'inst-2'}, {_id: 'inst-3'}])
-        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master')
+          .yieldsAsync(null, [
+            {_id: 'inst-1'},
+            {_id: 'inst-2'},
+            {_id: 'inst-3'}
+          ])
+        InstanceService.deleteForkedInstancesByRepoAndBranch(instance2, 'api', 'master')
           .asCallback(function (err) {
             expect(err).to.not.exist()
             expect(rabbitMQ.deleteInstance.callCount).to.equal(2)
@@ -573,7 +671,7 @@ describe('InstanceService', function () {
           {_id: 'inst-2'},
           {_id: 'inst-3'}
         ])
-        InstanceService.deleteForkedInstancesByRepoAndBranch('inst-2', 'api', 'master')
+        InstanceService.deleteForkedInstancesByRepoAndBranch(instance2, 'api', 'master')
           .asCallback(function (err) {
             expect(err).to.not.exist()
             expect(rabbitMQ.deleteInstance.callCount).to.equal(1)
@@ -766,15 +864,11 @@ describe('InstanceService', function () {
       InstanceService._findInstanceAndContextVersion.restore()
       InstanceService._createDockerContainer.restore()
       Instance.findOneByShortHash.restore()
-      joi.validateOrBoom.restore()
       done()
     })
 
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
-          cb(null, data)
-        })
         InstanceService._findInstanceAndContextVersion.yieldsAsync(null, ctx.mockMongoData)
         InstanceService._createDockerContainer.yieldsAsync(null, ctx.mockContainer)
         done()
@@ -783,10 +877,6 @@ describe('InstanceService', function () {
       it('should create a container', function (done) {
         InstanceService.createContainer(ctx.opts, function (err, container) {
           if (err) { return done(err) }
-          // assertions
-          sinon.assert.calledWith(
-            joi.validateOrBoom, ctx.opts, sinon.match.object, sinon.match.func
-          )
           sinon.assert.calledWith(
             InstanceService._findInstanceAndContextVersion,
             ctx.opts,
@@ -813,22 +903,8 @@ describe('InstanceService', function () {
         done()
       })
 
-      describe('validateOrBoom error', function () {
-        beforeEach(function (done) {
-          sinon.stub(joi, 'validateOrBoom').yieldsAsync(ctx.err)
-          done()
-        })
-
-        it('should callback the error', function (done) {
-          InstanceService.createContainer(ctx.opts, expectErr(ctx.err, done))
-        })
-      })
-
       describe('_findInstanceAndContextVersion error', function () {
         beforeEach(function (done) {
-          sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
-            cb(null, data)
-          })
           InstanceService._findInstanceAndContextVersion.yieldsAsync(ctx.err)
           done()
         })
@@ -840,9 +916,6 @@ describe('InstanceService', function () {
 
       describe('_createDockerContainer error', function () {
         beforeEach(function (done) {
-          sinon.stub(joi, 'validateOrBoom', function (data, schema, cb) {
-            cb(null, data)
-          })
           InstanceService._findInstanceAndContextVersion.yieldsAsync(null, ctx.mockMongoData)
           InstanceService._createDockerContainer.yieldsAsync(ctx.err)
           done()
