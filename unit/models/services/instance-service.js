@@ -29,6 +29,7 @@ var mongoFactory = require('../../factories/mongo')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
+var before = lab.before
 var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
@@ -3087,5 +3088,355 @@ describe('InstanceService', function () {
   })
 
   describe('_setNewContextVersionOnInstance', function () {
+    var instance
+    var instanceId = new ObjectId()
+    var ownerGithubId = 988765
+    var contextVersion
+    var oldContextVersionId = new ObjectId()
+    var newContextVersionId = new ObjectId()
+    var sessionUser
+    var sessionUserGithubId = 12345
+    var isolationId = new ObjectId()
+    var oldLowerRepoName = 'old-lowerRepoName'
+    var oldLowerBranchName = 'old-wowThisBranch'
+    var newLowerRepoName = 'new-lowerRepoName'
+    var newLowerBranchName = 'new-wowThisBranch'
+    var build
+    var newBuildId = new ObjectId()
+    var opts
+    beforeEach(function (done) {
+      instance = {
+        _id: instanceId,
+        owner: {
+          github: ownerGithubId
+        },
+        masterPod: true,
+        isolated: false,
+        isIsolationGroupMaster: false,
+        contextVersion: {
+          _id: oldContextVersionId,
+          appCodeVersions: [{
+            repo: oldLowerRepoName,
+            branch: oldLowerBranchName,
+            lowerRepo: oldLowerRepoName,
+            lowerBranch: oldLowerBranchName
+          }]
+        }
+      }
+      instance.setAsync = sinon.stub().resolves(instance)
+      build = {
+        _id: newBuildId,
+        started: true,
+        contextVersion: newContextVersionId
+      }
+      contextVersion = {
+        _id: newContextVersionId,
+        appCodeVersions: [{
+          repo: newLowerRepoName,
+          branch: newLowerBranchName,
+          lowerRepo: newLowerRepoName,
+          lowerBranch: newLowerBranchName
+        }],
+        build: build,
+        owner: {
+          github: ownerGithubId
+        }
+      }
+      contextVersion.toJSON = sinon.stub().returns(contextVersion)
+      opts = {
+        build: newBuildId,
+        isolated: false
+      }
+      sessionUser = {
+        accounts: {
+          github: {
+            id: sessionUserGithubId
+          }
+        }
+      }
+      sinon.stub(rabbitMQ, 'deleteContextVersion').resolves()
+      sinon.stub(rabbitMQ, 'matchCommitWithIsolationMaster').resolves()
+      sinon.stub(Build, 'findByIdAsync').resolves(build)
+      sinon.stub(ContextVersion, 'findByIdAsync').resolves(contextVersion)
+      sinon.stub(InstanceService, 'deleteForkedInstancesByRepoAndBranch').resolves()
+      sinon.stub(InstanceService, 'deleteInstanceContainer').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      rabbitMQ.deleteContextVersion.restore()
+      rabbitMQ.matchCommitWithIsolationMaster.restore()
+      Build.findByIdAsync.restore()
+      ContextVersion.findByIdAsync.restore()
+      InstanceService.deleteForkedInstancesByRepoAndBranch.restore()
+      InstanceService.deleteInstanceContainer.restore()
+      done()
+    })
+
+    describe('Main Functionality', function () {
+      it('should fetch the build', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(Build.findByIdAsync)
+            sinon.assert.calledWith(Build.findByIdAsync, newBuildId)
+          })
+          .asCallback(done)
+      })
+
+      it('should fetch the context version', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(ContextVersion.findByIdAsync)
+            sinon.assert.calledWith(ContextVersion.findByIdAsync, newContextVersionId)
+          })
+          .asCallback(done)
+      })
+
+      it('should set the build, contextVersion, and container', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(instance.setAsync)
+            sinon.assert.calledOnce(contextVersion.toJSON)
+            sinon.assert.calledWith(instance.setAsync, {
+              build: newBuildId,
+              contextVersion: contextVersion,
+              container: undefined // Should always be undefined
+            })
+          })
+          .asCallback(done)
+      })
+
+      it('should delete the `build` property so it can be saved later on', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            expect(opts.build).to.equal(undefined)
+          })
+          .asCallback(done)
+      })
+
+      it('should return the newly set context version', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function (_newContextVersion) {
+            expect(_newContextVersion).to.equal(contextVersion)
+          })
+          .asCallback(done)
+      })
+    })
+
+    describe('Delete Forked Instances', function () {
+      it('should delete forked instances if not isolated and is a master pod', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(InstanceService.deleteForkedInstancesByRepoAndBranch)
+            sinon.assert.calledWithExactly(
+              InstanceService.deleteForkedInstancesByRepoAndBranch,
+              instanceId.toString(),
+              newLowerRepoName,
+              newLowerBranchName
+            )
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete forked instances if it is not a masterpod', function (done) {
+        instance.masterPod = false
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(InstanceService.deleteForkedInstancesByRepoAndBranch)
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete forked instances if its an isolated container', function (done) {
+        instance.isolated = true
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(InstanceService.deleteForkedInstancesByRepoAndBranch)
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete forked instances if it includes an isolation update', function (done) {
+        opts.isolated = true
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(InstanceService.deleteForkedInstancesByRepoAndBranch)
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete forked instances if there is no new appCodeVersion', function (done) {
+        contextVersion.appCodeVersions = []
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(InstanceService.deleteForkedInstancesByRepoAndBranch)
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete forked instances if the branches are the same', function (done) {
+        contextVersion.appCodeVersions[0].lowerBranch = oldLowerBranchName
+        contextVersion.appCodeVersions[0].branch = oldLowerBranchName
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(InstanceService.deleteForkedInstancesByRepoAndBranch)
+          })
+          .asCallback(done)
+      })
+    })
+
+    describe('Isolation', function () {
+      describe('Match Commits', function () {
+        it('should match the commit if its isolated and its an isolation gropup master', function (done) {
+          instance.isolated = isolationId
+          instance.isIsolationGroupMaster = true
+          InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.calledOnce(rabbitMQ.matchCommitWithIsolationMaster)
+              sinon.assert.calledWithExactly(rabbitMQ.matchCommitWithIsolationMaster, {
+                isolationId: isolationId,
+                sessionUserGithubId: sessionUserGithubId
+              })
+            })
+            .asCallback(done)
+        })
+
+        it('should not match the commit if its not isolated', function (done) {
+          instance.isolated = false
+          instance.isIsolationGroupmaster = false
+          InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.notCalled(rabbitMQ.matchCommitWithIsolationMaster)
+            })
+            .asCallback(done)
+        })
+
+        it('should not match the commit if its not the isolation group master', function (done) {
+          instance.isolated = isolationId
+          instance.isIsolationGroupmaster = false
+          InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.notCalled(rabbitMQ.matchCommitWithIsolationMaster)
+            })
+            .asCallback(done)
+        })
+      })
+    })
+
+    describe('Delete Context Versions', function () {
+      it('should delete the old context version if there is a new context version', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(rabbitMQ.deleteContextVersion)
+            sinon.assert.calledWithExactly(rabbitMQ.deleteContextVersion, {
+              contextVersionId: oldContextVersionId.toString()
+            })
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete the old context version if the context version is the same', function (done) {
+        contextVersion._id = oldContextVersionId
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(rabbitMQ.deleteContextVersion)
+          })
+          .asCallback(done)
+      })
+    })
+
+    describe('Errors', function () {
+      var throwErr
+      var err = new Error('new error')
+      before(function (done) {
+        throwErr = function (d) {
+          return d.bind(d, new Error('This call should have thrown an error'))
+        }
+        done()
+      })
+
+      it('should throw an error if theres a DB error when fetching the build', function (done) {
+        Build.findByIdAsync.rejects(err)
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function () {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw a notFound error if no build is found', function (done) {
+        Build.findByIdAsync.resolves(null)
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/build.*not.*found/i)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw an error if theres a DB error when fetching the context version', function (done) {
+        ContextVersion.findByIdAsync.rejects(err)
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw a notFound error if no context version is found', function (done) {
+        ContextVersion.findByIdAsync.resolves(null)
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/contextVersion.*not.*found/i)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw a badRequest error if the build has not started building', function (done) {
+        build.started = false
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/cannot.*attach.*build.*not.*started.*building/i)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw a badRequest error if the context version owner does not mind the instance owner', function (done) {
+        contextVersion.owner.github = 3242342342323
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/instance.*owner.*match.*build.*owner/i)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should return an error if instance update failed', function (done) {
+        instance.setAsync.rejects(err)
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.calledOnce(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+    })
   })
 })
