@@ -2870,8 +2870,8 @@ describe('InstanceService', function () {
           .asCallback(done)
       })
 
-      it('should not delete forked instances if there is no new appCodeVersion', function (done) {
-        contextVersion.appCodeVersions = []
+      it('should not delete forked instances if there is no new appCodeVersion (non-repo container)', function (done) {
+        delete contextVersion.appCodeVersions
         InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
           .then(function () {
             sinon.assert.notCalled(InstanceService.deleteForkedInstancesByRepoAndBranch)
