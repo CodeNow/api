@@ -2247,418 +2247,247 @@ describe('InstanceService', function () {
   })
 
   describe('updateInstance', function () {
-    var ctx = {}
+    var instance
+    var opts
+    var sessionUser
+    var newContextVersion
+    var buildId = new ObjectId()
+
     beforeEach(function (done) {
-      sinon.stub(rabbitMQ, 'deleteContextVersion')
-      sinon.stub(InstanceService, 'deleteInstanceContainer')
+      instance = {}
+      opts = {
+        build: buildId.toString(),
+        env: [
+          'HELLO=1',
+          'WOW1=http://hello-world.runnable.io',
+          'SOME_OTHER_THING======'
+        ],
+        ipWhitelist: { enabled: false },
+        isolated: (new ObjectId()).toString(),
+        public: true,
+        locked: false
+      }
+      sessionUser = {}
+      instance.setAsync = sinon.stub().resolves(instance)
+      sinon.stub(InstanceService, '_setNewContextVersionOnInstance').resolves(newContextVersion)
+      sinon.stub(InstanceService, '_saveInstanceAndEmitUpdate').resolves()
       done()
     })
     afterEach(function (done) {
-      rabbitMQ.deleteContextVersion.restore()
-      InstanceService.deleteInstanceContainer.restore()
+      InstanceService._setNewContextVersionOnInstance.restore()
+      InstanceService._saveInstanceAndEmitUpdate.restore()
       done()
     })
-    beforeEach(function makeABunchOfModels (done) {
-      ctx.mockSessionUser = {
-        findGithubUserByGithubIdAsync: sinon.spy(function (id) {
-          var login = (id === ctx.mockSessionUser.accounts.github.id) ? 'user' : 'owner'
-          return Promise.resolve({
-            login: login,
-            avatar_url: 'TEST-avatar_url'
-          })
-        }),
-        gravatar: 'sdasdasdasdasdasd',
-        accounts: {
-          github: {
-            id: 1234,
-            username: 'user'
-          }
-        }
-      }
-      ctx.cvAttrs = {
-        name: 'name1',
-        owner: {
-          github: 2335750
-        },
-        createdBy: {
-          github: 146592
-        }
-      }
-      ctx.unstartedMockCv = new ContextVersion(ctx.cvAttrs)
-      ctx.mockCv = new ContextVersion(put(ctx.cvAttrs, {
-        build: {
-          _id: '23412312h3nk1lj2h3l1k2',
-          started: new Date(),
-          completed: new Date()
-        }
-      }))
-      ctx.builtCv = new ContextVersion(put(ctx.cvAttrs, {
-        build: {
-          _id: '23412312h3nk1lj2h3l1k2',
-          started: new Date(),
-          completed: new Date()
-        }
-      }))
-      ctx.buildingCv = new ContextVersion(put(ctx.cvAttrs, {
-        build: {
-          _id: '23412312h3nk1lj2h3l1k2',
-          started: new Date(),
-          completed: new Date()
-        }
-      }))
-      ctx.buildAttrs = {
-        name: 'name1',
-        owner: {
-          github: 2335750
-        },
-        createdBy: {
-          github: 146592
-        },
-        contextVersions: [ctx.mockCv._id]
-      }
-      ctx.mockHostname = 'hello-runnable.runnableapp.com'
-      ctx.mockBuild = new Build(ctx.buildAttrs)
-      ctx.builtBuild = new Build({
-        name: 'built',
-        owner: {
-          github: 2335750
-        },
-        createdBy: {
-          github: 146592
-        },
-        contextVersions: [ctx.builtCv._id]
-      })
-      ctx.buildingBuild = new Build({
-        name: 'building',
-        owner: {
-          github: 2335750
-        },
-        createdBy: {
-          github: 146592
-        },
-        contextVersions: [ctx.buildingCv._id]
-      })
-      ctx.mockInstance = {
-        _id: '507f1f77bcf86cd799439014',
-        name: 'name1',
-        owner: {
-          github: 2335750,
-          username: 'owner'
-        },
-        createdBy: {
-          github: 146592,
-          username: 'owner'
-        },
-        container: {
-          dockerContainer: {}
-        },
-        contextVersion: ctx.mockCv.toJSON(),
-        getElasticHostname: sinon.stub().returns('hello-runnable.runnableapp.com'),
-        saveAsync: sinon.spy(function () {
-          return Promise.resolve(ctx.mockInstance)
-        }),
-        setAsync: sinon.spy(function () {
-          return Promise.resolve(ctx.mockInstance)
-        }),
-        emitInstanceUpdateAsync: sinon.stub().resolves(),
-        upsertIntoGraphAsync: sinon.stub().resolves(),
-        setDependenciesFromEnvironmentAsync: sinon.stub()
-      }
-      done()
-    })
-    describe('flow validation', function () {
-      describe('new built version', function () {
+
+    describe('Main Functionality', function () {
+      describe('Validation', function () {
         beforeEach(function (done) {
-          sinon.stub(InstanceService, '_saveInstanceAndEmitUpdate').resolves(ctx.mockInstance)
-          sinon.stub(Build, 'findByIdAsync').resolves(ctx.builtBuild)
-          sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.builtCv)
+          sinon.spy(InstanceService, 'validateUpdateOpts')
           done()
         })
         afterEach(function (done) {
-          Build.findByIdAsync.restore()
-          ContextVersion.findByIdAsync.restore()
-          InstanceService._saveInstanceAndEmitUpdate.restore()
+          InstanceService.validateUpdateOpts.restore()
           done()
         })
-        describe('buildId', function () {
-          var body = {
-            build: '507f1f77bcf86cd799439011'
-          }
-          it('should set the new cv and build the instance, and remove the contaioner', function (done) {
-            InstanceService.updateInstance(ctx.mockInstance, body, ctx.mockSessionUser)
-              .then(function (instance) {
-                expect(instance).to.exist()
 
-                sinon.assert.calledWithMatch(ctx.mockInstance.setAsync, sinon.match({
-                  contextVersion: sinon.match.has('id', ctx.builtCv._id.toString()),
-                  container: undefined
-                }))
-                sinon.assert.calledWith(ctx.mockInstance.setAsync, {
-                  build: ctx.builtBuild._id,
-                  contextVersion: ctx.builtCv.toJSON(),
-                  container: undefined
-                })
-              })
-              .asCallback(done)
-          })
-          it('should delete the old cv and container', function (done) {
-            InstanceService.updateInstance(ctx.mockInstance, body, ctx.mockSessionUser)
-              .then(function (instance) {
-                expect(instance).to.exist()
-
-                sinon.assert.calledWith(
-                  InstanceService.deleteInstanceContainer,
-                  ctx.mockInstance,
-                  ctx.mockInstance.container
-                )
-
-                sinon.assert.calledWith(rabbitMQ.deleteContextVersion, {
-                  contextVersionId: ctx.mockCv._id.toString()
-                })
-              })
-              .asCallback(done)
-          })
-          it('should call _saveInstanceAndEmitUpdate with the body', function (done) {
-            InstanceService.updateInstance(ctx.mockInstance, body, ctx.mockSessionUser)
-              .then(function () {
-                sinon.assert.calledWith(
-                  InstanceService._saveInstanceAndEmitUpdate,
-                  ctx.mockInstance,
-                  ctx.builtCv,
-                  {},
-                  ctx.mockSessionUser
-                )
-              })
-              .asCallback(done)
-          })
-        })
-        describe('with buildId and env', function () {
-          var body = {
-            build: '507f1f77bcf86cd799439011',
-            env: ['hello=asdasdasd']
-          }
-          it('should set dependencies ', function (done) {
-            InstanceService.updateInstance(ctx.mockInstance, body, ctx.mockSessionUser)
-              .then(function () {
-                sinon.assert.calledWith(
-                  InstanceService._saveInstanceAndEmitUpdate,
-                  ctx.mockInstance,
-                  ctx.builtCv,
-                  {
-                    env: ['hello=asdasdasd']
-                  },
-                  ctx.mockSessionUser
-                )
-              })
-              .asCallback(done)
-          })
-        })
-      })
-      describe('when adding the same CV', function () {
-        var body = {
-          build: '507f1f77bcf86cd799439011'
-        }
-        beforeEach(function (done) {
-          sinon.stub(InstanceService, '_saveInstanceAndEmitUpdate').resolves(ctx.mockInstance)
-          sinon.stub(Build, 'findByIdAsync').resolves(ctx.builtBuild)
-          sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
-          done()
-        })
-        afterEach(function (done) {
-          Build.findByIdAsync.restore()
-          ContextVersion.findByIdAsync.restore()
-          InstanceService._saveInstanceAndEmitUpdate.restore()
-          done()
-        })
-        it('should not delete itself ', function (done) {
-          InstanceService.updateInstance(ctx.mockInstance, body, ctx.mockSessionUser)
+        it('should validate the opts', function (done) {
+          InstanceService.updateInstance(instance, opts, sessionUser)
             .then(function () {
-              sinon.assert.notCalled(rabbitMQ.deleteContextVersion)
+              sinon.assert.calledOnce(InstanceService.validateUpdateOpts)
+              sinon.assert.calledWith(InstanceService.validateUpdateOpts, sinon.match.object)
+            })
+            .asCallback(done)
+        })
+
+        it('should only pick out certain opts', function (done) {
+          opts.helloWorld = true
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.calledOnce(InstanceService.validateUpdateOpts)
+              var args = InstanceService.validateUpdateOpts.args[0] // First call
+              expect(args[0]).to.be.an.object() // First argument on first call
+              expect(args[0].helloWorld).to.not.exist()
             })
             .asCallback(done)
         })
       })
 
-      describe('unbuilt version', function () {
-        beforeEach(function (done) {
-          sinon.stub(InstanceService, '_saveInstanceAndEmitUpdate').resolves(ctx.mockInstance)
-          sinon.stub(Build, 'findByIdAsync').resolves(ctx.buildingBuild)
-          sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.buildingCv)
-          done()
-        })
-        afterEach(function (done) {
-          Build.findByIdAsync.restore()
-          ContextVersion.findByIdAsync.restore()
-          InstanceService._saveInstanceAndEmitUpdate.restore()
-          done()
-        })
-        describe('buildId', function () {
-          var body = {
-            build: '507f1f77bcf86cd799439011'
-          }
-          it('should update the instance and save it', function (done) {
-            InstanceService.updateInstance(ctx.mockInstance, body, ctx.mockSessionUser)
-              .then(function (instance) {
-                expect(instance).to.exist()
-
-                sinon.assert.calledWithMatch(ctx.mockInstance.setAsync, sinon.match({
-                  contextVersion: sinon.match.has('id', ctx.buildingCv._id.toString()),
-                  container: sinon.match.undefined
-                }))
-                sinon.assert.calledWith(ctx.mockInstance.setAsync, {})
-              })
-              .asCallback(done)
+      it('should set the new CV if there is a build', function (done) {
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(InstanceService._setNewContextVersionOnInstance)
+            sinon.assert.calledWithExactly(
+              InstanceService._setNewContextVersionOnInstance,
+              instance,
+              sinon.match.has('build', buildId.toString()),
+              sessionUser
+            )
           })
-          it('should delete the old cv and container', function (done) {
-            InstanceService.updateInstance(ctx.mockInstance, body, ctx.mockSessionUser)
-              .then(function (instance) {
-                expect(instance).to.exist()
-
-                sinon.assert.calledWith(
-                  InstanceService.deleteInstanceContainer,
-                  ctx.mockInstance,
-                  ctx.mockInstance.container
-                )
-
-                sinon.assert.calledWith(rabbitMQ.deleteContextVersion, {
-                  contextVersionId: ctx.mockCv._id.toString()
-                })
-              })
-              .asCallback(done)
-          })
-          it('should call _saveInstanceAndEmitUpdate with the body', function (done) {
-            InstanceService.updateInstance(ctx.mockInstance, body, ctx.mockSessionUser)
-              .then(function () {
-                sinon.assert.calledWith(
-                  InstanceService._saveInstanceAndEmitUpdate,
-                  ctx.mockInstance,
-                  ctx.buildingCv,
-                  {},
-                  ctx.mockSessionUser
-                )
-              })
-              .asCallback(done)
-          })
-        })
+          .asCallback(done)
       })
-      describe('without a build', function () {
-        beforeEach(function (done) {
-          sinon.stub(InstanceService, '_saveInstanceAndEmitUpdate').resolves(ctx.mockInstance)
-          sinon.stub(ContextVersion, 'findByIdAsync').resolves()
-          done()
-        })
-        afterEach(function (done) {
-          ContextVersion.findByIdAsync.restore()
-          InstanceService._saveInstanceAndEmitUpdate.restore()
-          done()
-        })
-        it('should only set on the instance, then save ', function (done) {
-          var body = {
-            env: ['asdasdaas=asdasdas']
-          }
-          InstanceService.updateInstance(ctx.mockInstance, body, ctx.mockSessionUser)
-            .then(function (instance) {
-              expect(instance).to.exist()
-              sinon.assert.notCalled(ContextVersion.findByIdAsync)
-              sinon.assert.calledWith(ctx.mockInstance.setAsync, body)
-            })
-            .asCallback(done)
-        })
+
+      it('should set the new properties', function (done) {
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(instance.setAsync)
+            sinon.assert.calledWithExactly(
+              instance.setAsync,
+              sinon.match.has('build', buildId.toString())
+            )
+          })
+          .asCallback(done)
+      })
+
+      it('should save the instance and emit the update', function (done) {
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(InstanceService._saveInstanceAndEmitUpdate)
+            sinon.assert.calledWithExactly(
+              InstanceService._saveInstanceAndEmitUpdate,
+              instance,
+              newContextVersion,
+              sinon.match.has('build', buildId.toString()),
+              sessionUser
+            )
+          })
+          .asCallback(done)
       })
     })
 
-    describe('errors', function () {
-      var validBody = {
-        build: '507f1f77bcf86cd799439011'
-      }
-      var error = new Error('oh shit')
-      describe('fetch build errors', function () {
-        afterEach(function (done) {
-          Build.findByIdAsync.restore()
-          done()
-        })
-        it('should throw error when the build fails to fetch', function (done) {
-          sinon.stub(Build, 'findByIdAsync').rejects(error)
-          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
+    describe('Errors', function () {
+      var throwErr
+      var dbError = new Error('Database Error')
+      before(function (done) {
+        throwErr = function (d) {
+          return d.bind(d, new Error('This call should have thrown an error'))
+        }
+        done()
+      })
+
+      describe('Opts', function () {
+        it('should reject if there is no build id', function (done) {
+          opts.build = true
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
             .catch(function (err) {
-              expect(err.message).to.equal(error.message)
+              expect(err).to.exist()
+              expect(err.message).to.match(/build.*must.*be.*string/i)
             })
             .asCallback(done)
         })
-        it('should throw error when the build fetch doesn\'t return anything', function (done) {
-          sinon.stub(Build, 'findByIdAsync').resolves()
-          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
+
+        it('should reject if the build ID is an object id', function (done) {
+          opts.build = new ObjectId()
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
             .catch(function (err) {
-              expect(err.message).to.equal('build not found')
+              expect(err).to.exist()
+              expect(err.message).to.match(/build.*must.*be.*string/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if there is an invalid ENV', function (done) {
+          opts.env.push('wow')
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/env.*fails.*to.*match/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if ipWhitelist is not an object', function (done) {
+          opts.ipWhitelist = false
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/ipWhitelist.*must.*be.*object/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if isolated is not a string', function (done) {
+          opts.isolated = 23423
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/isolated.*must.*be.*string/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if isolated is an objectId', function (done) {
+          opts.isolated = new ObjectId()
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/isolated.*must.*be.*string/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if public is not a boolean', function (done) {
+          opts.public = 1
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/public.*must.*be.*boolean/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if locked is not a boolean', function (done) {
+          opts.locked = 1
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/locked.*must.*be.*boolean/i)
             })
             .asCallback(done)
         })
       })
-      describe('fetch cv errors', function () {
-        beforeEach(function (done) {
-          sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
-          sinon.stub(ContextVersion, 'findByIdAsync')
-          done()
-        })
-        afterEach(function (done) {
-          Build.findByIdAsync.restore()
-          ContextVersion.findByIdAsync.restore()
-          done()
-        })
-        it('should throw error when the cv fetch fails', function (done) {
-          ContextVersion.findByIdAsync.rejects(error)
-          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
-            .catch(function (err) {
-              expect(err.message).to.equal(error.message)
-            })
-            .asCallback(done)
-        })
-        it('should throw error when the cv fetch returns nothing', function (done) {
-          ContextVersion.findByIdAsync.resolves()
-          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
-            .catch(function (err) {
-              expect(err.message).to.equal('contextVersion not found')
-            })
-            .asCallback(done)
-        })
-        it('should throw error when the cv hasn\'t started building', function (done) {
-          ContextVersion.findByIdAsync.resolves(ctx.unstartedMockCv)
-          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
-            .catch(function (err) {
-              expect(err.message).to.contains('Cannot attach a build to an instance with context ' +
-                'versions that have not started building')
-            })
-            .asCallback(done)
-        })
+
+      it('should reject if it cant set the new context version', function (done) {
+        InstanceService._setNewContextVersionOnInstance.rejects(dbError)
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(dbError)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
       })
-      describe('instance errors', function () {
-        beforeEach(function (done) {
-          sinon.stub(Build, 'findByIdAsync').resolves(ctx.mockBuild)
-          sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.mockCv)
-          done()
-        })
-        afterEach(function (done) {
-          Build.findByIdAsync.restore()
-          ContextVersion.findByIdAsync.restore()
-          done()
-        })
-        it('should throw error when set fails', function (done) {
-          ctx.mockInstance.setAsync = sinon.stub().rejects(error)
-          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
-            .catch(function (err) {
-              expect(err.message).to.equal(error.message)
-            })
-            .asCallback(done)
-        })
-        it('should throw error when save fails', function (done) {
-          ctx.mockInstance.setAsync = sinon.stub().resolves()
-          ctx.mockInstance.saveAsync = sinon.stub().rejects(error)
-          InstanceService.updateInstance(ctx.mockInstance, validBody, ctx.mockSessionUser)
-            .catch(function (err) {
-              expect(err.message).to.equal(error.message)
-            })
-            .asCallback(done)
-        })
+
+      it('should reject if it cant save set the new properties', function (done) {
+        instance.setAsync.rejects(dbError)
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(dbError)
+            sinon.assert.notCalled(InstanceService._saveInstanceAndEmitUpdate)
+          })
+          .asCallback(done)
+      })
+
+      it('should reject if it cant save the instance and emit the update', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate.rejects(dbError)
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(dbError)
+            sinon.assert.calledOnce(InstanceService._saveInstanceAndEmitUpdate)
+          })
+          .asCallback(done)
       })
     })
   })
