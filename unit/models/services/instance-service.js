@@ -5,7 +5,6 @@
  */
 var clone = require('101/clone')
 var put = require('101/put')
-// var keypather = require('keypather')()
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var sinon = require('sinon')
