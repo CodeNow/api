@@ -77,71 +77,85 @@ describe('Isolation Services Model', function () {
       done()
     })
 
-    describe('errors', function () {
-      it('should require child info', function (done) {
-        IsolationService.forkRepoChild()
+    describe('Validation', function () {
+      it('should allow a `matchBranch` property in childInfo', function (done) {
+        mockChildInfo.matchBranch = true
+        return IsolationService.forkRepoChild(mockChildInfo, '', '', mockSessionUser)
           .asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.match(/childinfo.+required/i)
+            expect(err).to.not.exist()
             done()
           }
         )
       })
 
-      ;['repo', 'org'].forEach(function (k) {
-        it('should require childInfo.' + k, function (done) {
-          var info = omit(mockChildInfo, k)
+      describe('Validation Errors', function () {
+        it('should require child info', function (done) {
+          IsolationService.forkRepoChild()
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/childinfo.+required/i)
+              done()
+            }
+          )
+        })
+
+        ;['repo', 'org'].forEach(function (k) {
+          it('should require childInfo.' + k, function (done) {
+            var info = omit(mockChildInfo, k)
+            return IsolationService.forkRepoChild(info, '', '', {})
+              .asCallback(function (err) {
+                expect(err).to.exist()
+                expect(err.message).to.match(new RegExp('must.+contain.+' + k, 'i'))
+                done()
+              }
+            )
+          })
+        })
+
+        it('should require childInfo branch', function (done) {
+          var info = omit(mockChildInfo, 'branch')
           return IsolationService.forkRepoChild(info, '', '', {})
             .asCallback(function (err) {
               expect(err).to.exist()
-              expect(err.message).to.match(new RegExp('must.+contain.+' + k, 'i'))
+              expect(err.message).to.match(new RegExp('branch.+required', 'i'))
+              done()
+            }
+          )
+        })
+
+        it('should require a short hash', function (done) {
+          IsolationService.forkRepoChild(mockChildInfo)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/masterinstanceshorthash.+required/i)
+              done()
+            }
+          )
+        })
+
+        it('should require an isolation id', function (done) {
+          IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/isolationid.+required/i)
+              done()
+            }
+          )
+        })
+
+        it('should require a session user', function (done) {
+          IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash, mockIsolationId)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/sessionuser.+required/i)
               done()
             }
           )
         })
       })
+    })
 
-      it('should require childInfo branch', function (done) {
-        var info = omit(mockChildInfo, 'branch')
-        return IsolationService.forkRepoChild(info, '', '', {})
-          .asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.match(new RegExp('branch.+required', 'i'))
-            done()
-          }
-        )
-      })
-
-      it('should require a short hash', function (done) {
-        IsolationService.forkRepoChild(mockChildInfo)
-          .asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.match(/masterinstanceshorthash.+required/i)
-            done()
-          }
-        )
-      })
-
-      it('should require an isolation id', function (done) {
-        IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash)
-          .asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.match(/isolationid.+required/i)
-            done()
-          }
-        )
-      })
-
-      it('should require a session user', function (done) {
-        IsolationService.forkRepoChild(mockChildInfo, mockMasterShortHash, mockIsolationId)
-          .asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.match(/sessionuser.+required/i)
-            done()
-          }
-        )
-      })
-
+    describe('Errors', function () {
       it('should reject with any findMasterInstancesForRepo error', function (done) {
         var error = new Error('pugsly')
         Instance.findMasterInstancesForRepo.yieldsAsync(error)
