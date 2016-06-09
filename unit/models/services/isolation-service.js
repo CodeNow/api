@@ -88,17 +88,28 @@ describe('Isolation Services Model', function () {
         )
       })
 
-      ;[ 'repo', 'org', 'branch' ].forEach(function (k) {
+      ;['repo', 'org'].forEach(function (k) {
         it('should require childInfo.' + k, function (done) {
           var info = omit(mockChildInfo, k)
-          return IsolationService.forkRepoChild(info)
+          return IsolationService.forkRepoChild(info, '', '', {})
             .asCallback(function (err) {
               expect(err).to.exist()
-              expect(err.message).to.match(new RegExp('childinfo.+' + k + '.+required', 'i'))
+              expect(err.message).to.match(new RegExp('must.+contain.+' + k, 'i'))
               done()
             }
           )
         })
+      })
+
+      it('should require childInfo branch', function (done) {
+        var info = omit(mockChildInfo, 'branch')
+        return IsolationService.forkRepoChild(info, '', '', {})
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(new RegExp('branch.+required', 'i'))
+            done()
+          }
+        )
       })
 
       it('should require a short hash', function (done) {
@@ -566,7 +577,15 @@ describe('Isolation Services Model', function () {
     var mockRepoInstance = { org: 'Runnable', repo: 'someRepo', branch: 'someBranch' }
     var mockRepoInstanceWithInstanceId = { instance: '123', branch: 'someOtherBranch' }
     var mockNonRepoInstance = { instance: 'childNonRepo' }
-    var mockInstance = { _id: 'deadbeef', shortHash: 'shorthash' }
+    var mockInstance = {
+      _id: 'deadbeef',
+      shortHash: 'shorthash',
+      contextVersion: {
+        appCodeVersions: [{
+          branch: 'someBranch'
+        }]
+      }
+    }
     var mockNewChildInstance = { _id: 'newChildInstanceId' }
     var mockNewChildRepoInstance = { _id: 'newChildRepoInstanceId' }
     var mockNewIsolation = { _id: 'newIsolationId' }
