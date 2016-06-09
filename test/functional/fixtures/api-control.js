@@ -15,9 +15,8 @@ module.exports = {
 function ensureIndex (script, cb) {
   var mongoCmd = [
     'mongo',
-    process.env.MONGO.split('/')[2],
-    '--eval', script,
-    process.env.MONGO.split('/').pop() // db name only
+    process.env.MONGO.replace('mongodb://',''),
+    '--eval', script
   ].join(' ')
   exec(mongoCmd, cb)
 }
