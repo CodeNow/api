@@ -2361,6 +2361,50 @@ describe('InstanceService', function () {
           })
           .asCallback(done)
       })
+
+      describe('setIsolatedInstancesLocked', function () {
+        var isolationID
+        beforeEach(function (done) {
+          isolationID = new ObjectId()
+          done()
+        })
+
+        it('should set the `locked` property on all isolation instances', function (done) {
+          instance.isolated = isolationID
+          opts = { locked: true }
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.calledOnce(Instance.updateInstancesInIsolationWithSameRepo)
+              sinon.assert.calledWithExactly(
+                Instance.updateInstancesInIsolationWithSameRepo,
+                isolationID,
+                repoName,
+                { locked: true },
+                sinon.match.func
+              )
+            })
+            .asCallback(done)
+        })
+
+        it('should not set the `locked` property if the instance is not isolated', function (done) {
+          opts = { locked: true }
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.notCalled(Instance.updateInstancesInIsolationWithSameRepo)
+            })
+            .asCallback(done)
+        })
+
+        it('should not set the `locked` property if the update does not include the `locked` property', function (done) {
+          delete opts.locked
+          instance.isolated = isolationID
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.notCalled(Instance.updateInstancesInIsolationWithSameRepo)
+            })
+            .asCallback(done)
+        })
+      })
     })
 
     describe('Errors', function () {
