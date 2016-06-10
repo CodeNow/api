@@ -383,6 +383,85 @@ describe('Instance Model Tests', function () {
     })
   })
 
+  describe('#updateInstancesInIsolationWithSameRepo', function () {
+    var id = '571b39b9d35173300021667d'
+    var repo = 'repoName'
+    var updates = { locked: true }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'update').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.update.restore()
+      done()
+    })
+
+    it('should update the database', function (done) {
+      Instance.updateInstancesInIsolationWithSameRepo(id, repo, updates, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(
+          Instance.update,
+          {
+            isolated: id,
+            isIsolationGroupMaster: { $ne: true },
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          },
+          {
+            $set: {
+              locked: true
+            }
+          }
+        )
+        done()
+      })
+    })
+
+    it('should update the database with a more complex object', function (done) {
+      var newID = newObjectId()
+      updates.contextVersion = { build: { _id: newID } }
+      Instance.updateInstancesInIsolationWithSameRepo(id, repo, updates, function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(
+          Instance.update,
+          {
+            isolated: id,
+            isIsolationGroupMaster: { $ne: true },
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          },
+          {
+            $set: {
+              locked: true,
+              contextVersion: {
+                build: newID
+              }
+            }
+          }
+        )
+        done()
+      })
+    })
+
+    it('should throw any database errors', function (done) {
+      var dbErr = new Error('MongoErr')
+      Instance.update.yieldsAsync(dbErr)
+      Instance.updateInstancesInIsolationWithSameRepo(id, repo, updates, function (err) {
+        expect(err).to.exist()
+        expect(err).to.equal(dbErr)
+        done()
+      })
+    })
+  })
+
   describe('invalidateContainerDNS', function () {
     var instance
 
