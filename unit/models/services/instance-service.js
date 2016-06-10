@@ -1046,38 +1046,6 @@ describe('InstanceService', function () {
     })
   })
 
-  describe('#updateLockedOnInstancesInIsolation', function () {
-    var isolationId = new ObjectId()
-    var repoName = 'helloWorld'
-    var locked = true
-    var instance = {}
-    beforeEach(function (done) {
-      sinon.stub(Instance, 'updateInstancesInIsolationWithSameRepo').yieldsAsync(null, instance)
-      done()
-    })
-
-    afterEach(function (done) {
-      Instance.updateInstancesInIsolationWithSameRepo.restore()
-      done()
-    })
-
-    it('should call updateInstancesInIsolationWithSameRepo', function (done) {
-      InstanceService.updateLockedOnInstancesInIsolation(isolationId, repoName, locked)
-        .then(function (i) {
-          expect(i).to.equal(instance)
-          sinon.assert.calledOnce(Instance.updateInstancesInIsolationWithSameRepo)
-          sinon.assert.calledWithExactly(
-            Instance.updateInstancesInIsolationWithSameRepo,
-            isolationId,
-            repoName,
-            { locked: true },
-            sinon.match.func
-          )
-        })
-        .asCallback(done)
-    })
-  })
-
   describe('startInstance', function () {
     beforeEach(function (done) {
       sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').returns(Promise.resolve())
@@ -2283,10 +2251,17 @@ describe('InstanceService', function () {
     var opts
     var sessionUser
     var newContextVersion
+    var repoName = 'helloWorldWow'
     var buildId = new ObjectId()
 
     beforeEach(function (done) {
-      instance = {}
+      instance = {
+        contextVersion: {
+          appCodeVersions: [{
+            repo: repoName
+          }]
+        }
+      }
       opts = {
         build: buildId.toString(),
         env: [
@@ -2303,11 +2278,13 @@ describe('InstanceService', function () {
       instance.setAsync = sinon.stub().resolves(instance)
       sinon.stub(InstanceService, '_setNewContextVersionOnInstance').resolves(newContextVersion)
       sinon.stub(InstanceService, '_saveInstanceAndEmitUpdate').resolves()
+      sinon.stub(Instance, 'updateInstancesInIsolationWithSameRepo').yieldsAsync(null, [])
       done()
     })
     afterEach(function (done) {
       InstanceService._setNewContextVersionOnInstance.restore()
       InstanceService._saveInstanceAndEmitUpdate.restore()
+      Instance.updateInstancesInIsolationWithSameRepo.restore()
       done()
     })
 
