@@ -96,7 +96,6 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
           })
           it('should create a copy of the context version maintaining the memory', function (done) {
             var expectedNewBuild = clone(ctx.build.json())
-            delete expectedNewBuild.contextVersion
             expectedNewBuild.contextVersions = function (contextVersions) {
               expect(contextVersions.length).to.equal(1)
               expect(contextVersions[0]).to.not.equal(ctx.contextVersion.id())
@@ -130,7 +129,6 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
           })
           it('should create a copy of the context version maintaining the memory', function (done) {
             var expectedNewBuild = clone(ctx.build.json())
-            delete expectedNewBuild.contextVersion
             expectedNewBuild.contextVersions = function (contextVersions) {
               expect(contextVersions.length).to.equal(1)
               expect(contextVersions[0]).to.not.equal(ctx.contextVersion.id())
@@ -156,7 +154,6 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
 
         it('should create a copy of the build', function (done) {
           var expectedNewBuild = clone(ctx.build.json())
-          delete expectedNewBuild.contextVersion
           expectedNewBuild.contextVersions = function (contextVersions) {
             expect(contextVersions.length).to.equal(1)
             expect(contextVersions[0]).to.not.equal(ctx.contextVersion.id())
@@ -179,7 +176,6 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
         })
         it('should create a copy of the build', function (done) {
           var expectedNewBuild = clone(ctx.build.json())
-          delete expectedNewBuild.contextVersion
           expectedNewBuild.contextVersions = function (contextVersions) {
             expect(contextVersions.length).to.equal(1)
             expect(contextVersions[0]).to.not.equal(ctx.contextVersion.id())

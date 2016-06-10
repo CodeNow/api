@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "7.12.10",
+  "version": "7.13.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -66,6 +66,7 @@
     "mixpanel": "^0.1.0",
     "moment": "^2.11.0",
     "mongoose": "~3.8.24",
+    "mongoose-hidden": "^0.6.3",
     "mongoose-validator": "~1.0.3",
     "mongooseware": "^0.4.2",
     "monitor-dog": "^1.4.1",
