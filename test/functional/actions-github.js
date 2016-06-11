@@ -28,6 +28,7 @@ var request = require('request')
 var rabbitMQ = require('models/rabbitmq')
 var UserWhitelist = require('models/mongo/user-whitelist')
 var sinon = require('sinon')
+require('sinon-as-promised')(Promise)
 
 describe('Github - /actions/github', function () {
   var ctx = {}
@@ -213,7 +214,7 @@ describe('Github - /actions/github', function () {
 
     it('should return a 403 if the repo owner is not whitelisted', function (done) {
       // No org whitelisted
-      UserWhitelist.findOne.yieldsAsync(null, null)
+      UserWhitelist.findOneAsync.resolve()
 
       var data = {
         branch: 'some-branch',
