@@ -150,7 +150,7 @@ describe('isolation.match-commit-with-master', function () {
         Instance.findInstancesInIsolationWithSameRepo.yieldsAsync(null, [])
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err.message).to.match(/no.*children.*found/i)
+          expect(err.message).to.match(/no.*instances.*found/i)
           done()
         })
       })
@@ -167,7 +167,7 @@ describe('isolation.match-commit-with-master', function () {
   })
 
   describe('valid job', function () {
-    it('should call findIsolationChildrenWithRepoAsync', function (done) {
+    it('should call findInstancesInIsolationWithSameRepo', function (done) {
       matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
 
