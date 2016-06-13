@@ -120,9 +120,31 @@ describe('Isolation Model Integration Tests', function () {
           done()
         })
       })
+
+      it('should not allow for children to have a `matchBranch` and a `branch` property', function (done) {
+        data.children[0].matchBranch = true
+        data.children[0].branch = 'hello'
+        Isolation._validateCreateData(data).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.isBoom).to.be.true()
+          expect(err.message).to.match(/children.+0.+not.+match.+allowed.+types/i)
+          done()
+        })
+      })
     })
 
     it('should validate arguments', function (done) {
+      Isolation._validateCreateData(data).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(joi.validate)
+        sinon.assert.calledWith(joi.validate, data)
+        done()
+      })
+    })
+
+    it('should allow for children to have a `matchBranch` property', function (done) {
+      delete data.children[0].branch
+      data.children[0].matchBranch = true
       Isolation._validateCreateData(data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(joi.validate)

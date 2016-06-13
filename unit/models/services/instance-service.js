@@ -3,10 +3,8 @@
 /**
  * @module unit/models/services/instance-service
  */
-var assign = require('101/assign')
 var clone = require('101/clone')
 var put = require('101/put')
-var keypather = require('keypather')()
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var sinon = require('sinon')
@@ -23,7 +21,6 @@ var InstanceCounter = require('models/mongo/instance-counter')
 var Instance = require('models/mongo/instance')
 var User = require('models/mongo/user')
 var rabbitMQ = require('models/rabbitmq')
-var Runnable = require('models/apis/runnable')
 var messenger = require('socket/messenger')
 var ObjectId = require('mongoose').Types.ObjectId
 
@@ -31,6 +28,7 @@ var mongoFactory = require('../../factories/mongo')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
+var before = lab.before
 var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
@@ -48,229 +46,6 @@ describe('InstanceService', function () {
   beforeEach(function (done) {
     ctx = {}
     done()
-  })
-
-  describe('updateInstanceBuild', function () {
-    var instance
-    beforeEach(function (done) {
-      instance = {
-        _id: 'instance_id_1',
-        shortHash: 'abc1',
-        name: 'hellonode',
-        masterPod: false,
-        owner: {
-          github: 4,
-          username: 'anton'
-        },
-        contextVersion: {
-          _id: '123',
-          appCodeVersions: [
-            {
-              lowerBranch: 'master',
-              additionalRepo: false
-            }
-          ]
-        }
-      }
-      var build = {
-        _id: 'build_id_1',
-        successful: true,
-        contextVersions: [
-          'cv_id'
-        ]
-      }
-      sinon.stub(Instance, 'findByIdAndUpdateAsync').resolves(instance)
-      sinon.stub(InstanceService, 'deleteInstanceContainer').returns()
-      sinon.stub(Build, 'findByIdAsync').resolves(build)
-      sinon.stub(rabbitMQ, 'createInstanceContainer').returns()
-      sinon.stub(rabbitMQ, 'deleteContextVersion')
-      done()
-    })
-    afterEach(function (done) {
-      Instance.findByIdAndUpdateAsync.restore()
-      InstanceService.deleteInstanceContainer.restore()
-      Build.findByIdAsync.restore()
-      rabbitMQ.createInstanceContainer.restore()
-      rabbitMQ.deleteContextVersion.restore()
-      done()
-    })
-    it('should return an error if instance update failed', function (done) {
-      var mongoError = new Error('Mongo error')
-      Instance.findByIdAndUpdateAsync.rejects(mongoError)
-      var updates = {
-        build: 'build_id'
-      }
-      InstanceService.updateInstanceBuild(instance, updates, 12345)
-        .asCallback(function (err) {
-          expect(err).to.equal(mongoError)
-          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
-          sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
-          sinon.assert.notCalled(Build.findByIdAsync)
-          sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
-          done()
-        })
-    })
-    it('should not publish jobs if instance was not found', function (done) {
-      Instance.findByIdAndUpdateAsync.resolves(null)
-      var updates = {
-        build: 'build_id'
-      }
-      InstanceService.updateInstanceBuild(instance, updates, 12345)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
-          sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
-          sinon.assert.notCalled(Build.findByIdAsync)
-          sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
-          done()
-        })
-    })
-    it('should return an error if build find failed', function (done) {
-      var mongoError = new Error('Mongo error')
-      Build.findByIdAsync.rejects(mongoError)
-      var updates = {
-        build: 'build_id'
-      }
-      InstanceService.updateInstanceBuild(instance, updates, 12345)
-        .asCallback(function (err) {
-          expect(err).to.equal(mongoError)
-          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
-          sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
-          sinon.assert.calledOnce(Build.findByIdAsync)
-          sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
-          done()
-        })
-    })
-    it('should not publish create instance job if build was not found', function (done) {
-      Build.findByIdAsync.resolves(null)
-      var updates = {
-        build: 'build_id'
-      }
-      InstanceService.updateInstanceBuild(instance, updates, 12345)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
-          sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
-          sinon.assert.calledOnce(Build.findByIdAsync)
-          sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
-          done()
-        })
-    })
-    it('should not publish create instance job if build was not successully', function (done) {
-      Build.findByIdAsync.resolves({ _id: 'build_id', successful: false })
-      var updates = {
-        build: 'build_id'
-      }
-      InstanceService.updateInstanceBuild(instance, updates, 12345)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
-          sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
-          sinon.assert.calledOnce(Build.findByIdAsync)
-          sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
-          done()
-        })
-    })
-    it('should call 4 functions in the order', function (done) {
-      var updates = {
-        build: 'build_id'
-      }
-      var instance = {
-        _id: 'instance_id_1',
-        shortHash: 'abc1',
-        name: 'hellonode',
-        masterPod: false,
-        owner: {
-          github: 4,
-          username: 'anton'
-        },
-        contextVersion: {
-          _id: '123',
-          appCodeVersions: [
-            {
-              lowerBranch: 'master',
-              additionalRepo: false
-            }
-          ]
-        },
-        container: {
-          dockerContainer: 'somecontainerid'
-        }
-      }
-      InstanceService.updateInstanceBuild(instance, updates, 12345)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.findByIdAndUpdateAsync)
-          sinon.assert.calledWith(Instance.findByIdAndUpdateAsync, 'instance_id_1', {
-            $set: updates, $unset: { container: 1 } })
-          sinon.assert.calledOnce(InstanceService.deleteInstanceContainer)
-          var updatedInstance = clone(instance)
-          delete updatedInstance['container']
-          sinon.assert.calledWith(InstanceService.deleteInstanceContainer,
-            updatedInstance, instance.container)
-          sinon.assert.calledOnce(Build.findByIdAsync)
-          sinon.assert.calledWith(Build.findByIdAsync, 'build_id')
-          sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
-          sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
-            instanceId: 'instance_id_1',
-            contextVersionId: 'cv_id',
-            sessionUserGithubId: 12345,
-            ownerUsername: keypather.get(instance, 'owner.username')
-          })
-          sinon.assert.callOrder(Instance.findByIdAndUpdateAsync,
-            InstanceService.deleteInstanceContainer,
-            Build.findByIdAsync,
-            rabbitMQ.createInstanceContainer)
-          done()
-        })
-    })
-    it('should not delete the old context version if there is a new context version', function (done) {
-      var updates = {
-        build: 'build_id'
-      }
-      var newInstance = clone(instance)
-      Instance.findByIdAndUpdateAsync.resolves(newInstance)
-
-      InstanceService.updateInstanceBuild(instance, updates, 12345)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.notCalled(rabbitMQ.deleteContextVersion)
-          done()
-        })
-    })
-    it('should delete the old context version if there is a new context version', function (done) {
-      var updates = {
-        build: 'build_id'
-      }
-      var newInstance = clone(instance)
-      assign(newInstance.contextVersion, { _id: '456' })
-      Instance.findByIdAndUpdateAsync.resolves(newInstance)
-
-      InstanceService.updateInstanceBuild(instance, updates, 12345)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(rabbitMQ.deleteContextVersion)
-          sinon.assert.calledWith(rabbitMQ.deleteContextVersion, {
-            contextVersionId: instance.contextVersion._id
-          })
-          done()
-        })
-    })
-    it('should not delete the old context version if there is no old context version', function (done) {
-      var updates = {
-        build: 'build_id'
-      }
-      var newInstance = clone(instance)
-      assign(newInstance.contextVersion, null)
-      Instance.findByIdAndUpdateAsync.resolves(newInstance)
-
-      InstanceService.updateInstanceBuild(instance, updates, 12345)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.notCalled(rabbitMQ.deleteContextVersion)
-          done()
-        })
-    })
   })
 
   describe('#deleteInstanceContainer', function () {
@@ -349,12 +124,12 @@ describe('InstanceService', function () {
       }
       ctx.mockBuild = { _id: 123 }
       sinon.stub(User, 'findByGithubIdAsync').resolves(ctx.mockUser)
-      sinon.stub(Runnable.prototype, 'updateInstance').yieldsAsync(null)
+      sinon.stub(InstanceService, 'updateInstance').resolves(null)
       done()
     })
     afterEach(function (done) {
       User.findByGithubIdAsync.restore()
-      Runnable.prototype.updateInstance.restore()
+      InstanceService.updateInstance.restore()
       done()
     })
     it('should fail if user lookup failed', function (done) {
@@ -366,9 +141,9 @@ describe('InstanceService', function () {
           done()
         })
     })
-    it('should fail if update instnance failed', function (done) {
+    it('should fail if update instance failed', function (done) {
       var apiError = new Error('Api error')
-      Runnable.prototype.updateInstance.yieldsAsync(apiError)
+      InstanceService.updateInstance.rejects(apiError)
       InstanceService.updateBuild(ctx.mockInstance, ctx.mockBuild)
         .asCallback(function (err) {
           expect(err.message).to.equal(apiError.message)
@@ -381,9 +156,13 @@ describe('InstanceService', function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(User.findByGithubIdAsync)
           sinon.assert.calledWith(User.findByGithubIdAsync, ctx.mockInstance.createdBy.github)
-          sinon.assert.calledOnce(Runnable.prototype.updateInstance)
-          sinon.assert.calledWith(Runnable.prototype.updateInstance,
-            ctx.mockInstance.shortHash, { json: { build: ctx.mockBuild._id } })
+          sinon.assert.calledOnce(InstanceService.updateInstance)
+          sinon.assert.calledWith(
+            InstanceService.updateInstance,
+            ctx.mockInstance,
+            { build: ctx.mockBuild._id.toString() },
+            ctx.mockUser
+          )
           done()
         })
     })
@@ -393,6 +172,10 @@ describe('InstanceService', function () {
     beforeEach(function (done) {
       ctx.build = {
         _id: '1233'
+      }
+      ctx.contextVersion = {
+        _id: '123123',
+        context: '56789'
       }
       ctx.instances = [
         {
@@ -416,7 +199,7 @@ describe('InstanceService', function () {
     it('should fail if build lookup failed', function (done) {
       var mongoError = new Error('Mongo error')
       Build.findByContextVersionIdsAsync.rejects(mongoError)
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextxVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(mongoError.message)
@@ -426,7 +209,7 @@ describe('InstanceService', function () {
     it('should fail if instances lookup failed', function (done) {
       var mongoError = new Error('Mongo error')
       Instance.findInstancesLinkedToBranchAsync.rejects(mongoError)
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(mongoError.message)
@@ -436,7 +219,7 @@ describe('InstanceService', function () {
     it('should fail if build update failed', function (done) {
       var mongoError = new Error('Mongo error')
       InstanceService.updateBuild.rejects(mongoError)
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(mongoError.message)
@@ -444,7 +227,7 @@ describe('InstanceService', function () {
         })
     })
     it('should call find build', function (done) {
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Build.findByContextVersionIdsAsync)
@@ -453,7 +236,7 @@ describe('InstanceService', function () {
         })
     })
     it('should call find instances', function (done) {
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findInstancesLinkedToBranchAsync)
@@ -463,7 +246,7 @@ describe('InstanceService', function () {
     })
     it('should not call find instances if builds was not found', function (done) {
       Build.findByContextVersionIdsAsync.resolves([])
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.notCalled(Instance.findInstancesLinkedToBranchAsync)
@@ -471,7 +254,7 @@ describe('InstanceService', function () {
         })
     })
     it('should call update builds', function (done) {
-      InstanceService.updateBuildByRepoAndBranch('codenow/api', ' master', '123123')
+      InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(InstanceService.updateBuild)
@@ -1896,7 +1679,7 @@ describe('InstanceService', function () {
           return Promise.resolve(ctx.mockInstance)
         }),
         emitInstanceUpdateAsync: sinon.stub().resolves(),
-        upsertIntoGraphAsync: sinon.stub(),
+        upsertIntoGraphAsync: sinon.stub().resolves(),
         setDependenciesFromEnvironmentAsync: sinon.stub()
       }
       done()
@@ -1978,10 +1761,26 @@ describe('InstanceService', function () {
               })
               .asCallback(done)
           })
-          it('should set dependencies', function (done) {
+          it('should not set dependencies (since the envs weren\'t updated', function (done) {
             InstanceService.createInstance(body, ctx.mockSessionUser)
               .then(function () {
-                sinon.assert.calledOnce(ctx.mockInstance.upsertIntoGraphAsync)
+                sinon.assert.notCalled(ctx.mockInstance.setDependenciesFromEnvironmentAsync)
+              })
+              .asCallback(done)
+          })
+        })
+        describe('with name, buildId, env, and owner', function () {
+          var body = {
+            name: 'asdasdasd',
+            build: '507f1f77bcf86cd799439011',
+            owner: {
+              github: 11111
+            },
+            env: ['hello=asdasdasd']
+          }
+          it('should set dependencies ', function (done) {
+            InstanceService.createInstance(body, ctx.mockSessionUser)
+              .then(function () {
                 sinon.assert.calledWith(ctx.mockInstance.setDependenciesFromEnvironmentAsync, 'owner')
               })
               .asCallback(done)
@@ -2088,10 +1887,33 @@ describe('InstanceService', function () {
               })
               .asCallback(done)
           })
-          it('should set dependencies', function (done) {
+          it('should upsert itself', function (done) {
             InstanceService.createInstance(body, ctx.mockSessionUser)
               .then(function () {
                 sinon.assert.calledOnce(ctx.mockInstance.upsertIntoGraphAsync)
+              })
+              .asCallback(done)
+          })
+          it('should not set dependencies (since the envs weren\'t updated', function (done) {
+            InstanceService.createInstance(body, ctx.mockSessionUser)
+              .then(function () {
+                sinon.assert.notCalled(ctx.mockInstance.setDependenciesFromEnvironmentAsync)
+              })
+              .asCallback(done)
+          })
+        })
+        describe('with name, buildId, env, and owner', function () {
+          var body = {
+            name: 'asdasdasd',
+            build: '507f1f77bcf86cd799439011',
+            owner: {
+              github: 11111
+            },
+            env: ['hello=asdasdasd']
+          }
+          it('should set dependencies ', function (done) {
+            InstanceService.createInstance(body, ctx.mockSessionUser)
+              .then(function () {
                 sinon.assert.calledWith(ctx.mockInstance.setDependenciesFromEnvironmentAsync, 'owner')
               })
               .asCallback(done)
@@ -2165,14 +1987,6 @@ describe('InstanceService', function () {
                   ownerUsername: 'owner',
                   sessionUserGithubId: 1234
                 })
-              })
-              .asCallback(done)
-          })
-          it('should set dependencies', function (done) {
-            InstanceService.createInstance(body, ctx.mockSessionUser)
-              .then(function () {
-                sinon.assert.calledOnce(ctx.mockInstance.upsertIntoGraphAsync)
-                sinon.assert.calledWith(ctx.mockInstance.setDependenciesFromEnvironmentAsync, 'owner')
               })
               .asCallback(done)
           })
@@ -2427,6 +2241,806 @@ describe('InstanceService', function () {
             })
             .asCallback(done)
         })
+      })
+    })
+  })
+
+  describe('updateInstance', function () {
+    var instance
+    var opts
+    var sessionUser
+    var newContextVersion
+    var buildId = new ObjectId()
+
+    beforeEach(function (done) {
+      instance = {}
+      opts = {
+        build: buildId.toString(),
+        env: [
+          'HELLO=1',
+          'WOW1=http://hello-world.runnable.io',
+          'SOME_OTHER_THING======'
+        ],
+        ipWhitelist: { enabled: false },
+        isolated: (new ObjectId()).toString(),
+        public: true,
+        locked: false
+      }
+      sessionUser = {}
+      instance.setAsync = sinon.stub().resolves(instance)
+      sinon.stub(InstanceService, '_setNewContextVersionOnInstance').resolves(newContextVersion)
+      sinon.stub(InstanceService, '_saveInstanceAndEmitUpdate').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      InstanceService._setNewContextVersionOnInstance.restore()
+      InstanceService._saveInstanceAndEmitUpdate.restore()
+      done()
+    })
+
+    describe('Main Functionality', function () {
+      describe('Validation', function () {
+        beforeEach(function (done) {
+          sinon.spy(InstanceService, 'validateUpdateOpts')
+          done()
+        })
+        afterEach(function (done) {
+          InstanceService.validateUpdateOpts.restore()
+          done()
+        })
+
+        it('should validate the opts', function (done) {
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.calledOnce(InstanceService.validateUpdateOpts)
+              sinon.assert.calledWith(InstanceService.validateUpdateOpts, sinon.match.object)
+            })
+            .asCallback(done)
+        })
+
+        it('should only pick out certain opts', function (done) {
+          opts.helloWorld = true
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.calledOnce(InstanceService.validateUpdateOpts)
+              var args = InstanceService.validateUpdateOpts.args[0] // First call
+              expect(args[0]).to.be.an.object() // First argument on first call
+              expect(args[0].helloWorld).to.not.exist()
+            })
+            .asCallback(done)
+        })
+      })
+
+      it('should set the new CV if there is a build', function (done) {
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(InstanceService._setNewContextVersionOnInstance)
+            sinon.assert.calledWithExactly(
+              InstanceService._setNewContextVersionOnInstance,
+              instance,
+              sinon.match.has('build', buildId.toString()),
+              sessionUser
+            )
+          })
+          .asCallback(done)
+      })
+
+      it('should set the new properties', function (done) {
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(instance.setAsync)
+            sinon.assert.calledWithExactly(
+              instance.setAsync,
+              sinon.match.has('build', buildId.toString())
+            )
+          })
+          .asCallback(done)
+      })
+
+      it('should save the instance and emit the update', function (done) {
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(InstanceService._saveInstanceAndEmitUpdate)
+            sinon.assert.calledWithExactly(
+              InstanceService._saveInstanceAndEmitUpdate,
+              instance,
+              newContextVersion,
+              sinon.match.has('build', buildId.toString()),
+              sessionUser
+            )
+          })
+          .asCallback(done)
+      })
+    })
+
+    describe('Errors', function () {
+      var throwErr
+      var dbError = new Error('Database Error')
+      before(function (done) {
+        throwErr = function (d) {
+          return d.bind(d, new Error('This call should have thrown an error'))
+        }
+        done()
+      })
+
+      describe('Opts', function () {
+        it('should reject if there is no build id', function (done) {
+          opts.build = true
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/build.*must.*be.*string/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if the build ID is an object id', function (done) {
+          opts.build = new ObjectId()
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/build.*must.*be.*string/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if there is an invalid ENV', function (done) {
+          opts.env.push('wow')
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/env.*fails.*to.*match/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if ipWhitelist is not an object', function (done) {
+          opts.ipWhitelist = false
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/ipWhitelist.*must.*be.*object/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if isolated is not a string', function (done) {
+          opts.isolated = 23423
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/isolated.*must.*be.*string/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if isolated is an objectId', function (done) {
+          opts.isolated = new ObjectId()
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/isolated.*must.*be.*string/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if public is not a boolean', function (done) {
+          opts.public = 1
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/public.*must.*be.*boolean/i)
+            })
+            .asCallback(done)
+        })
+
+        it('should reject if locked is not a boolean', function (done) {
+          opts.locked = 1
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(throwErr(done))
+            .catch(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/locked.*must.*be.*boolean/i)
+            })
+            .asCallback(done)
+        })
+      })
+
+      it('should reject if it cant set the new context version', function (done) {
+        InstanceService._setNewContextVersionOnInstance.rejects(dbError)
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(dbError)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should reject if it cant save set the new properties', function (done) {
+        instance.setAsync.rejects(dbError)
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(dbError)
+            sinon.assert.notCalled(InstanceService._saveInstanceAndEmitUpdate)
+          })
+          .asCallback(done)
+      })
+
+      it('should reject if it cant save the instance and emit the update', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate.rejects(dbError)
+        InstanceService.updateInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(dbError)
+            sinon.assert.calledOnce(InstanceService._saveInstanceAndEmitUpdate)
+          })
+          .asCallback(done)
+      })
+    })
+  })
+
+  describe('_saveInstanceAndEmitUpdate', function () {
+    var instance
+    var instanceId = new ObjectId()
+    var ownerUsername = 'hiphipjorge'
+    var contextVersion
+    var contextVersionId = new ObjectId()
+    var sessionUser
+    var opts
+    beforeEach(function (done) {
+      instance = {
+        _id: instanceId,
+        owner: {
+          username: ownerUsername
+        },
+        upsertIntoGraphAsync: sinon.stub().resolves(true),
+        setDependenciesFromEnvironmentAsync: sinon.stub().resolves(true),
+        emitInstanceUpdateAsync: sinon.stub().resolves(true)
+      }
+      instance.saveAsync = sinon.stub().resolves(instance)
+      contextVersion = {
+        _id: contextVersionId,
+        build: {
+          triggeredAction: {}
+        },
+        isBuildSuccessful: true
+      }
+      opts = {
+        env: [
+          'HELLO=1',
+          'WOW=1'
+        ]
+      }
+      sessionUser = {
+        accounts: {
+          github: {
+            id: 12345
+          }
+        }
+      }
+      sinon.stub(rabbitMQ, 'instanceDeployed')
+      sinon.stub(rabbitMQ, 'createInstanceContainer')
+      done()
+    })
+    afterEach(function (done) {
+      rabbitMQ.instanceDeployed.restore()
+      rabbitMQ.createInstanceContainer.restore()
+      done()
+    })
+
+    describe('Return Values', function () {
+      it('should return the instance', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function (_instance) {
+            expect(_instance).to.equal(instance)
+          })
+          .asCallback(done)
+      })
+    })
+
+    describe('Actions', function () {
+      it('should save the instance', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(instance.saveAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should upsert the dependencies into graph', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(instance.upsertIntoGraphAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should set dependencies from environment, if there are any new envs', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(instance.setDependenciesFromEnvironmentAsync)
+            sinon.assert.calledWith(instance.setDependenciesFromEnvironmentAsync, ownerUsername)
+          })
+          .asCallback(done)
+      })
+
+      it('should not set dependencies from environment, if there are no new envs', function (done) {
+        delete opts.env
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+        .then(function () {
+          sinon.assert.notCalled(instance.setDependenciesFromEnvironmentAsync)
+        })
+        .asCallback(done)
+      })
+
+      it('should emit an `instanceDeployed` event if it was not manually triggered actions', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(rabbitMQ.instanceDeployed)
+            sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
+              instanceId: instanceId.toString(),
+              cvId: contextVersionId.toString()
+            })
+          })
+          .asCallback(done)
+      })
+
+      it('should emit an `instanceDeployed` event if it was not a manually triggered action', function (done) {
+        contextVersion.build.triggeredAction.manual = true
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(rabbitMQ.instanceDeployed)
+          })
+          .asCallback(done)
+      })
+
+      it('should create an instance container if the build is succseful', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
+            sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
+              instanceId: instanceId.toString(),
+              contextVersionId: contextVersionId.toString(),
+              sessionUserGithubId: 12345,
+              ownerUsername: ownerUsername
+            })
+          })
+          .asCallback(done)
+      })
+
+      it('should not create an instance container if the build is not succseful', function (done) {
+        contextVersion.isBuildSuccessful = false
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
+          })
+          .asCallback(done)
+      })
+
+      it('should emit an instance update', function (done) {
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+        .then(function () {
+          sinon.assert.calledOnce(instance.emitInstanceUpdateAsync)
+        })
+        .asCallback(done)
+      })
+    })
+
+    describe('Errors', function () {
+      it('should throw an error if the instance cannot be saved', function (done) {
+        var err = new Error('dbErr')
+        instance.saveAsync.rejects(err)
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.notCalled(instance.upsertIntoGraphAsync)
+            sinon.assert.notCalled(instance.emitInstanceUpdateAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw a notFound error if no instances is found', function (done) {
+        instance.saveAsync.resolves(null)
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/instance.*not.*found/i)
+            sinon.assert.notCalled(instance.upsertIntoGraphAsync)
+            sinon.assert.notCalled(instance.emitInstanceUpdateAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should not create an instance container if it cannot set dependencies', function (done) {
+        var err = new Error('dbErr')
+        instance.setDependenciesFromEnvironmentAsync.rejects(err)
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.calledOnce(instance.upsertIntoGraphAsync)
+            sinon.assert.notCalled(instance.emitInstanceUpdateAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should not emit instance update if it cant create the instance container', function (done) {
+        var err = new Error('dbErr')
+        rabbitMQ.createInstanceContainer.rejects(err)
+        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
+            sinon.assert.notCalled(instance.emitInstanceUpdateAsync)
+          })
+          .asCallback(done)
+      })
+    })
+  })
+
+  describe('_setNewContextVersionOnInstance', function () {
+    var instance
+    var instanceId = new ObjectId()
+    var ownerGithubId = 988765
+    var contextVersion
+    var oldContextVersionId = new ObjectId()
+    var newContextVersionId = new ObjectId()
+    var sessionUser
+    var sessionUserGithubId = 12345
+    var isolationId = new ObjectId()
+    var oldLowerRepoName = 'old-lowerRepoName'
+    var oldLowerBranchName = 'old-wowThisBranch'
+    var newLowerRepoName = 'new-lowerRepoName'
+    var newLowerBranchName = 'new-wowThisBranch'
+    var build
+    var newBuildId = new ObjectId()
+    var opts
+    beforeEach(function (done) {
+      instance = {
+        _id: instanceId,
+        owner: {
+          github: ownerGithubId
+        },
+        masterPod: true,
+        isolated: false,
+        isIsolationGroupMaster: false,
+        contextVersion: {
+          _id: oldContextVersionId,
+          appCodeVersions: [{
+            repo: oldLowerRepoName,
+            branch: oldLowerBranchName,
+            lowerRepo: oldLowerRepoName,
+            lowerBranch: oldLowerBranchName
+          }]
+        }
+      }
+      instance.setAsync = sinon.stub().resolves(instance)
+      build = {
+        _id: newBuildId,
+        started: true,
+        contextVersion: newContextVersionId
+      }
+      contextVersion = {
+        _id: newContextVersionId,
+        appCodeVersions: [{
+          repo: newLowerRepoName,
+          branch: newLowerBranchName,
+          lowerRepo: newLowerRepoName,
+          lowerBranch: newLowerBranchName
+        }],
+        build: build,
+        owner: {
+          github: ownerGithubId
+        }
+      }
+      contextVersion.toJSON = sinon.stub().returns(contextVersion)
+      opts = {
+        build: newBuildId,
+        isolated: false
+      }
+      sessionUser = {
+        accounts: {
+          github: {
+            id: sessionUserGithubId
+          }
+        }
+      }
+      sinon.stub(rabbitMQ, 'deleteContextVersion').resolves()
+      sinon.stub(rabbitMQ, 'matchCommitWithIsolationMaster').resolves()
+      sinon.stub(Build, 'findByIdAsync').resolves(build)
+      sinon.stub(ContextVersion, 'findByIdAsync').resolves(contextVersion)
+      sinon.stub(InstanceService, 'deleteForkedInstancesByRepoAndBranch').resolves()
+      sinon.stub(InstanceService, 'deleteInstanceContainer').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      rabbitMQ.deleteContextVersion.restore()
+      rabbitMQ.matchCommitWithIsolationMaster.restore()
+      Build.findByIdAsync.restore()
+      ContextVersion.findByIdAsync.restore()
+      InstanceService.deleteForkedInstancesByRepoAndBranch.restore()
+      InstanceService.deleteInstanceContainer.restore()
+      done()
+    })
+
+    describe('Main Functionality', function () {
+      it('should fetch the build', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(Build.findByIdAsync)
+            sinon.assert.calledWith(Build.findByIdAsync, newBuildId)
+          })
+          .asCallback(done)
+      })
+
+      it('should fetch the context version', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(ContextVersion.findByIdAsync)
+            sinon.assert.calledWith(ContextVersion.findByIdAsync, newContextVersionId)
+          })
+          .asCallback(done)
+      })
+
+      it('should set the build, contextVersion, and container', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(instance.setAsync)
+            sinon.assert.calledOnce(contextVersion.toJSON)
+            sinon.assert.calledWith(instance.setAsync, {
+              build: newBuildId,
+              contextVersion: contextVersion,
+              container: undefined // Should always be undefined
+            })
+          })
+          .asCallback(done)
+      })
+
+      it('should delete the `build` property so it can be saved later on', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            expect(opts.build).to.equal(undefined)
+          })
+          .asCallback(done)
+      })
+
+      it('should return the newly set context version', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function (_newContextVersion) {
+            expect(_newContextVersion).to.equal(contextVersion)
+          })
+          .asCallback(done)
+      })
+    })
+
+    describe('Delete Forked Instances', function () {
+      it('should delete forked instances if not isolated and is a master pod', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(InstanceService.deleteForkedInstancesByRepoAndBranch)
+            sinon.assert.calledWithExactly(
+              InstanceService.deleteForkedInstancesByRepoAndBranch,
+              instanceId.toString(),
+              newLowerRepoName,
+              newLowerBranchName
+            )
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete forked instances if it is not a masterpod', function (done) {
+        instance.masterPod = false
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(InstanceService.deleteForkedInstancesByRepoAndBranch)
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete forked instances if its an isolated container', function (done) {
+        instance.isolated = true
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(InstanceService.deleteForkedInstancesByRepoAndBranch)
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete forked instances if it includes an isolation update', function (done) {
+        opts.isolated = true
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(InstanceService.deleteForkedInstancesByRepoAndBranch)
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete forked instances if there is no new appCodeVersion (non-repo container)', function (done) {
+        delete contextVersion.appCodeVersions
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(InstanceService.deleteForkedInstancesByRepoAndBranch)
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete forked instances if the branches are the same', function (done) {
+        contextVersion.appCodeVersions[0].lowerBranch = oldLowerBranchName
+        contextVersion.appCodeVersions[0].branch = oldLowerBranchName
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(InstanceService.deleteForkedInstancesByRepoAndBranch)
+          })
+          .asCallback(done)
+      })
+    })
+
+    describe('Isolation', function () {
+      describe('Match Commits', function () {
+        it('should match the commit if its isolated and its an isolation gropup master', function (done) {
+          instance.isolated = isolationId
+          instance.isIsolationGroupMaster = true
+          InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.calledOnce(rabbitMQ.matchCommitWithIsolationMaster)
+              sinon.assert.calledWithExactly(rabbitMQ.matchCommitWithIsolationMaster, {
+                isolationId: isolationId,
+                sessionUserGithubId: sessionUserGithubId
+              })
+            })
+            .asCallback(done)
+        })
+
+        it('should not match the commit if its not isolated', function (done) {
+          instance.isolated = false
+          instance.isIsolationGroupmaster = false
+          InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.notCalled(rabbitMQ.matchCommitWithIsolationMaster)
+            })
+            .asCallback(done)
+        })
+
+        it('should not match the commit if its not the isolation group master', function (done) {
+          instance.isolated = isolationId
+          instance.isIsolationGroupmaster = false
+          InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.notCalled(rabbitMQ.matchCommitWithIsolationMaster)
+            })
+            .asCallback(done)
+        })
+      })
+    })
+
+    describe('Delete Context Versions', function () {
+      it('should delete the old context version if there is a new context version', function (done) {
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(rabbitMQ.deleteContextVersion)
+            sinon.assert.calledWithExactly(rabbitMQ.deleteContextVersion, {
+              contextVersionId: oldContextVersionId.toString()
+            })
+          })
+          .asCallback(done)
+      })
+
+      it('should not delete the old context version if the context version is the same', function (done) {
+        contextVersion._id = oldContextVersionId
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(rabbitMQ.deleteContextVersion)
+          })
+          .asCallback(done)
+      })
+    })
+
+    describe('Errors', function () {
+      var throwErr
+      var err = new Error('new error')
+      before(function (done) {
+        throwErr = function (d) {
+          return d.bind(d, new Error('This call should have thrown an error'))
+        }
+        done()
+      })
+
+      it('should throw an error if theres a DB error when fetching the build', function (done) {
+        Build.findByIdAsync.rejects(err)
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function () {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw a notFound error if no build is found', function (done) {
+        Build.findByIdAsync.resolves(null)
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/build.*not.*found/i)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw an error if theres a DB error when fetching the context version', function (done) {
+        ContextVersion.findByIdAsync.rejects(err)
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw a notFound error if no context version is found', function (done) {
+        ContextVersion.findByIdAsync.resolves(null)
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/contextVersion.*not.*found/i)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw a badRequest error if the build has not started building', function (done) {
+        build.started = false
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/cannot.*attach.*build.*not.*started.*building/i)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw a badRequest error if the context version owner does not mind the instance owner', function (done) {
+        contextVersion.owner.github = 3242342342323
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/instance.*owner.*match.*build.*owner/i)
+            sinon.assert.notCalled(instance.setAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should return an error if instance update failed', function (done) {
+        instance.setAsync.rejects(err)
+        InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+          .then(throwErr(done))
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.calledOnce(instance.setAsync)
+          })
+          .asCallback(done)
       })
     })
   })

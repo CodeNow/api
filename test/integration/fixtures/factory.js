@@ -49,6 +49,8 @@ var factory = module.exports = {
     var ownerGithubId = (typeof owner === 'string' || typeof owner === 'number')
       ? owner
       : owner.accounts.github.id
+    props = props || {}
+    props.username = props.username || username
     var count = createCount(1, function () {
       var data = factory.instanceTemplate(ownerGithubId, props)
       Instance.create(data, function (err, instance) {

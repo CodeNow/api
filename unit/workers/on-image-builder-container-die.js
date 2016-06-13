@@ -322,10 +322,18 @@ describe('OnImageBuilderContainerDie', function () {
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(InstanceService.updateBuildByRepoAndBranch)
-          sinon.assert.calledWith(InstanceService.updateBuildByRepoAndBranch,
-            'codenow/api', 'master', 'cv1')
-          sinon.assert.calledWith(InstanceService.updateBuildByRepoAndBranch,
-            'codenow/api', 'dev', 'cv2')
+          sinon.assert.calledWith(
+            InstanceService.updateBuildByRepoAndBranch,
+            cvs[0],
+            'codenow/api',
+            'master'
+          )
+          sinon.assert.calledWith(
+            InstanceService.updateBuildByRepoAndBranch,
+            cvs[1],
+            'codenow/api',
+            'dev'
+           )
           done()
         })
     })
