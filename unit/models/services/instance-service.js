@@ -2361,7 +2361,7 @@ describe('InstanceService', function () {
           .asCallback(done)
       })
 
-      describe('setIsolatedInstancesLocked', function () {
+      describe('`locked` property in isolated instances', function () {
         var isolationID
         beforeEach(function (done) {
           isolationID = new ObjectId()
@@ -2544,7 +2544,7 @@ describe('InstanceService', function () {
     })
   })
 
-  describe('_saveInstanceAndEmitUpdate', function () {
+  describe('#_saveInstanceAndEmitUpdate', function () {
     var instance
     var instanceId = new ObjectId()
     var ownerUsername = 'hiphipjorge'
@@ -2745,7 +2745,7 @@ describe('InstanceService', function () {
     })
   })
 
-  describe('_setNewContextVersionOnInstance', function () {
+  describe('#_setNewContextVersionOnInstance', function () {
     var instance
     var instanceId = new ObjectId()
     var ownerGithubId = 988765

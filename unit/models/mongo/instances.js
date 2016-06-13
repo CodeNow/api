@@ -1846,7 +1846,7 @@ describe('Instance Model Tests', function () {
     })
   })
 
-  describe('findInstancesInIsolationWithSameRepo', function () {
+  describe('#findInstancesInIsolationWithSameRepo', function () {
     var id = '571b39b9d35173300021667d'
     var repo = 'repoName'
     beforeEach(function (done) {
