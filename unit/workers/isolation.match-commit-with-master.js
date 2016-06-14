@@ -26,11 +26,6 @@ var expect = Code.expect
 var it = lab.it
 
 describe('isolation.match-commit-with-master', function () {
-  var testJob
-  var testJobData = {
-    sessionUserGithubId: 12345,
-    isolationId: '1234'
-  }
   var repoName = 'superRepoName'
   var branchName = 'superBranchName'
   var commitHash = '46409ea4999d1472844e36640375962a0fa1f3b1'
@@ -38,6 +33,15 @@ describe('isolation.match-commit-with-master', function () {
   var childInstance
   var childInstance2
   var user
+
+  var testJob
+  var testJobData = {
+    repo: repoName,
+    branch: branchName,
+    commit: commitHash,
+    sessionUserGithubId: 12345,
+    isolationId: '1234'
+  }
 
   beforeEach(function (done) {
     masterInstance = {
@@ -72,7 +76,6 @@ describe('isolation.match-commit-with-master', function () {
     }
     user = {}
     testJob = clone(testJobData)
-    sinon.stub(Instance, 'findIsolationMaster').yieldsAsync(null, masterInstance)
     sinon.stub(Instance, 'findInstancesInIsolationWithSameRepoAndBranch').yieldsAsync(null, [childInstance, childInstance2])
     sinon.stub(User, 'findByGithubId').yieldsAsync(null, user)
     sinon.stub(InstanceService, 'updateInstanceCommitToNewCommit').resolves(true)
@@ -80,16 +83,15 @@ describe('isolation.match-commit-with-master', function () {
   })
 
   afterEach(function (done) {
-    Instance.findIsolationMaster.restore()
     Instance.findInstancesInIsolationWithSameRepoAndBranch.restore()
     User.findByGithubId.restore()
     InstanceService.updateInstanceCommitToNewCommit.restore()
     done()
   })
 
-  describe('errors', function () {
-    describe('job validation', function () {
-      it('should throw if missing isolationId', function (done) {
+  describe('Errors', function () {
+    describe('Job validation', function () {
+      it('should throw if missing `isolationId`', function (done) {
         delete testJob.isolationId
 
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
@@ -99,7 +101,7 @@ describe('isolation.match-commit-with-master', function () {
         })
       })
 
-      it('should throw if missing sessionUserGithubId', function (done) {
+      it('should throw if missing `sessionUserGithubId`', function (done) {
         delete testJob.sessionUserGithubId
 
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
@@ -110,7 +112,7 @@ describe('isolation.match-commit-with-master', function () {
       })
     })
 
-    describe('behavior errors', function () {
+    describe('Behavior Errors', function () {
       var testErr
 
       beforeEach(function (done) {
@@ -118,30 +120,11 @@ describe('isolation.match-commit-with-master', function () {
         done()
       })
 
-      it('should throw error if findIsolationMaster failed', function (done) {
-        Instance.findIsolationMaster.yieldsAsync(testErr)
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.cause).to.deep.equal(testErr)
-          done()
-        })
-      })
-
       it('should throw error if findInstancesInIsolationWithSameRepoAndBranch failed', function (done) {
         Instance.findInstancesInIsolationWithSameRepoAndBranch.yieldsAsync(testErr)
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.cause).to.deep.equal(testErr)
-          done()
-        })
-      })
-
-      it('should throw a TaskFatalError if the master instances has no repo or commit', function (done) {
-        masterInstance.contextVersion.appCodeVersions[0].commit = undefined
-        Instance.findIsolationMaster.yieldsAsync(null, masterInstance)
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/instance does not have repo.*commit/i)
           done()
         })
       })
