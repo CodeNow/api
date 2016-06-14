@@ -32,6 +32,7 @@ describe('isolation.match-commit-with-master', function () {
   var masterInstance
   var childInstance
   var childInstance2
+  var childInstance3
   var user
 
   var testJob
@@ -74,6 +75,16 @@ describe('isolation.match-commit-with-master', function () {
         }]
       }
     }
+    childInstance3 = {
+      _id: objectId('571b39b9d35173300021667d'),
+      contextVersion: {
+        appCodeVersions: [{
+          repo: repoName,
+          branch: 'somethingDifferent', // Will be filtered out
+          commit: 'b11410762bf274002fc7f147475525f20ccda91e'
+        }]
+      }
+    }
     user = {}
     testJob = clone(testJobData)
     sinon.stub(Instance, 'findInstancesInIsolationWithSameRepoAndBranch').yieldsAsync(null, [childInstance, childInstance2])
@@ -91,23 +102,15 @@ describe('isolation.match-commit-with-master', function () {
 
   describe('Errors', function () {
     describe('Job validation', function () {
-      it('should throw if missing `isolationId`', function (done) {
-        delete testJob.isolationId
+      ['isolationId', 'repo', 'branch', 'commit', 'sessionUserGithubId'].forEach(function (property) {
+        it('should throw if missing `' + property + '`', function (done) {
+          delete testJob[property]
 
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
-          done()
-        })
-      })
-
-      it('should throw if missing `sessionUserGithubId`', function (done) {
-        delete testJob.sessionUserGithubId
-
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
-          done()
+          matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
+            expect(err).to.be.an.instanceof(TaskFatalError)
+            expect(err.message).to.match(/Invalid Job Data/)
+            done()
+          })
         })
       })
     })
@@ -138,7 +141,7 @@ describe('isolation.match-commit-with-master', function () {
         })
       })
 
-      it('should throw error if updateInstanceCommitToNewCommit failed', function (done) {
+      it('should throw error if `updateInstanceCommitToNewCommit` failed', function (done) {
         InstanceService.updateInstanceCommitToNewCommit.rejects(testErr)
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err, res) {
           expect(err).to.exist()
@@ -166,7 +169,7 @@ describe('isolation.match-commit-with-master', function () {
       })
     })
 
-    it('should call findByGithubIdAsync', function (done) {
+    it('should call `findByGithubIdAsync`', function (done) {
       matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
 
@@ -189,7 +192,7 @@ describe('isolation.match-commit-with-master', function () {
         })
       })
 
-      it('should filter out instances with the same commit as the enqueue commit', function (done) {
+      it('should filter out instances with the same commit as the enqueue commit, a differnt branch or a different repo', function (done) {
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(InstanceService.updateInstanceCommitToNewCommit)
