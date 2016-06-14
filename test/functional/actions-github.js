@@ -72,64 +72,7 @@ describe('Github - /actions/github', function () {
     done()
   })
 
-  describe('ping', function () {
-    it('should return OKAY', function (done) {
-      var options = hooks().ping
-      request.post(options, function (err, res, body) {
-        if (err) { return done(err) }
-        expect(res.statusCode).to.equal(202)
-        expect(body).to.equal('Hello, Github Ping!')
-        done()
-      })
-    })
-  })
 
-  describe('disabled hooks', function () {
-    beforeEach(function (done) {
-      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS
-      delete process.env.ENABLE_GITHUB_HOOKS
-      done()
-    })
-    afterEach(function (done) {
-      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting
-      done()
-    })
-    it('should send response immediately if hooks are disabled', function (done) {
-      var options = hooks().pull_request_sync
-      options.json.ref = 'refs/heads/someotherbranch'
-      require('./fixtures/mocks/github/users-username')(429706, 'podviaznikov')
-      request.post(options, function (err, res) {
-        if (err) {
-          done(err)
-        } else {
-          expect(res.statusCode).to.equal(202)
-          expect(res.body).to.match(/Hooks are currently disabled\. but we gotchu/)
-          done()
-        }
-      })
-    })
-  })
-
-  describe('not supported event type', function () {
-    beforeEach(function (done) {
-      ctx.originalBuildsOnPushSetting = process.env.ENABLE_GITHUB_HOOKS
-      process.env.ENABLE_GITHUB_HOOKS = 'true'
-      done()
-    })
-    afterEach(function (done) {
-      process.env.ENABLE_GITHUB_HOOKS = ctx.originalBuildsOnPushSetting
-      done()
-    })
-    it('should return OKAY', function (done) {
-      var options = hooks().issue_comment
-      request.post(options, function (err, res, body) {
-        if (err) { return done(err) }
-        expect(res.statusCode).to.equal(202)
-        expect(body).to.equal('No action set up for that payload.')
-        done()
-      })
-    })
-  })
 
   describe('created tag', function () {
     beforeEach(function (done) {
