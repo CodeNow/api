@@ -107,9 +107,8 @@ describe('Building - Context Version Deduping', function () {
           Instance.findById.bind(Instance, forkedInstance._id)
         ], function (err, results) {
           if (err) { return done(err) }
-          console.log('forkedInstance>>>>', results)
           expect(instance.attrs.containers[0].inspect.State.Running).to.exist()
-          // expect(forkedInstance.containers[0].inspect.State.Running).to.exist()
+          expect(results[1].container.inspect.State.Running).to.exist()
           done()
         })
       })
@@ -141,7 +140,11 @@ describe('Building - Context Version Deduping', function () {
           primus.onceVersionComplete(ctx.cv.id(), function () {
             var count = createCount(2, done)
             instance.fetch(assertInstanceHasNoContainers)
-            forkedInstance.fetch(assertInstanceHasNoContainers)
+            Instance.findById(forkedInstance._id, function (err, instance) {
+              if (err) { return count.next(err) }
+              expect(instance.containers).to.have.length(0)
+              count.next()
+            })
             function assertInstanceHasNoContainers (err, instance) {
               if (err) { return count.next(err) }
               expect(instance.containers).to.have.length(0)
@@ -167,7 +170,11 @@ describe('Building - Context Version Deduping', function () {
             forkedInstance = inst
             var count = createCount(2, done)
             instance.fetch(assertInstanceHasNoContainers)
-            forkedInstance.fetch(assertInstanceHasNoContainers)
+            Instance.findById(forkedInstance._id, function (err, instance) {
+              if (err) { return count.next(err) }
+              expect(instance.containers).to.have.length(0)
+              count.next()
+            })
             function assertInstanceHasNoContainers (err, instance) {
               if (err) { return count.next(err) }
               expect(instance.containers).to.have.length(0)
@@ -197,11 +204,11 @@ describe('Building - Context Version Deduping', function () {
       var count = createCount(1, function () {
         async.parallel([
           instance.fetch.bind(instance),
-          forkedInstance.fetch.bind(forkedInstance)
-        ], function (err) {
+          Instance.findById.bind(Instance, forkedInstance._id)
+        ], function (err, results) {
           if (err) { return done(err) }
           expect(instance.attrs.containers[0].inspect.State.Running).to.exist()
-          expect(forkedInstance.containers[0].inspect.State.Running).to.exist()
+          expect(results[1].container.inspect.State.Running).to.exist()
           done()
         })
       })
