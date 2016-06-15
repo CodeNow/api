@@ -102,8 +102,7 @@ describe('Building - Context Version Deduping', function () {
 
       var count = createCount(1, function () {
         async.parallel([
-          instance.fetch.bind(instance),
-          forkedInstance.fetch.bind(forkedInstance)
+          instance.fetch.bind(instance)
         ], function (err) {
           if (err) { return done(err) }
           expect(instance.attrs.containers[0].inspect.State.Running).to.exist()
@@ -139,7 +138,6 @@ describe('Building - Context Version Deduping', function () {
           primus.onceVersionComplete(ctx.cv.id(), function () {
             var count = createCount(2, done)
             instance.fetch(assertInstanceHasNoContainers)
-            forkedInstance.fetch(assertInstanceHasNoContainers)
             function assertInstanceHasNoContainers (err, instance) {
               if (err) { return count.next(err) }
               expect(instance.containers).to.have.length(0)
@@ -165,7 +163,6 @@ describe('Building - Context Version Deduping', function () {
             forkedInstance = inst
             var count = createCount(2, done)
             instance.fetch(assertInstanceHasNoContainers)
-            forkedInstance.fetch(assertInstanceHasNoContainers)
             function assertInstanceHasNoContainers (err, instance) {
               if (err) { return count.next(err) }
               expect(instance.containers).to.have.length(0)
