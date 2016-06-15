@@ -108,13 +108,11 @@ describe('Building - Context Version Deduping', function () {
       })
       primus.expectActionCount('start', 2, count.next)
 
-      var forkedInstance
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         // Now fork that instance
         cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
-          forkedInstance = inst
           // Now tail both and make sure they both start
           dockerMockEvents.emitBuildComplete(ctx.cv)
         })
@@ -126,10 +124,8 @@ describe('Building - Context Version Deduping', function () {
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         // Now fork that instance
-        var forkedInstance
         cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
-          forkedInstance = inst
           // since the build will fail we must rely on version complete, versus instance deploy socket event
           primus.onceVersionComplete(ctx.cv.id(), function () {
             var count = createCount(1, done)
@@ -194,12 +190,10 @@ describe('Building - Context Version Deduping', function () {
       })
       primus.expectActionCount('start', 2, count.next)
 
-      var forkedInstance
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         cloneInstance(json, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
-          forkedInstance = inst
         })
       })
     })
