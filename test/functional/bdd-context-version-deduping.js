@@ -153,7 +153,7 @@ describe('Building - Context Version Deduping', function () {
             if (err) { return done(err) }
             instance.fetch(assertInstanceHasNoContainers)
             function assertInstanceHasNoContainers (err, instance) {
-              if (err) { return count.next(err) }
+              if (err) { return done(err) }
               expect(instance.containers).to.have.length(0)
               done()
             }
