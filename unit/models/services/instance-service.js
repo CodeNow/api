@@ -2290,13 +2290,13 @@ describe('InstanceService', function () {
       instance.setAsync = sinon.stub().resolves(instance)
       sinon.stub(InstanceService, '_setNewContextVersionOnInstance').resolves(newContextVersion)
       sinon.stub(InstanceService, '_saveInstanceAndEmitUpdate').resolves()
-      sinon.stub(Instance, 'findInstancesInIsolationWithSameRepoAsync').resolves([isolationChildOrSibling, instance])
+      sinon.stub(InstanceService, 'updateAllInstancesInIsolationWithSameRepoAndBranch').resolves()
       done()
     })
     afterEach(function (done) {
       InstanceService._setNewContextVersionOnInstance.restore()
       InstanceService._saveInstanceAndEmitUpdate.restore()
-      Instance.findInstancesInIsolationWithSameRepoAsync.restore()
+      InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch.restore()
       done()
     })
 
@@ -2386,26 +2386,12 @@ describe('InstanceService', function () {
           opts = { locked: true }
           InstanceService.updateInstance(instance, opts, sessionUser)
             .then(function () {
-              sinon.assert.calledOnce(Instance.findInstancesInIsolationWithSameRepoAsync)
+              sinon.assert.calledOnce(InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch)
               sinon.assert.calledWithExactly(
-                Instance.findInstancesInIsolationWithSameRepoAsync,
-                isolationID,
-                repoName
-              )
-            })
-            .asCallback(done)
-        })
-
-        it('should update the `locked` property on instances in same isolation with same repo', function (done) {
-          instance.isolated = isolationID
-          opts = { locked: true }
-          InstanceService.updateInstance(instance, opts, sessionUser)
-            .then(function () {
-              sinon.assert.notCalled(instance.updateAsync)
-              sinon.assert.calledOnce(isolationChildOrSibling.updateAsync)
-              sinon.assert.calledWithExactly(
-                isolationChildOrSibling.updateAsync,
-                { locked: true }
+                InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch,
+                instance,
+                { locked: true },
+                sessionUser
               )
             })
             .asCallback(done)
@@ -2415,7 +2401,7 @@ describe('InstanceService', function () {
           opts = { locked: true }
           InstanceService.updateInstance(instance, opts, sessionUser)
             .then(function () {
-              sinon.assert.notCalled(Instance.findInstancesInIsolationWithSameRepoAsync)
+              sinon.assert.notCalled(InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch)
             })
             .asCallback(done)
         })
@@ -2425,7 +2411,7 @@ describe('InstanceService', function () {
           instance.isolated = isolationID
           InstanceService.updateInstance(instance, opts, sessionUser)
             .then(function () {
-              sinon.assert.notCalled(Instance.findInstancesInIsolationWithSameRepoAsync)
+              sinon.assert.notCalled(InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch)
             })
             .asCallback(done)
         })
