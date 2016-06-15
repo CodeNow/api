@@ -32,6 +32,7 @@ function cloneInstance (data, instance, user, cb) {
   var body = {}
   var parentInstance = instance
   body.parent = parentInstance.shortHash
+  console.log('cloning0>>>>', instance.attrs)
   console.log('cloning1>>>>', instance.build)
   console.log('cloning2>>>>', instance.build.attrs)
   console.log('cloning3>>>>', instance.build.attrs.id)
@@ -41,7 +42,7 @@ function cloneInstance (data, instance, user, cb) {
   body.owner = data.owner || parentInstance.owner
   body.masterPod = body.masterPod || parentInstance.masterPod
   return User.findByIdAsync(user.attrs._id).then(function (sessionUser) {
-    return InstanceService.createInstance(body, user)
+    return InstanceService.createInstance(body, sessionUser)
       .asCallback(cb)
   })
 }
