@@ -136,8 +136,9 @@ describe('Building - Context Version Deduping', function () {
           forkedInstance = inst
           // since the build will fail we must rely on version complete, versus instance deploy socket event
           primus.onceVersionComplete(ctx.cv.id(), function () {
-            var count = createCount(2, done)
+            var count = createCount(1, done)
             instance.fetch(assertInstanceHasNoContainers)
+            expect(forkedInstance.containers).to.have.length(0)
             function assertInstanceHasNoContainers (err, instance) {
               if (err) { return count.next(err) }
               expect(instance.containers).to.have.length(0)
@@ -161,8 +162,9 @@ describe('Building - Context Version Deduping', function () {
           cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
             if (err) { return done(err) }
             forkedInstance = inst
-            var count = createCount(2, done)
+            var count = createCount(1, done)
             instance.fetch(assertInstanceHasNoContainers)
+            expect(forkedInstance.containers).to.have.length(0)
             function assertInstanceHasNoContainers (err, instance) {
               if (err) { return count.next(err) }
               expect(instance.containers).to.have.length(0)
