@@ -185,11 +185,11 @@ describe('GitHub Actions: ' + moduleName, function () {
     })
   })
 
-  describe('checkCommitterIsRunnableUser', function () {
+  describe('checkCommitPusherIsRunnableUser', function () {
     var username = 'thejsj'
     var req = {
       githubPushInfo: {
-        committer: username
+        commitPusher: username
       }
     }
     beforeEach(function (done) {
@@ -204,7 +204,7 @@ describe('GitHub Actions: ' + moduleName, function () {
     it('should next with error if db call failed', function (done) {
       var mongoErr = new Error('Mongo error')
       User.findOne.yieldsAsync(mongoErr)
-      githubActions.checkCommitterIsRunnableUser(req, {}, function (err) {
+      githubActions.checkCommitPusherIsRunnableUser(req, {}, function (err) {
         expect(err).to.equal(mongoErr)
         sinon.assert.calledOnce(User.findOne)
         sinon.assert.calledWith(User.findOne, { 'accounts.github.username': username })
@@ -214,7 +214,7 @@ describe('GitHub Actions: ' + moduleName, function () {
     })
 
     it('should next without error if everything worked', function (done) {
-      githubActions.checkCommitterIsRunnableUser(req, {}, function (err) {
+      githubActions.checkCommitPusherIsRunnableUser(req, {}, function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(User.findOne)
         sinon.assert.calledWith(User.findOne, { 'accounts.github.username': username })
@@ -237,14 +237,14 @@ describe('GitHub Actions: ' + moduleName, function () {
           return { send: callback.bind(callback, code) }
         }
       }
-      githubActions.checkCommitterIsRunnableUser(req, res, errStub)
+      githubActions.checkCommitPusherIsRunnableUser(req, res, errStub)
     })
 
     it('should respond with 403 if username was not specified', function (done) {
       var errStub = sinon.stub()
       var callback = function (code, message) {
         expect(code).to.equal(403)
-        expect(message).to.match(/Commit author\/committer username is empty/i)
+        expect(message).to.match(/commit.*pusher.*username.*is.*empty/i)
         sinon.assert.notCalled(User.findOne)
         done()
       }
@@ -258,7 +258,7 @@ describe('GitHub Actions: ' + moduleName, function () {
           committer: null
         }
       }
-      githubActions.checkCommitterIsRunnableUser(req, res, errStub)
+      githubActions.checkCommitPusherIsRunnableUser(req, res, errStub)
     })
   })
 })
