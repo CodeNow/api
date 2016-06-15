@@ -29,16 +29,13 @@ var InstanceService = require('models/services/instance-service')
 var User = require('models/mongo/user')
 
 function cloneInstance (data, instance, user, cb) {
-  var body = {}
-  var parentInstance = instance
-  body.parent = parentInstance.shortHash
-  console.log('cloning3>>>>', instance.attrs.build.id)
+  var const = {}
+  body.parent = instance.shortHash
   body.name = data.name
-  body.masterPod = false
   body.build = instance.attrs.build.id.toString()
-  body.env = data.env || parentInstance.env
+  body.env = data.env || instance.env
   body.owner = data.owner || parentInstance.owner
-  body.masterPod = body.masterPod || parentInstance.masterPod
+  body.masterPod = body.masterPod || instance.masterPod || false
   return User.findByIdAsync(user.attrs._id).then(function (sessionUser) {
     return InstanceService.createInstance(body, sessionUser)
       .asCallback(cb)
