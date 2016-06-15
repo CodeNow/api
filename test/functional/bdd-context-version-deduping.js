@@ -217,6 +217,7 @@ describe('Building - Context Version Deduping', function () {
       var forkedInstance
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
+        json.name = uuid()
         cloneInstance(json, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
           forkedInstance = inst
