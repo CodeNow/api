@@ -29,7 +29,7 @@ var InstanceService = require('models/services/instance-service')
 var User = require('models/mongo/user')
 
 function cloneInstance (data, instance, user, cb) {
-  var const = {}
+  var body = {}
   body.parent = instance.shortHash
   body.name = data.name
   body.build = instance.attrs.build.id.toString()
