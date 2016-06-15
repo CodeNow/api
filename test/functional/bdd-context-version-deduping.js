@@ -5,7 +5,9 @@
 
 var Code = require('code')
 var Lab = require('lab')
+var async = require('async')
 var createCount = require('callback-count')
+var randStr = require('randomstring').generate
 var uuid = require('uuid')
 
 var lab = exports.lab = Lab.script()
@@ -96,22 +98,29 @@ describe('Building - Context Version Deduping', function () {
     })
     it('should fork the instance, and both should be deployed when the build is finished', function (done) {
       // Add it to an instance
-      var json = { build: ctx.build.id(), name: uuid() }
+      var json = { build: ctx.build.id(), name: randStr(5) }
 
       var count = createCount(1, function () {
-        instance.fetch(function (err) {
+        async.parallel([
+          instance.fetch.bind(instance),
+          Instance.findById.bind(Instance, forkedInstance._id)
+        ], function (err, results) {
           if (err) { return done(err) }
+          console.log('forkedInstance>>>>', results)
           expect(instance.attrs.containers[0].inspect.State.Running).to.exist()
+          // expect(forkedInstance.containers[0].inspect.State.Running).to.exist()
           done()
         })
       })
       primus.expectActionCount('start', 2, count.next)
 
+      var forkedInstance
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         // Now fork that instance
         cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
+          forkedInstance = inst
           // Now tail both and make sure they both start
           dockerMockEvents.emitBuildComplete(ctx.cv)
         })
@@ -119,16 +128,19 @@ describe('Building - Context Version Deduping', function () {
     })
     it('should fork the instance, and but not deploy since the build will fail', function (done) {
       // Add it to an instance
-      var json = { build: ctx.build.id(), name: uuid() }
+      var json = { build: ctx.build.id(), name: randStr(5) }
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         // Now fork that instance
+        var forkedInstance
         cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
+          forkedInstance = inst
           // since the build will fail we must rely on version complete, versus instance deploy socket event
           primus.onceVersionComplete(ctx.cv.id(), function () {
-            var count = createCount(1, done)
+            var count = createCount(2, done)
             instance.fetch(assertInstanceHasNoContainers)
+            forkedInstance.fetch(assertInstanceHasNoContainers)
             function assertInstanceHasNoContainers (err, instance) {
               if (err) { return count.next(err) }
               expect(instance.containers).to.have.length(0)
@@ -142,19 +154,23 @@ describe('Building - Context Version Deduping', function () {
     })
     it('should fork after failure, so the instance should not deploy', function (done) {
       // Add it to an instance
-      var json = { build: ctx.build.id(), name: uuid() }
+      var json = { build: ctx.build.id(), name: randStr(5) }
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         // Now wait for the finished build
         // since the build will fail we must rely on version complete, versus instance deploy socket event
         primus.onceVersionComplete(ctx.cv.id(), function () {
+          var forkedInstance
           cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
             if (err) { return done(err) }
+            forkedInstance = inst
+            var count = createCount(2, done)
             instance.fetch(assertInstanceHasNoContainers)
+            forkedInstance.fetch(assertInstanceHasNoContainers)
             function assertInstanceHasNoContainers (err, instance) {
-              if (err) { return done(err) }
+              if (err) { return count.next(err) }
               expect(instance.containers).to.have.length(0)
-              done()
+              count.next()
             }
           })
         })
@@ -176,20 +192,26 @@ describe('Building - Context Version Deduping', function () {
     it('should deploy right after', function (done) {
       // start the build
       // Add it to an instance
-      var json = { build: ctx.build.id(), name: uuid() }
+      var json = { build: ctx.build.id(), name: randStr(5) }
       var count = createCount(1, function () {
-        instance.fetch(function (err) {
+        async.parallel([
+          instance.fetch.bind(instance),
+          forkedInstance.fetch.bind(forkedInstance)
+        ], function (err) {
           if (err) { return done(err) }
           expect(instance.attrs.containers[0].inspect.State.Running).to.exist()
+          expect(forkedInstance.containers[0].inspect.State.Running).to.exist()
           done()
         })
       })
       primus.expectActionCount('start', 2, count.next)
 
+      var forkedInstance
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         cloneInstance(json, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
+          forkedInstance = inst
         })
       })
     })
