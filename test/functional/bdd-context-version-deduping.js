@@ -32,7 +32,9 @@ function cloneInstance (data, instance, user, cb) {
   var body = {}
   var parentInstance = instance
   body.parent = parentInstance.shortHash
-  body.build = data.build._id.toString()
+  if (data.build && data.build._id) {
+    body.build = data.build._id.toString()
+  }
   body.env = data.env || parentInstance.env
   body.owner = data.owner || parentInstance.owner
   body.masterPod = body.masterPod || parentInstance.masterPod
@@ -117,7 +119,7 @@ describe('Building - Context Version Deduping', function () {
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         // Now fork that instance
-        forkedInstance = instance.copy({ name: uuid() }, function (err) {
+        cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
           // Now tail both and make sure they both start
           dockerMockEvents.emitBuildComplete(ctx.cv)
@@ -130,7 +132,7 @@ describe('Building - Context Version Deduping', function () {
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         // Now fork that instance
-        var forkedInstance = instance.copy({ name: uuid() }, function (err) {
+        cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
           // since the build will fail we must rely on version complete, versus instance deploy socket event
           primus.onceVersionComplete(ctx.cv.id(), function () {
@@ -156,8 +158,9 @@ describe('Building - Context Version Deduping', function () {
         // Now wait for the finished build
         // since the build will fail we must rely on version complete, versus instance deploy socket event
         primus.onceVersionComplete(ctx.cv.id(), function () {
-          var forkedInstance = instance.copy({ name: uuid() }, function (err) {
+          cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
             if (err) { return done(err) }
+            forkedInstance = inst
             var count = createCount(2, done)
             instance.fetch(assertInstanceHasNoContainers)
             forkedInstance.fetch(assertInstanceHasNoContainers)
