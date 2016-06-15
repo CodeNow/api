@@ -34,7 +34,7 @@ function cloneInstance (data, instance, user, cb) {
   body.name = data.name
   body.build = instance.attrs.build.id.toString()
   body.env = data.env || instance.env
-  body.owner = data.owner || parentInstance.owner
+  body.owner = data.owner || instance.owner
   body.masterPod = body.masterPod || instance.masterPod || false
   return User.findByIdAsync(user.attrs._id).then(function (sessionUser) {
     return InstanceService.createInstance(body, sessionUser)
