@@ -33,7 +33,7 @@ function cloneInstance (data, instance, user, cb) {
   var parentInstance = instance
   body.parent = parentInstance.shortHash
   console.log('cloning>>>>', instance.build, data.build)
-  body.build = instance.build
+  body.build = instance.build.attrs.id.toString()
   body.env = data.env || parentInstance.env
   body.owner = data.owner || parentInstance.owner
   body.masterPod = body.masterPod || parentInstance.masterPod
