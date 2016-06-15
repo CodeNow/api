@@ -5,7 +5,6 @@
 
 var Code = require('code')
 var Lab = require('lab')
-var async = require('async')
 var createCount = require('callback-count')
 var randStr = require('randomstring').generate
 var uuid = require('uuid')
@@ -101,12 +100,10 @@ describe('Building - Context Version Deduping', function () {
       var json = { build: ctx.build.id(), name: randStr(5) }
 
       var count = createCount(1, function () {
-        async.parallel([
-          instance.fetch.bind(instance)
-        ], function (err) {
+        instance.fetch(function (err) {
           if (err) { return done(err) }
           expect(instance.attrs.containers[0].inspect.State.Running).to.exist()
-          expect(forkedInstance.attrs.containers[0].inspect.State.Running).to.exist()
+          expect(forkedInstance.containers[0].inspect.State.Running).to.exist()
           done()
         })
       })
@@ -192,10 +189,7 @@ describe('Building - Context Version Deduping', function () {
       // Add it to an instance
       var json = { build: ctx.build.id(), name: randStr(5) }
       var count = createCount(1, function () {
-        async.parallel([
-          instance.fetch.bind(instance),
-          forkedInstance.fetch.bind(forkedInstance)
-        ], function (err) {
+        instance.fetch(function (err) {
           if (err) { return done(err) }
           expect(instance.attrs.containers[0].inspect.State.Running).to.exist()
           expect(forkedInstance.containers[0].inspect.State.Running).to.exist()
