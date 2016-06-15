@@ -1,0 +1,71 @@
+/**
+ * Handle 'isolation.match-updated-properties' command
+ * @module lib/workers/isolation.match-updated-properties
+ */
+
+'use strict'
+
+var Instance = require('models/mongo/instance')
+var joi = require('utils/joi')
+var logger = require('middlewares/logger')(__filename)
+var Promise = require('bluebird')
+var TaskFatalError = require('ponos').TaskFatalError
+var User = require('models/mongo/user')
+
+module.exports = MatchUpdatesPropertiesForIsolation
+var queueName = 'isolation.match-properties'
+
+/**
+ * Math properties for all instances in an isolation
+ *
+ * @param   {Object}  job                     - Job info
+ * @param   {String}  job.isolationId         - Id of the isolation model
+ * @param   {String}  job.repo                - Name of repo
+ * @param   {Object}  job.updates             - Updates to be applied to all instances in isolation with same repo
+ * @param   {Number}  job.sessionUserGithubId - GitHub ID of the session user
+ * @returns {Promise}
+ */
+function MatchUpdatesPropertiesForIsolation (job) {
+  var schema = joi.object({
+    isolationId: joi.string().required(),
+    repo: joi.string().required(),
+    updates: joi.object().required(),
+    sessionUserGithubId: joi.number().required()
+  }).required().label('job')
+
+  var log = logger.log.child({
+    sessionUser: job.sessionUser,
+    opts: job.opts,
+    method: 'MatchUpdatesPropertiesForIsolation'
+  })
+  log.info('MatchUpdatesPropertiesForIsolation called')
+
+  return joi.validateOrBoomAsync(job, schema)
+    .catch(function (err) {
+      throw new TaskFatalError(
+        queueName,
+        'Invalid Job Data',
+        { validationError: err }
+      )
+    })
+    .then(function () {
+      return Promise.props({
+        instances: Instance.findInstancesInIsolationWithSameRepoAsync(job.isolationId, job.repo),
+        sessionUser: User.findByGithubIdAsync(job.sessionUserGithubId)
+      })
+    })
+    .then(function (instances) {
+      return Promise.map(instances, function (isolationInstance) {
+        log.trace({
+          instanceId: isolationInstance._id.toString()
+        }, 'Update instance with new properties')
+        return isolationInstance.updateAsync(job.updates)
+          .then(function () {
+            log.trace({
+              instanceId: isolationInstance._id.toString()
+            }, 'emitInstanceUpdate for isolation instance')
+            return isolationInstance.emitInstanceUpdateAsync(job.sessionUser, 'update')
+          })
+      })
+    })
+}
