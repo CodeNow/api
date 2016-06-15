@@ -27,6 +27,7 @@ var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
 var InstanceService = require('models/services/instance-service')
 var User = require('models/mongo/user')
+var Instance = require('models/mongo/instance')
 
 function cloneInstance (data, instance, user, cb) {
   var body = {}
