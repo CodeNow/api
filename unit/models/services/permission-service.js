@@ -22,6 +22,13 @@ describe('PermisionService', function () {
       }
     }
   }
+  var helloRunnable = {
+    accounts: {
+      github: {
+        id: process.env.HELLO_RUNNABLE_GITHUB_ID
+      }
+    }
+  }
   describe('isModerator', function () {
     it('should reject if user is not moderator', function (done) {
       PermisionService.isModerator({
@@ -52,6 +59,37 @@ describe('PermisionService', function () {
       .asCallback(done)
     })
   })
+
+  describe('isHelloRunnableOwnerOf', function (done) {
+
+    it('should resolve if HELLO_RUNNABLE_GITHUB_ID is the same as owner', function (done) {
+      PermisionService.isHelloRunnableOwnerOf(sessionUser, { owner: { github: process.env.HELLO_RUNNABLE_GITHUB_ID } })
+      .asCallback(done)
+    })
+
+    it('should resolve if sessionUser is hellorunnable', function (done) {
+      PermisionService.isHelloRunnableOwnerOf(helloRunnable, { owner: { github: '1' } })
+      .asCallback(done)
+    })
+
+    it('should reject if sessionUser do not have access to the model', function (done) {
+      PermisionService.isHelloRunnableOwnerOf({
+        accounts: {
+          github: {
+            id: '2'
+          }
+        }
+      }, { owner: { github: '3' } })
+      .then(function () {
+        done(new Error('Should fail'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Access denied (!owner)')
+        done()
+      })
+    })
+  })
+
   describe('isOwnerOf', function (done) {
     beforeEach(function (done) {
       sinon.stub(Github.prototype, 'getUserAuthorizedOrgs')
