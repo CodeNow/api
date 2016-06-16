@@ -73,7 +73,7 @@ describe('isolation.match-commit-with-master', function () {
     user = {}
     testJob = clone(testJobData)
     sinon.stub(Instance, 'findIsolationMaster').yieldsAsync(null, masterInstance)
-    sinon.stub(Instance, 'findIsolationChildrenWithRepo').yieldsAsync(null, [childInstance, childInstance2])
+    sinon.stub(Instance, 'findInstancesInIsolationWithSameRepoAndBranch').yieldsAsync(null, [childInstance, childInstance2])
     sinon.stub(User, 'findByGithubId').yieldsAsync(null, user)
     sinon.stub(InstanceService, 'updateInstanceCommitToNewCommit').resolves(true)
     done()
@@ -81,7 +81,7 @@ describe('isolation.match-commit-with-master', function () {
 
   afterEach(function (done) {
     Instance.findIsolationMaster.restore()
-    Instance.findIsolationChildrenWithRepo.restore()
+    Instance.findInstancesInIsolationWithSameRepoAndBranch.restore()
     User.findByGithubId.restore()
     InstanceService.updateInstanceCommitToNewCommit.restore()
     done()
@@ -127,8 +127,8 @@ describe('isolation.match-commit-with-master', function () {
         })
       })
 
-      it('should throw error if findIsolationChildrenWithRepo failed', function (done) {
-        Instance.findIsolationChildrenWithRepo.yieldsAsync(testErr)
+      it('should throw error if findInstancesInIsolationWithSameRepoAndBranch failed', function (done) {
+        Instance.findInstancesInIsolationWithSameRepoAndBranch.yieldsAsync(testErr)
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.cause).to.deep.equal(testErr)
@@ -147,10 +147,10 @@ describe('isolation.match-commit-with-master', function () {
       })
 
       it('should throw a TaskFatalError if there are no child instances', function (done) {
-        Instance.findIsolationChildrenWithRepo.yieldsAsync(null, [])
+        Instance.findInstancesInIsolationWithSameRepoAndBranch.yieldsAsync(null, [])
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err.message).to.match(/no.*children.*found/i)
+          expect(err.message).to.match(/no.*instances.*found/i)
           done()
         })
       })
@@ -167,15 +167,16 @@ describe('isolation.match-commit-with-master', function () {
   })
 
   describe('valid job', function () {
-    it('should call findIsolationChildrenWithRepoAsync', function (done) {
+    it('should call findInstancesInIsolationWithSameRepoAndBranch', function (done) {
       matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
 
-        sinon.assert.calledOnce(Instance.findIsolationChildrenWithRepo)
+        sinon.assert.calledOnce(Instance.findInstancesInIsolationWithSameRepoAndBranch)
         sinon.assert.calledWithExactly(
-          Instance.findIsolationChildrenWithRepo,
+          Instance.findInstancesInIsolationWithSameRepoAndBranch,
           testJob.isolationId,
           repoName,
+          branchName,
           sinon.match.func
         )
         done()
