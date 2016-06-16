@@ -11,10 +11,12 @@ var omit = require('101/omit')
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
+var Build = require('models/mongo/build')
+var BuildService = require('models/services/build-service')
 var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
 var ContextService = require('models/services/context-service')
-var BuildService = require('models/services/build-service')
+var PermisionService = require('models/services/permission-service')
 var User = require('models/mongo/user')
 var Runnable = require('models/apis/runnable')
 
@@ -25,6 +27,114 @@ var expect = Code.expect
 var it = lab.it
 
 describe('BuildService', function () {
+  describe('#findBuild', function () {
+    beforeEach(function (done) {
+      sinon.stub(Build, 'findByIdAsync').resolves(
+        new Build({
+          _id: '507f1f77bcf86cd799439011'
+        }))
+      sinon.stub(PermisionService, 'isOwnerOf').resolves()
+      sinon.stub(PermisionService, 'isModerator').resolves()
+      sinon.stub(PermisionService, 'isHelloRunnableOwnerOf').resolves()
+      done()
+    })
+
+    afterEach(function (done) {
+      Build.findByIdAsync.restore()
+      PermisionService.isOwnerOf.restore()
+      PermisionService.isModerator.restore()
+      PermisionService.isHelloRunnableOwnerOf.restore()
+      done()
+    })
+
+    it('should fail if build is is not valid', function (done) {
+      BuildService.findBuild('1111', {})
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Invalid build id')
+        done()
+      })
+    })
+
+    it('should fail build lookup failed', function (done) {
+      Build.findByIdAsync.rejects(new Error('Mongo error'))
+      BuildService.findBuild('507f1f77bcf86cd799439011', {})
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Mongo error')
+        done()
+      })
+    })
+
+    it('should fail if build was not found', function (done) {
+      Build.findByIdAsync.resolves(null)
+      BuildService.findBuild('507f1f77bcf86cd799439011', {})
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.isBoom).to.equal(true)
+        expect(err.output.statusCode).to.equal(404)
+        expect(err.output.payload.message).to.equal('Build not found')
+        done()
+      })
+    })
+
+    it('should fail all perm check failed', function (done) {
+      PermisionService.isOwnerOf.rejects(new Error('Not an owner'))
+      PermisionService.isModerator.rejects(new Error('Not a modeator'))
+      PermisionService.isHelloRunnableOwnerOf.rejects(new Error('Not HelloRunnable'))
+      BuildService.findBuild('507f1f77bcf86cd799439011', {})
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Not an owner')
+        done()
+      })
+    })
+
+    it('should succed if only isOwner check succeeded', function (done) {
+      PermisionService.isModerator.rejects(new Error('Not a modeator'))
+      PermisionService.isHelloRunnableOwnerOf.rejects(new Error('Not HelloRunnable'))
+      BuildService.findBuild('507f1f77bcf86cd799439011', {}).asCallback(done)
+    })
+
+    it('should succeed if only isModerator check succeeded', function (done) {
+      PermisionService.isOwnerOf.rejects(new Error('Not an owner'))
+      PermisionService.isHelloRunnableOwnerOf.rejects(new Error('Not HelloRunnable'))
+      BuildService.findBuild('507f1f77bcf86cd799439011', {}).asCallback(done)
+    })
+
+    it('should succeed if only isHelloRunnable check succeeded', function (done) {
+      PermisionService.isOwnerOf.rejects(new Error('Not an owner'))
+      PermisionService.isModerator.rejects(new Error('Not a modeator'))
+      BuildService.findBuild('507f1f77bcf86cd799439011', {}).asCallback(done)
+    })
+
+    it('should return build', function (done) {
+      BuildService.findBuild('507f1f77bcf86cd799439011', {})
+      .then(function (build) {
+        expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
+        done()
+      })
+      .catch(done)
+    })
+
+    it('should call Build.findByIdAsync with correct params', function (done) {
+      BuildService.findBuild('507f1f77bcf86cd799439011', {})
+      .then(function (build) {
+        sinon.assert.calledOnce(Build.findByIdAsync)
+        sinon.assert.calledWith(Build.findByIdAsync, '507f1f77bcf86cd799439011')
+        done()
+      })
+      .catch(done)
+    })
+  })
   describe('#validatePushInfo', function () {
     var pushInfo
 

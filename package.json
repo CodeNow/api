@@ -163,7 +163,7 @@
     "todo": "grep -nR TODO lib test",
     "test": "npm run clear; npm run lint && npm run bdd && npm run unit",
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
-    "unit": "npm run clear; NODE_PATH=./lib lab --threshold 88 --assert code --leaks --verbose unit/",
+    "unit": "npm run clear; NODE_PATH=./lib lab --threshold 88 --assert code --leaks --verbose unit/models/services/build-service.js",
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "unit-watch": "nodemon -w package.json -w unit -w lib -w node_modules/runnable/lib/models --exec 'npm run' unit",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs index.js"

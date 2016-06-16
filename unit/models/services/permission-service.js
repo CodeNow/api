@@ -22,6 +22,36 @@ describe('PermisionService', function () {
       }
     }
   }
+  describe('isModerator', function () {
+    it('should reject if user is not moderator', function (done) {
+      PermisionService.isModerator({
+        accounts: {
+          github: {
+            id: '2'
+          }
+        }
+      })
+      .then(function () {
+        done(new Error('Should fail'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('access denied (!isModerator)')
+        done()
+      })
+    })
+
+    it('should resolve if user is moderator', function (done) {
+      PermisionService.isModerator({
+        accounts: {
+          github: {
+            id: '2'
+          }
+        },
+        isModerator: true
+      })
+      .asCallback(done)
+    })
+  })
   describe('isOwnerOf', function (done) {
     beforeEach(function (done) {
       sinon.stub(Github.prototype, 'getUserAuthorizedOrgs')
