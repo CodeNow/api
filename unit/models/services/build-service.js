@@ -26,13 +26,14 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
+var ctx = {}
 describe('BuildService', function () {
   describe('#findBuild', function () {
     beforeEach(function (done) {
-      sinon.stub(Build, 'findByIdAsync').resolves(
-        new Build({
-          _id: '507f1f77bcf86cd799439011'
-        }))
+      ctx.build = new Build({
+        _id: '507f1f77bcf86cd799439011'
+      })
+      sinon.stub(Build, 'findByIdAsync').resolves(ctx.build)
       sinon.stub(PermisionService, 'isOwnerOf').resolves()
       sinon.stub(PermisionService, 'isModerator').resolves()
       sinon.stub(PermisionService, 'isHelloRunnableOwnerOf').resolves()
@@ -130,6 +131,53 @@ describe('BuildService', function () {
       .then(function (build) {
         sinon.assert.calledOnce(Build.findByIdAsync)
         sinon.assert.calledWith(Build.findByIdAsync, '507f1f77bcf86cd799439011')
+        done()
+      })
+      .catch(done)
+    })
+
+    it('should call PermisionService.isOwnerOf with correct params', function (done) {
+      var sessionUser = { _id: 'user-id' }
+      BuildService.findBuild('507f1f77bcf86cd799439011', sessionUser)
+      .then(function (build) {
+        sinon.assert.calledOnce(PermisionService.isOwnerOf)
+        sinon.assert.calledWith(PermisionService.isOwnerOf, sessionUser, ctx.build)
+        done()
+      })
+      .catch(done)
+    })
+
+    it('should call PermisionService.isModerator with correct params', function (done) {
+      var sessionUser = { _id: 'user-id' }
+      BuildService.findBuild('507f1f77bcf86cd799439011', sessionUser)
+      .then(function (build) {
+        sinon.assert.calledOnce(PermisionService.isModerator)
+        sinon.assert.calledWith(PermisionService.isModerator, sessionUser)
+        done()
+      })
+      .catch(done)
+    })
+
+    it('should call PermisionService.isHelloRunnable with correct params', function (done) {
+      var sessionUser = { _id: 'user-id' }
+      BuildService.findBuild('507f1f77bcf86cd799439011', sessionUser)
+      .then(function (build) {
+        sinon.assert.calledOnce(PermisionService.isHelloRunnableOwnerOf)
+        sinon.assert.calledWith(PermisionService.isHelloRunnableOwnerOf, sessionUser, ctx.build)
+        done()
+      })
+      .catch(done)
+    })
+
+    it('should call all functions in correct order', function (done) {
+      var sessionUser = { _id: 'user-id' }
+      BuildService.findBuild('507f1f77bcf86cd799439011', sessionUser)
+      .then(function (build) {
+        sinon.assert.callOrder(
+          Build.findByIdAsync,
+          PermisionService.isOwnerOf,
+          PermisionService.isModerator,
+          PermisionService.isHelloRunnableOwnerOf)
         done()
       })
       .catch(done)
