@@ -2252,22 +2252,11 @@ describe('InstanceService', function () {
     var newContextVersion
     var repoName = 'helloWorldWow'
     var buildId = new ObjectId()
-    var isolationChildOrSibling
 
     beforeEach(function (done) {
       instance = {
         _id: '123',
         updateAsync: sinon.stub().resolves(),
-        contextVersion: {
-          appCodeVersions: [{
-            repo: repoName
-          }]
-        }
-      }
-      isolationChildOrSibling = {
-        _id: '456',
-        updateAsync: sinon.stub().resolves(),
-        emitInstanceUpdateAsync: sinon.stub().resolves(),
         contextVersion: {
           appCodeVersions: [{
             repo: repoName
@@ -2393,15 +2382,6 @@ describe('InstanceService', function () {
                 { locked: true },
                 sessionUser
               )
-            })
-            .asCallback(done)
-        })
-
-        it('should not set the `locked` property if the instance is not isolated', function (done) {
-          opts = { locked: true }
-          InstanceService.updateInstance(instance, opts, sessionUser)
-            .then(function () {
-              sinon.assert.notCalled(InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch)
             })
             .asCallback(done)
         })
