@@ -2272,6 +2272,7 @@ describe('InstanceService', function () {
         ],
         ipWhitelist: { enabled: false },
         isolated: (new ObjectId()).toString(),
+        isTesting: true,
         public: true,
         locked: false
       }
