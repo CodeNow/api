@@ -220,8 +220,9 @@ function buildTheBuildTests (ctx) {
 
             dockerMockEvents.emitBuildComplete(ctx.cv)
           })
-
+          console.log('bbb1111')
           ctx.build.build(ctx.body, expects.success(201, ctx.expectStarted, function (err) {
+            console.log('bbb222', ctx.build)
             if (err) { return done(err) }
           }))
         })
