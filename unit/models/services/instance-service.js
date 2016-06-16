@@ -3109,4 +3109,160 @@ describe('InstanceService', function () {
       })
     })
   })
+
+  describe('#updateAllInstancesInIsolationWithSameRepoAndBranch', function () {
+    var repoName = 'helloWorld'
+    var branchName = 'superBranch'
+    var instance
+    var childInstance1
+    var opts
+    var sessionUser
+    var isolationId
+    beforeEach(function (done) {
+      isolationId = new ObjectId()
+      instance = {
+        _id: new ObjectId(),
+        isolated: isolationId,
+        updateAsync: sinon.stub().resolves(),
+        emitInstanceUpdateAsync: sinon.stub().resolves(),
+        contextVersion: {
+          appCodeVersions: [{
+            repo: repoName,
+            branch: branchName
+          }]
+        }
+      }
+      childInstance1 = {
+        _id: new ObjectId(),
+        isolated: isolationId,
+        updateAsync: sinon.stub().resolves(),
+        emitInstanceUpdateAsync: sinon.stub().resolves(),
+        contextVersion: {
+          appCodeVersions: [{
+            repo: repoName,
+            branch: branchName
+          }]
+        }
+      }
+      opts = { locked: true }
+      sessionUser = {}
+      sinon.stub(Instance, 'findInstancesInIsolationWithSameRepoAndBranch')
+        .yieldsAsync(null, [instance, childInstance1])
+      done()
+    })
+    afterEach(function (done) {
+      Instance.findInstancesInIsolationWithSameRepoAndBranch.restore()
+      done()
+    })
+
+    describe('Errors', function () {
+      var throwErr
+      var err = new Error('Hello')
+      beforeEach(function (done) {
+        throwErr = function (d) {
+          return d.bind(d, new Error('This call should have thrown an error'))
+        }
+        done()
+      })
+
+      it('should thow an error if it cant `findInstancesInIsolationWithSameRepoAndBranchAsync`', function (done) {
+        Instance.findInstancesInIsolationWithSameRepoAndBranch.yieldsAsync(err)
+        InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch(instance, opts, sessionUser)
+          .then(throwErr)
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.notCalled(childInstance1.updateAsync)
+            sinon.assert.notCalled(childInstance1.emitInstanceUpdateAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should throw an error if it cant update an instance', function (done) {
+        childInstance1.updateAsync.rejects(err)
+        InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch(instance, opts, sessionUser)
+          .then(throwErr)
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.calledOnce(childInstance1.updateAsync)
+            sinon.assert.notCalled(childInstance1.emitInstanceUpdateAsync)
+          })
+          .asCallback(done)
+      })
+
+      it('should not throw an error if it cant emit and update', function (done) {
+        childInstance1.emitInstanceUpdateAsync.rejects()
+        InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch(instance, opts, sessionUser)
+          .catch(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(err)
+            sinon.assert.calledOnce(childInstance1.emitInstanceUpdateAsync)
+          })
+          .asCallback(done)
+      })
+    })
+
+    describe('Main Behavior', function () {
+      it('should not do anything if theres no appCodeVersion', function (done) {
+        instance.contextVersion.appCodeVersions = []
+        InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch(instance, opts, sessionUser)
+        .then(function () {
+          sinon.assert.notCalled(Instance.findInstancesInIsolationWithSameRepoAndBranch)
+        })
+        .asCallback(done)
+      })
+
+      it('should not do anything if the instance is not isolated', function (done) {
+        instance.isolated = null
+        InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.notCalled(Instance.findInstancesInIsolationWithSameRepoAndBranch)
+          })
+          .asCallback(done)
+      })
+
+      it('should call `findInstancesInIsolationWithSameRepoAndBranchAsync`', function (done) {
+        InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(Instance.findInstancesInIsolationWithSameRepoAndBranch)
+            sinon.assert.calledWithExactly(
+              Instance.findInstancesInIsolationWithSameRepoAndBranch,
+              isolationId,
+              repoName,
+              branchName,
+              sinon.match.func
+            )
+          })
+          .asCallback(done)
+      })
+
+      it('should call `update` on the matching instance', function (done) {
+        InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(childInstance1.updateAsync)
+            sinon.assert.notCalled(instance.updateAsync)
+            sinon.assert.calledWithExactly(
+              childInstance1.updateAsync,
+              opts
+            )
+          })
+          .asCallback(done)
+      })
+
+      it('should emit an update on the instance', function (done) {
+        InstanceService.updateAllInstancesInIsolationWithSameRepoAndBranch(instance, opts, sessionUser)
+          .then(function () {
+            sinon.assert.calledOnce(childInstance1.emitInstanceUpdateAsync)
+            sinon.assert.notCalled(instance.emitInstanceUpdateAsync)
+            sinon.assert.calledWithExactly(
+              childInstance1.emitInstanceUpdateAsync,
+              sessionUser,
+              'update'
+            )
+          })
+          .asCallback(done)
+      })
+    })
+  })
 })
