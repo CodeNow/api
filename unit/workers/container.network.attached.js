@@ -24,7 +24,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-describe('Workers: Isolation Kill', function () {
+describe('Workers: Container Network Attach', function () {
   var testData = {
     id: 'dockerContainerId',
     containerIp: '127.0.0.1',
