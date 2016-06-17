@@ -41,6 +41,7 @@ describe('BuildService', function () {
     })
 
     afterEach(function (done) {
+      ctx = {}
       Build.findByIdAsync.restore()
       PermisionService.isOwnerOf.restore()
       PermisionService.isModerator.restore()
@@ -182,6 +183,344 @@ describe('BuildService', function () {
       })
       .catch(done)
     })
+  })
+  describe('#buildBuild', function () {
+    beforeEach(function (done) {
+      ctx.cv = new ContextVersion({
+        _id: '607f1f77bcf86cd799439012'
+      })
+      ctx.newCv = new ContextVersion({
+        _id: '707f1f77bcf86cd799439013'
+      })
+      ctx.build = new Build({
+        _id: '507f1f77bcf86cd799439011',
+        contextVersions: [ ctx.cv ]
+      })
+      ctx.sessionUser = { _id: 'user-id' }
+      ctx.domain = { runnableData: { tid: 'some-id' } }
+      sinon.stub(Build, 'findByIdAsync').resolves(ctx.build)
+      sinon.stub(BuildService, 'findBuild').resolves(ctx.build)
+      sinon.stub(ContextVersion, 'buildSelf').resolves(ctx.newCv)
+      sinon.stub(ContextVersion, 'findByIdsAsync').resolves([ ctx.cv ])
+      sinon.stub(ctx.build, 'setInProgressAsync').resolves(ctx.build)
+      sinon.stub(ctx.build, 'modifyCompletedIfFinishedAsync').resolves(ctx.build)
+      sinon.stub(ctx.build, 'replaceContextVersionAsync').resolves(ctx.build)
+      sinon.stub(ctx.build, 'modifyErroredAsync').resolves(ctx.build)
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx = {}
+      Build.findByIdAsync.restore()
+      BuildService.findBuild.restore()
+      ContextVersion.buildSelf.restore()
+      ContextVersion.findByIdsAsync.restore()
+      done()
+    })
+
+    it('should fail if build was not found', function (done) {
+      BuildService.findBuild.rejects(new Error('Access denied'))
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Access denied')
+        done()
+      })
+    })
+
+    it('should fail if build completed', function (done) {
+      ctx.build.completed = new Date()
+      BuildService.findBuild.resolves(ctx.build)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.isBoom).to.equal(true)
+        expect(err.output.statusCode).to.equal(409)
+        expect(err.output.payload.message).to.equal('Build is already built')
+        done()
+      })
+    })
+
+    it('should fail if build started', function (done) {
+      ctx.build.started = new Date()
+      BuildService.findBuild.resolves(ctx.build)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.isBoom).to.equal(true)
+        expect(err.output.statusCode).to.equal(409)
+        expect(err.output.payload.message).to.equal('Build is already in progress')
+        done()
+      })
+    })
+
+    it('should fail if context versions lookup failed', function (done) {
+      ContextVersion.findByIdsAsync.rejects(new Error('CV lookup failed'))
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('CV lookup failed')
+        done()
+      })
+    })
+
+    it('should fail if no cvs were found', function (done) {
+      ContextVersion.findByIdsAsync.resolves([])
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.isBoom).to.equal(true)
+        expect(err.output.statusCode).to.equal(400)
+        expect(err.output.payload.message).to.equal('Cannot build a build without context versions')
+        done()
+      })
+    })
+
+    it('should fail if more than 1 cvs were found', function (done) {
+      ContextVersion.findByIdsAsync.resolves([1, 2])
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.isBoom).to.equal(true)
+        expect(err.output.statusCode).to.equal(400)
+        expect(err.output.payload.message).to.equal('Cannot build a build with many context versions')
+        done()
+      })
+    })
+
+    it('should fail if setBuildInProgress failed', function (done) {
+      ctx.build.setInProgressAsync.rejects(new Error('setBuildInProgress failed'))
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('setBuildInProgress failed')
+        done()
+      })
+    })
+
+    it('should fail if modifyCompletedIfFinishedAsync failed', function (done) {
+      ctx.build.modifyCompletedIfFinishedAsync.rejects(new Error('modifyCompletedIfFinishedAsync failed'))
+      ctx.cv.build = {
+        started: new Date()
+      }
+      ContextVersion.findByIdsAsync.resolves([ ctx.cv ])
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('modifyCompletedIfFinishedAsync failed')
+        done()
+      })
+    })
+
+    it('should fail if refetch of the build failed', function (done) {
+      Build.findByIdAsync.rejects(new Error('Mongo error'))
+      ctx.cv.build = {
+        started: new Date()
+      }
+      ContextVersion.findByIdsAsync.resolves([ ctx.cv ])
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Mongo error')
+        done()
+      })
+    })
+
+    describe('check args', function () {
+      it('should call findBuild with correct args', function (done) {
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .tap(function () {
+          sinon.assert.calledOnce(BuildService.findBuild)
+          sinon.assert.calledWith(BuildService.findBuild, '507f1f77bcf86cd799439011', ctx.sessionUser)
+        })
+        .asCallback(done)
+      })
+
+      it('should call ContextVersion.findByIdsAsync with correct args', function (done) {
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .tap(function () {
+          sinon.assert.calledOnce(ContextVersion.findByIdsAsync)
+          sinon.assert.calledWith(ContextVersion.findByIdsAsync, [ ctx.cv._id ], { 'build.log': false })
+        })
+        .asCallback(done)
+      })
+
+      it('should call setInProgressAsync with correct args', function (done) {
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .tap(function () {
+          sinon.assert.calledOnce(ctx.build.setInProgressAsync)
+          sinon.assert.calledWith(ctx.build.setInProgressAsync, ctx.sessionUser)
+        })
+        .asCallback(done)
+      })
+
+      it('should call buildSelf with correct args', function (done) {
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .tap(function () {
+          sinon.assert.calledOnce(ContextVersion.buildSelf)
+          sinon.assert.calledWith(ContextVersion.buildSelf, ctx.cv, ctx.sessionUser, { message: 'new build', triggeredAction: { manual: true } }, ctx.domain)
+        })
+        .asCallback(done)
+      })
+
+      it('should call replaceContextVersionAsync with correct args', function (done) {
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .tap(function () {
+          sinon.assert.calledOnce(ctx.build.replaceContextVersionAsync)
+          sinon.assert.calledWith(ctx.build.replaceContextVersionAsync, ctx.cv, ctx.newCv)
+        })
+        .asCallback(done)
+      })
+
+      it('should call replaceContextVersionAsync with correct args', function (done) {
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .tap(function () {
+          sinon.assert.calledOnce(ctx.build.replaceContextVersionAsync)
+          sinon.assert.calledWith(ctx.build.replaceContextVersionAsync, ctx.cv, ctx.newCv)
+        })
+        .asCallback(done)
+      })
+
+      it('should call modifyErroredAsync with correct args', function (done) {
+        ContextVersion.buildSelf.rejects(new Error('Build error'))
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .tap(function () {
+          sinon.assert.calledOnce(ctx.build.modifyErroredAsync)
+          sinon.assert.calledWith(ctx.build.modifyErroredAsync, ctx.cv._id)
+        })
+        .asCallback(done)
+      })
+
+      it('should call modifyErroredAsync with correct args', function (done) {
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .tap(function () {
+          sinon.assert.calledOnce(ctx.build.modifyCompletedIfFinishedAsync)
+          sinon.assert.calledWith(ctx.build.modifyCompletedIfFinishedAsync, ctx.newCv.build)
+        })
+        .asCallback(done)
+      })
+
+      it('should call findByIdAsync with correct args', function (done) {
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .tap(function () {
+          sinon.assert.calledOnce(Build.findByIdAsync)
+          sinon.assert.calledWith(Build.findByIdAsync, ctx.build._id)
+        })
+        .asCallback(done)
+      })
+    })
+
+    describe('calls order', function () {
+      it('should not build cv if started', function (done) {
+        ctx.cv.build = {
+          started: new Date()
+        }
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .then(function (build) {
+          expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
+          sinon.assert.callOrder(
+            BuildService.findBuild,
+            ContextVersion.findByIdsAsync,
+            ctx.build.setInProgressAsync,
+            ctx.build.modifyCompletedIfFinishedAsync,
+            Build.findByIdAsync
+          )
+          sinon.assert.notCalled(ContextVersion.buildSelf)
+          done()
+        })
+        .catch(done)
+      })
+
+      it('should build cv if started', function (done) {
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .then(function (build) {
+          expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
+          sinon.assert.callOrder(
+            BuildService.findBuild,
+            ContextVersion.findByIdsAsync,
+            ctx.build.setInProgressAsync,
+            ContextVersion.buildSelf,
+            build.replaceContextVersionAsync,
+            ctx.build.modifyCompletedIfFinishedAsync,
+            Build.findByIdAsync
+          )
+          done()
+        })
+        .catch(done)
+      })
+
+      it('should call modifyErroredAsync if buildSelf failed', function (done) {
+        ContextVersion.buildSelf.rejects(new Error('Build error'))
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .then(function (build) {
+          expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
+          sinon.assert.callOrder(
+            BuildService.findBuild,
+            ContextVersion.findByIdsAsync,
+            ctx.build.setInProgressAsync,
+            ContextVersion.buildSelf,
+            build.modifyErroredAsync,
+            ctx.build.modifyCompletedIfFinishedAsync,
+            Build.findByIdAsync
+          )
+          sinon.assert.notCalled(build.replaceContextVersionAsync)
+          done()
+        })
+        .catch(done)
+      })
+
+      it('should call modifyErroredAsync if replaceContextVersionAsync failed', function (done) {
+        ctx.build.replaceContextVersionAsync.rejects(new Error('Build error'))
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        .then(function (build) {
+          expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
+          sinon.assert.callOrder(
+            BuildService.findBuild,
+            ContextVersion.findByIdsAsync,
+            ctx.build.setInProgressAsync,
+            ContextVersion.buildSelf,
+            build.replaceContextVersionAsync,
+            build.modifyErroredAsync,
+            ctx.build.modifyCompletedIfFinishedAsync,
+            Build.findByIdAsync
+          )
+          done()
+        })
+        .catch(done)
+      })
+    })
+    // it('should fail if cv buildSelf failed', function (done) {
+    //   ContextVersion.buildSelf.rejects(new Error('Build error'))
+    //   var sessionUser = { _id: 'user-id' }
+    //   BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, sessionUser, ctx.domain)
+    //   .then(function () {
+    //     done(new Error('Should never happen'))
+    //   })
+    //   .catch(function (err) {
+    //     expect(err.message).to.equal('Build error')
+    //     done()
+    //   })
+    // })
+
+
   })
   describe('#validatePushInfo', function () {
     var pushInfo
