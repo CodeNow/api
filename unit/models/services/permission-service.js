@@ -61,7 +61,6 @@ describe('PermisionService', function () {
   })
 
   describe('isHelloRunnableOwnerOf', function (done) {
-
     it('should resolve if HELLO_RUNNABLE_GITHUB_ID is the same as owner', function (done) {
       PermisionService.isHelloRunnableOwnerOf(sessionUser, { owner: { github: process.env.HELLO_RUNNABLE_GITHUB_ID } })
       .asCallback(done)
