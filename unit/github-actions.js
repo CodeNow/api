@@ -14,8 +14,7 @@ var Promise = require('bluebird')
 var sinon = require('sinon')
 var monitor = require('monitor-dog')
 
-var EmptyResponseError = require('errors/empty-response-error')
-var NotImplementedError = require('errors/not-implemented-error')
+var NotImplementedException = require('errors/not-implemented-exception.js')
 
 var githubActions = require('routes/actions/github')
 var WebhookService = require('models/services/webhook-service')
@@ -103,6 +102,7 @@ describe('GitHub Actions: ' + moduleName, function () {
       it('should return OKAY', function (done) {
         validHeaders['x-github-event'] = 'ping'
         githubActions.onGithookEvent(req, res, function (err, res) {
+          expect(err).to.be.null()
           sinon.assert.calledOnce(res.status)
           sinon.assert.calledWith(res.status, 202)
           sinon.assert.calledWith(res.send, 'Hello, Github Ping!')
@@ -115,6 +115,7 @@ describe('GitHub Actions: ' + moduleName, function () {
       it('should return no action', function (done) {
         validHeaders['x-github-event'] = 'pull request'
         githubActions.onGithookEvent(req, res, function (err, res) {
+          expect(err).to.be.null()
           sinon.assert.calledOnce(res.status)
           sinon.assert.calledWith(res.status, 202)
           sinon.assert.calledWith(res.send, 'No action set up for that payload.')
@@ -134,6 +135,7 @@ describe('GitHub Actions: ' + moduleName, function () {
       })
       it('should send response immediately if hooks are disabled', function (done) {
         githubActions.onGithookEvent(req, res, function (err, res) {
+          expect(err).to.be.null()
           sinon.assert.calledOnce(res.status)
           sinon.assert.calledWith(res.status, 202)
           sinon.assert.calledWith(res.send, 'Hooks are currently disabled, but we gotchu!')
@@ -153,6 +155,7 @@ describe('GitHub Actions: ' + moduleName, function () {
       it('resolves successfully', function (done) {
         WebhookService.processGithookEvent.resolves()
         githubActions.onGithookEvent(req, res, function (err, res) {
+          expect(err).to.be.null()
           sinon.assert.calledOnce(res.status)
           sinon.assert.calledWith(res.status, 200)
           sinon.assert.calledWith(res.send, 'Success')
@@ -168,27 +171,17 @@ describe('GitHub Actions: ' + moduleName, function () {
           done()
         })
       })
-      it('should respond with a 202 when it fails with a NotImplementedError', function (done) {
-        var error = new NotImplementedError('Nope', 'Error')
+      it('should respond with a 202 when it fails with a NotImplementedException', function (done) {
+        var error = new NotImplementedException('Nope', 'Error')
         WebhookService.processGithookEvent.rejects(error)
         githubActions.onGithookEvent(req, res, function (err, res) {
+          expect(err).to.be.null()
           sinon.assert.calledOnce(res.status)
           sinon.assert.calledWith(res.status, 202)
           sinon.assert.calledWith(res.send, 'Error')
           done()
         })
       })
-      it('should respond with a 202 when it fails with an EmptyResponseError', function (done) {
-        var error = new EmptyResponseError('Nope', 'Another error')
-        WebhookService.processGithookEvent.rejects(error)
-        githubActions.onGithookEvent(req, res, function (err, res) {
-          sinon.assert.calledOnce(res.status)
-          sinon.assert.calledWith(res.status, 202)
-          sinon.assert.calledWith(res.send, 'Another error')
-          done()
-        })
-      })
     })
   })
-
 })
