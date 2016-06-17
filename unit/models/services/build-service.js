@@ -507,20 +507,6 @@ describe('BuildService', function () {
         .catch(done)
       })
     })
-    // it('should fail if cv buildSelf failed', function (done) {
-    //   ContextVersion.buildSelf.rejects(new Error('Build error'))
-    //   var sessionUser = { _id: 'user-id' }
-    //   BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, sessionUser, ctx.domain)
-    //   .then(function () {
-    //     done(new Error('Should never happen'))
-    //   })
-    //   .catch(function (err) {
-    //     expect(err.message).to.equal('Build error')
-    //     done()
-    //   })
-    // })
-
-
   })
   describe('#validatePushInfo', function () {
     var pushInfo
