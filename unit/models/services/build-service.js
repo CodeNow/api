@@ -122,9 +122,8 @@ describe('BuildService', function () {
       BuildService.findBuild('507f1f77bcf86cd799439011', {})
       .then(function (build) {
         expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
-        done()
       })
-      .catch(done)
+      .asCallback(done)
     })
 
     it('should call Build.findByIdAsync with correct params', function (done) {
@@ -132,9 +131,8 @@ describe('BuildService', function () {
       .then(function (build) {
         sinon.assert.calledOnce(Build.findByIdAsync)
         sinon.assert.calledWith(Build.findByIdAsync, '507f1f77bcf86cd799439011')
-        done()
       })
-      .catch(done)
+      .asCallback(done)
     })
 
     it('should call PermisionService.isOwnerOf with correct params', function (done) {
@@ -143,9 +141,8 @@ describe('BuildService', function () {
       .then(function (build) {
         sinon.assert.calledOnce(PermisionService.isOwnerOf)
         sinon.assert.calledWith(PermisionService.isOwnerOf, sessionUser, ctx.build)
-        done()
       })
-      .catch(done)
+      .asCallback(done)
     })
 
     it('should call PermisionService.isModerator with correct params', function (done) {
@@ -154,9 +151,8 @@ describe('BuildService', function () {
       .then(function (build) {
         sinon.assert.calledOnce(PermisionService.isModerator)
         sinon.assert.calledWith(PermisionService.isModerator, sessionUser)
-        done()
       })
-      .catch(done)
+      .asCallback(done)
     })
 
     it('should call PermisionService.isHelloRunnable with correct params', function (done) {
@@ -165,9 +161,8 @@ describe('BuildService', function () {
       .then(function (build) {
         sinon.assert.calledOnce(PermisionService.isHelloRunnableOwnerOf)
         sinon.assert.calledWith(PermisionService.isHelloRunnableOwnerOf, sessionUser, ctx.build)
-        done()
       })
-      .catch(done)
+      .asCallback(done)
     })
 
     it('should call all functions in correct order', function (done) {
@@ -179,9 +174,8 @@ describe('BuildService', function () {
           PermisionService.isOwnerOf,
           PermisionService.isModerator,
           PermisionService.isHelloRunnableOwnerOf)
-        done()
       })
-      .catch(done)
+      .asCallback(done)
     })
   })
   describe('#buildBuild', function () {
@@ -444,9 +438,8 @@ describe('BuildService', function () {
             Build.findByIdAsync
           )
           sinon.assert.notCalled(ContextVersion.buildSelf)
-          done()
         })
-        .catch(done)
+        .asCallback(done)
       })
 
       it('should build cv if started', function (done) {
@@ -462,9 +455,8 @@ describe('BuildService', function () {
             ctx.build.modifyCompletedIfFinishedAsync,
             Build.findByIdAsync
           )
-          done()
         })
-        .catch(done)
+        .asCallback(done)
       })
 
       it('should call modifyErroredAsync if buildSelf failed', function (done) {
@@ -482,9 +474,8 @@ describe('BuildService', function () {
             Build.findByIdAsync
           )
           sinon.assert.notCalled(build.replaceContextVersionAsync)
-          done()
         })
-        .catch(done)
+        .asCallback(done)
       })
 
       it('should call modifyErroredAsync if replaceContextVersionAsync failed', function (done) {
@@ -502,9 +493,8 @@ describe('BuildService', function () {
             ctx.build.modifyCompletedIfFinishedAsync,
             Build.findByIdAsync
           )
-          done()
         })
-        .catch(done)
+        .asCallback(done)
       })
     })
   })
