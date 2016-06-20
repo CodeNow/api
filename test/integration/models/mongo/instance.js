@@ -27,7 +27,6 @@ var mongoFactory = require('../../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 require('sinon-as-promised')
 
-
 function newObjectId () {
   return new mongoose.Types.ObjectId()
 }
@@ -165,7 +164,6 @@ describe('Instance Model Integration Tests', function () {
     })
   })
 
-
   describe('.findMasterPodsToAutoFork', function () {
     /**
      * This test must verify all of these scenarios
@@ -188,7 +186,7 @@ describe('Instance Model Integration Tests', function () {
     var repo = 'owner/api'
     var api
     var worker
-    beforeEach(function clearApiAndWorker(done) {
+    beforeEach(function clearApiAndWorker (done) {
       api = {
         context: null,
         masterPod: null,
@@ -203,7 +201,7 @@ describe('Instance Model Integration Tests', function () {
       }
       done()
     })
-    beforeEach(function makeUserStuff(done) {
+    beforeEach(function makeUserStuff (done) {
       mockSessionUser = {
         findGithubUserByGithubId: sinon.spy(function (id, cb) {
           var login = (id === mockSessionUser.accounts.github.id) ? 'user' : 'owner'
@@ -232,7 +230,7 @@ describe('Instance Model Integration Tests', function () {
       }
       done()
     })
-    function createCv(opts) {
+    function createCv (opts) {
       return mongoFactory.createCompletedCvAsync(ownerId, {
         context: opts.context._id,
         appCodeVersions: [{
@@ -245,11 +243,11 @@ describe('Instance Model Integration Tests', function () {
         }]
       })
     }
-    beforeEach(function createContexts(done) {
+    beforeEach(function createContexts (done) {
       Promise.props({
-          api: mongoFactory.createContextAsync(mockOwner),
-          worker: mongoFactory.createContextAsync(mockOwner)
-        })
+        api: mongoFactory.createContextAsync(mockOwner),
+        worker: mongoFactory.createContextAsync(mockOwner)
+      })
         .then(function (results) {
           api.context = results.api
           worker.context = results.worker
@@ -458,7 +456,6 @@ describe('Instance Model Integration Tests', function () {
             })
             .asCallback(done)
         })
-
       })
     })
     describe('2 masterPod api(m) worker(m), 1 isolated api(fb)', function () {

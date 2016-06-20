@@ -199,14 +199,14 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
       }]
       contextIds = ['sadsadasdsad', 'sdgfddfsgdfsgsdfgdsfg']
       sinon.stub(WebhookService, 'checkCommitPusherIsRunnableUser')
-      sinon.stub(Instance, 'findForkableMasterInstancesAsync')
+      sinon.stub(Instance, 'findMasterPodsToAutoFork')
       sinon.stub(InstanceForkService, 'autoFork')
       sinon.stub(IsolationService, 'autoIsolate')
       done()
     })
     afterEach(function (done) {
       WebhookService.checkCommitPusherIsRunnableUser.restore()
-      Instance.findForkableMasterInstancesAsync.restore()
+      Instance.findMasterPodsToAutoFork.restore()
       InstanceForkService.autoFork.restore()
       IsolationService.autoIsolate.restore()
       done()
@@ -221,10 +221,10 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
             done()
           })
       })
-      it('should reject if findForkableMasterInstancesAsync fails', function (done) {
+      it('should reject if findMasterPodsToAutoFork fails', function (done) {
         var error = new Error('User is bad')
         WebhookService.checkCommitPusherIsRunnableUser.resolves()
-        Instance.findForkableMasterInstancesAsync.rejects(error)
+        Instance.findMasterPodsToAutoFork.rejects(error)
         WebhookService.autoFork(contextIds, githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.equal(error)
@@ -234,7 +234,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
       it('should reject if autoFork fails', function (done) {
         var error = new Error('User is bad')
         WebhookService.checkCommitPusherIsRunnableUser.resolves()
-        Instance.findForkableMasterInstancesAsync.resolves(instances)
+        Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.rejects(error)
         WebhookService.autoFork(contextIds, githubPushInfo)
           .asCallback(function (err) {
@@ -245,7 +245,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
       it('should reject if autoIsolate fails', function (done) {
         var error = new Error('User is bad')
         WebhookService.checkCommitPusherIsRunnableUser.resolves()
-        Instance.findForkableMasterInstancesAsync.resolves(instances)
+        Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.resolves(instances)
         IsolationService.autoIsolate.rejects(error)
         WebhookService.autoFork(contextIds, githubPushInfo)
@@ -267,7 +267,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
       })
       it('should skip autoFork when instance fetch returns null, then return null', function (done) {
         WebhookService.checkCommitPusherIsRunnableUser.resolves()
-        Instance.findForkableMasterInstancesAsync.resolves([])
+        Instance.findMasterPodsToAutoFork.resolves([])
         InstanceForkService.autoFork.resolves([])
         WebhookService.autoFork(contextIds, githubPushInfo)
           .then(function (instances) {
@@ -278,13 +278,13 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
       })
       it('should fetch the MasterPods with repo, branch, and contextIds', function (done) {
         WebhookService.checkCommitPusherIsRunnableUser.resolves()
-        Instance.findForkableMasterInstancesAsync.resolves(instances)
+        Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.resolves(forkedInstances)
         IsolationService.autoIsolate.resolves()
         WebhookService.autoFork(contextIds, githubPushInfo)
           .then(function () {
             sinon.assert.calledWith(
-              Instance.findForkableMasterInstancesAsync,
+              Instance.findMasterPodsToAutoFork,
               githubPushInfo.repo,
               githubPushInfo.branch,
               contextIds
@@ -292,9 +292,9 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
           })
           .asCallback(done)
       })
-      it('should attempt to autoFork all instances returned from findForkableMasterInstancesAsync', function (done) {
+      it('should attempt to autoFork all instances returned from findMasterPodsToAutoFork', function (done) {
         WebhookService.checkCommitPusherIsRunnableUser.resolves()
-        Instance.findForkableMasterInstancesAsync.resolves(instances)
+        Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.resolves(forkedInstances)
         IsolationService.autoIsolate.resolves()
         WebhookService.autoFork(contextIds, githubPushInfo)
@@ -310,7 +310,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
       })
       it('should autoIsolate the new forked instances from autoFork, and return the forked instances', function (done) {
         WebhookService.checkCommitPusherIsRunnableUser.resolves()
-        Instance.findForkableMasterInstancesAsync.resolves(instances)
+        Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.resolves(forkedInstances)
         IsolationService.autoIsolate.resolves()
         WebhookService.autoFork(contextIds, githubPushInfo)
@@ -533,32 +533,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
       })
     })
     describe('Successful runs', function () {
-      it('should filter out isolated contextIds that are sent to autoFork', function (done) {
-        instances[0].isolated = 'asdfasdfsadsdadsf'
-        Instance.findInstancesLinkedToBranchAsync.resolves(instances)
-        WebhookService.autoDeploy.resolves()
-        WebhookService.autoFork.resolves()
-        WebhookService.doAutoDeployAndAutoFork(githubPushInfo)
-          .then(function () {
-            sinon.assert.calledWith(WebhookService.autoDeploy, instances, githubPushInfo)
-            sinon.assert.calledWith(WebhookService.autoFork, [contextId2.toString()], githubPushInfo)
-          })
-          .asCallback(done)
-      })
-      it('should not autoFork if all instances are isolated', function (done) {
-        instances[0].isolated = 'asdfasdfsadsdadsf'
-        instances[1].isolated = 'asdfasdfsadsdadsf'
-        Instance.findInstancesLinkedToBranchAsync.resolves(instances)
-        WebhookService.autoDeploy.resolves()
-        WebhookService.autoFork.resolves()
-        WebhookService.doAutoDeployAndAutoFork(githubPushInfo)
-          .then(function () {
-            sinon.assert.calledWith(WebhookService.autoDeploy, instances, githubPushInfo)
-            sinon.assert.notCalled(WebhookService.autoFork)
-          })
-          .asCallback(done)
-      })
-      it('should filter out copy contextIds', function (done) {
+      it('should call both autoFork and AutoDeploy with the instances and githubPushInfo', function (done) {
         instances.push(instances[0])
         Instance.findInstancesLinkedToBranchAsync.resolves(instances)
         WebhookService.autoDeploy.resolves()
@@ -568,7 +543,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
             sinon.assert.calledWith(WebhookService.autoDeploy, instances, githubPushInfo)
             sinon.assert.calledWith(
               WebhookService.autoFork,
-              [contextId1.toString(), contextId2.toString()],
+              instances,
               githubPushInfo
             )
           })
