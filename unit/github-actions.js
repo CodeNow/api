@@ -91,36 +91,39 @@ describe('GitHub Actions: ' + moduleName, function () {
     describe('invalid headers', function () {
       it('should return 400', function (done) {
         delete validHeaders['x-github-event']
-        githubActions.onGithookEvent(req, res, function (err) {
-          expect(err.output.statusCode).to.equal(400) // Bad Request
-          expect(err.output.payload.message).to.match(/Invalid githook/)
-          done()
-        })
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err.output.statusCode).to.equal(400) // Bad Request
+            expect(err.output.payload.message).to.match(/Invalid githook/)
+            done()
+          })
       })
     })
     describe('ping', function () {
       it('should return OKAY', function (done) {
         validHeaders['x-github-event'] = 'ping'
-        githubActions.onGithookEvent(req, res, function (err, res) {
-          expect(err).to.be.null()
-          sinon.assert.calledOnce(res.status)
-          sinon.assert.calledWith(res.status, 202)
-          sinon.assert.calledWith(res.send, 'Hello, Github Ping!')
-          done()
-        })
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err).to.be.null()
+            sinon.assert.calledOnce(res.status)
+            sinon.assert.calledWith(res.status, 202)
+            sinon.assert.calledWith(res.send, 'Hello, Github Ping!')
+            done()
+          })
       })
     })
 
     describe('not a push event', function () {
       it('should return no action', function (done) {
         validHeaders['x-github-event'] = 'pull request'
-        githubActions.onGithookEvent(req, res, function (err, res) {
-          expect(err).to.be.null()
-          sinon.assert.calledOnce(res.status)
-          sinon.assert.calledWith(res.status, 202)
-          sinon.assert.calledWith(res.send, 'No action set up for that payload.')
-          done()
-        })
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err).to.be.null()
+            sinon.assert.calledOnce(res.status)
+            sinon.assert.calledWith(res.status, 202)
+            sinon.assert.calledWith(res.send, 'No action set up for that payload.')
+            done()
+          })
       })
     })
 
@@ -134,13 +137,14 @@ describe('GitHub Actions: ' + moduleName, function () {
         done()
       })
       it('should send response immediately if hooks are disabled', function (done) {
-        githubActions.onGithookEvent(req, res, function (err, res) {
-          expect(err).to.be.null()
-          sinon.assert.calledOnce(res.status)
-          sinon.assert.calledWith(res.status, 202)
-          sinon.assert.calledWith(res.send, 'Hooks are currently disabled, but we gotchu!')
-          done()
-        })
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err).to.be.null()
+            sinon.assert.calledOnce(res.status)
+            sinon.assert.calledWith(res.status, 202)
+            sinon.assert.calledWith(res.send, 'Hooks are currently disabled, but we gotchu!')
+            done()
+          })
       })
     })
     describe('process', function () {
@@ -154,33 +158,36 @@ describe('GitHub Actions: ' + moduleName, function () {
       })
       it('resolves successfully', function (done) {
         WebhookService.processGithookEvent.resolves()
-        githubActions.onGithookEvent(req, res, function (err, res) {
-          expect(err).to.be.null()
-          sinon.assert.calledOnce(res.status)
-          sinon.assert.calledWith(res.status, 200)
-          sinon.assert.calledWith(res.send, 'Success')
-          done()
-        })
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err).to.be.null()
+            sinon.assert.calledOnce(res.status)
+            sinon.assert.calledWith(res.status, 200)
+            sinon.assert.calledWith(res.send, 'Success')
+            done()
+          })
       })
       it('should respond with 403 if processGithookEvent returns that', function (done) {
         var boomError = Boom.forbidden('Repo owner is not registered on Runnable')
         WebhookService.processGithookEvent.rejects(boomError)
-        githubActions.onGithookEvent(req, res, function (err, res) {
-          sinon.assert.notCalled(res.status)
-          expect(err).to.equal(boomError)
-          done()
-        })
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            sinon.assert.notCalled(res.status)
+            expect(err).to.equal(boomError)
+            done()
+          })
       })
       it('should respond with a 202 when it fails with a NotImplementedException', function (done) {
         var error = new NotImplementedException('Nope', 'Error')
         WebhookService.processGithookEvent.rejects(error)
-        githubActions.onGithookEvent(req, res, function (err, res) {
-          expect(err).to.be.null()
-          sinon.assert.calledOnce(res.status)
-          sinon.assert.calledWith(res.status, 202)
-          sinon.assert.calledWith(res.send, 'Error')
-          done()
-        })
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err).to.be.null()
+            sinon.assert.calledOnce(res.status)
+            sinon.assert.calledWith(res.status, 202)
+            sinon.assert.calledWith(res.send, 'Error')
+            done()
+          })
       })
     })
   })
