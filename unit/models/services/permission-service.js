@@ -99,6 +99,26 @@ describe('PermisionService', function () {
         done()
       })
     })
+
+    it('should call isOwnerOf with correct params', function (done) {
+      var model = { owner: { github: '1' } }
+      PermisionService.ensureOwnerOrModerator(sessionUser, model)
+      .then(function () {
+        sinon.assert.calledOnce(PermisionService.isOwnerOf)
+        sinon.assert.calledWith(PermisionService.isOwnerOf, sessionUser, model)
+      })
+      .asCallback(done)
+    })
+
+    it('should call isModerator with correct params', function (done) {
+      var model = { owner: { github: '1' } }
+      PermisionService.ensureOwnerOrModerator(sessionUser, model)
+      .then(function () {
+        sinon.assert.calledOnce(PermisionService.isModerator)
+        sinon.assert.calledWith(PermisionService.isModerator, sessionUser)
+      })
+      .asCallback(done)
+    })
   })
 
   describe('ensureModelAccess', function () {
@@ -186,6 +206,36 @@ describe('PermisionService', function () {
         sinon.assert.calledOnce(PermisionService.isHelloRunnableOwnerOf)
         done()
       })
+    })
+
+    it('should call isOwnerOf with correct params', function (done) {
+      var model = { owner: { github: '1' } }
+      PermisionService.ensureModelAccess(sessionUser, model)
+      .then(function () {
+        sinon.assert.calledOnce(PermisionService.isOwnerOf)
+        sinon.assert.calledWith(PermisionService.isOwnerOf, sessionUser, model)
+      })
+      .asCallback(done)
+    })
+
+    it('should call isModerator with correct params', function (done) {
+      var model = { owner: { github: '1' } }
+      PermisionService.ensureModelAccess(sessionUser, model)
+      .then(function () {
+        sinon.assert.calledOnce(PermisionService.isModerator)
+        sinon.assert.calledWith(PermisionService.isModerator, sessionUser)
+      })
+      .asCallback(done)
+    })
+
+    it('should call isHelloRunnableOwnerOf with correct params', function (done) {
+      var model = { owner: { github: '1' } }
+      PermisionService.ensureModelAccess(sessionUser, model)
+      .then(function () {
+        sinon.assert.calledOnce(PermisionService.isHelloRunnableOwnerOf)
+        sinon.assert.calledWith(PermisionService.isHelloRunnableOwnerOf, sessionUser, model)
+      })
+      .asCallback(done)
     })
   })
 

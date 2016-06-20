@@ -34,18 +34,14 @@ describe('BuildService', function () {
         _id: '507f1f77bcf86cd799439011'
       })
       sinon.stub(Build, 'findByIdAsync').resolves(ctx.build)
-      sinon.stub(PermisionService, 'isOwnerOf').resolves()
-      sinon.stub(PermisionService, 'isModerator').resolves()
-      sinon.stub(PermisionService, 'isHelloRunnableOwnerOf').resolves()
+      sinon.stub(PermisionService, 'ensureModelAccess').resolves()
       done()
     })
 
     afterEach(function (done) {
       ctx = {}
       Build.findByIdAsync.restore()
-      PermisionService.isOwnerOf.restore()
-      PermisionService.isModerator.restore()
-      PermisionService.isHelloRunnableOwnerOf.restore()
+      PermisionService.ensureModelAccess.restore()
       done()
     })
 
@@ -86,10 +82,8 @@ describe('BuildService', function () {
       })
     })
 
-    it('should fail all perm check failed', function (done) {
-      PermisionService.isOwnerOf.rejects(new Error('Not an owner'))
-      PermisionService.isModerator.rejects(new Error('Not a modeator'))
-      PermisionService.isHelloRunnableOwnerOf.rejects(new Error('Not HelloRunnable'))
+    it('should fail if perm check failed', function (done) {
+      PermisionService.ensureModelAccess.rejects(new Error('Not an owner'))
       BuildService.findBuild('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
@@ -98,24 +92,6 @@ describe('BuildService', function () {
         expect(err.message).to.equal('Not an owner')
         done()
       })
-    })
-
-    it('should succed if only isOwner check succeeded', function (done) {
-      PermisionService.isModerator.rejects(new Error('Not a modeator'))
-      PermisionService.isHelloRunnableOwnerOf.rejects(new Error('Not HelloRunnable'))
-      BuildService.findBuild('507f1f77bcf86cd799439011', {}).asCallback(done)
-    })
-
-    it('should succeed if only isModerator check succeeded', function (done) {
-      PermisionService.isOwnerOf.rejects(new Error('Not an owner'))
-      PermisionService.isHelloRunnableOwnerOf.rejects(new Error('Not HelloRunnable'))
-      BuildService.findBuild('507f1f77bcf86cd799439011', {}).asCallback(done)
-    })
-
-    it('should succeed if only isHelloRunnable check succeeded', function (done) {
-      PermisionService.isOwnerOf.rejects(new Error('Not an owner'))
-      PermisionService.isModerator.rejects(new Error('Not a modeator'))
-      BuildService.findBuild('507f1f77bcf86cd799439011', {}).asCallback(done)
     })
 
     it('should return build', function (done) {
@@ -135,32 +111,12 @@ describe('BuildService', function () {
       .asCallback(done)
     })
 
-    it('should call PermisionService.isOwnerOf with correct params', function (done) {
+    it('should call PermisionService.ensureModelAccess with correct params', function (done) {
       var sessionUser = { _id: 'user-id' }
       BuildService.findBuild('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledWith(PermisionService.isOwnerOf, sessionUser, ctx.build)
-      })
-      .asCallback(done)
-    })
-
-    it('should call PermisionService.isModerator with correct params', function (done) {
-      var sessionUser = { _id: 'user-id' }
-      BuildService.findBuild('507f1f77bcf86cd799439011', sessionUser)
-      .then(function (build) {
-        sinon.assert.calledOnce(PermisionService.isModerator)
-        sinon.assert.calledWith(PermisionService.isModerator, sessionUser)
-      })
-      .asCallback(done)
-    })
-
-    it('should call PermisionService.isHelloRunnable with correct params', function (done) {
-      var sessionUser = { _id: 'user-id' }
-      BuildService.findBuild('507f1f77bcf86cd799439011', sessionUser)
-      .then(function (build) {
-        sinon.assert.calledOnce(PermisionService.isHelloRunnableOwnerOf)
-        sinon.assert.calledWith(PermisionService.isHelloRunnableOwnerOf, sessionUser, ctx.build)
+        sinon.assert.calledOnce(PermisionService.ensureModelAccess)
+        sinon.assert.calledWith(PermisionService.ensureModelAccess, sessionUser, ctx.build)
       })
       .asCallback(done)
     })
@@ -171,9 +127,7 @@ describe('BuildService', function () {
       .then(function (build) {
         sinon.assert.callOrder(
           Build.findByIdAsync,
-          PermisionService.isOwnerOf,
-          PermisionService.isModerator,
-          PermisionService.isHelloRunnableOwnerOf)
+          PermisionService.ensureModelAccess)
       })
       .asCallback(done)
     })
