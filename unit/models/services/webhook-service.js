@@ -123,10 +123,12 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
     })
     describe('Successful runs', function () {
       it('should skip createAndBuildContextVersion but return successfully when given []', function (done) {
-        BuildService.createAndBuildContextVersion.resolves()
+        BuildService.createAndBuildContextVersion.resolves({
+          hello: 'asdfasdfdsa'
+        })
         WebhookService.autoDeploy([], githubPushInfo)
-          .then(function (instances) {
-            expect(instances).to.deep.equal(null)
+          .then(function (results) {
+            expect(results).to.deep.equal([])
             sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
           })
           .asCallback(done)
@@ -134,19 +136,26 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
       it('shouldn\'t build  but return successfully when given only locked instances', function (done) {
         instances[0].locked = true
         instances[1].locked = true
-        BuildService.createAndBuildContextVersion.resolves()
+        BuildService.createAndBuildContextVersion.resolves({
+          hello: 'asdfasdfdsa'
+        })
         WebhookService.autoDeploy(instances, githubPushInfo)
-          .then(function (instances) {
-            expect(instances).to.deep.equal(null)
+          .then(function (results) {
+            expect(results).to.deep.equal([])
             sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
           })
           .asCallback(done)
       })
       it('should skip createAndBuildContextVersion on an instance that is locked', function (done) {
         instances[0].locked = true
-        BuildService.createAndBuildContextVersion.resolves()
+        BuildService.createAndBuildContextVersion.resolves({
+          hello: 'asdfasdfdsa'
+        })
         WebhookService.autoDeploy(instances, githubPushInfo)
-          .then(function () {
+          .then(function (results) {
+            expect(results).to.deep.equal([{
+              hello: 'asdfasdfdsa'
+            }])
             sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)
             sinon.assert.neverCalledWith(BuildService.createAndBuildContextVersion, {
               locked: true,
@@ -358,7 +367,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         WebhookService.checkCommitPusherIsRunnableUser(githubPushInfo)
           .asCallback(function (err) {
             expect(err.output.statusCode).to.equal(403)
-            expect(err.output.payload.message).to.match(/commit.*author.*not.*runnable.*user/i)
+            expect(err.output.payload.message).to.match(/committer.*not.*runnable.*user/i)
             sinon.assert.calledOnce(User.findOneAsync)
             sinon.assert.calledWith(User.findOneAsync, { 'accounts.github.username': 'thejsj' })
             done()
@@ -368,7 +377,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         WebhookService.checkCommitPusherIsRunnableUser({})
           .asCallback(function (err) {
             expect(err.output.statusCode).to.equal(403)
-            expect(err.output.payload.message).to.match(/Commit author\/committer username is empty/i)
+            expect(err.output.payload.message).to.match(/committer.*username is empty/i)
             sinon.assert.notCalled(User.findOneAsync)
             done()
           })
