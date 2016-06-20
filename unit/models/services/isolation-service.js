@@ -1666,6 +1666,47 @@ describe('Isolation Services Model', function () {
     })
   })
 
+  describe('isTestingIsolation', function () {
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAsync').resolves({ _id: 'instance-id' })
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAsync.restore()
+      done()
+    })
+
+    it('should fail if mongo call failed', function (done) {
+      Instance.findOneAsync.rejects(new Error('Mongo error'))
+      IsolationService.isTestingIsolation('iso-id')
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Mongo error')
+        done()
+      })
+    })
+
+    it('should return true if instance was found', function (done) {
+      IsolationService.isTestingIsolation('iso-id')
+      .tap(function (isTesting) {
+        expect(isTesting).to.equal(true)
+      })
+      .asCallback(done)
+    })
+
+    it('should return false if instance was not found', function (done) {
+      Instance.findOneAsync.resolves(null)
+      IsolationService.isTestingIsolation('iso-id')
+      .tap(function (isTesting) {
+        expect(isTesting).to.equal(false)
+      })
+      .asCallback(done)
+    })
+  })
+
   describe('redeployIfAllKilled', function () {
     var mockIsolation
     var mockInstances
