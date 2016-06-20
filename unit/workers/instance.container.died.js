@@ -108,7 +108,7 @@ describe('InstanceContainerDiedWorker', function () {
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
-        sinon.assert.calledOnce(rabbitMQ.clearContainerMemory)
+        sinon.assert.notCalled(rabbitMQ.clearContainerMemory)
         sinon.assert.calledOnce(rabbitMQ.killIsolation)
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledOnce(IsolationService.isTestingIsolation)
@@ -116,7 +116,6 @@ describe('InstanceContainerDiedWorker', function () {
         sinon.assert.callOrder(
           InstanceService.modifyExistingContainerInspect,
           InstanceService.emitInstanceUpdate,
-          rabbitMQ.clearContainerMemory,
           rabbitMQ.killIsolation,
           IsolationService.isTestingIsolation,
           IsolationService.redeployIfAllKilled)
@@ -152,15 +151,14 @@ describe('InstanceContainerDiedWorker', function () {
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
-        sinon.assert.calledOnce(rabbitMQ.clearContainerMemory)
+        sinon.assert.notCalled(rabbitMQ.clearContainerMemory)
         sinon.assert.notCalled(rabbitMQ.killIsolation)
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.notCalled(IsolationService.isTestingIsolation)
         sinon.assert.notCalled(IsolationService.redeployIfAllKilled)
         sinon.assert.callOrder(
           InstanceService.modifyExistingContainerInspect,
-          InstanceService.emitInstanceUpdate,
-          rabbitMQ.clearContainerMemory)
+          InstanceService.emitInstanceUpdate)
         done()
       })
     })
@@ -170,7 +168,7 @@ describe('InstanceContainerDiedWorker', function () {
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
-        sinon.assert.calledTwice(rabbitMQ.clearContainerMemory)
+        sinon.assert.calledOnce(rabbitMQ.clearContainerMemory)
         sinon.assert.calledOnce(rabbitMQ.killIsolation)
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledOnce(IsolationService.isTestingIsolation)
@@ -178,7 +176,6 @@ describe('InstanceContainerDiedWorker', function () {
         sinon.assert.callOrder(
           InstanceService.modifyExistingContainerInspect,
           InstanceService.emitInstanceUpdate,
-          rabbitMQ.clearContainerMemory,
           rabbitMQ.killIsolation,
           IsolationService.isTestingIsolation,
           rabbitMQ.clearContainerMemory)
@@ -187,6 +184,7 @@ describe('InstanceContainerDiedWorker', function () {
     })
 
     it('should publish rabbit jobs', function (done) {
+      IsolationService.isTestingIsolation.resolves(true)
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(rabbitMQ.clearContainerMemory)
