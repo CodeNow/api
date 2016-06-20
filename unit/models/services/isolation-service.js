@@ -1705,6 +1705,19 @@ describe('Isolation Services Model', function () {
       })
       .asCallback(done)
     })
+
+    it('should pass correct params', function (done) {
+      IsolationService.isTestingIsolation('iso-id')
+      .tap(function (isTesting) {
+        sinon.assert.calledOnce(Instance.findOneAsync)
+        sinon.assert.calledWith(Instance.findOneAsync, {
+          isolated: 'iso-id',
+          isIsolationGroupMaster: true,
+          isTesting: true
+        })
+      })
+      .asCallback(done)
+    })
   })
 
   describe('redeployIfAllKilled', function () {
