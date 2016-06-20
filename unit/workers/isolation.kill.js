@@ -6,6 +6,7 @@
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
+var clone = require('101/clone')
 var objectId = require('objectid')
 var omit = require('101/omit')
 var Code = require('code')
@@ -28,7 +29,8 @@ var it = lab.it
 describe('Workers: Isolation Kill', function () {
   var testIsolationId = '5633e9273e2b5b0c0077fd41'
   var testData = {
-    isolationId: testIsolationId
+    isolationId: testIsolationId,
+    triggerRedeploy: true
   }
   var instancesToStop = [
     {
@@ -95,6 +97,16 @@ describe('Workers: Isolation Kill', function () {
         done()
       })
     })
+
+    it('should fatally fail if job has no triggerRedeploy', function (done) {
+      var data = omit(testData, 'triggerRedeploy')
+      Worker(data).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err).to.be.an.instanceOf(TaskFatalError)
+        expect(err.message).to.equal('isolation.kill: Invalid Job')
+        done()
+      })
+    })
   })
 
   it('should fail if findOneAndUpdateAsync failed', function (done) {
@@ -148,6 +160,16 @@ describe('Workers: Isolation Kill', function () {
             state: 'killing'
           }
         })
+      })
+      .asCallback(done)
+  })
+
+  it('should not update the isolation with the state of killing if triggerRedeploy=false', function (done) {
+    var data = clone(testData)
+    data.triggerRedeploy = false
+    Worker(data)
+      .then(function () {
+        sinon.assert.notCalled(Isolation.findOneAndUpdateAsync)
       })
       .asCallback(done)
   })
