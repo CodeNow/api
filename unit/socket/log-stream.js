@@ -187,7 +187,7 @@ describe('log stream: ' + moduleName, function () {
             sinon.assert.calledWith(
               Docker.prototype.getLogsAndRetryOnTimeout,
               ctx.data.containerId,
-              process.env.DOCKER_LOG_TAIL_LIMIT,
+              100,
               sinon.match.func
             )
             sinon.assert.calledOnce(ctx.socket.write)
@@ -211,7 +211,7 @@ describe('log stream: ' + moduleName, function () {
             sinon.assert.calledWith(
               Docker.prototype.getLogsAndRetryOnTimeout,
               ctx.data.containerId,
-              process.env.DOCKER_TEST_LOG_TAIL_LIMIT,
+              2000,
               sinon.match.func
             )
             done()
