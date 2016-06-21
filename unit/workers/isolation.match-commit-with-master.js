@@ -29,10 +29,8 @@ describe('isolation.match-commit-with-master', function () {
   var repoName = 'superRepoName'
   var branchName = 'superBranchName'
   var commitHash = '46409ea4999d1472844e36640375962a0fa1f3b1'
-  var masterInstance
   var childInstance
   var childInstance2
-  var childInstance3
   var user
 
   var testJob
@@ -45,16 +43,6 @@ describe('isolation.match-commit-with-master', function () {
   }
 
   beforeEach(function (done) {
-    masterInstance = {
-      _id: objectId('5743c95f450e812600d066c6'),
-      contextVersion: {
-        appCodeVersions: [{
-          repo: repoName,
-          branch: branchName,
-          commit: commitHash
-        }]
-      }
-    }
     childInstance = {
       _id: objectId('571b39b9d35173300021667d'),
       contextVersion: {
@@ -72,16 +60,6 @@ describe('isolation.match-commit-with-master', function () {
           repo: 'anotherRepo',
           branch: branchName,
           commit: commitHash // Will be filtered out
-        }]
-      }
-    }
-    childInstance3 = {
-      _id: objectId('571b39b9d35173300021667d'),
-      contextVersion: {
-        appCodeVersions: [{
-          repo: repoName,
-          branch: 'somethingDifferent', // Will be filtered out
-          commit: 'b11410762bf274002fc7f147475525f20ccda91e'
         }]
       }
     }
