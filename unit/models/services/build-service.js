@@ -306,7 +306,7 @@ describe('BuildService', function () {
         BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
         .tap(function () {
           sinon.assert.calledOnce(ContextVersion.findByIdsAsync)
-          sinon.assert.calledWith(ContextVersion.findByIdsAsync, [ ctx.cv._id ], { 'build.log': false })
+          sinon.assert.calledWith(ContextVersion.findByIdsAsync, [ ctx.cv._id ])
         })
         .asCallback(done)
       })
