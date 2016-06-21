@@ -68,7 +68,6 @@ describe('log stream: ' + moduleName, function () {
         dockHost: 1233,
         containerId: 1231231232
       }
-
       ctx.instance = {
         createdBy: {
           github: 123
@@ -82,7 +81,7 @@ describe('log stream: ' + moduleName, function () {
       }
       done()
     })
-    
+
     afterEach(function (done) {
       Instance.findOne.restore()
       commonStream.checkOwnership.restore()
