@@ -2937,7 +2937,7 @@ describe('InstanceService', function () {
 
     describe('Isolation', function () {
       describe('Match Commits', function () {
-        it('should match the commit if its isolated and its an isolation gropup master', function (done) {
+        it('should match the commit if its isolated', function (done) {
           instance.isolated = isolationId
           instance.isIsolationGroupMaster = true
           InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
@@ -2945,6 +2945,7 @@ describe('InstanceService', function () {
               sinon.assert.calledOnce(rabbitMQ.matchCommitWithIsolationMaster)
               sinon.assert.calledWithExactly(rabbitMQ.matchCommitWithIsolationMaster, {
                 isolationId: isolationId,
+                instanceId: instance._id.toString(),
                 sessionUserGithubId: sessionUserGithubId
               })
             })
@@ -2953,16 +2954,6 @@ describe('InstanceService', function () {
 
         it('should not match the commit if its not isolated', function (done) {
           instance.isolated = false
-          instance.isIsolationGroupmaster = false
-          InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
-            .then(function () {
-              sinon.assert.notCalled(rabbitMQ.matchCommitWithIsolationMaster)
-            })
-            .asCallback(done)
-        })
-
-        it('should not match the commit if its not the isolation group master', function (done) {
-          instance.isolated = isolationId
           instance.isIsolationGroupmaster = false
           InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
             .then(function () {
