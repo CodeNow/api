@@ -17,7 +17,7 @@ var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 var User = require('models/mongo/user')
 
-var matchCommitWithIsolationGroupMaster = require('workers/isolation.match-commit-with-master')
+var matchCommitWithIsolationGroupMaster = require('workers/isolation.match-commit')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
