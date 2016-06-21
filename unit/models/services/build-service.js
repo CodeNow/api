@@ -142,14 +142,14 @@ describe('BuildService', function () {
       })
       ctx.build = new Build({
         _id: '507f1f77bcf86cd799439011',
-        contextVersions: [ ctx.cv ]
+        contextVersions: [ ctx.cv._id ]
       })
       ctx.sessionUser = { _id: 'user-id' }
       ctx.domain = { runnableData: { tid: 'some-id' } }
       sinon.stub(Build, 'findByIdAsync').resolves(ctx.build)
       sinon.stub(BuildService, 'findBuild').resolves(ctx.build)
       sinon.stub(ContextVersion, 'buildSelf').resolves(ctx.newCv)
-      sinon.stub(ContextVersion, 'findByIdsAsync').resolves([ ctx.cv ])
+      sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.cv)
       sinon.stub(ctx.build, 'setInProgressAsync').resolves(ctx.build)
       sinon.stub(ctx.build, 'modifyCompletedIfFinishedAsync').resolves(ctx.build)
       sinon.stub(ctx.build, 'replaceContextVersionAsync').resolves(ctx.build)
@@ -162,7 +162,7 @@ describe('BuildService', function () {
       Build.findByIdAsync.restore()
       BuildService.findBuild.restore()
       ContextVersion.buildSelf.restore()
-      ContextVersion.findByIdsAsync.restore()
+      ContextVersion.findByIdAsync.restore()
       done()
     })
 
@@ -209,7 +209,7 @@ describe('BuildService', function () {
     })
 
     it('should fail if context versions lookup failed', function (done) {
-      ContextVersion.findByIdsAsync.rejects(new Error('CV lookup failed'))
+      ContextVersion.findByIdAsync.rejects(new Error('CV lookup failed'))
       BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
       .then(function () {
         done(new Error('Should never happen'))
@@ -221,7 +221,23 @@ describe('BuildService', function () {
     })
 
     it('should fail if no cvs were found', function (done) {
-      ContextVersion.findByIdsAsync.resolves([])
+      ContextVersion.findByIdAsync.resolves(null)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.isBoom).to.equal(true)
+        expect(err.output.statusCode).to.equal(400)
+        expect(err.output.payload.message).to.equal('Cannot build a build without context versions')
+        done()
+      })
+    })
+
+    it('should fail if build has no cvs', function (done) {
+      var build = clone(ctx.build)
+      build.contextVersions = []
+      BuildService.findBuild.resolves(build)
       BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
       .then(function () {
         done(new Error('Should never happen'))
@@ -235,7 +251,9 @@ describe('BuildService', function () {
     })
 
     it('should fail if more than 1 cvs were found', function (done) {
-      ContextVersion.findByIdsAsync.resolves([1, 2])
+      var build = clone(ctx.build)
+      build.contextVersions.push('507f1f77bcf86cd799439011')
+      BuildService.findBuild.resolves(build)
       BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
       .then(function () {
         done(new Error('Should never happen'))
@@ -265,7 +283,6 @@ describe('BuildService', function () {
       ctx.cv.build = {
         started: new Date()
       }
-      ContextVersion.findByIdsAsync.resolves([ ctx.cv ])
       BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
       .then(function () {
         done(new Error('Should never happen'))
@@ -281,7 +298,6 @@ describe('BuildService', function () {
       ctx.cv.build = {
         started: new Date()
       }
-      ContextVersion.findByIdsAsync.resolves([ ctx.cv ])
       BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
       .then(function () {
         done(new Error('Should never happen'))
@@ -302,11 +318,11 @@ describe('BuildService', function () {
         .asCallback(done)
       })
 
-      it('should call ContextVersion.findByIdsAsync with correct args', function (done) {
+      it('should call ContextVersion.findByIdAsync with correct args', function (done) {
         BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
         .tap(function () {
-          sinon.assert.calledOnce(ContextVersion.findByIdsAsync)
-          sinon.assert.calledWith(ContextVersion.findByIdsAsync, [ ctx.cv._id ])
+          sinon.assert.calledOnce(ContextVersion.findByIdAsync)
+          sinon.assert.calledWith(ContextVersion.findByIdAsync, ctx.cv._id)
         })
         .asCallback(done)
       })
@@ -386,7 +402,7 @@ describe('BuildService', function () {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(
             BuildService.findBuild,
-            ContextVersion.findByIdsAsync,
+            ContextVersion.findByIdAsync,
             ctx.build.setInProgressAsync,
             ctx.build.modifyCompletedIfFinishedAsync,
             Build.findByIdAsync
@@ -402,7 +418,7 @@ describe('BuildService', function () {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(
             BuildService.findBuild,
-            ContextVersion.findByIdsAsync,
+            ContextVersion.findByIdAsync,
             ctx.build.setInProgressAsync,
             ContextVersion.buildSelf,
             build.replaceContextVersionAsync,
@@ -420,7 +436,7 @@ describe('BuildService', function () {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(
             BuildService.findBuild,
-            ContextVersion.findByIdsAsync,
+            ContextVersion.findByIdAsync,
             ctx.build.setInProgressAsync,
             ContextVersion.buildSelf,
             build.modifyErroredAsync,
@@ -439,7 +455,7 @@ describe('BuildService', function () {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(
             BuildService.findBuild,
-            ContextVersion.findByIdsAsync,
+            ContextVersion.findByIdAsync,
             ctx.build.setInProgressAsync,
             ContextVersion.buildSelf,
             build.replaceContextVersionAsync,
