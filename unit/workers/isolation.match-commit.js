@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/isolation.match-commit-with-master
+ * @module unit/workers/isolation.match-commit
  */
 'use strict'
 
@@ -25,7 +25,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-describe('isolation.match-commit-with-master', function () {
+describe('isolation.match-commit', function () {
   var testJob
   var masterInstanceId = objectId('5743c95f450e812600d066c6')
   var isolationId = objectId('5743c95f450e818600d06689')
