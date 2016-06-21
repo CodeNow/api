@@ -187,7 +187,7 @@ describe('log stream: ' + moduleName, function () {
             sinon.assert.calledWith(
               Docker.prototype.getLogsAndRetryOnTimeout,
               ctx.data.containerId,
-              sinon.match.any,
+              process.env.DOCKER_LOG_TAIL_LIMIT,
               sinon.match.func
             )
             sinon.assert.calledOnce(ctx.socket.write)
@@ -198,6 +198,22 @@ describe('log stream: ' + moduleName, function () {
                 substreamId: ctx.data.containerId
               }
             })
+            done()
+          })
+          .catch(done)
+      })
+
+      it('should fetch different amounts for test containers', function (done) {
+        ctx.instance.isTesting = true
+        logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data, ctx.instance)
+          .then(function () {
+            sinon.assert.calledOnce(Docker.prototype.getLogsAndRetryOnTimeout)
+            sinon.assert.calledWith(
+              Docker.prototype.getLogsAndRetryOnTimeout,
+              ctx.data.containerId,
+              process.env.DOCKER_TEST_LOG_TAIL_LIMIT,
+              sinon.match.func
+            )
             done()
           })
           .catch(done)
