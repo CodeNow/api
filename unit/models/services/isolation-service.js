@@ -1666,6 +1666,60 @@ describe('Isolation Services Model', function () {
     })
   })
 
+  describe('isTestingIsolation', function () {
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAsync').resolves({ _id: 'instance-id' })
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAsync.restore()
+      done()
+    })
+
+    it('should fail if mongo call failed', function (done) {
+      Instance.findOneAsync.rejects(new Error('Mongo error'))
+      IsolationService.isTestingIsolation('iso-id')
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Mongo error')
+        done()
+      })
+    })
+
+    it('should return true if instance was found', function (done) {
+      IsolationService.isTestingIsolation('iso-id')
+      .tap(function (isTesting) {
+        expect(isTesting).to.equal(true)
+      })
+      .asCallback(done)
+    })
+
+    it('should return false if instance was not found', function (done) {
+      Instance.findOneAsync.resolves(null)
+      IsolationService.isTestingIsolation('iso-id')
+      .tap(function (isTesting) {
+        expect(isTesting).to.equal(false)
+      })
+      .asCallback(done)
+    })
+
+    it('should pass correct params', function (done) {
+      IsolationService.isTestingIsolation('iso-id')
+      .tap(function (isTesting) {
+        sinon.assert.calledOnce(Instance.findOneAsync)
+        sinon.assert.calledWith(Instance.findOneAsync, {
+          isolated: 'iso-id',
+          isIsolationGroupMaster: true,
+          isTesting: true
+        })
+      })
+      .asCallback(done)
+    })
+  })
+
   describe('redeployIfAllKilled', function () {
     var mockIsolation
     var mockInstances
