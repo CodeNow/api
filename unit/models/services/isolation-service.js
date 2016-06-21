@@ -19,6 +19,7 @@ var Github = require('models/apis/github')
 var Instance = require('models/mongo/instance')
 var InstanceForkService = require('models/services/instance-fork-service')
 var Isolation = require('models/mongo/isolation')
+var ObjectId = require('mongoose').Types.ObjectId
 var rabbitMQ = require('models/rabbitmq')
 var User = require('models/mongo/user')
 
@@ -1637,6 +1638,34 @@ describe('Isolation Services Model', function () {
           {
             master: 'foobar',
             children: [],
+            redeployOnKilled: false
+          },
+          { user: 2 }
+        )
+        done()
+      })
+    })
+
+    it('should keep the `matchBranch` property when passed in a child config', function (done) {
+      var child = {
+        instance: new ObjectId(),
+        matchBranch: true
+      }
+      var mockAIC = { requestedDependencies: [ child ] }
+      AutoIsolationConfig.findOne.yieldsAsync(null, mockAIC)
+
+      IsolationService.autoIsolate(newInstances, pushInfo)
+      .asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(IsolationService.createIsolationAndEmitInstanceUpdates)
+        sinon.assert.calledWithExactly(
+          IsolationService.createIsolationAndEmitInstanceUpdates,
+          {
+            master: 'foobar',
+            children: [{
+              instance: child.instance.toString(),
+              matchBranch: true
+            }],
             redeployOnKilled: false
           },
           { user: 2 }
