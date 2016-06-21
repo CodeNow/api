@@ -930,7 +930,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
 
     it('should publish the job with the correct payload', function (done) {
       var data = {
-        isolationId: 'efgh'
+        isolationId: 'efgh',
+        triggerRedeploy: true
       }
       ctx.rabbitMQ.killIsolation(data)
       sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)

@@ -1767,9 +1767,10 @@ describe('Instance Model Tests', function () {
     })
   })
 
-  describe('findIsolationChildrenWithRepo', function () {
+  describe('#findInstancesInIsolationWithSameRepoAndBranch', function () {
     var id = '571b39b9d35173300021667d'
     var repo = 'repoName'
+    var branch = 'brancName'
     beforeEach(function (done) {
       sinon.stub(Instance, 'find').yieldsAsync(null)
       done()
@@ -1780,7 +1781,7 @@ describe('Instance Model Tests', function () {
     })
 
     it('should query the database', function (done) {
-      Instance.findIsolationChildrenWithRepo(id, repo, function (err) {
+      Instance.findInstancesInIsolationWithSameRepoAndBranch(id, repo, branch, function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(
           Instance.find,
@@ -1790,6 +1791,7 @@ describe('Instance Model Tests', function () {
             'contextVersion.appCodeVersions': {
               $elemMatch: {
                 lowerRepo: repo.toLowerCase(),
+                lowerBranch: branch.toLowerCase(),
                 additionalRepo: { $ne: true }
               }
             }
@@ -1802,7 +1804,7 @@ describe('Instance Model Tests', function () {
     it('should throw any database errors', function (done) {
       var dbErr = new Error('MongoErr')
       Instance.find.yieldsAsync(dbErr)
-      Instance.findIsolationChildrenWithRepo(id, repo, function (err) {
+      Instance.findInstancesInIsolationWithSameRepoAndBranch(id, repo, branch, function (err) {
         expect(err).to.exist()
         expect(err).to.equal(dbErr)
         done()
