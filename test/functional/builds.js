@@ -47,16 +47,6 @@ describe('Builds - /builds', function () {
   afterEach(mockGetUserById.stubAfter)
 
   describe('POST', function () {
-    describe('empty body', function () {
-      it('should create a build', function (done) {
-        var expected = {
-          _id: exists,
-          'owner.github': ctx.user.attrs.accounts.github.id,
-          'createdBy.github': ctx.user.attrs.accounts.github.id
-        }
-        ctx.user.createBuild(expects.success(201, expected, done))
-      })
-    })
     describe('specify owner', function () {
       describe('owner is github org user is a member of', function () {
         it('should create a build', function (done) {
@@ -102,6 +92,7 @@ describe('Builds - /builds', function () {
           contexts: [ctx.contextVersion.attrs.context],
           contextVersions: [ctx.contextVersion.id()]
         }
+        require('./fixtures/mocks/github/user-orgs')(body.owner.github, 'orgname')
         ctx.user.createBuild(body, expects.success(201, expected, done))
       })
       describe('non-owner', function () {
