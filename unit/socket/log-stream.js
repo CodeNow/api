@@ -82,6 +82,7 @@ describe('log stream: ' + moduleName, function () {
       }
       done()
     })
+    
     afterEach(function (done) {
       Instance.findOne.restore()
       commonStream.checkOwnership.restore()
@@ -109,6 +110,7 @@ describe('log stream: ' + moduleName, function () {
             })
             .catch(done)
         })
+
         it('should do nothing if the instance fetch returns an error', function (done) {
           sinon.stub(Instance, 'findOne').yields(error)
           logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
@@ -125,6 +127,7 @@ describe('log stream: ' + moduleName, function () {
             .catch(done)
         })
       })
+
       describe('Other failures', function () {
         beforeEach(function (done) {
           sinon.stub(Instance, 'findOne').yields(null, ctx.instance)
@@ -145,6 +148,7 @@ describe('log stream: ' + moduleName, function () {
             })
             .catch(done)
         })
+
         it('should do nothing if the ownership check fails', function (done) {
           sinon.stub(commonStream, 'checkOwnership').returns(rejectionPromise)
           logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
@@ -172,10 +176,12 @@ describe('log stream: ' + moduleName, function () {
         })
         done()
       })
+
       afterEach(function (done) {
         Docker.prototype.getLogsAndRetryOnTimeout.restore()
         done()
       })
+
       it('should allow logs when check ownership passes', function (done) {
         logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
           .then(function () {
