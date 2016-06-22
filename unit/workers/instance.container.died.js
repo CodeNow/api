@@ -178,7 +178,8 @@ describe('InstanceContainerDiedWorker', function () {
           InstanceService.emitInstanceUpdate,
           rabbitMQ.killIsolation,
           IsolationService.isTestingIsolation,
-          rabbitMQ.clearContainerMemory)
+          rabbitMQ.clearContainerMemory,
+          IsolationService.redeployIfAllKilled)
         done()
       })
     })
