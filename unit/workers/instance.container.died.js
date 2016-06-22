@@ -163,7 +163,7 @@ describe('InstanceContainerDiedWorker', function () {
       })
     })
 
-    it('should not kill isolation if isTesting isolationMaster', function (done) {
+    it('should kill isolation if isTesting isolationMaster', function (done) {
       IsolationService.isTestingIsolation.resolves(true)
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
@@ -172,7 +172,7 @@ describe('InstanceContainerDiedWorker', function () {
         sinon.assert.calledOnce(rabbitMQ.killIsolation)
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledOnce(IsolationService.isTestingIsolation)
-        sinon.assert.notCalled(IsolationService.redeployIfAllKilled)
+        sinon.assert.calledOnce(IsolationService.redeployIfAllKilled)
         sinon.assert.callOrder(
           InstanceService.modifyExistingContainerInspect,
           InstanceService.emitInstanceUpdate,
