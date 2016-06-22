@@ -25,7 +25,23 @@ var dockerMockEvents = require('./fixtures/docker-mock-events')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var primus = require('./fixtures/primus')
+var InstanceService = require('models/services/instance-service')
+var User = require('models/mongo/user')
+var Instance = require('models/mongo/instance')
 
+function cloneInstance (data, instance, user, cb) {
+  var body = {}
+  body.parent = instance.shortHash
+  body.name = data.name
+  body.build = instance.attrs.build.id.toString()
+  body.env = data.env || instance.env
+  body.owner = data.owner || instance.owner
+  body.masterPod = body.masterPod || instance.masterPod || false
+  return User.findByIdAsync(user.attrs._id).then(function (sessionUser) {
+    return InstanceService.createInstance(body, sessionUser)
+      .asCallback(cb)
+  })
+}
 /**
  * This tests many of the different possibilities that can happen during build, namely when deduping
  * occurs
@@ -88,11 +104,11 @@ describe('Building - Context Version Deduping', function () {
       var count = createCount(1, function () {
         async.parallel([
           instance.fetch.bind(instance),
-          forkedInstance.fetch.bind(forkedInstance)
-        ], function (err) {
+          Instance.findById.bind(Instance, forkedInstance._id)
+        ], function (err, results) {
           if (err) { return done(err) }
           expect(instance.attrs.containers[0].inspect.State.Running).to.exist()
-          expect(forkedInstance.attrs.containers[0].inspect.State.Running).to.exist()
+          expect(results[1].container.inspect.State.Running).to.exist()
           done()
         })
       })
@@ -102,8 +118,9 @@ describe('Building - Context Version Deduping', function () {
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         // Now fork that instance
-        forkedInstance = instance.copy({ name: uuid() }, function (err) {
+        cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
+          forkedInstance = inst
           // Now tail both and make sure they both start
           dockerMockEvents.emitBuildComplete(ctx.cv)
         })
@@ -115,13 +132,19 @@ describe('Building - Context Version Deduping', function () {
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
         // Now fork that instance
-        var forkedInstance = instance.copy({ name: uuid() }, function (err) {
+        var forkedInstance
+        cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
+          forkedInstance = inst
           // since the build will fail we must rely on version complete, versus instance deploy socket event
           primus.onceVersionComplete(ctx.cv.id(), function () {
             var count = createCount(2, done)
             instance.fetch(assertInstanceHasNoContainers)
-            forkedInstance.fetch(assertInstanceHasNoContainers)
+            Instance.findById(forkedInstance._id, function (err, instance) {
+              if (err) { return count.next(err) }
+              expect(instance.containers).to.have.length(0)
+              count.next()
+            })
             function assertInstanceHasNoContainers (err, instance) {
               if (err) { return count.next(err) }
               expect(instance.containers).to.have.length(0)
@@ -141,11 +164,17 @@ describe('Building - Context Version Deduping', function () {
         // Now wait for the finished build
         // since the build will fail we must rely on version complete, versus instance deploy socket event
         primus.onceVersionComplete(ctx.cv.id(), function () {
-          var forkedInstance = instance.copy({ name: uuid() }, function (err) {
+          var forkedInstance
+          cloneInstance({ name: uuid() }, instance, ctx.user, function (err, inst) {
             if (err) { return done(err) }
+            forkedInstance = inst
             var count = createCount(2, done)
             instance.fetch(assertInstanceHasNoContainers)
-            forkedInstance.fetch(assertInstanceHasNoContainers)
+            Instance.findById(forkedInstance._id, function (err, instance) {
+              if (err) { return count.next(err) }
+              expect(instance.containers).to.have.length(0)
+              count.next()
+            })
             function assertInstanceHasNoContainers (err, instance) {
               if (err) { return count.next(err) }
               expect(instance.containers).to.have.length(0)
@@ -175,11 +204,11 @@ describe('Building - Context Version Deduping', function () {
       var count = createCount(1, function () {
         async.parallel([
           instance.fetch.bind(instance),
-          forkedInstance.fetch.bind(forkedInstance)
-        ], function (err) {
+          Instance.findById.bind(Instance, forkedInstance._id)
+        ], function (err, results) {
           if (err) { return done(err) }
           expect(instance.attrs.containers[0].inspect.State.Running).to.exist()
-          expect(forkedInstance.attrs.containers[0].inspect.State.Running).to.exist()
+          expect(results[1].container.inspect.State.Running).to.exist()
           done()
         })
       })
@@ -188,8 +217,10 @@ describe('Building - Context Version Deduping', function () {
       var forkedInstance
       var instance = ctx.user.createInstance({ json: json }, function (err) {
         if (err) { return done(err) }
-        forkedInstance = instance.copy({ name: uuid() }, function (err) {
+        json.name = uuid()
+        cloneInstance(json, instance, ctx.user, function (err, inst) {
           if (err) { return done(err) }
+          forkedInstance = inst
         })
       })
     })

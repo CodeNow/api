@@ -68,7 +68,6 @@ describe('log stream: ' + moduleName, function () {
         dockHost: 1233,
         containerId: 1231231232
       }
-
       ctx.instance = {
         createdBy: {
           github: 123
@@ -82,6 +81,7 @@ describe('log stream: ' + moduleName, function () {
       }
       done()
     })
+
     afterEach(function (done) {
       Instance.findOne.restore()
       commonStream.checkOwnership.restore()
@@ -109,6 +109,7 @@ describe('log stream: ' + moduleName, function () {
             })
             .catch(done)
         })
+
         it('should do nothing if the instance fetch returns an error', function (done) {
           sinon.stub(Instance, 'findOne').yields(error)
           logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
@@ -125,6 +126,7 @@ describe('log stream: ' + moduleName, function () {
             .catch(done)
         })
       })
+
       describe('Other failures', function () {
         beforeEach(function (done) {
           sinon.stub(Instance, 'findOne').yields(null, ctx.instance)
@@ -145,6 +147,7 @@ describe('log stream: ' + moduleName, function () {
             })
             .catch(done)
         })
+
         it('should do nothing if the ownership check fails', function (done) {
           sinon.stub(commonStream, 'checkOwnership').returns(rejectionPromise)
           logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
@@ -172,10 +175,12 @@ describe('log stream: ' + moduleName, function () {
         })
         done()
       })
+
       afterEach(function (done) {
         Docker.prototype.getLogsAndRetryOnTimeout.restore()
         done()
       })
+
       it('should allow logs when check ownership passes', function (done) {
         logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
           .then(function () {
@@ -187,7 +192,7 @@ describe('log stream: ' + moduleName, function () {
             sinon.assert.calledWith(
               Docker.prototype.getLogsAndRetryOnTimeout,
               ctx.data.containerId,
-              sinon.match.any,
+              100,
               sinon.match.func
             )
             sinon.assert.calledOnce(ctx.socket.write)
@@ -198,6 +203,22 @@ describe('log stream: ' + moduleName, function () {
                 substreamId: ctx.data.containerId
               }
             })
+            done()
+          })
+          .catch(done)
+      })
+
+      it('should fetch different amounts for test containers', function (done) {
+        ctx.instance.isTesting = true
+        logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data, ctx.instance)
+          .then(function () {
+            sinon.assert.calledOnce(Docker.prototype.getLogsAndRetryOnTimeout)
+            sinon.assert.calledWith(
+              Docker.prototype.getLogsAndRetryOnTimeout,
+              ctx.data.containerId,
+              2000,
+              sinon.match.func
+            )
             done()
           })
           .catch(done)
