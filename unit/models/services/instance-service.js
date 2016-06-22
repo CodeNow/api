@@ -2806,7 +2806,7 @@ describe('InstanceService', function () {
         }
       }
       sinon.stub(rabbitMQ, 'deleteContextVersion').resolves()
-      sinon.stub(rabbitMQ, 'matchCommitWithIsolationMaster').resolves()
+      sinon.stub(rabbitMQ, 'matchCommitInIsolationInstances').resolves()
       sinon.stub(Build, 'findByIdAsync').resolves(build)
       sinon.stub(ContextVersion, 'findByIdAsync').resolves(contextVersion)
       sinon.stub(InstanceService, 'deleteForkedInstancesByRepoAndBranch').resolves()
@@ -2815,7 +2815,7 @@ describe('InstanceService', function () {
     })
     afterEach(function (done) {
       rabbitMQ.deleteContextVersion.restore()
-      rabbitMQ.matchCommitWithIsolationMaster.restore()
+      rabbitMQ.matchCommitInIsolationInstances.restore()
       Build.findByIdAsync.restore()
       ContextVersion.findByIdAsync.restore()
       InstanceService.deleteForkedInstancesByRepoAndBranch.restore()
@@ -2937,14 +2937,15 @@ describe('InstanceService', function () {
 
     describe('Isolation', function () {
       describe('Match Commits', function () {
-        it('should match the commit if its isolated and its an isolation gropup master', function (done) {
+        it('should match the commit if its isolated', function (done) {
           instance.isolated = isolationId
           instance.isIsolationGroupMaster = true
           InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
             .then(function () {
-              sinon.assert.calledOnce(rabbitMQ.matchCommitWithIsolationMaster)
-              sinon.assert.calledWithExactly(rabbitMQ.matchCommitWithIsolationMaster, {
+              sinon.assert.calledOnce(rabbitMQ.matchCommitInIsolationInstances)
+              sinon.assert.calledWithExactly(rabbitMQ.matchCommitInIsolationInstances, {
                 isolationId: isolationId,
+                instanceId: instance._id.toString(),
                 sessionUserGithubId: sessionUserGithubId
               })
             })
@@ -2956,17 +2957,7 @@ describe('InstanceService', function () {
           instance.isIsolationGroupmaster = false
           InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
             .then(function () {
-              sinon.assert.notCalled(rabbitMQ.matchCommitWithIsolationMaster)
-            })
-            .asCallback(done)
-        })
-
-        it('should not match the commit if its not the isolation group master', function (done) {
-          instance.isolated = isolationId
-          instance.isIsolationGroupmaster = false
-          InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
-            .then(function () {
-              sinon.assert.notCalled(rabbitMQ.matchCommitWithIsolationMaster)
+              sinon.assert.notCalled(rabbitMQ.matchCommitInIsolationInstances)
             })
             .asCallback(done)
         })
