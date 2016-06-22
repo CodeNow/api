@@ -8,13 +8,16 @@ var Code = require('code')
 var Promise = require('bluebird')
 var clone = require('101/clone')
 var omit = require('101/omit')
+var pick = require('101/pick')
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
+var Build = require('models/mongo/build')
+var BuildService = require('models/services/build-service')
 var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
 var ContextService = require('models/services/context-service')
-var BuildService = require('models/services/build-service')
+var PermissionService = require('models/services/permission-service')
 var User = require('models/mongo/user')
 var Runnable = require('models/apis/runnable')
 
@@ -333,7 +336,7 @@ describe('BuildService', function () {
         }
       }
       mockRunnableClient = {
-        createAndBuildBuild: sinon.stub().yieldsAsync(null, mockBuild)
+        buildBuild: sinon.stub().yieldsAsync(null, mockBuild)
       }
       mockInstanceUser = { accounts: { github: { accessToken: 'instanceUserGithubToken' } } }
       mockPushUser = { accounts: { github: { accessToken: 'pushUserGithubToken' } } }
@@ -342,6 +345,7 @@ describe('BuildService', function () {
       User.findByGithubId.withArgs('pushUserId').yieldsAsync(null, mockPushUser)
       User.findByGithubId.withArgs('instanceCreatedById').yieldsAsync(null, mockInstanceUser)
       sinon.stub(BuildService, 'createNewContextVersion').resolves(mockContextVersion)
+      sinon.stub(BuildService, 'createBuild').resolves(mockBuild)
       sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
       done()
     })
@@ -350,6 +354,7 @@ describe('BuildService', function () {
       BuildService.validatePushInfo.restore()
       User.findByGithubId.restore()
       BuildService.createNewContextVersion.restore()
+      BuildService.createBuild.restore()
       Runnable.createClient.restore()
       done()
     })
@@ -466,16 +471,28 @@ describe('BuildService', function () {
     it('should create a new build and build it', function (done) {
       BuildService.createAndBuildContextVersion(instance, pushInfo, 'autodeploy').asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(mockRunnableClient.createAndBuildBuild)
+        sinon.assert.calledOnce(BuildService.createBuild)
         sinon.assert.calledWithExactly(
-          mockRunnableClient.createAndBuildBuild,
-          mockContextVersion._id, // 'deadbeef'
-          'instanceOwnerId',
-          'autodeploy',
+          BuildService.createBuild,
           {
-            repo: pushInfo.repo,
-            commit: pushInfo.commit,
-            branch: pushInfo.branch
+            contextVersion: mockContextVersion._id,
+            owner: {
+              github: 'instanceOwnerId'
+            }
+          }
+        )
+        sinon.assert.calledOnce(mockRunnableClient.buildBuild)
+        sinon.assert.calledWithExactly(
+          mockRunnableClient.buildBuild,
+          mockBuild, // 'deadbeef'
+          {
+            json: {
+              message: 'autodeploy',
+              triggeredAction: {
+                manual: false,
+                appCodeVersion: pick(pushInfo, ['repo', 'branch', 'commit', 'commitLog'])
+              }
+            }
           },
           sinon.match.func
         )
@@ -513,6 +530,246 @@ describe('BuildService', function () {
           expect(result.contextVersion).to.equal(mockContextVersion)
           done()
         })
+      })
+    })
+  })
+
+  describe('createBuild', function () {
+    var contextVersion
+    var instance
+    var opts
+    var mockContext
+    var mockContextVersion
+    var mockBuild
+    var mockGithubUserId = 12345
+    var mockUser
+
+    beforeEach(function (done) {
+      contextVersion = {
+        context: 'mockContextId'
+      }
+      instance = {
+        contextVersion: contextVersion
+      }
+      mockContext = {
+        owner: {
+          github: 14
+        }
+      }
+      mockContextVersion = {
+        _id: 21
+      }
+      mockBuild = {
+        _id: 21,
+        saveAsync: sinon.stub()
+      }
+      mockUser = {
+        accounts: {
+          github: {
+            id: mockGithubUserId
+          }
+        }
+      }
+      opts = {
+        contextVersion: mockContextVersion._id,
+      }
+      sinon.stub(BuildService, 'validateCreateOpts')
+      sinon.stub(PermissionService, 'isOwnerOf')
+      sinon.stub(ContextVersion, 'findByIdAsync')
+      sinon.stub(Build, 'createAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      BuildService.validateCreateOpts.restore()
+      PermissionService.isOwnerOf.restore()
+      ContextVersion.findByIdAsync.restore()
+      Build.createAsync.restore()
+      done()
+    })
+
+    describe('validation errors', function () {
+      it('should reject when the validator fails', function (done) {
+        var error = new Error('Validator Fail')
+        BuildService.validateCreateOpts.reject(error)
+        BuildService.createBuild()
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
+      })
+      it('should reject when the isOwnerOf fails', function (done) {
+        BuildService.validateCreateOpts.resolve()
+
+        var error = new Error('Validator Fail')
+        PermissionService.isOwnerOf.reject(error)
+        BuildService.createBuild()
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
+      })
+
+      it('should reject when ContextVersion.findByIdAsync fails', function (done) {
+        BuildService.validateCreateOpts.resolve()
+        PermissionService.isOwnerOf.resolve()
+
+        var error = new Error('Validator Fail')
+        ContextVersion.findByIdAsync.reject(error)
+        BuildService.createBuild()
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
+            done()
+          })
+      })
+
+      it('should require an instance.contextVersion.context', function (done) {
+        delete contextVersion.context
+        BuildService.createNewContextVersion(instance).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/createNewContextVersion.+instance\.contextVersion\.context/)
+          done()
+        })
+      })
+
+      it('should validate pushInfo', function (done) {
+        delete pushInfo.repo
+        BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
+          expect(err).to.exist()
+          sinon.assert.calledOnce(BuildService.validatePushInfo)
+          sinon.assert.calledWithExactly(
+            BuildService.validatePushInfo,
+            pushInfo,
+            'createNewContextVersion'
+          )
+          done()
+        })
+      })
+
+      // this is a little later in the flow, but a validation none the less
+      it('should require the found context to have an owner.github', function (done) {
+        delete mockContext.owner.github
+        BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/createNewContextVersion.+context.+owner/)
+          done()
+        })
+      })
+    })
+
+    describe('behavior errors', function () {
+      var error
+      describe('in Context.findOne', function () {
+        beforeEach(function (done) {
+          error = new Error('doobie')
+          Context.findOne.yieldsAsync(error)
+          done()
+        })
+
+        it('should return errors', function (done) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+        })
+
+        it('should not call anything else', function (done) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
+            expect(err).to.exist()
+            sinon.assert.calledOnce(Context.findOne)
+            sinon.assert.notCalled(ContextService.handleVersionDeepCopy)
+            sinon.assert.notCalled(ContextVersion.modifyAppCodeVersionByRepo)
+            done()
+          })
+        })
+      })
+
+      describe('in ContextService.handleVersionDeepCopy', function () {
+        beforeEach(function (done) {
+          error = new Error('robot')
+          ContextService.handleVersionDeepCopy.yieldsAsync(error)
+          done()
+        })
+
+        it('should return errors', function (done) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+        })
+
+        it('should not call anything else', function (done) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
+            expect(err).to.exist()
+            sinon.assert.calledOnce(Context.findOne)
+            sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+            sinon.assert.notCalled(ContextVersion.modifyAppCodeVersionByRepo)
+            done()
+          })
+        })
+      })
+
+      describe('in ContextVersion.modifyAppCodeVersionByRepo', function () {
+        beforeEach(function (done) {
+          error = new Error('luna')
+          ContextVersion.modifyAppCodeVersionByRepo.yieldsAsync(error)
+          done()
+        })
+
+        it('should return errors', function (done) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+        })
+
+        it('should have called everything', function (done) {
+          BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
+            expect(err).to.exist()
+            sinon.assert.calledOnce(Context.findOne)
+            sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+            sinon.assert.calledOnce(ContextVersion.modifyAppCodeVersionByRepo)
+            done()
+          })
+        })
+      })
+    })
+
+    it('should create a new context version', function (done) {
+      BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err, newContextVersion) {
+        expect(err).to.not.exist()
+        expect(newContextVersion).to.deep.equal(mockContextVersion)
+        sinon.assert.calledOnce(Context.findOne)
+        sinon.assert.calledWithExactly(
+          Context.findOne,
+          { _id: 'mockContextId' },
+          sinon.match.func
+        )
+        sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+        sinon.assert.calledWithExactly(
+          ContextService.handleVersionDeepCopy,
+          mockContext, // returned from `findOne`
+          contextVersion, // from the Instance
+          { accounts: { github: { id: 7 } } }, // from pushInfo (like sessionUser)
+          { owner: { github: 14 } }, // from mockContext.owner.github (owner object)
+          sinon.match.func
+        )
+        sinon.assert.calledOnce(ContextVersion.modifyAppCodeVersionByRepo)
+        sinon.assert.calledWithExactly(
+          ContextVersion.modifyAppCodeVersionByRepo,
+          '21', // from mockContextVersion, stringified
+          pushInfo.repo,
+          pushInfo.branch,
+          pushInfo.commit,
+          sinon.match.func
+        )
+        done()
       })
     })
   })
