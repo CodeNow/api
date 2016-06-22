@@ -15,6 +15,7 @@ var ContextVersion = require('models/mongo/context-version.js')
 var InfraCodeVersion = require('models/mongo/infra-code-version.js')
 var Instance = require('models/mongo/instance.js')
 var ObjectId = mongoose.Types.ObjectId
+var Promise = require('bluebird')
 var User = require('models/mongo/user.js')
 var sinon = require('sinon')
 
@@ -35,6 +36,17 @@ var factory = module.exports = {
             'hello@runnable.com'
           ]
         }
+      }
+    }, cb)
+  },
+  createContext: function (owner, cb) {
+    var ownerGithubId = (typeof owner === 'string' || typeof owner === 'number')
+      ? owner
+      : owner.accounts.github.id
+    Context.create({
+      name: uuid(),
+      owner: {
+        github: ownerGithubId
       }
     }, cb)
   },
@@ -124,6 +136,9 @@ var factory = module.exports = {
       props = null
     }
     props = props || {build: {}}
+    if (!props.build) {
+      props.build = {}
+    }
     defaults(props.build, {
       _id: '012345678901234567890123',
       hash: uuid(),
@@ -136,7 +151,8 @@ var factory = module.exports = {
     })
     var data = this.cvTemplate(
       ownerGithubId,
-      props.build
+      props.build,
+      props
     )
     ContextVersion.create(data, cb)
   },
@@ -208,7 +224,7 @@ var factory = module.exports = {
         github: ownerGithubId
       },
       advanced: true,
-      appCodeVersions: [],
+      appCodeVersions: opts.appCodeVersions || [],
       __v: 0,
       dockerHost: 'http://127.0.0.1:4242'
     }
@@ -399,3 +415,5 @@ var factory = module.exports = {
     })
   }
 }
+
+Promise.promisifyAll(factory)

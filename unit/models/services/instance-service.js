@@ -324,46 +324,46 @@ describe('InstanceService', function () {
     })
 
     it('should return if instanceId param is missing', function (done) {
-      sinon.spy(Instance, 'findForkedInstances')
+      sinon.spy(Instance, 'findNonIsolatedForkedInstances')
       InstanceService.deleteForkedInstancesByRepoAndBranch(null, 'api', 'master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          expect(Instance.findForkedInstances.callCount).to.equal(0)
-          Instance.findForkedInstances.restore()
+          expect(Instance.findNonIsolatedForkedInstances.callCount).to.equal(0)
+          Instance.findNonIsolatedForkedInstances.restore()
           done()
         })
     })
 
     it('should return if repo param is missing', function (done) {
-      sinon.spy(Instance, 'findForkedInstances')
+      sinon.spy(Instance, 'findNonIsolatedForkedInstances')
       InstanceService.deleteForkedInstancesByRepoAndBranch(instance, null, 'master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          expect(Instance.findForkedInstances.callCount).to.equal(0)
-          Instance.findForkedInstances.restore()
+          expect(Instance.findNonIsolatedForkedInstances.callCount).to.equal(0)
+          Instance.findNonIsolatedForkedInstances.restore()
           done()
         })
     })
 
     it('should return if branch param is missing', function (done) {
-      sinon.spy(Instance, 'findForkedInstances')
+      sinon.spy(Instance, 'findNonIsolatedForkedInstances')
       InstanceService.deleteForkedInstancesByRepoAndBranch(instance, 'api', null)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          expect(Instance.findForkedInstances.callCount).to.equal(0)
-          Instance.findForkedInstances.restore()
+          expect(Instance.findNonIsolatedForkedInstances.callCount).to.equal(0)
+          Instance.findNonIsolatedForkedInstances.restore()
           done()
         })
     })
 
-    it('should return error if #findForkedInstances failed', function (done) {
-      sinon.stub(Instance, 'findForkedInstances')
+    it('should return error if #findNonIsolatedForkedInstances failed', function (done) {
+      sinon.stub(Instance, 'findNonIsolatedForkedInstances')
         .yieldsAsync(new Error('Some error'))
       InstanceService.deleteForkedInstancesByRepoAndBranch(instance, 'api', 'master')
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal('Some error')
-          Instance.findForkedInstances.restore()
+          Instance.findNonIsolatedForkedInstances.restore()
           done()
         })
     })
@@ -374,12 +374,12 @@ describe('InstanceService', function () {
         done()
       })
       afterEach(function (done) {
-        Instance.findForkedInstances.restore()
+        Instance.findNonIsolatedForkedInstances.restore()
         rabbitMQ.deleteInstance.restore()
         done()
       })
       it('should not create new jobs if instances were not found', function (done) {
-        sinon.stub(Instance, 'findForkedInstances')
+        sinon.stub(Instance, 'findNonIsolatedForkedInstances')
           .yieldsAsync(null, [])
         InstanceService.deleteForkedInstancesByRepoAndBranch(instance, 'api', 'master')
           .asCallback(function (err) {
@@ -391,7 +391,7 @@ describe('InstanceService', function () {
 
       it('should not create new jobs if instances dont share master pods', function (done) {
         InstanceService.doInstancesShareSameMasterPod.returns(false)
-        sinon.stub(Instance, 'findForkedInstances')
+        sinon.stub(Instance, 'findNonIsolatedForkedInstances')
           .yieldsAsync(null, [
             {_id: 'inst-1'},
             {_id: 'inst-2'},
@@ -409,7 +409,7 @@ describe('InstanceService', function () {
         InstanceService.doInstancesShareSameMasterPod.returns(true)
           .onFirstCall().returns(true)
           .onSecondCall().returns(false)
-        sinon.stub(Instance, 'findForkedInstances')
+        sinon.stub(Instance, 'findNonIsolatedForkedInstances')
           .yieldsAsync(null, [
             {_id: 'inst-1'},
             {_id: 'inst-2'},
@@ -428,7 +428,7 @@ describe('InstanceService', function () {
       })
 
       it('should create 2 jobs if 3 instances were found and 1 filtered', function (done) {
-        sinon.stub(Instance, 'findForkedInstances')
+        sinon.stub(Instance, 'findNonIsolatedForkedInstances')
           .yieldsAsync(null, [
             {_id: 'inst-1'},
             {_id: 'inst-2'},
@@ -447,7 +447,7 @@ describe('InstanceService', function () {
       })
 
       it('should create 1 job if 3 instances were found and 1 was isolated', function (done) {
-        sinon.stub(Instance, 'findForkedInstances').yieldsAsync(null, [
+        sinon.stub(Instance, 'findNonIsolatedForkedInstances').yieldsAsync(null, [
           {_id: 'inst-1', isolated: '2sdasdasdasd'},
           {_id: 'inst-2'},
           {_id: 'inst-3'}
@@ -2806,7 +2806,7 @@ describe('InstanceService', function () {
         }
       }
       sinon.stub(rabbitMQ, 'deleteContextVersion').resolves()
-      sinon.stub(rabbitMQ, 'matchCommitWithIsolationMaster').resolves()
+      sinon.stub(rabbitMQ, 'matchCommitInIsolationInstances').resolves()
       sinon.stub(Build, 'findByIdAsync').resolves(build)
       sinon.stub(ContextVersion, 'findByIdAsync').resolves(contextVersion)
       sinon.stub(InstanceService, 'deleteForkedInstancesByRepoAndBranch').resolves()
@@ -2815,7 +2815,7 @@ describe('InstanceService', function () {
     })
     afterEach(function (done) {
       rabbitMQ.deleteContextVersion.restore()
-      rabbitMQ.matchCommitWithIsolationMaster.restore()
+      rabbitMQ.matchCommitInIsolationInstances.restore()
       Build.findByIdAsync.restore()
       ContextVersion.findByIdAsync.restore()
       InstanceService.deleteForkedInstancesByRepoAndBranch.restore()
@@ -2937,14 +2937,15 @@ describe('InstanceService', function () {
 
     describe('Isolation', function () {
       describe('Match Commits', function () {
-        it('should match the commit if its isolated and its an isolation gropup master', function (done) {
+        it('should match the commit if its isolated', function (done) {
           instance.isolated = isolationId
           instance.isIsolationGroupMaster = true
           InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
             .then(function () {
-              sinon.assert.calledOnce(rabbitMQ.matchCommitWithIsolationMaster)
-              sinon.assert.calledWithExactly(rabbitMQ.matchCommitWithIsolationMaster, {
+              sinon.assert.calledOnce(rabbitMQ.matchCommitInIsolationInstances)
+              sinon.assert.calledWithExactly(rabbitMQ.matchCommitInIsolationInstances, {
                 isolationId: isolationId,
+                instanceId: instance._id.toString(),
                 sessionUserGithubId: sessionUserGithubId
               })
             })
@@ -2956,17 +2957,7 @@ describe('InstanceService', function () {
           instance.isIsolationGroupmaster = false
           InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
             .then(function () {
-              sinon.assert.notCalled(rabbitMQ.matchCommitWithIsolationMaster)
-            })
-            .asCallback(done)
-        })
-
-        it('should not match the commit if its not the isolation group master', function (done) {
-          instance.isolated = isolationId
-          instance.isIsolationGroupmaster = false
-          InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
-            .then(function () {
-              sinon.assert.notCalled(rabbitMQ.matchCommitWithIsolationMaster)
+              sinon.assert.notCalled(rabbitMQ.matchCommitInIsolationInstances)
             })
             .asCallback(done)
         })

@@ -7,258 +7,188 @@ var it = lab.it
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 
+var Boom = require('dat-middleware').Boom
 var Code = require('code')
 var expect = Code.expect
+var Promise = require('bluebird')
 var sinon = require('sinon')
+var monitor = require('monitor-dog')
+
+var NotImplementedException = require('errors/not-implemented-exception.js')
 
 var githubActions = require('routes/actions/github')
-var UserWhitelist = require('models/mongo/user-whitelist')
-var User = require('models/mongo/user')
+var WebhookService = require('models/services/webhook-service')
 
 var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
+require('sinon-as-promised')(Promise)
 
 describe('GitHub Actions: ' + moduleName, function () {
-  describe('parseGitHubPushData', function () {
-    it('should return error if req.body.repository not found', function (done) {
-      var req = {
-        body: {}
-      }
-      var res = {}
-      githubActions.parseGitHubPushData(req, res, function (err) {
-        expect(err.output.statusCode).to.equal(400)
-        expect(err.output.payload.message).to.equal('Unexpected commit hook format. Repository is required')
+  var validHeaders = {}
+  var req
+  var res
+  beforeEach(function (done) {
+    validHeaders = {
+      'user-agent': 'GitHub stuff',
+      'x-github-delivery': 'sadasdasda',
+      'x-github-event': 'push'
+    }
+    req = {
+      headers: validHeaders,
+      get: sinon.spy(function (i) {
+        return req.headers[i]
+      })
+    }
+    res = {}
+    res.status = sinon.stub().returns(res)
+    res.send = sinon.stub().returns(res)
+    done()
+  })
+  describe('areHeadersValidGithubEvent', function () {
+    describe('Invalid headers', function () {
+      it('should be invalid for an empty header', function (done) {
+        expect(githubActions.areHeadersValidGithubEvent()).to.equal(false)
+        done()
+      })
+      it('should be invalid if the userAgent isn\'t github', function (done) {
+        expect(githubActions.areHeadersValidGithubEvent({
+          'user-agent': 'nope'
+        })).to.equal(false)
+        done()
+      })
+      it('should be invalid if the x-github-event is missing', function (done) {
+        expect(githubActions.areHeadersValidGithubEvent({
+          'user-agent': 'GitHub stuff'
+        })).to.equal(false)
+        done()
+      })
+      it('should be invalid if the x-github-delivery is missing', function (done) {
+        expect(githubActions.areHeadersValidGithubEvent({
+          'user-agent': 'GitHub stuff'
+        })).to.equal(false)
         done()
       })
     })
-    it('should parse branch and default to [] for commmitLog', function (done) {
-      var headCommit = {
-        id: '77485a1a3c2fcf1a6db52e72bf1c05f40336d244',
-        distinct: true,
-        message: 'add whitelist check back to hooks',
-        timestamp: '2016-01-20T14:40:39-08:00',
-        url: 'https://github.com/CodeNow/api/commit/77485a1a3c2fcf1a6db52e72bf1c05f40336d244',
-        author: {
-          name: 'Anton Podviaznikov',
-          email: 'podviaznikov@gmail.com',
-          username: 'podviaznikov'
-        },
-        committer: {
-          name: 'Anton Podviaznikov',
-          email: 'podviaznikov@gmail.com',
-          username: 'podviaznikov'
-        },
-        added: [
-
-        ],
-        removed: [
-
-        ],
-        modified: [
-          'lib/routes/actions/github.js'
-        ]
-      }
-      var sender = {
-        login: 'podviaznikov',
-        id: 429706,
-        avatar_url: 'https://avatars.githubusercontent.com/u/429706?v=3',
-        gravatar_id: '',
-        url: 'https://api.github.com/users/podviaznikov',
-        html_url: 'https://github.com/podviaznikov',
-        followers_url: 'https://api.github.com/users/podviaznikov/followers',
-        following_url: 'https://api.github.com/users/podviaznikov/following{/other_user}',
-        gists_url: 'https://api.github.com/users/podviaznikov/gists{/gist_id}',
-        starred_url: 'https://api.github.com/users/podviaznikov/starred{/owner}{/repo}',
-        subscriptions_url: 'https://api.github.com/users/podviaznikov/subscriptions',
-        organizations_url: 'https://api.github.com/users/podviaznikov/orgs',
-        repos_url: 'https://api.github.com/users/podviaznikov/repos',
-        events_url: 'https://api.github.com/users/podviaznikov/events{/privacy}',
-        received_events_url: 'https://api.github.com/users/podviaznikov/received_events',
-        type: 'User',
-        site_admin: false
-      }
-      var req = {
-        body: {
-          ref: 'refs/heads/feature-1',
-          head_commit: headCommit,
-          commits: [headCommit],
-          sender: sender,
-          repository: {
-            id: 20736018,
-            name: 'api',
-            full_name: 'CodeNow/api',
-            owner: {
-              name: 'CodeNow',
-              email: 'live@codenow.com'
-            },
-            private: true
-          }
-        }
-      }
-
-      var res = {}
-      githubActions.parseGitHubPushData(req, res, function (err) {
-        if (err) { return done(err) }
-        expect(req.githubPushInfo.branch).to.equal('feature-1')
-        expect(req.githubPushInfo.repo).to.equal('CodeNow/api')
-        expect(req.githubPushInfo.repoName).to.equal('api')
-        expect(req.githubPushInfo.repoOwnerOrgName).to.equal('CodeNow')
-        expect(req.githubPushInfo.ref).to.equal(req.body.ref)
-        expect(req.githubPushInfo.commit).to.equal(headCommit.id)
-        expect(req.githubPushInfo.commitLog.length).to.equal(1)
-        expect(req.githubPushInfo.commitLog[0]).to.equal(headCommit)
-        expect(req.githubPushInfo.user).to.equal(sender)
-        done()
-      })
+    it('should return true with a valid header', function (done) {
+      expect(githubActions.areHeadersValidGithubEvent({
+        'user-agent': 'GitHub stuff',
+        'x-github-delivery': 'sadasdasda',
+        'x-github-event': 'asdasdasdsad'
+      })).to.equal(true)
+      done()
     })
   })
 
-  describe('checkRepoOrganizationAgainstWhitelist', function () {
-    var req = {
-      githubPushInfo: {
-        repoOwnerOrgName: 'CodeNow'
-      }
-    }
-    var res
-
+  describe('onGithookEvent', function () {
     beforeEach(function (done) {
-      sinon.stub(UserWhitelist, 'findOne')
-        .yieldsAsync(null, { _id: 'some-id', allowed: true })
-      res = {}
-      res.status = sinon.stub().returns(res)
-      res.send = function () {}
+      sinon.stub(monitor, 'increment').returns()
       done()
     })
     afterEach(function (done) {
-      UserWhitelist.findOne.restore()
+      monitor.increment.restore()
       done()
     })
-
-    it('should next with error if db call failed', function (done) {
-      var mongoErr = new Error('Mongo error')
-      UserWhitelist.findOne.yieldsAsync(mongoErr)
-
-      githubActions.checkRepoOrganizationAgainstWhitelist(req, res, function (err) {
-        expect(err).to.equal(mongoErr)
-        sinon.assert.calledOnce(UserWhitelist.findOne)
-        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
-        done()
+    describe('invalid headers', function () {
+      it('should return 400', function (done) {
+        delete validHeaders['x-github-event']
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err.output.statusCode).to.equal(400) // Bad Request
+            expect(err.output.payload.message).to.match(/Invalid githook/)
+            done()
+          })
       })
     })
-    it('should next without error if everything worked', function (done) {
-      githubActions.checkRepoOrganizationAgainstWhitelist(req, res, function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(UserWhitelist.findOne)
-        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
-        done()
-      })
-    })
-    it('should respond with 403 if no whitelist found', function (done) {
-      UserWhitelist.findOne.yieldsAsync(null, null)
-      sinon.stub(res, 'send', function (message) {
-        sinon.assert.calledOnce(res.status)
-        sinon.assert.calledWithExactly(res.status, 403)
-        sinon.assert.calledOnce(res.send)
-        sinon.assert.calledWithExactly(res.send, sinon.match(/not registered/))
-        sinon.assert.calledOnce(UserWhitelist.findOne)
-        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
-        done()
-      })
-      githubActions.checkRepoOrganizationAgainstWhitelist(req, res, function () {
-        throw new Error('Should never happen')
-      })
-    })
-    it('should respond with 403 if not allowed', function (done) {
-      UserWhitelist.findOne.yieldsAsync(null, { allowed: false })
-      sinon.stub(res, 'send', function (message) {
-        sinon.assert.calledOnce(res.status)
-        sinon.assert.calledWithExactly(res.status, 403)
-        sinon.assert.calledOnce(res.send)
-        sinon.assert.calledWithExactly(res.send, sinon.match(/suspended/))
-        sinon.assert.calledOnce(UserWhitelist.findOne)
-        sinon.assert.calledWith(UserWhitelist.findOne, { lowerName: 'codenow' })
-        done()
-      })
-      githubActions.checkRepoOrganizationAgainstWhitelist(req, res, function () {
-        throw new Error('Should never happen')
-      })
-    })
-  })
-
-  describe('checkCommitterIsRunnableUser', function () {
-    var username = 'thejsj'
-    var req = {
-      githubPushInfo: {
-        committer: username
-      }
-    }
-    beforeEach(function (done) {
-      sinon.stub(User, 'findOne').yieldsAsync(null, { _id: 'some-id' })
-      done()
-    })
-    afterEach(function (done) {
-      User.findOne.restore()
-      done()
-    })
-
-    it('should next with error if db call failed', function (done) {
-      var mongoErr = new Error('Mongo error')
-      User.findOne.yieldsAsync(mongoErr)
-      githubActions.checkCommitterIsRunnableUser(req, {}, function (err) {
-        expect(err).to.equal(mongoErr)
-        sinon.assert.calledOnce(User.findOne)
-        sinon.assert.calledWith(User.findOne, { 'accounts.github.username': username })
-        expect(err).to.equal(mongoErr)
-        done()
+    describe('ping', function () {
+      it('should return OKAY', function (done) {
+        validHeaders['x-github-event'] = 'ping'
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err).to.be.null()
+            sinon.assert.calledOnce(res.status)
+            sinon.assert.calledWith(res.status, 202)
+            sinon.assert.calledWith(res.send, 'Hello, Github Ping!')
+            done()
+          })
       })
     })
 
-    it('should next without error if everything worked', function (done) {
-      githubActions.checkCommitterIsRunnableUser(req, {}, function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(User.findOne)
-        sinon.assert.calledWith(User.findOne, { 'accounts.github.username': username })
-        done()
+    describe('not a push event', function () {
+      it('should return no action', function (done) {
+        validHeaders['x-github-event'] = 'pull request'
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err).to.be.null()
+            sinon.assert.calledOnce(res.status)
+            sinon.assert.calledWith(res.status, 202)
+            sinon.assert.calledWith(res.send, 'No action set up for that payload.')
+            done()
+          })
       })
     })
 
-    it('should respond with 403 if no whitelist found', function (done) {
-      User.findOne.yieldsAsync(null, null)
-      var errStub = sinon.stub()
-      var callback = function (code, message) {
-        expect(code).to.equal(403)
-        expect(message).to.match(/commit.*author.*not.*runnable.*user/i)
-        sinon.assert.calledOnce(User.findOne)
-        sinon.assert.calledWith(User.findOne, { 'accounts.github.username': username })
+    describe('disabled hooks', function () {
+      beforeEach(function (done) {
+        delete process.env.ENABLE_GITHUB_HOOKS
         done()
-      }
-      var res = {
-        status: function (code) {
-          return { send: callback.bind(callback, code) }
-        }
-      }
-      githubActions.checkCommitterIsRunnableUser(req, res, errStub)
+      })
+      afterEach(function (done) {
+        process.env.ENABLE_GITHUB_HOOKS = true
+        done()
+      })
+      it('should send response immediately if hooks are disabled', function (done) {
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err).to.be.null()
+            sinon.assert.calledOnce(res.status)
+            sinon.assert.calledWith(res.status, 202)
+            sinon.assert.calledWith(res.send, 'Hooks are currently disabled, but we gotchu!')
+            done()
+          })
+      })
     })
-
-    it('should respond with 403 if username was not specified', function (done) {
-      var errStub = sinon.stub()
-      var callback = function (code, message) {
-        expect(code).to.equal(403)
-        expect(message).to.match(/Commit author\/committer username is empty/i)
-        sinon.assert.notCalled(User.findOne)
+    describe('process', function () {
+      beforeEach(function (done) {
+        sinon.stub(WebhookService, 'processGithookEvent')
         done()
-      }
-      var res = {
-        status: function (code) {
-          return { send: callback.bind(callback, code) }
-        }
-      }
-      var req = {
-        githubPushInfo: {
-          committer: null
-        }
-      }
-      githubActions.checkCommitterIsRunnableUser(req, res, errStub)
+      })
+      afterEach(function (done) {
+        WebhookService.processGithookEvent.restore()
+        done()
+      })
+      it('resolves successfully', function (done) {
+        WebhookService.processGithookEvent.resolves()
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err).to.be.null()
+            sinon.assert.calledOnce(res.status)
+            sinon.assert.calledWith(res.status, 200)
+            sinon.assert.calledWith(res.send, 'Success')
+            done()
+          })
+      })
+      it('should respond with 403 if processGithookEvent returns that', function (done) {
+        var boomError = Boom.forbidden('Repo owner is not registered on Runnable')
+        WebhookService.processGithookEvent.rejects(boomError)
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            sinon.assert.notCalled(res.status)
+            expect(err).to.equal(boomError)
+            done()
+          })
+      })
+      it('should respond with a 202 when it fails with a NotImplementedException', function (done) {
+        var error = new NotImplementedException('Nope', 'Error')
+        WebhookService.processGithookEvent.rejects(error)
+        githubActions.onGithookEvent(req, res)
+          .asCallback(function (err) {
+            expect(err).to.be.null()
+            sinon.assert.calledOnce(res.status)
+            sinon.assert.calledWith(res.status, 202)
+            sinon.assert.calledWith(res.send, 'Error')
+            done()
+          })
+      })
     })
   })
 })
