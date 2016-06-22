@@ -37,19 +37,19 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
     }
 
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findForkedInstancesAsync')
+      sinon.stub(Instance, 'findNonIsolatedForkedInstancesAsync')
       sinon.stub(rabbitMQ, 'deleteInstance')
       done()
     })
     afterEach(function (done) {
-      Instance.findForkedInstancesAsync.restore()
+      Instance.findNonIsolatedForkedInstancesAsync.restore()
       rabbitMQ.deleteInstance.restore()
       done()
     })
     describe('validating errors', function () {
       it('should reject when Mongo returns an error', function (done) {
         var mongoErr = new Error('Mongo error')
-        Instance.findForkedInstancesAsync.rejects(mongoErr)
+        Instance.findNonIsolatedForkedInstancesAsync.rejects(mongoErr)
         WebhookService.autoDelete(githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.equal(mongoErr)
@@ -60,7 +60,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
     })
     describe('Successful runs', function () {
       it('should return empty array, and not delete anything, when fetch returns empty', function (done) {
-        Instance.findForkedInstancesAsync.resolves([])
+        Instance.findNonIsolatedForkedInstancesAsync.resolves([])
         WebhookService.autoDelete(githubPushInfo)
           .then(function (instances) {
             expect(instances).to.deep.equal([])
@@ -74,7 +74,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         }, {
           _id: 'erfvsdfsavxscvsacfvserw'
         }]
-        Instance.findForkedInstancesAsync.resolves(instances)
+        Instance.findNonIsolatedForkedInstancesAsync.resolves(instances)
         WebhookService.autoDelete(githubPushInfo)
           .then(function (instances) {
             expect(instances).to.deep.equal(['sdasdsaddgfasdfgasdfasdf', 'erfvsdfsavxscvsacfvserw'])
