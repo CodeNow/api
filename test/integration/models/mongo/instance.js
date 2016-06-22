@@ -20,10 +20,12 @@ var Graph = require('models/apis/graph')
 var async = require('async')
 var hasProps = require('101/has-properties')
 var pick = require('101/pick')
+var Promise = require('bluebird')
 
 var Instance = require('models/mongo/instance')
 var mongoFactory = require('../../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
+require('sinon-as-promised')
 
 function newObjectId () {
   return new mongoose.Types.ObjectId()
@@ -162,66 +164,364 @@ describe('Instance Model Integration Tests', function () {
     })
   })
 
-  // describe('find instance by container id', function () {
-  //   var savedInstance = null
-  //   var instance = null
-  //   before(function (done) {
-  //     instance = mongoFactory.createNewInstance()
-  //     instance.save(function (err, instance) {
-  //       if (err) { return done(err) }
-  //       expect(instance).to.exist()
-  //       savedInstance = instance
-  //       done()
-  //     })
-  //   })
-  //
-  //   it('should find an instance', function (done) {
-  //     Instance.findOneByContainerId(savedInstance.container.dockerContainer, function (err, fetchedInstance) {
-  //       if (err) { return done(err) }
-  //       expect(fetchedInstance._id.toString()).to.equal(instance._id.toString())
-  //       expect(fetchedInstance.name).to.equal(instance.name)
-  //       expect(fetchedInstance.container.dockerContainer).to.equal(instance.container.dockerContainer)
-  //       expect(fetchedInstance.public).to.equal(instance.public)
-  //       expect(fetchedInstance.lowerName).to.equal(instance.lowerName)
-  //       expect(fetchedInstance.build.toString()).to.equal(instance.build.toString())
-  //       done()
-  //     })
-  //   })
-  // })
+  describe('.findMasterPodsToAutoFork', function () {
+    /**
+     * This test must verify all of these scenarios
+     * (m) - master branch    (fb) - feature branch
+     * update master
+     * 2 masterPod 1(m) 2(fb), 1 child 1(fb) , 1 isolated 2(m) - fetch 2
+     *
+     * update fb
+     * 2 masterPod 1(m) 2(m)                                    - fetch 1, 2
+     * 2 masterPod 1(m) 2(m),  1 child 1(fb)                    - fetch 2
+     * 2 masterPod 1(m) 2(fb), 1 child 1(fb) , 1 isolated 2(m) - fetch 1
+     * 2 masterPod 1(m) 2(m),  1 isolated 2(fb)                 - fetch 1, 2
+     */
 
-  // describe('find by repo and branch', function () {
-  //   before(function (done) {
-  //     var instance = mongoFactory.createNewInstance('instance1')
-  //     instance.save(done)
-  //   })
-  //   before(function (done) {
-  //     var instance = mongoFactory.createNewInstance('instance2', { locked: false })
-  //     instance.save(done)
-  //   })
-  //   before(function (done) {
-  //     var instance = mongoFactory.createNewInstance('instance3', { locked: true, repo: 'podviaznikov/hello' })
-  //     instance.save(done)
-  //   })
-  //
-  //   it('should find instances using repo name and branch', function (done) {
-  //     Instance.findInstancesLinkedToBranch('bkendall/flaming-octo-nemisis._', 'master', function (err, insts) {
-  //       if (err) { return done(err) }
-  //       expect(insts.length).to.equal(2)
-  //       insts.forEach(function (inst) {
-  //         expect([ 'instance1', 'instance2' ]).to.include(inst.name)
-  //       })
-  //       done()
-  //     })
-  //   })
-  //
-  //   it('should not find instance using repo name and branch if it was locked', function (done) {
-  //     Instance.findInstancesLinkedToBranch('podviaznikov/hello', 'master', function (err, insts) {
-  //       if (err) { return done(err) }
-  //       expect(insts.length).to.equal(0)
-  //       done()
-  //     })
-  //   })
-  // })
+    var mockSessionUser
+    var ownerId
+    var mockOwner
+    var masterBranch = 'master'
+    var branch = 'featureBranch'
+    var repo = 'owner/api'
+    var api
+    var worker
+    beforeEach(function clearApiAndWorker (done) {
+      api = {
+        context: null,
+        masterPod: null,
+        child: null,
+        isolated: null
+      }
+      worker = {
+        context: null,
+        masterPod: null,
+        child: null,
+        isolated: null
+      }
+      done()
+    })
+    beforeEach(function makeUserStuff (done) {
+      mockSessionUser = {
+        findGithubUserByGithubId: sinon.spy(function (id, cb) {
+          var login = (id === mockSessionUser.accounts.github.id) ? 'user' : 'owner'
+          return cb(null, {
+            login: login,
+            avatar_url: 'sdasdasdasdasdasd'
+          })
+        }),
+        gravatar: 'sdasdasdasdasdasd',
+        accounts: {
+          github: {
+            id: 1234,
+            username: 'user'
+          }
+        }
+      }
+      ownerId = 11111
+      mockOwner = {
+        gravatar: 'sdasdasdasdasdasd',
+        accounts: {
+          github: {
+            id: ownerId,
+            username: 'owner'
+          }
+        }
+      }
+      done()
+    })
+    function createCv (opts) {
+      return mongoFactory.createCompletedCvAsync(ownerId, {
+        context: opts.context._id,
+        appCodeVersions: [{
+          additionalRepo: false,
+          repo: opts.repo || 'bkendall/flaming-octo-nemisis._',
+          lowerRepo: opts.repo.toLowerCase() || 'bkendall/flaming-octo-nemisis._',
+          branch: opts.branch || 'master',
+          lowerBranch: opts.branch.toLowerCase() || 'master',
+          commit: 'deadbeef'
+        }]
+      })
+    }
+    beforeEach(function createContexts (done) {
+      Promise.props({
+        api: mongoFactory.createContextAsync(mockOwner),
+        worker: mongoFactory.createContextAsync(mockOwner)
+      })
+        .then(function (results) {
+          api.context = results.api
+          worker.context = results.worker
+        })
+        .asCallback(done)
+    })
+    /**
+     * update fb
+     * 2 masterPod 1(m) 2(m)                                   - fetch 1, 2
+     * 2 masterPod 1(m) 2(m),  1 child 1(fb)                   - fetch 2
+     * 2 masterPod 1(fb) 2(m), 1 child 1(m), 1 isolated 2(fb)  - fetch 2
+     * 2 masterPod 1(m) 2(m),  1 isolated 2(fb)                - fetch 1, 2
+     */
+    describe('2 masterPod api(m) worker(m)', function () {
+      beforeEach(function (done) {
+        return Promise.props({
+          api: createCv({
+            repo: repo,
+            branch: masterBranch,
+            context: api.context
+          }),
+          worker: createCv({
+            repo: repo,
+            branch: masterBranch,
+            context: worker.context
+          })
+        })
+          .then(function (results) {
+            api.cv = results.api
+            worker.cv = results.worker
+            return Promise.props({
+              api: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                masterPod: true,
+                branch: masterBranch,
+                cv: api.cv
+              }),
+              worker: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                masterPod: true,
+                branch: masterBranch,
+                cv: worker.cv
+              })
+            })
+          })
+          .then(function (results) {
+            api.masterPod = results.api
+            worker.masterPod = results.worker
+          })
+          .asCallback(done)
+      })
+      describe('Updating fb', function () {
+        it('should fetch both masterPods', function (done) {
+          var autoDeployedInstances = []
+
+          Instance.findMasterPodsToAutoFork(repo, branch, autoDeployedInstances)
+            .then(function (instances) {
+              expect(instances).to.exist()
+              expect(instances.length).to.equal(2)
+              var instanceIds = instances.map(pluck('_id.toString()'))
+              expect(instanceIds).to.contains(worker.masterPod._id.toString())
+              expect(instanceIds).to.contains(api.masterPod._id.toString())
+            })
+            .asCallback(done)
+        })
+      })
+    })
+    describe('2 masterPod api(m) worker(m), api.child(fb)', function () {
+      beforeEach(function (done) {
+        return Promise.props({
+          api: createCv({
+            repo: repo,
+            branch: masterBranch,
+            context: api.context
+          }),
+          childApi: createCv({
+            repo: repo,
+            branch: branch,
+            context: api.context
+          }),
+          worker: createCv({
+            repo: repo,
+            branch: masterBranch,
+            context: worker.context
+          })
+        })
+          .then(function (results) {
+            return Promise.props({
+              api: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                masterPod: true,
+                branch: masterBranch,
+                cv: results.api
+              }),
+              childApi: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                branch: branch,
+                cv: results.childApi
+              }),
+              worker: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                masterPod: true,
+                branch: masterBranch,
+                cv: results.worker
+              })
+            })
+          })
+          .then(function (results) {
+            api.masterPod = results.api
+            api.child = results.childApi
+            worker.masterPod = results.worker
+          })
+          .asCallback(done)
+      })
+      describe('Updating fb', function () {
+        it('should fetch worker masterPod', function (done) {
+          var autoDeployedInstances = [
+            api.child
+          ]
+          Instance.findMasterPodsToAutoFork(repo, branch, autoDeployedInstances)
+            .then(function (instances) {
+              expect(instances).to.exist()
+              expect(instances.length).to.equal(1)
+              expect(instances[0]._id.toString()).to.equal(worker.masterPod._id.toString())
+            })
+            .asCallback(done)
+        })
+      })
+    })
+    describe('2 masterPod api(m) worker(fb1), worker.child(m), api.isolated(fb)', function () {
+      beforeEach(function (done) {
+        return Promise.props({
+          api: createCv({
+            repo: repo,
+            branch: masterBranch,
+            context: api.context
+          }),
+          isolatedApi: createCv({
+            repo: repo,
+            branch: branch,
+            context: api.context
+          }),
+          worker: createCv({
+            repo: repo,
+            branch: branch,
+            context: worker.context
+          }),
+          workerChild: createCv({
+            repo: repo,
+            branch: masterBranch,
+            context: worker.context
+          })
+        })
+          .then(function (results) {
+            return Promise.props({
+              api: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                masterPod: true,
+                branch: masterBranch,
+                cv: results.api
+              }),
+              isolatedApi: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                cv: results.isolatedApi,
+                branch: branch,
+                isolated: 'asdsadasdasdasd'
+              }),
+              worker: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                masterPod: true,
+                branch: branch,
+                cv: results.worker
+              }),
+              workerChild: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                branch: masterBranch,
+                cv: results.workerChild
+              })
+            })
+          })
+          .then(function (results) {
+            api.masterPod = results.api
+            api.isolated = results.isolatedApi
+            worker.masterPod = results.worker
+            worker.child = results.workerChild
+          })
+          .asCallback(done)
+      })
+      describe('Updating master branch ( api(m), worker.child(m) )', function () {
+        it('should fetch nothing', function (done) {
+          var autoDeployedInstances = [
+            api.masterPod,
+            worker.child
+          ]
+          Instance.findMasterPodsToAutoFork(repo, masterBranch, autoDeployedInstances)
+            .then(function (instances) {
+              expect(instances).to.exist()
+              expect(instances.length).to.equal(0)
+            })
+            .asCallback(done)
+        })
+      })
+
+      describe('Updating fb ( worker(fb), api.isolated(fb) )', function () {
+        it('should fetch the api masterPod', function (done) {
+          var autoDeployedInstances = [
+            worker.masterPod,
+            api.isolated
+          ]
+          Instance.findMasterPodsToAutoFork(repo, branch, autoDeployedInstances)
+            .then(function (instances) {
+              expect(instances).to.exist()
+              expect(instances.length).to.equal(1)
+              expect(instances[0]._id.toString()).to.equal(api.masterPod._id.toString())
+            })
+            .asCallback(done)
+        })
+      })
+    })
+    describe('2 masterPod api(m) worker(m), 1 isolated api(fb)', function () {
+      beforeEach(function (done) {
+        return Promise.props({
+          api: createCv({
+            repo: repo,
+            branch: masterBranch,
+            context: api.context
+          }),
+          isolatedApi: createCv({
+            repo: repo,
+            branch: branch,
+            context: api.context
+          }),
+          worker: createCv({
+            repo: repo,
+            branch: masterBranch,
+            context: worker.context
+          })
+        })
+          .then(function (results) {
+            return Promise.props({
+              api: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                masterPod: true,
+                branch: masterBranch,
+                cv: results.api
+              }),
+              isolatedApi: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                branch: branch,
+                cv: results.isolatedApi,
+                isolated: 'asdsadasdasdasd'
+              }),
+              worker: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
+                masterPod: true,
+                branch: masterBranch,
+                cv: results.worker
+              })
+            })
+          })
+          .then(function (results) {
+            api.masterPod = results.api
+            api.isolated = results.isolatedApi
+            worker.masterPod = results.worker
+            worker.child = results.workerChild
+          })
+          .asCallback(done)
+      })
+      describe('Updating fb ( api.isolated(fb) )', function () {
+        it('should fetch both masterPods', function (done) {
+          var autoDeployedInstances = [
+            api.isolated
+          ]
+          Instance.findMasterPodsToAutoFork(repo, branch, autoDeployedInstances)
+            .then(function (instances) {
+              expect(instances).to.exist()
+              expect(instances.length).to.equal(2)
+              var instanceIds = instances.map(pluck('_id.toString()'))
+              expect(instanceIds).to.contains(worker.masterPod._id.toString())
+              expect(instanceIds).to.contains(api.masterPod._id.toString())
+            })
+            .asCallback(done)
+        })
+      })
+    })
+  })
 
   describe('findByContextVersionIds', function () {
     var instance = null
