@@ -630,7 +630,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         WebhookService.parseGitHubPushData({})
           .asCallback(function (err) {
             expect(err.output.statusCode).to.equal(400)
-            expect(err.output.payload.message).to.equal('Unexpected commit hook format. Repository is required')
+            expect(err.output.payload.message).to.match(/"repository" is required/)
             done()
           })
       })
@@ -639,7 +639,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         WebhookService.parseGitHubPushData(body)
           .asCallback(function (err) {
             expect(err.output.statusCode).to.equal(400)
-            expect(err.output.payload.message).to.equal('Unexpected commit hook format. Ref is required')
+            expect(err.output.payload.message).to.match(/"ref" is required/)
             done()
           })
       })
