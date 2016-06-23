@@ -547,9 +547,6 @@ describe('BuildService', function () {
       contextVersion = {
         context: 'mockContextId'
       }
-      instance = {
-        contextVersion: contextVersion
-      }
       mockContext = {
         _id: 'sadfsdafsdfsdf',
         owner: {
