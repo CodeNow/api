@@ -902,7 +902,7 @@ describe('InstanceForkService', function () {
       InstanceForkService._forkOne.onSecondCall().rejects(error)
       InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
         expect(err).to.not.exist()
-        expect(results).to.deep.equal([ 1, null ])
+        expect(results).to.deep.equal([ 1 ])
         sinon.assert.calledOnce(Bunyan.prototype.error)
         sinon.assert.calledWithExactly(
           Bunyan.prototype.error,
@@ -925,6 +925,16 @@ describe('InstanceForkService', function () {
           InstanceForkService._forkOne,
           mockTimer.stop
         )
+        done()
+      })
+    })
+
+    it('should filter out null instances', function (done) {
+      InstanceForkService._forkOne.onCall(0).rejects(new Error('wow'))
+      InstanceForkService._forkOne.onCall(1).resolves(null)
+      InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
+        expect(err).to.not.exist()
+        expect(results).to.deep.equal([])
         done()
       })
     })

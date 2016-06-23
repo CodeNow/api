@@ -22,8 +22,6 @@
 ./test/functional/bdd-deploy-instance.js
 ./test/functional/bdd-instance-dependencies.js
 ./test/functional/bdd-isolation.js
-./test/functional/builds-id-actions-build/post/201.js
-./test/functional/builds-id-actions-build/post/index.js
 ./test/functional/builds-id-actions-copy.js
 ./test/functional/builds.js
 ./test/functional/contexts-id-versions-id-appcodeversions-id-action-apply-transform-rules/index.js
@@ -40,7 +38,6 @@
 ./test/functional/csrf-validation.js
 ./test/functional/github-proxy.js
 ./test/functional/instance-dependency-health.js
-./test/functional/instances-id-actions-copy/post/index.js
 ./test/functional/instances-id-actions-redeploy/post/index.js
 ./test/functional/instances-id-actions-restart/put/index.js
 ./test/functional/instances-id-actions-start/put/index.js
@@ -52,8 +49,6 @@
 ./test/functional/instances-id-dependencies/get/200.js
 ./test/functional/instances-id/delete/204.js
 ./test/functional/instances-id/delete/index.js
-./test/functional/instances-id/patch/200.js
-./test/functional/instances-id/patch/index.js
 ./test/functional/instances/get/index.js
 ./test/functional/json-body-parser.js
 ./test/functional/messenger.js
