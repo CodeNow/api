@@ -67,8 +67,10 @@ describe('InstanceForkService', function () {
         isolated: 'mockIsolationId',
         isIsolationGroupMaster: false
       }
-      mockClient = {}
-      mockClient.createAndBuildBuild = sinon.stub().yieldsAsync(null, mockNewBuild)
+      mockClient = {
+        buildBuild: sinon.stub().yieldsAsync(null, mockNewBuild)
+      }
+      sinon.stub(BuildService, 'createBuild').resolves(mockNewBuild)
       mockClient.createInstance = sinon.stub().yieldsAsync(null, mockNewInstance)
       sinon.stub(BuildService, 'createNewContextVersion').resolves(mockNewContextVersion)
       sinon.stub(Runnable, 'createClient').returns(mockClient)

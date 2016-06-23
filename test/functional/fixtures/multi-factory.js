@@ -202,8 +202,9 @@ module.exports = {
       self.createContext(ownerId, function (err, context, user) {
         if (err) { return cb(err) }
         var body = { name: randStr(5) }
-        if (ownerId) { body.owner = { github: ownerId } }
-
+        body.owner = {
+          github: ownerId || user.json().accounts.github.id
+        }
         if (!ContextVersionService.checkOwnerAllowed.isSinonProxy) {
           // Duck it, we never need to restore this stub anyways right?
           sinon.stub(ContextVersionService, 'checkOwnerAllowed').returns(Promise.resolve())
