@@ -1063,7 +1063,7 @@ describe('InstanceService', function () {
       sinon.stub(Instance, 'markAsStartingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'startInstanceContainer').resolves()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
-      sinon.stub(PermissionService, 'ensureModelAccess').resolves()
+      sinon.stub(PermissionService, 'ensureOwnerOrModerator').resolves()
       done()
     })
 
@@ -1074,7 +1074,7 @@ describe('InstanceService', function () {
       Instance.markAsStartingAsync.restore()
       rabbitMQ.startInstanceContainer.restore()
       rabbitMQ.redeployInstanceContainer.restore()
-      PermissionService.ensureModelAccess.restore()
+      PermissionService.ensureOwnerOrModerator.restore()
       done()
     })
 
@@ -1091,7 +1091,7 @@ describe('InstanceService', function () {
     })
 
     it('should fail if permissions failed', function (done) {
-      PermissionService.ensureModelAccess.rejects(new Error('Access denied'))
+      PermissionService.ensureOwnerOrModerator.rejects(new Error('Access denied'))
       InstanceService.startInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1160,8 +1160,8 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.calledOnce(InstanceService.findInstance)
         sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
-        sinon.assert.calledOnce(PermissionService.ensureModelAccess)
-        sinon.assert.calledWith(PermissionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
+        sinon.assert.calledOnce(PermissionService.ensureOwnerOrModerator)
+        sinon.assert.calledWith(PermissionService.ensureOwnerOrModerator, ctx.sessionUser, ctx.instance)
         sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
         sinon.assert.calledOnce(Instance.markAsStartingAsync)
@@ -1182,7 +1182,7 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.callOrder(
           InstanceService.findInstance,
-          PermissionService.ensureModelAccess,
+          PermissionService.ensureOwnerOrModerator,
           Instance.prototype.populateModelsAsync,
           Instance.prototype.isNotStartingOrStoppingAsync,
           Instance.markAsStartingAsync,
@@ -1225,7 +1225,7 @@ describe('InstanceService', function () {
       sinon.stub(InstanceService, 'findInstance').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStartingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'restartInstance').resolves()
-      sinon.stub(PermissionService, 'ensureModelAccess').resolves()
+      sinon.stub(PermissionService, 'ensureOwnerOrModerator').resolves()
       done()
     })
 
@@ -1235,7 +1235,7 @@ describe('InstanceService', function () {
       InstanceService.findInstance.restore()
       Instance.markAsStartingAsync.restore()
       rabbitMQ.restartInstance.restore()
-      PermissionService.ensureModelAccess.restore()
+      PermissionService.ensureOwnerOrModerator.restore()
       done()
     })
 
@@ -1252,7 +1252,7 @@ describe('InstanceService', function () {
     })
 
     it('should fail if permissions failed', function (done) {
-      PermissionService.ensureModelAccess.rejects(new Error('Access denied'))
+      PermissionService.ensureOwnerOrModerator.rejects(new Error('Access denied'))
       InstanceService.restartInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1321,8 +1321,8 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.calledOnce(InstanceService.findInstance)
         sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
-        sinon.assert.calledOnce(PermissionService.ensureModelAccess)
-        sinon.assert.calledWith(PermissionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
+        sinon.assert.calledOnce(PermissionService.ensureOwnerOrModerator)
+        sinon.assert.calledWith(PermissionService.ensureOwnerOrModerator, ctx.sessionUser, ctx.instance)
         sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
         sinon.assert.calledOnce(Instance.markAsStartingAsync)
@@ -1343,7 +1343,7 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.callOrder(
           InstanceService.findInstance,
-          PermissionService.ensureModelAccess,
+          PermissionService.ensureOwnerOrModerator,
           Instance.prototype.populateModelsAsync,
           Instance.prototype.isNotStartingOrStoppingAsync,
           Instance.markAsStartingAsync,
@@ -1425,7 +1425,7 @@ describe('InstanceService', function () {
       sinon.stub(InstanceService, 'findInstance').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStoppingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'stopInstanceContainer').resolves()
-      sinon.stub(PermissionService, 'ensureModelAccess').resolves()
+      sinon.stub(PermissionService, 'ensureOwnerOrModerator').resolves()
       done()
     })
 
@@ -1435,7 +1435,7 @@ describe('InstanceService', function () {
       InstanceService.findInstance.restore()
       Instance.markAsStoppingAsync.restore()
       rabbitMQ.stopInstanceContainer.restore()
-      PermissionService.ensureModelAccess.restore()
+      PermissionService.ensureOwnerOrModerator.restore()
       done()
     })
 
@@ -1452,7 +1452,7 @@ describe('InstanceService', function () {
     })
 
     it('should fail if permissions failed', function (done) {
-      PermissionService.ensureModelAccess.rejects(new Error('Access denied'))
+      PermissionService.ensureOwnerOrModerator.rejects(new Error('Access denied'))
       InstanceService.stopInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1521,8 +1521,8 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.calledOnce(InstanceService.findInstance)
         sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
-        sinon.assert.calledOnce(PermissionService.ensureModelAccess)
-        sinon.assert.calledWith(PermissionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
+        sinon.assert.calledOnce(PermissionService.ensureOwnerOrModerator)
+        sinon.assert.calledWith(PermissionService.ensureOwnerOrModerator, ctx.sessionUser, ctx.instance)
         sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
         sinon.assert.calledOnce(Instance.markAsStoppingAsync)
@@ -1543,7 +1543,7 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.callOrder(
           InstanceService.findInstance,
-          PermissionService.ensureModelAccess,
+          PermissionService.ensureOwnerOrModerator,
           Instance.prototype.populateModelsAsync,
           Instance.prototype.isNotStartingOrStoppingAsync,
           Instance.markAsStoppingAsync,
