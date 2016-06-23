@@ -14,7 +14,7 @@ require('sinon-as-promised')(require('bluebird'))
 var PermisionService = require('models/services/permission-service')
 var Github = require('models/apis/github')
 
-describe('PermisionService', function () {
+describe('PermissionService', function () {
   var sessionUser = {
     accounts: {
       github: {

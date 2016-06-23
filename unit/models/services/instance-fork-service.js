@@ -19,7 +19,6 @@ var Instance = require('models/mongo/instance')
 var BuildService = require('models/services/build-service')
 var InstanceForkService = require('models/services/instance-fork-service')
 var InstanceService = require('models/services/instance-service')
-var Runnable = require('models/apis/runnable')
 var monitorDog = require('monitor-dog')
 
 var afterEach = lab.afterEach
@@ -48,7 +47,6 @@ describe('InstanceForkService', function () {
     var mockNewBuild = {
       _id: 'newBuildId'
     }
-    var mockClient
 
     beforeEach(function (done) {
       mockInstance = {
@@ -67,13 +65,11 @@ describe('InstanceForkService', function () {
         isolated: 'mockIsolationId',
         isIsolationGroupMaster: false
       }
-      mockClient = {
-        buildBuild: sinon.stub().yieldsAsync(null, mockNewBuild)
-      }
-      sinon.stub(BuildService, 'createBuild').resolves(mockNewBuild)
-      mockClient.createInstance = sinon.stub().yieldsAsync(null, mockNewInstance)
-      sinon.stub(BuildService, 'createNewContextVersion').resolves(mockNewContextVersion)
-      sinon.stub(Runnable, 'createClient').returns(mockClient)
+      sinon.stub(BuildService, 'createAndBuildContextVersion').resolves({
+        contextVersion: mockNewContextVersion,
+        build: mockNewBuild,
+        user: mockSessionUser
+      })
       sinon.stub(Instance, 'findById')
         .withArgs('mockNewInstanceId', sinon.match.func).yieldsAsync(null, mockNewInstance)
       sinon.stub(InstanceService, 'createInstance').resolves(mockNewInstance)
@@ -81,8 +77,7 @@ describe('InstanceForkService', function () {
     })
 
     afterEach(function (done) {
-      BuildService.createNewContextVersion.restore()
-      Runnable.createClient.restore()
+      BuildService.createAndBuildContextVersion.restore()
       Instance.findById.restore()
       InstanceService.createInstance.restore()
       done()
@@ -134,57 +129,23 @@ describe('InstanceForkService', function () {
       })
     })
 
-    it('should create a new context version', function (done) {
+    it('should call createAndBuildContextVersion', function (done) {
       InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(BuildService.createNewContextVersion)
+          sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)
           sinon.assert.calledWithExactly(
-            BuildService.createNewContextVersion,
+            BuildService.createAndBuildContextVersion,
             mockInstance,
-            {
-              repo: 'mockRepo',
-              branch: 'mockBranch',
-              commit: 'mockCommit',
-              user: { id: 'mockGithubId' }
-            }
-          )
-          done()
-        }
-      )
-    })
-
-    it('should create a runnable client', function (done) {
-      InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(Runnable.createClient)
-          sinon.assert.calledWithExactly(
-            Runnable.createClient,
-            {},
-            mockSessionUser
-          )
-          done()
-        }
-      )
-    })
-
-    it('should create and build a new build', function (done) {
-      InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockClient.createAndBuildBuild)
-          sinon.assert.calledWithExactly(
-            mockClient.createAndBuildBuild,
-            'newContextVersionId',
-            'instanceOwnerId',
-            'isolate',
             {
               'repo': 'mockRepo',
               'commit': 'mockCommit',
-              'branch': 'mockBranch'
+              'branch': 'mockBranch',
+              user: {
+                id: mockSessionUser.accounts.github.id
+              }
             },
-            sinon.match.func
+            'isolate'
           )
           done()
         }
@@ -493,7 +454,6 @@ describe('InstanceForkService', function () {
     var mockInstance
     var mockIsolationId = 'deadbeefdeadbeefdeadbeef'
     var mockSessionUser
-    var mockRunnableClient
     var mockNewContextVersion = { _id: 'beefdeadbeefdeadbeefdead' }
     var mockNewBuild = { _id: 'mockBuildId' }
     var mockNewInstanceModel = { _id: 'mockInstanceId', isModel: true } // for diff
@@ -511,11 +471,8 @@ describe('InstanceForkService', function () {
         }
       }
       sinon.stub(InstanceForkService, '_createNewNonRepoContextVersion').resolves(mockNewContextVersion)
-      mockRunnableClient = {
-        createBuild: sinon.stub().yieldsAsync(null, mockNewBuild),
-        buildBuild: sinon.stub().yieldsAsync(null, mockNewBuild)
-      }
-      sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
+      sinon.stub(BuildService, 'createBuild').resolves(mockNewBuild)
+      sinon.stub(BuildService, 'buildBuild').resolves(mockNewBuild)
       sinon.stub(Instance, 'findByIdAsync').resolves(mockNewInstanceModel)
       sinon.stub(InstanceService, 'createInstance').resolves(mockNewInstanceModel)
       done()
@@ -523,7 +480,8 @@ describe('InstanceForkService', function () {
 
     afterEach(function (done) {
       InstanceForkService._createNewNonRepoContextVersion.restore()
-      Runnable.createClient.restore()
+      BuildService.createBuild.restore()
+      BuildService.buildBuild.restore()
       InstanceService.createInstance.restore()
       Instance.findByIdAsync.restore()
       done()
@@ -605,7 +563,7 @@ describe('InstanceForkService', function () {
 
       it('should reject with any createBuild error', function (done) {
         var error = new Error('robot')
-        mockRunnableClient.createBuild.yieldsAsync(error)
+        BuildService.createBuild.rejects(error)
         InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -616,7 +574,7 @@ describe('InstanceForkService', function () {
 
       it('should reject with any buildBuild error', function (done) {
         var error = new Error('robot')
-        mockRunnableClient.buildBuild.yieldsAsync(error)
+        BuildService.buildBuild.rejects(error)
         InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -667,16 +625,14 @@ describe('InstanceForkService', function () {
       InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockRunnableClient.createBuild)
+          sinon.assert.calledOnce(BuildService.createBuild)
           sinon.assert.calledWithExactly(
-            mockRunnableClient.createBuild,
+            BuildService.createBuild,
             {
-              json: {
-                contextVersions: [ mockNewContextVersion._id ],
-                owner: { github: mockInstance.owner.github }
-              }
+              contextVersions: [ mockNewContextVersion._id ],
+              owner: { github: mockInstance.owner.github }
             },
-            sinon.match.func
+            mockSessionUser
           )
           done()
         })
@@ -686,35 +642,12 @@ describe('InstanceForkService', function () {
       InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockRunnableClient.buildBuild)
-          sinon.assert.calledWithExactly(
-            mockRunnableClient.buildBuild,
-            mockNewBuild,
-            {
-              json: {
-                message: 'Initial Isolation Build'
-              }
-            },
-            sinon.match.func
-          )
-          done()
-        })
-    })
-
-    it('should create a new instance with the new build', function (done) {
-      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockRunnableClient.buildBuild)
-          sinon.assert.calledWithExactly(
-            mockRunnableClient.buildBuild,
-            mockNewBuild,
-            {
-              json: {
-                message: 'Initial Isolation Build'
-              }
-            },
-            sinon.match.func
+          sinon.assert.calledOnce(BuildService.buildBuild)
+          sinon.assert.calledWith(
+            BuildService.buildBuild,
+            mockNewBuild._id,
+            { message: 'Initial Isolation Build' },
+            mockSessionUser
           )
           done()
         })
@@ -755,25 +688,14 @@ describe('InstanceForkService', function () {
         })
     })
 
-    it('should create the runnable clients with sessionUser', function (done) {
-      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
-        .asCallback(function (err, newInstance) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(Runnable.createClient)
-          sinon.assert.calledWithExactly(Runnable.createClient, {}, mockSessionUser)
-          done()
-        })
-    })
-
     it('should do all the things in the right order', function (done) {
       InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
-        .asCallback(function (err, newInstance) {
+        .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.callOrder(
             InstanceForkService._createNewNonRepoContextVersion,
-            Runnable.createClient,
-            mockRunnableClient.createBuild,
-            mockRunnableClient.buildBuild,
+            BuildService.createBuild,
+            BuildService.buildBuild,
             InstanceService.createInstance,
             Instance.findByIdAsync
           )

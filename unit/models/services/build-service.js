@@ -19,7 +19,6 @@ var ContextVersion = require('models/mongo/context-version')
 var ContextService = require('models/services/context-service')
 var PermissionService = require('models/services/permission-service')
 var User = require('models/mongo/user')
-var Runnable = require('models/apis/runnable')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -35,14 +34,14 @@ describe('BuildService', function () {
         _id: '507f1f77bcf86cd799439011'
       })
       sinon.stub(Build, 'findByIdAsync').resolves(ctx.build)
-      sinon.stub(PermisionService, 'ensureModelAccess').resolves()
+      sinon.stub(PermissionService, 'ensureModelAccess').resolves()
       done()
     })
 
     afterEach(function (done) {
       ctx = {}
       Build.findByIdAsync.restore()
-      PermisionService.ensureModelAccess.restore()
+      PermissionService.ensureModelAccess.restore()
       done()
     })
 
@@ -84,7 +83,7 @@ describe('BuildService', function () {
     })
 
     it('should fail if perm check failed', function (done) {
-      PermisionService.ensureModelAccess.rejects(new Error('Not an owner'))
+      PermissionService.ensureModelAccess.rejects(new Error('Not an owner'))
       BuildService.findBuild('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
@@ -112,12 +111,12 @@ describe('BuildService', function () {
       .asCallback(done)
     })
 
-    it('should call PermisionService.ensureModelAccess with correct params', function (done) {
+    it('should call PermissionService.ensureModelAccess with correct params', function (done) {
       var sessionUser = { _id: 'user-id' }
       BuildService.findBuild('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
-        sinon.assert.calledOnce(PermisionService.ensureModelAccess)
-        sinon.assert.calledWith(PermisionService.ensureModelAccess, sessionUser, ctx.build)
+        sinon.assert.calledOnce(PermissionService.ensureModelAccess)
+        sinon.assert.calledWith(PermissionService.ensureModelAccess, sessionUser, ctx.build)
       })
       .asCallback(done)
     })
@@ -128,7 +127,7 @@ describe('BuildService', function () {
       .then(function (build) {
         sinon.assert.callOrder(
           Build.findByIdAsync,
-          PermisionService.ensureModelAccess)
+          PermissionService.ensureModelAccess)
       })
       .asCallback(done)
     })
@@ -757,7 +756,6 @@ describe('BuildService', function () {
     var mockBuild = {
       _id: 'buildbeef'
     }
-    var mockRunnableClient
 
     beforeEach(function (done) {
       instance = {
@@ -776,9 +774,6 @@ describe('BuildService', function () {
           id: 'pushUserId'
         }
       }
-      mockRunnableClient = {
-        buildBuild: sinon.stub().yieldsAsync(null, mockBuild)
-      }
       mockInstanceUser = { accounts: { github: { accessToken: 'instanceUserGithubToken' } } }
       mockPushUser = { accounts: { github: { accessToken: 'pushUserGithubToken' } } }
       sinon.spy(BuildService, 'validatePushInfo')
@@ -787,7 +782,7 @@ describe('BuildService', function () {
       User.findByGithubId.withArgs('instanceCreatedById').yieldsAsync(null, mockInstanceUser)
       sinon.stub(BuildService, 'createNewContextVersion').resolves(mockContextVersion)
       sinon.stub(BuildService, 'createBuild').resolves(mockBuild)
-      sinon.stub(Runnable, 'createClient').returns(mockRunnableClient)
+      sinon.stub(BuildService, 'buildBuild').resolves(mockBuild)
       done()
     })
 
@@ -795,8 +790,8 @@ describe('BuildService', function () {
       BuildService.validatePushInfo.restore()
       User.findByGithubId.restore()
       BuildService.createNewContextVersion.restore()
+      BuildService.buildBuild.restore()
       BuildService.createBuild.restore()
-      Runnable.createClient.restore()
       done()
     })
 
@@ -920,35 +915,39 @@ describe('BuildService', function () {
             owner: {
               github: 'instanceOwnerId'
             }
-          }
+          },
+          mockPushUser
         )
-        sinon.assert.calledOnce(mockRunnableClient.buildBuild)
-        sinon.assert.calledWithExactly(
-          mockRunnableClient.buildBuild,
-          mockBuild, // 'deadbeef'
+        sinon.assert.calledOnce(BuildService.buildBuild)
+        sinon.assert.calledWith(
+          BuildService.buildBuild,
+          mockBuild._id, // 'deadbeef'
           {
-            json: {
-              message: 'autodeploy',
-              triggeredAction: {
-                manual: false,
-                appCodeVersion: pick(pushInfo, ['repo', 'branch', 'commit', 'commitLog'])
-              }
+            message: 'autodeploy',
+            triggeredAction: {
+              manual: false,
+              appCodeVersion: pick(pushInfo, ['repo', 'branch', 'commit', 'commitLog'])
             }
           },
-          sinon.match.func
+          mockPushUser
         )
         done()
       })
     })
 
     describe('building a new build', function () {
-      it('should use the push user to create the runnable client if available', function (done) {
+      it('should use the push user to create the build if available', function (done) {
         BuildService.createAndBuildContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err, result) {
           expect(err).to.not.exist()
-          sinon.assert.called(Runnable.createClient)
+          sinon.assert.calledOnce(BuildService.createBuild)
           sinon.assert.calledWithExactly(
-            Runnable.createClient,
-            {},
+            BuildService.createBuild,
+            {
+              contextVersion: mockContextVersion._id,
+              owner: {
+                github: 'instanceOwnerId'
+              }
+            },
             mockPushUser
           )
           expect(result.user).to.equal(mockPushUser)
@@ -956,14 +955,19 @@ describe('BuildService', function () {
           done()
         })
       })
-      it('should use the instance user to create the runnable client if pushUser not found', function (done) {
+      it('should use the instance user to create the build if pushUser not found', function (done) {
         User.findByGithubId.withArgs('pushUserId').yieldsAsync(null, null)
         BuildService.createAndBuildContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err, result) {
           expect(err).to.not.exist()
-          sinon.assert.called(Runnable.createClient)
+          sinon.assert.calledOnce(BuildService.createBuild)
           sinon.assert.calledWithExactly(
-            Runnable.createClient,
-            {},
+            BuildService.createBuild,
+            {
+              contextVersion: mockContextVersion._id,
+              owner: {
+                github: 'instanceOwnerId'
+              }
+            },
             mockInstanceUser
           )
           expect(result.user).to.equal(mockInstanceUser)
