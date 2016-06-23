@@ -1147,76 +1147,158 @@ describe('InstanceService', function () {
 
   describe('restartInstance', function () {
     beforeEach(function (done) {
-      sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').returns(Promise.resolve())
-      sinon.stub(Instance, 'markAsStartingAsync').returns(Promise.resolve())
-      sinon.stub(rabbitMQ, 'restartInstance').returns()
+      ctx = {}
+      ctx.sessionUser = {
+        accounts: {
+          github: {
+            id: 1228161
+          }
+        }
+      }
+      ctx.instance = mongoFactory.createNewInstance('testy', {})
+      sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').resolves(ctx.instance)
+      sinon.stub(Instance.prototype, 'populateModelsAsync').resolves(ctx.instance)
+      sinon.stub(Instance, 'findOneByShortHashAsync').resolves(ctx.instance)
+      sinon.stub(Instance, 'markAsStartingAsync').resolves(ctx.instance)
+      sinon.stub(rabbitMQ, 'restartInstance').resolves()
+      sinon.stub(PermisionService, 'ensureModelAccess').resolves()
       done()
     })
 
     afterEach(function (done) {
       Instance.prototype.isNotStartingOrStoppingAsync.restore()
+      Instance.prototype.populateModelsAsync.restore()
+      Instance.findOneByShortHashAsync.restore()
       Instance.markAsStartingAsync.restore()
       rabbitMQ.restartInstance.restore()
+      PermisionService.ensureModelAccess.restore()
       done()
     })
 
+    it('should fail if instance lookup failed', function (done) {
+      Instance.findOneByShortHashAsync.rejects(new Error('Mongo error'))
+      InstanceService.restartInstance('ab1', ctx.sessionUser)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Mongo error')
+        done()
+      })
+    })
+
+    it('should fail if instance was not found', function (done) {
+      Instance.findOneByShortHashAsync.resolves(null)
+      InstanceService.restartInstance('ab1', ctx.sessionUser)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.output.statusCode).to.equal(404)
+        expect(err.output.payload.message).to.equal('Instance not found')
+        done()
+      })
+    })
+
+    it('should fail if permissions failed', function (done) {
+      PermisionService.ensureModelAccess.rejects(new Error('Access denied'))
+      InstanceService.restartInstance('ab1', ctx.sessionUser)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Access denied')
+        done()
+      })
+    })
+
     it('should fail if instance has no container', function (done) {
-      InstanceService.restartInstance({}, 21331).asCallback(function (err) {
+      var instance = mongoFactory.createNewInstance('testy', {})
+      instance.container.dockerContainer = null
+      Instance.findOneByShortHashAsync.resolves(instance)
+      InstanceService.restartInstance('ab1', ctx.sessionUser)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
         expect(err.message).to.equal('Instance does not have a container')
-        sinon.assert.notCalled(Instance.prototype.isNotStartingOrStoppingAsync)
-        sinon.assert.notCalled(Instance.markAsStartingAsync)
-        sinon.assert.notCalled(rabbitMQ.restartInstance)
+        done()
+      })
+    })
+
+    it('should fail populateModelsAsync failed', function (done) {
+      var testErr = new Error('Mongo error')
+      Instance.prototype.populateModelsAsync.rejects(testErr)
+      InstanceService.restartInstance('ab1', ctx.sessionUser)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Mongo error')
         done()
       })
     })
 
     it('should fail isNotStartingOrStoppingAsync failed', function (done) {
       var testErr = new Error('Mongo error')
-      var rejectionPromise = Promise.reject(testErr)
-      rejectionPromise.suppressUnhandledRejections()
-      Instance.prototype.isNotStartingOrStoppingAsync.returns(rejectionPromise)
-      var instance = mongoFactory.createNewInstance('testy', {})
-      InstanceService.restartInstance(instance, 21331).asCallback(function (err) {
-        expect(err.message).to.equal(testErr.message)
-        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
-        sinon.assert.notCalled(Instance.markAsStartingAsync)
-        sinon.assert.notCalled(rabbitMQ.restartInstance)
+      Instance.prototype.isNotStartingOrStoppingAsync.rejects(testErr)
+      InstanceService.restartInstance('ab1', ctx.sessionUser)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Mongo error')
         done()
       })
     })
 
     it('should fail markAsStartingAsync failed', function (done) {
       var testErr = new Error('Mongo error')
-      var rejectionPromise = Promise.reject(testErr)
-      rejectionPromise.suppressUnhandledRejections()
-      Instance.markAsStartingAsync.returns(rejectionPromise)
-      var instance = mongoFactory.createNewInstance('testy', {})
-      InstanceService.restartInstance(instance, 21331).asCallback(function (err) {
-        expect(err.message).to.equal(testErr.message)
-        sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
-        sinon.assert.calledOnce(Instance.markAsStartingAsync)
-        sinon.assert.notCalled(rabbitMQ.restartInstance)
+      Instance.markAsStartingAsync.rejects(testErr)
+      InstanceService.restartInstance('ab1', ctx.sessionUser)
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Mongo error')
         done()
       })
     })
 
-    it('should pass if dependant calls pass', function (done) {
-      var instance = mongoFactory.createNewInstance('testy', {})
-      var sessionUserGithubId = 21331
-      Instance.markAsStartingAsync.returns(Promise.resolve(instance))
-      InstanceService.restartInstance(instance, sessionUserGithubId).asCallback(function (err) {
-        expect(err).to.not.exist()
+    it('should call all functions with correct args', function (done) {
+      InstanceService.restartInstance('ab1', ctx.sessionUser)
+      .tap(function (instance) {
+        sinon.assert.calledOnce(Instance.findOneByShortHashAsync)
+        sinon.assert.calledWith(Instance.findOneByShortHashAsync, 'ab1')
+        sinon.assert.calledOnce(PermisionService.ensureModelAccess)
+        sinon.assert.calledWith(PermisionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
+        sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
         sinon.assert.calledOnce(Instance.markAsStartingAsync)
+        sinon.assert.calledWith(Instance.markAsStartingAsync, ctx.instance._id, ctx.instance.container.dockerContainer)
         sinon.assert.calledOnce(rabbitMQ.restartInstance)
         sinon.assert.calledWith(rabbitMQ.restartInstance, {
-          containerId: instance.container.dockerContainer,
-          instanceId: instance._id.toString(),
-          sessionUserGithubId: sessionUserGithubId,
+          containerId: ctx.instance.container.dockerContainer,
+          instanceId: ctx.instance._id.toString(),
+          sessionUserGithubId: ctx.sessionUser.accounts.github.id,
           tid: null
         })
-        done()
       })
+      .asCallback(done)
+    })
+
+    it('should call all functions in order', function (done) {
+      InstanceService.restartInstance('ab1', ctx.sessionUser)
+      .tap(function (instance) {
+        sinon.assert.callOrder(
+          Instance.findOneByShortHashAsync,
+          PermisionService.ensureModelAccess,
+          Instance.prototype.populateModelsAsync,
+          Instance.prototype.isNotStartingOrStoppingAsync,
+          Instance.markAsStartingAsync,
+          rabbitMQ.restartInstance)
+      })
+      .asCallback(done)
     })
   })
 
