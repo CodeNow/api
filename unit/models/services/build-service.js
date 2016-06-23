@@ -535,7 +535,6 @@ describe('BuildService', function () {
   })
 
   describe('createBuild', function () {
-    var contextVersion
     var opts
     var mockContext
     var mockContextVersion
@@ -544,9 +543,6 @@ describe('BuildService', function () {
     var mockUser
 
     beforeEach(function (done) {
-      contextVersion = {
-        context: 'mockContextId'
-      }
       mockContext = {
         _id: 'sadfsdafsdfsdf',
         owner: {
