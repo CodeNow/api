@@ -1059,7 +1059,7 @@ describe('InstanceService', function () {
       ctx.instance = mongoFactory.createNewInstance('testy', {})
       sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').resolves(ctx.instance)
       sinon.stub(Instance.prototype, 'populateModelsAsync').resolves(ctx.instance)
-      sinon.stub(Instance, 'findOneByShortHashAsync').resolves(ctx.instance)
+      sinon.stub(InstanceService, 'findInstance').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStartingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'startInstanceContainer').resolves()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
@@ -1070,7 +1070,7 @@ describe('InstanceService', function () {
     afterEach(function (done) {
       Instance.prototype.isNotStartingOrStoppingAsync.restore()
       Instance.prototype.populateModelsAsync.restore()
-      Instance.findOneByShortHashAsync.restore()
+      InstanceService.findInstance.restore()
       Instance.markAsStartingAsync.restore()
       rabbitMQ.startInstanceContainer.restore()
       rabbitMQ.redeployInstanceContainer.restore()
@@ -1079,26 +1079,13 @@ describe('InstanceService', function () {
     })
 
     it('should fail if instance lookup failed', function (done) {
-      Instance.findOneByShortHashAsync.rejects(new Error('Mongo error'))
+      InstanceService.findInstance.rejects(new Error('Mongo error'))
       InstanceService.startInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
       .catch(function (err) {
         expect(err.message).to.equal('Mongo error')
-        done()
-      })
-    })
-
-    it('should fail if instance was not found', function (done) {
-      Instance.findOneByShortHashAsync.resolves(null)
-      InstanceService.startInstance('ab1', ctx.sessionUser)
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err.output.statusCode).to.equal(404)
-        expect(err.output.payload.message).to.equal('Instance not found')
         done()
       })
     })
@@ -1118,7 +1105,7 @@ describe('InstanceService', function () {
     it('should fail if instance has no container', function (done) {
       var instance = mongoFactory.createNewInstance('testy', {})
       instance.container.dockerContainer = null
-      Instance.findOneByShortHashAsync.resolves(instance)
+      InstanceService.findInstance.resolves(instance)
       InstanceService.startInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1171,8 +1158,8 @@ describe('InstanceService', function () {
     it('should call all functions with correct args', function (done) {
       InstanceService.startInstance('ab1', ctx.sessionUser)
       .tap(function (instance) {
-        sinon.assert.calledOnce(Instance.findOneByShortHashAsync)
-        sinon.assert.calledWith(Instance.findOneByShortHashAsync, 'ab1')
+        sinon.assert.calledOnce(InstanceService.findInstance)
+        sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
         sinon.assert.calledOnce(PermissionService.ensureModelAccess)
         sinon.assert.calledWith(PermissionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
         sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
@@ -1194,7 +1181,7 @@ describe('InstanceService', function () {
       InstanceService.startInstance('ab1', ctx.sessionUser)
       .tap(function (instance) {
         sinon.assert.callOrder(
-          Instance.findOneByShortHashAsync,
+          InstanceService.findInstance,
           PermissionService.ensureModelAccess,
           Instance.prototype.populateModelsAsync,
           Instance.prototype.isNotStartingOrStoppingAsync,
@@ -1235,7 +1222,7 @@ describe('InstanceService', function () {
       ctx.instance = mongoFactory.createNewInstance('testy', {})
       sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').resolves(ctx.instance)
       sinon.stub(Instance.prototype, 'populateModelsAsync').resolves(ctx.instance)
-      sinon.stub(Instance, 'findOneByShortHashAsync').resolves(ctx.instance)
+      sinon.stub(InstanceService, 'findInstance').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStartingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'restartInstance').resolves()
       sinon.stub(PermissionService, 'ensureModelAccess').resolves()
@@ -1245,7 +1232,7 @@ describe('InstanceService', function () {
     afterEach(function (done) {
       Instance.prototype.isNotStartingOrStoppingAsync.restore()
       Instance.prototype.populateModelsAsync.restore()
-      Instance.findOneByShortHashAsync.restore()
+      InstanceService.findInstance.restore()
       Instance.markAsStartingAsync.restore()
       rabbitMQ.restartInstance.restore()
       PermissionService.ensureModelAccess.restore()
@@ -1253,26 +1240,13 @@ describe('InstanceService', function () {
     })
 
     it('should fail if instance lookup failed', function (done) {
-      Instance.findOneByShortHashAsync.rejects(new Error('Mongo error'))
+      InstanceService.findInstance.rejects(new Error('Mongo error'))
       InstanceService.restartInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
       .catch(function (err) {
         expect(err.message).to.equal('Mongo error')
-        done()
-      })
-    })
-
-    it('should fail if instance was not found', function (done) {
-      Instance.findOneByShortHashAsync.resolves(null)
-      InstanceService.restartInstance('ab1', ctx.sessionUser)
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err.output.statusCode).to.equal(404)
-        expect(err.output.payload.message).to.equal('Instance not found')
         done()
       })
     })
@@ -1292,7 +1266,7 @@ describe('InstanceService', function () {
     it('should fail if instance has no container', function (done) {
       var instance = mongoFactory.createNewInstance('testy', {})
       instance.container.dockerContainer = null
-      Instance.findOneByShortHashAsync.resolves(instance)
+      InstanceService.findInstance.resolves(instance)
       InstanceService.restartInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1345,8 +1319,8 @@ describe('InstanceService', function () {
     it('should call all functions with correct args', function (done) {
       InstanceService.restartInstance('ab1', ctx.sessionUser)
       .tap(function (instance) {
-        sinon.assert.calledOnce(Instance.findOneByShortHashAsync)
-        sinon.assert.calledWith(Instance.findOneByShortHashAsync, 'ab1')
+        sinon.assert.calledOnce(InstanceService.findInstance)
+        sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
         sinon.assert.calledOnce(PermissionService.ensureModelAccess)
         sinon.assert.calledWith(PermissionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
         sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
@@ -1368,7 +1342,7 @@ describe('InstanceService', function () {
       InstanceService.restartInstance('ab1', ctx.sessionUser)
       .tap(function (instance) {
         sinon.assert.callOrder(
-          Instance.findOneByShortHashAsync,
+          InstanceService.findInstance,
           PermissionService.ensureModelAccess,
           Instance.prototype.populateModelsAsync,
           Instance.prototype.isNotStartingOrStoppingAsync,
@@ -1433,7 +1407,6 @@ describe('InstanceService', function () {
       })
       .asCallback(done)
     })
-
   })
 
   describe('stopInstance', function () {
@@ -1449,7 +1422,7 @@ describe('InstanceService', function () {
       ctx.instance = mongoFactory.createNewInstance('testy', {})
       sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').resolves(ctx.instance)
       sinon.stub(Instance.prototype, 'populateModelsAsync').resolves(ctx.instance)
-      sinon.stub(Instance, 'findOneByShortHashAsync').resolves(ctx.instance)
+      sinon.stub(InstanceService, 'findInstance').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStoppingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'stopInstanceContainer').resolves()
       sinon.stub(PermissionService, 'ensureModelAccess').resolves()
@@ -1459,7 +1432,7 @@ describe('InstanceService', function () {
     afterEach(function (done) {
       Instance.prototype.isNotStartingOrStoppingAsync.restore()
       Instance.prototype.populateModelsAsync.restore()
-      Instance.findOneByShortHashAsync.restore()
+      InstanceService.findInstance.restore()
       Instance.markAsStoppingAsync.restore()
       rabbitMQ.stopInstanceContainer.restore()
       PermissionService.ensureModelAccess.restore()
@@ -1467,26 +1440,13 @@ describe('InstanceService', function () {
     })
 
     it('should fail if instance lookup failed', function (done) {
-      Instance.findOneByShortHashAsync.rejects(new Error('Mongo error'))
+      InstanceService.findInstance.rejects(new Error('Mongo error'))
       InstanceService.stopInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
       .catch(function (err) {
         expect(err.message).to.equal('Mongo error')
-        done()
-      })
-    })
-
-    it('should fail if instance was not found', function (done) {
-      Instance.findOneByShortHashAsync.resolves(null)
-      InstanceService.stopInstance('ab1', ctx.sessionUser)
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err.output.statusCode).to.equal(404)
-        expect(err.output.payload.message).to.equal('Instance not found')
         done()
       })
     })
@@ -1506,7 +1466,7 @@ describe('InstanceService', function () {
     it('should fail if instance has no container', function (done) {
       var instance = mongoFactory.createNewInstance('testy', {})
       instance.container.dockerContainer = null
-      Instance.findOneByShortHashAsync.resolves(instance)
+      InstanceService.findInstance.resolves(instance)
       InstanceService.stopInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1559,8 +1519,8 @@ describe('InstanceService', function () {
     it('should call all functions with correct args', function (done) {
       InstanceService.stopInstance('ab1', ctx.sessionUser)
       .tap(function (instance) {
-        sinon.assert.calledOnce(Instance.findOneByShortHashAsync)
-        sinon.assert.calledWith(Instance.findOneByShortHashAsync, 'ab1')
+        sinon.assert.calledOnce(InstanceService.findInstance)
+        sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
         sinon.assert.calledOnce(PermissionService.ensureModelAccess)
         sinon.assert.calledWith(PermissionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
         sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
@@ -1582,7 +1542,7 @@ describe('InstanceService', function () {
       InstanceService.stopInstance('ab1', ctx.sessionUser)
       .tap(function (instance) {
         sinon.assert.callOrder(
-          Instance.findOneByShortHashAsync,
+          InstanceService.findInstance,
           PermissionService.ensureModelAccess,
           Instance.prototype.populateModelsAsync,
           Instance.prototype.isNotStartingOrStoppingAsync,
