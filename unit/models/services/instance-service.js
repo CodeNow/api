@@ -19,7 +19,7 @@ var Docker = require('models/apis/docker')
 var InstanceService = require('models/services/instance-service')
 var InstanceCounter = require('models/mongo/instance-counter')
 var Instance = require('models/mongo/instance')
-var PermisionService = require('models/services/permission-service')
+var PermissionService = require('models/services/permission-service')
 var User = require('models/mongo/user')
 var rabbitMQ = require('models/rabbitmq')
 var messenger = require('socket/messenger')
@@ -1063,7 +1063,7 @@ describe('InstanceService', function () {
       sinon.stub(Instance, 'markAsStartingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'startInstanceContainer').resolves()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
-      sinon.stub(PermisionService, 'ensureModelAccess').resolves()
+      sinon.stub(PermissionService, 'ensureModelAccess').resolves()
       done()
     })
 
@@ -1074,7 +1074,7 @@ describe('InstanceService', function () {
       Instance.markAsStartingAsync.restore()
       rabbitMQ.startInstanceContainer.restore()
       rabbitMQ.redeployInstanceContainer.restore()
-      PermisionService.ensureModelAccess.restore()
+      PermissionService.ensureModelAccess.restore()
       done()
     })
 
@@ -1104,7 +1104,7 @@ describe('InstanceService', function () {
     })
 
     it('should fail if permissions failed', function (done) {
-      PermisionService.ensureModelAccess.rejects(new Error('Access denied'))
+      PermissionService.ensureModelAccess.rejects(new Error('Access denied'))
       InstanceService.startInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1173,8 +1173,8 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.calledOnce(Instance.findOneByShortHashAsync)
         sinon.assert.calledWith(Instance.findOneByShortHashAsync, 'ab1')
-        sinon.assert.calledOnce(PermisionService.ensureModelAccess)
-        sinon.assert.calledWith(PermisionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
+        sinon.assert.calledOnce(PermissionService.ensureModelAccess)
+        sinon.assert.calledWith(PermissionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
         sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
         sinon.assert.calledOnce(Instance.markAsStartingAsync)
@@ -1195,7 +1195,7 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.callOrder(
           Instance.findOneByShortHashAsync,
-          PermisionService.ensureModelAccess,
+          PermissionService.ensureModelAccess,
           Instance.prototype.populateModelsAsync,
           Instance.prototype.isNotStartingOrStoppingAsync,
           Instance.markAsStartingAsync,
@@ -1238,7 +1238,7 @@ describe('InstanceService', function () {
       sinon.stub(Instance, 'findOneByShortHashAsync').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStartingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'restartInstance').resolves()
-      sinon.stub(PermisionService, 'ensureModelAccess').resolves()
+      sinon.stub(PermissionService, 'ensureModelAccess').resolves()
       done()
     })
 
@@ -1248,7 +1248,7 @@ describe('InstanceService', function () {
       Instance.findOneByShortHashAsync.restore()
       Instance.markAsStartingAsync.restore()
       rabbitMQ.restartInstance.restore()
-      PermisionService.ensureModelAccess.restore()
+      PermissionService.ensureModelAccess.restore()
       done()
     })
 
@@ -1278,7 +1278,7 @@ describe('InstanceService', function () {
     })
 
     it('should fail if permissions failed', function (done) {
-      PermisionService.ensureModelAccess.rejects(new Error('Access denied'))
+      PermissionService.ensureModelAccess.rejects(new Error('Access denied'))
       InstanceService.restartInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1347,8 +1347,8 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.calledOnce(Instance.findOneByShortHashAsync)
         sinon.assert.calledWith(Instance.findOneByShortHashAsync, 'ab1')
-        sinon.assert.calledOnce(PermisionService.ensureModelAccess)
-        sinon.assert.calledWith(PermisionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
+        sinon.assert.calledOnce(PermissionService.ensureModelAccess)
+        sinon.assert.calledWith(PermissionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
         sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
         sinon.assert.calledOnce(Instance.markAsStartingAsync)
@@ -1369,7 +1369,7 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.callOrder(
           Instance.findOneByShortHashAsync,
-          PermisionService.ensureModelAccess,
+          PermissionService.ensureModelAccess,
           Instance.prototype.populateModelsAsync,
           Instance.prototype.isNotStartingOrStoppingAsync,
           Instance.markAsStartingAsync,
@@ -1395,7 +1395,7 @@ describe('InstanceService', function () {
       sinon.stub(Instance, 'findOneByShortHashAsync').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStoppingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'stopInstanceContainer').resolves()
-      sinon.stub(PermisionService, 'ensureModelAccess').resolves()
+      sinon.stub(PermissionService, 'ensureModelAccess').resolves()
       done()
     })
 
@@ -1405,7 +1405,7 @@ describe('InstanceService', function () {
       Instance.findOneByShortHashAsync.restore()
       Instance.markAsStoppingAsync.restore()
       rabbitMQ.stopInstanceContainer.restore()
-      PermisionService.ensureModelAccess.restore()
+      PermissionService.ensureModelAccess.restore()
       done()
     })
 
@@ -1435,7 +1435,7 @@ describe('InstanceService', function () {
     })
 
     it('should fail if permissions failed', function (done) {
-      PermisionService.ensureModelAccess.rejects(new Error('Access denied'))
+      PermissionService.ensureModelAccess.rejects(new Error('Access denied'))
       InstanceService.stopInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1504,8 +1504,8 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.calledOnce(Instance.findOneByShortHashAsync)
         sinon.assert.calledWith(Instance.findOneByShortHashAsync, 'ab1')
-        sinon.assert.calledOnce(PermisionService.ensureModelAccess)
-        sinon.assert.calledWith(PermisionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
+        sinon.assert.calledOnce(PermissionService.ensureModelAccess)
+        sinon.assert.calledWith(PermissionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
         sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
         sinon.assert.calledOnce(Instance.prototype.isNotStartingOrStoppingAsync)
         sinon.assert.calledOnce(Instance.markAsStoppingAsync)
@@ -1526,7 +1526,7 @@ describe('InstanceService', function () {
       .tap(function (instance) {
         sinon.assert.callOrder(
           Instance.findOneByShortHashAsync,
-          PermisionService.ensureModelAccess,
+          PermissionService.ensureModelAccess,
           Instance.prototype.populateModelsAsync,
           Instance.prototype.isNotStartingOrStoppingAsync,
           Instance.markAsStoppingAsync,
