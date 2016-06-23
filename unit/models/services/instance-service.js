@@ -1379,6 +1379,63 @@ describe('InstanceService', function () {
     })
   })
 
+  describe('findInstance', function () {
+    beforeEach(function (done) {
+      ctx = {}
+      ctx.instance = mongoFactory.createNewInstance('testy', {})
+      sinon.stub(Instance, 'findOneByShortHashAsync').resolves(ctx.instance)
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneByShortHashAsync.restore()
+      done()
+    })
+
+    it('should fail if instance lookup failed', function (done) {
+      Instance.findOneByShortHashAsync.rejects(new Error('Mongo error'))
+      InstanceService.findInstance('ab1')
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Mongo error')
+        done()
+      })
+    })
+
+    it('should fail if instance was not found', function (done) {
+      Instance.findOneByShortHashAsync.resolves(null)
+      InstanceService.findInstance('ab1')
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.output.statusCode).to.equal(404)
+        expect(err.output.payload.message).to.equal('Instance not found')
+        done()
+      })
+    })
+
+    it('should return instance if found', function (done) {
+      InstanceService.findInstance('ab1')
+      .then(function (instance) {
+        expect(instance._id).to.equal(ctx.instance._id)
+      })
+      .asCallback(done)
+    })
+
+    it('should call findOneByShortHashAsync with correct params', function (done) {
+      InstanceService.findInstance('ab1')
+      .then(function (instance) {
+        sinon.assert.calledOnce(Instance.findOneByShortHashAsync)
+        sinon.assert.calledWith(Instance.findOneByShortHashAsync, 'ab1')
+      })
+      .asCallback(done)
+    })
+
+  })
+
   describe('stopInstance', function () {
     beforeEach(function (done) {
       ctx = {}
