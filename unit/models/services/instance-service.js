@@ -1801,14 +1801,14 @@ describe('InstanceService', function () {
           }
         }
       }
-      sinon.stub(Instance.prototype, 'isNotStartingOrStoppingAsync').returns(true)
+      sinon.stub(Instance.prototype, 'assertNotStartingOrStopping').returns(true)
       sinon.stub(Instance, 'markAsStoppingAsync').resolves(mockInstance)
       sinon.stub(rabbitMQ, 'killInstanceContainer')
       done()
     })
 
     afterEach(function (done) {
-      Instance.prototype.isNotStartingOrStoppingAsync.restore()
+      Instance.prototype.assertNotStartingOrStopping.restore()
       Instance.markAsStoppingAsync.restore()
       rabbitMQ.killInstanceContainer.restore()
       done()
@@ -1816,7 +1816,7 @@ describe('InstanceService', function () {
 
     it('should fail if instance.assertNotStartingOrStopping fails', function (done) {
       var error = new Error('notStartingOrStopping error')
-      Instance.prototype.isNotStartingOrStoppingAsync.rejects(error)
+      Instance.prototype.assertNotStartingOrStopping.throws(error)
       InstanceService.killInstance(mockInstance)
         .asCallback(function (err) {
           expect(err).to.exist()
