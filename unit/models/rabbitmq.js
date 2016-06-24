@@ -218,14 +218,12 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       ctx.validJobData = {
         containerId: '123',
         instanceId: '55555',
-        sessionUserGithubId: '9494949',
-        tid: '000000'
+        sessionUserGithubId: '9494949'
       }
       // missing containerId
       ctx.invalidJobData = {
         instanceId: '55555',
-        sessionUserGithubId: '9494949',
-        tid: '000000'
+        sessionUserGithubId: '9494949'
       }
       done()
     })
