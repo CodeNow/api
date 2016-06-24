@@ -1171,7 +1171,7 @@ describe('InstanceService', function () {
           containerId: ctx.instance.container.dockerContainer,
           instanceId: ctx.instance._id.toString(),
           sessionUserGithubId: ctx.sessionUser.accounts.github.id,
-          tid: null
+          tid: sinon.match.string
         })
       })
       .asCallback(done)
