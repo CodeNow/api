@@ -171,6 +171,5 @@ describe('auth/whitelist unit test: ', function () {
           done()
         })
     })
-
   })
 })
