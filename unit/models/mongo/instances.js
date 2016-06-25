@@ -47,7 +47,6 @@ describe('Instance Model Tests', function () {
     done()
   })
   describe('assertNotStartingOrStopping', function () {
-
     it('should error if no container', function (done) {
       var instance = mongoFactory.createNewInstance('no-container')
       instance.container = {}
