@@ -8,7 +8,7 @@ var Promise = require('bluebird')
 var rabbitMQ = require('models/rabbitmq')
 var sinon = require('sinon')
 var userWhitelist = require('models/mongo/user-whitelist')
-var whitelistModel = require('models/auth/whitelist')
+var whitelistService = require('models/services/whitelist-service')
 
 var lab = exports.lab = Lab.script()
 var afterEach = lab.afterEach
@@ -68,7 +68,7 @@ describe('auth/whitelist unit test: ', function () {
     })
 
     it('should fail if no org name is passed in', function (done) {
-      whitelistModel.createWhitelist(null, {})
+      whitelistService.createWhitelist(null, {})
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.isBoom).to.be.true()
@@ -79,7 +79,7 @@ describe('auth/whitelist unit test: ', function () {
     })
 
     it('should fail if no session user is passed in', function (done) {
-      whitelistModel.createWhitelist(mockOrgName, null)
+      whitelistService.createWhitelist(mockOrgName, null)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.isBoom).to.be.true()
@@ -90,7 +90,7 @@ describe('auth/whitelist unit test: ', function () {
     })
 
     it('should fail if session user does not have a github token', function (done) {
-      whitelistModel.createWhitelist(mockOrgName, {})
+      whitelistService.createWhitelist(mockOrgName, {})
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.isBoom).to.be.true()
@@ -102,7 +102,7 @@ describe('auth/whitelist unit test: ', function () {
 
     it('should fail if the user does not have access to the organization', function (done) {
       Github.prototype.getUserAuthorizedOrgsAsync.resolves([{login: 'Foo'}])
-      whitelistModel.createWhitelist(mockOrgName, mockSessionUser)
+      whitelistService.createWhitelist(mockOrgName, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.isBoom).to.be.true()
@@ -115,7 +115,7 @@ describe('auth/whitelist unit test: ', function () {
     it('should fail if the user is an administrator and the org does not exist', function (done) {
       Github.prototype.getUserAuthorizedOrgsAsync.resolves([{login: 'CodeNow'}])
       Github.prototype.getUserByUsernameAsync.resolves(undefined)
-      whitelistModel.createWhitelist(mockOrgName, mockSessionUser)
+      whitelistService.createWhitelist(mockOrgName, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.isBoom).to.be.true()
@@ -128,7 +128,7 @@ describe('auth/whitelist unit test: ', function () {
     it('should pass if the user does not have access to the organization but is in the CodeNow org', function (done) {
       Github.prototype.getUserAuthorizedOrgsAsync.resolves([{login: 'CodeNow'}])
       Github.prototype.getUserByUsernameAsync.resolves(mockGithubOrg)
-      whitelistModel.createWhitelist(mockOrgName, mockSessionUser)
+      whitelistService.createWhitelist(mockOrgName, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Github.prototype.getUserByUsernameAsync)
@@ -138,7 +138,7 @@ describe('auth/whitelist unit test: ', function () {
     })
 
     it('should create a user whitelist entry with firstDockCreated set to false', function (done) {
-      whitelistModel.createWhitelist(mockOrgName, mockSessionUser)
+      whitelistService.createWhitelist(mockOrgName, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(userWhitelist.createAsync)
@@ -153,7 +153,7 @@ describe('auth/whitelist unit test: ', function () {
     })
 
     it('should create a user in intercom', function (done) {
-      whitelistModel.createWhitelist(mockOrgName, mockSessionUser)
+      whitelistService.createWhitelist(mockOrgName, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(orion.users.create)
