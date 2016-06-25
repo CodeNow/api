@@ -11,7 +11,7 @@ var expect = require('code').expect
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
-var PermisionService = require('models/services/permission-service')
+var PermissionService = require('models/services/permission-service')
 var Settings = require('models/mongo/settings')
 var SettingsService = require('models/services/settings-service')
 
@@ -26,12 +26,12 @@ describe('SettingsService', function () {
   describe('createNew', function (done) {
     beforeEach(function (done) {
       sinon.stub(Settings, 'createAsync').returns({})
-      sinon.stub(PermisionService, 'isOwnerOf').returns({})
+      sinon.stub(PermissionService, 'isOwnerOf').returns({})
       done()
     })
     afterEach(function (done) {
       Settings.createAsync.restore()
-      PermisionService.isOwnerOf.restore()
+      PermissionService.isOwnerOf.restore()
       done()
     })
 
@@ -189,7 +189,7 @@ describe('SettingsService', function () {
         },
         ignoredHelpCards: []
       }
-      PermisionService.isOwnerOf.rejects(new Error('Perm error'))
+      PermissionService.isOwnerOf.rejects(new Error('Perm error'))
       SettingsService.createNew(sessionUser, payload)
       .then(function () {
         done(new Error('Should fail'))
@@ -212,8 +212,8 @@ describe('SettingsService', function () {
       }
       SettingsService.createNew(sessionUser, payload)
         .tap(function () {
-          sinon.assert.calledOnce(PermisionService.isOwnerOf)
-          sinon.assert.calledWith(PermisionService.isOwnerOf, sessionUser, payload)
+          sinon.assert.calledOnce(PermissionService.isOwnerOf)
+          sinon.assert.calledWith(PermissionService.isOwnerOf, sessionUser, payload)
         })
         .asCallback(done)
     })
@@ -249,7 +249,7 @@ describe('SettingsService', function () {
       SettingsService.createNew(sessionUser, payload)
         .tap(function () {
           sinon.assert.callOrder(
-            PermisionService.isOwnerOf,
+            PermissionService.isOwnerOf,
             Settings.createAsync)
         })
         .asCallback(done)
