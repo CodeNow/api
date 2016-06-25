@@ -1058,7 +1058,6 @@ describe('InstanceService', function () {
       }
       ctx.instance = mongoFactory.createNewInstance('testy', {})
       sinon.stub(Instance.prototype, 'assertNotStartingOrStopping').returns(true)
-      sinon.stub(Instance.prototype, 'populateModelsAsync').resolves(ctx.instance)
       sinon.stub(InstanceService, 'findInstance').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStartingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'startInstanceContainer').resolves()
@@ -1069,7 +1068,6 @@ describe('InstanceService', function () {
 
     afterEach(function (done) {
       Instance.prototype.assertNotStartingOrStopping.restore()
-      Instance.prototype.populateModelsAsync.restore()
       InstanceService.findInstance.restore()
       Instance.markAsStartingAsync.restore()
       rabbitMQ.startInstanceContainer.restore()
@@ -1116,19 +1114,6 @@ describe('InstanceService', function () {
       })
     })
 
-    it('should fail populateModelsAsync failed', function (done) {
-      var testErr = new Error('Mongo error')
-      Instance.prototype.populateModelsAsync.rejects(testErr)
-      InstanceService.startInstance('ab1', ctx.sessionUser)
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err.message).to.equal('Mongo error')
-        done()
-      })
-    })
-
     it('should fail assertNotStartingOrStopping failed', function (done) {
       var testErr = new Error('Mongo error')
       Instance.prototype.assertNotStartingOrStopping.throws(testErr)
@@ -1162,7 +1147,6 @@ describe('InstanceService', function () {
         sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
         sinon.assert.calledOnce(PermissionService.ensureOwnerOrModerator)
         sinon.assert.calledWith(PermissionService.ensureOwnerOrModerator, ctx.sessionUser, ctx.instance)
-        sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
         sinon.assert.calledOnce(Instance.prototype.assertNotStartingOrStopping)
         sinon.assert.calledOnce(Instance.markAsStartingAsync)
         sinon.assert.calledWith(Instance.markAsStartingAsync, ctx.instance._id, ctx.instance.container.dockerContainer)
@@ -1183,7 +1167,6 @@ describe('InstanceService', function () {
         sinon.assert.callOrder(
           InstanceService.findInstance,
           PermissionService.ensureOwnerOrModerator,
-          Instance.prototype.populateModelsAsync,
           Instance.prototype.assertNotStartingOrStopping,
           Instance.markAsStartingAsync,
           rabbitMQ.startInstanceContainer)
@@ -1193,7 +1176,7 @@ describe('InstanceService', function () {
 
     it('should call redeploy', function (done) {
       var instance = mongoFactory.createNewInstance('testy', { dockRemoved: true })
-      Instance.prototype.populateModelsAsync.resolves(instance)
+      InstanceService.findInstance.resolves(instance)
       InstanceService.startInstance('ab1', ctx.sessionUser)
       .tap(function (instance) {
         sinon.assert.calledOnce(Instance.prototype.assertNotStartingOrStopping)
@@ -1221,7 +1204,6 @@ describe('InstanceService', function () {
       }
       ctx.instance = mongoFactory.createNewInstance('testy', {})
       sinon.stub(Instance.prototype, 'assertNotStartingOrStopping').returns(true)
-      sinon.stub(Instance.prototype, 'populateModelsAsync').resolves(ctx.instance)
       sinon.stub(InstanceService, 'findInstance').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStartingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'restartInstance').resolves()
@@ -1231,7 +1213,6 @@ describe('InstanceService', function () {
 
     afterEach(function (done) {
       Instance.prototype.assertNotStartingOrStopping.restore()
-      Instance.prototype.populateModelsAsync.restore()
       InstanceService.findInstance.restore()
       Instance.markAsStartingAsync.restore()
       rabbitMQ.restartInstance.restore()
@@ -1277,19 +1258,6 @@ describe('InstanceService', function () {
       })
     })
 
-    it('should fail populateModelsAsync failed', function (done) {
-      var testErr = new Error('Mongo error')
-      Instance.prototype.populateModelsAsync.rejects(testErr)
-      InstanceService.restartInstance('ab1', ctx.sessionUser)
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err.message).to.equal('Mongo error')
-        done()
-      })
-    })
-
     it('should fail assertNotStartingOrStopping failed', function (done) {
       var testErr = new Error('Mongo error')
       Instance.prototype.assertNotStartingOrStopping.throws(testErr)
@@ -1323,7 +1291,6 @@ describe('InstanceService', function () {
         sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
         sinon.assert.calledOnce(PermissionService.ensureOwnerOrModerator)
         sinon.assert.calledWith(PermissionService.ensureOwnerOrModerator, ctx.sessionUser, ctx.instance)
-        sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
         sinon.assert.calledOnce(Instance.prototype.assertNotStartingOrStopping)
         sinon.assert.calledOnce(Instance.markAsStartingAsync)
         sinon.assert.calledWith(Instance.markAsStartingAsync, ctx.instance._id, ctx.instance.container.dockerContainer)
@@ -1344,7 +1311,6 @@ describe('InstanceService', function () {
         sinon.assert.callOrder(
           InstanceService.findInstance,
           PermissionService.ensureOwnerOrModerator,
-          Instance.prototype.populateModelsAsync,
           Instance.prototype.assertNotStartingOrStopping,
           Instance.markAsStartingAsync,
           rabbitMQ.restartInstance)
@@ -1421,7 +1387,6 @@ describe('InstanceService', function () {
       }
       ctx.instance = mongoFactory.createNewInstance('testy', {})
       sinon.stub(Instance.prototype, 'assertNotStartingOrStopping').returns(true)
-      sinon.stub(Instance.prototype, 'populateModelsAsync').resolves(ctx.instance)
       sinon.stub(InstanceService, 'findInstance').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStoppingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'stopInstanceContainer').resolves()
@@ -1431,7 +1396,6 @@ describe('InstanceService', function () {
 
     afterEach(function (done) {
       Instance.prototype.assertNotStartingOrStopping.restore()
-      Instance.prototype.populateModelsAsync.restore()
       InstanceService.findInstance.restore()
       Instance.markAsStoppingAsync.restore()
       rabbitMQ.stopInstanceContainer.restore()
@@ -1477,19 +1441,6 @@ describe('InstanceService', function () {
       })
     })
 
-    it('should fail populateModelsAsync failed', function (done) {
-      var testErr = new Error('Mongo error')
-      Instance.prototype.populateModelsAsync.rejects(testErr)
-      InstanceService.stopInstance('ab1', ctx.sessionUser)
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err.message).to.equal('Mongo error')
-        done()
-      })
-    })
-
     it('should fail assertNotStartingOrStopping failed', function (done) {
       var testErr = new Error('Mongo error')
       Instance.prototype.assertNotStartingOrStopping.throws(testErr)
@@ -1523,7 +1474,6 @@ describe('InstanceService', function () {
         sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
         sinon.assert.calledOnce(PermissionService.ensureOwnerOrModerator)
         sinon.assert.calledWith(PermissionService.ensureOwnerOrModerator, ctx.sessionUser, ctx.instance)
-        sinon.assert.calledOnce(Instance.prototype.populateModelsAsync)
         sinon.assert.calledOnce(Instance.prototype.assertNotStartingOrStopping)
         sinon.assert.calledOnce(Instance.markAsStoppingAsync)
         sinon.assert.calledWith(Instance.markAsStoppingAsync, ctx.instance._id, ctx.instance.container.dockerContainer)
@@ -1544,7 +1494,6 @@ describe('InstanceService', function () {
         sinon.assert.callOrder(
           InstanceService.findInstance,
           PermissionService.ensureOwnerOrModerator,
-          Instance.prototype.populateModelsAsync,
           Instance.prototype.assertNotStartingOrStopping,
           Instance.markAsStoppingAsync,
           rabbitMQ.stopInstanceContainer)
