@@ -47,11 +47,7 @@ describe('Instance Model Tests', function () {
     done()
   })
   describe('assertNotStartingOrStopping', function () {
-    it('should not error if container is not starting or stopping', function (done) {
-      var instance = mongoFactory.createNewInstance('container-not-starting-or-stopping')
-      expect(instance.assertNotStartingOrStopping()).to.not.exist()
-      done()
-    })
+
     it('should error if no container', function (done) {
       var instance = mongoFactory.createNewInstance('no-container')
       instance.container = {}
@@ -63,6 +59,7 @@ describe('Instance Model Tests', function () {
         done()
       }
     })
+
     it('should error if container starting', function (done) {
       var instance = mongoFactory.createNewInstance('container-starting')
       instance.container.inspect.State.Starting = true
@@ -74,6 +71,7 @@ describe('Instance Model Tests', function () {
         done()
       }
     })
+
     it('should error if container stopping', function (done) {
       var instance = mongoFactory.createNewInstance('container-stopping')
       instance.container.inspect.State.Stopping = true
@@ -84,6 +82,13 @@ describe('Instance Model Tests', function () {
         expect(err.message).to.equal('Instance is already stopping')
         done()
       }
+    })
+
+    it('should return instance itself', function (done) {
+      var instance = mongoFactory.createNewInstance('container-stopping')
+      var result = instance.assertNotStartingOrStopping()
+      expect(result).to.equal(instance)
+      done()
     })
   })
 
