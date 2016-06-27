@@ -34,15 +34,12 @@ describe('GET /auth/whitelist/:name', function () {
   })
   beforeEach(function (done) {
     ctx.name = randStr(5)
-    beforeEach(function (done) {
-      ctx.name = randStr(5)
-      MongoWhitelist.create({
-        name: ctx.name,
-        lowerName: ctx.name.toLowerCase(),
-        githubId: 2828361,
-        allowed: true
-      }, done)
-    })
+    MongoWhitelist.create({
+      name: ctx.name,
+      lowerName: ctx.name.toLowerCase(),
+      githubId: 2828361,
+      allowed: true
+    }, done)
   })
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
 

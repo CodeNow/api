@@ -49,7 +49,6 @@ describe('GET /auth/whitelist/', function () {
   describe('User with whitelisted orgs', function () {
     beforeEach(function (done) {
       require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
-      require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
       ctx.name = randStr(5)
       return whitelistOrgs([ctx.name, 'Runnable'])
         .asCallback(done)
