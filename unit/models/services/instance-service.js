@@ -500,7 +500,7 @@ describe('InstanceService', function () {
       ctx.containerId = ctx.instance.container.dockerContainer
       sinon.spy(Instance.prototype, 'invalidateContainerDNS')
       sinon.stub(Instance, 'findOneAsync').resolves(ctx.instance)
-      sinon.stub(InstanceService, 'updateContainerInspect').yieldsAsync(null, ctx.instance)
+      sinon.stub(InstanceService, 'updateContainerInspect').resolves(ctx.instance)
       done()
     })
 
@@ -547,7 +547,7 @@ describe('InstanceService', function () {
 
     it('should return an error if updateContainerInspect failed', function (done) {
       var mongoErr = new Error('Mongo error')
-      InstanceService.updateContainerInspect.yieldsAsync(mongoErr)
+      InstanceService.updateContainerInspect.rejects(mongoErr)
       InstanceService.modifyExistingContainerInspect(ctx.instance._id, ctx.containerId, ctx.inspect, '127.0.0.1')
         .asCallback(function (err) {
           expect(err.message).to.equal('Mongo error')

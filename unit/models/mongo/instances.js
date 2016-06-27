@@ -592,7 +592,7 @@ describe('Instance Model Tests', function () {
 
     beforeEach(function (done) {
       instance = mongoFactory.createNewInstance('wooosh')
-      sinon.spy(instance, 'invalidateContainerDNS')
+      sinon.stub(instance, 'invalidateContainerDNS').resolves()
       done()
     })
 
