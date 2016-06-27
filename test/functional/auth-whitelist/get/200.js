@@ -12,6 +12,7 @@ var Code = require('code')
 var expect = Code.expect
 
 var api = require('../../fixtures/api-control')
+var MongoWhitelist = require('models/mongo/user-whitelist')
 
 var Promise = require('bluebird')
 var request = require('request')
@@ -23,19 +24,12 @@ describe('GET /auth/whitelist/', function () {
   after(api.stop.bind(ctx))
 
   var whitelistOrgs = function (orgNames) {
-    var getOpts = function (name) {
-      return {
-        method: 'POST',
-        url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
-        json: true,
-        body: { name: name },
-        jar: ctx.j
-      }
-    }
     return Promise.all(orgNames.map(function (orgName) {
-      require('../../fixtures/mocks/github/users-username')(2828361, orgName)
-      return Promise.fromCallback(function (cb) {
-        return request(getOpts(orgName), cb)
+      return MongoWhitelist.createAsync({
+        name: orgName,
+        lowerName: orgName.toLowerCase(),
+        githubId: 2828361,
+        allowed: true
       })
     }))
   }

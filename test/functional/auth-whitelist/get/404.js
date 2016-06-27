@@ -12,6 +12,7 @@ var Code = require('code')
 var expect = Code.expect
 
 var api = require('../../fixtures/api-control')
+var MongoWhitelist = require('models/mongo/user-whitelist')
 
 var request = require('request')
 var uuid = require('uuid')
@@ -32,17 +33,16 @@ describe('GET /auth/whitelist/:name', function () {
     })
   })
   beforeEach(function (done) {
-    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
     ctx.name = randStr(5)
-    require('../../fixtures/mocks/github/users-username')(2828361, ctx.name)
-    var opts = {
-      method: 'POST',
-      url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
-      json: true,
-      body: { name: ctx.name },
-      jar: ctx.j
-    }
-    request(opts, done)
+    beforeEach(function (done) {
+      ctx.name = randStr(5)
+      MongoWhitelist.create({
+        name: ctx.name,
+        lowerName: ctx.name.toLowerCase(),
+        githubId: 2828361,
+        allowed: true
+      }, done)
+    })
   })
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
 
