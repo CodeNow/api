@@ -1612,13 +1612,13 @@ describe('Instance Model Integration Tests', function () {
       var dependant = mongoFactory.createNewInstance('splooosh')
 
       beforeEach(function (done) {
-        sinon.spy(instance, 'invalidateContainerDNS')
+        sinon.spy(Instance, 'invalidateContainerDNS')
         sinon.stub(async, 'series').yieldsAsync()
         done()
       })
 
       afterEach(function (done) {
-        instance.invalidateContainerDNS.restore()
+        Instance.invalidateContainerDNS.restore()
         async.series.restore()
         done()
       })
@@ -1626,7 +1626,7 @@ describe('Instance Model Integration Tests', function () {
       it('should invalidate dns cache entries', function (done) {
         instance.addDependency(dependant, 'wooo.com', function (err) {
           if (err) { done(err) }
-          expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
+          expect(Instance.invalidateContainerDNS.calledTwice).to.be.true()
           done()
         })
       })
