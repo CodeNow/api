@@ -3,15 +3,17 @@
  */
 'use strict'
 
-var Promise = require('bluebird')
 var clone = require('101/clone')
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
 var Code = require('code')
 var sinon = require('sinon')
+require('sinon-as-promised')(require('bluebird'))
 
+var Boom = require('dat-middleware').Boom
 var ContextVersion = require('models/mongo/context-version')
+var Docker = require('models/apis/docker')
 var InstanceContainerCreated = require('workers/instance.container.created')
 var InstanceService = require('models/services/instance-service')
 var TaskFatalError = require('ponos').TaskFatalError
@@ -57,9 +59,10 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
       }
     }
     ctx.cv = new ContextVersion({ _id: '123' })
-    sinon.stub(ContextVersion, 'recoverAsync').returns(Promise.resolve(ctx.cv))
+    sinon.stub(ContextVersion, 'recoverAsync').resolves(ctx.cv)
     sinon.stub(InstanceService, 'updateContainerInspect').yieldsAsync(null, ctx.mockInstance)
-    sinon.stub(InstanceService, 'startInstance').returns(Promise.resolve(ctx.mockInstance))
+    sinon.stub(InstanceService, 'startInstance').resolves(ctx.mockInstance)
+    sinon.stub(Docker.prototype, 'removeContainerAsync').resolves(null)
     done()
   })
 
@@ -67,6 +70,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
     ContextVersion.recoverAsync.restore()
     InstanceService.updateContainerInspect.restore()
     InstanceService.startInstance.restore()
+    Docker.prototype.removeContainerAsync.restore()
     done()
   })
 
@@ -113,6 +117,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         done()
       })
     })
+
     it('should fail if validation failed: {}', function (done) {
       InstanceContainerCreated({}).asCallback(function (err) {
         expect(err).to.exist()
@@ -124,6 +129,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         done()
       })
     })
+
     it('should fail if validation failed: no labels', function (done) {
       var data = clone(ctx.data)
       data.inspectData.Config.Labels = null
@@ -137,11 +143,10 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         done()
       })
     })
+
     it('should callback with error if context version fetch failed', function (done) {
       var mongoError = new Error('Mongo error')
-      var rejectionPromise = Promise.reject(mongoError)
-      rejectionPromise.suppressUnhandledRejections()
-      ContextVersion.recoverAsync.returns(rejectionPromise)
+      ContextVersion.recoverAsync.rejects(mongoError)
       InstanceContainerCreated(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
@@ -152,6 +157,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         done()
       })
     })
+
     it('should fail if updateContainerInspect failed', function (done) {
       var mongoError = new Error('Mongo error')
       InstanceService.updateContainerInspect.yieldsAsync(mongoError)
@@ -182,11 +188,21 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         done()
       })
     })
+
+    it('should delete the container if it got a 409', function (done) {
+      var updateConflict = Boom.conflict("Container was not updated, instance's container has changed")
+      InstanceService.updateContainerInspect.yieldsAsync(updateConflict)
+      InstanceContainerCreated(ctx.data).asCallback(function (err) {
+        expect(err).to.exist()
+        sinon.assert.calledOnce(Docker.prototype.removeContainerAsync)
+        sinon.assert.calledWith(Docker.prototype.removeContainerAsync, ctx.data.id)
+        done()
+      })
+    })
+
     it('should callback with error if start instance failed failed', function (done) {
       var startInstanceError = new Error('Start instance error')
-      var rejectionPromise = Promise.reject(startInstanceError)
-      rejectionPromise.suppressUnhandledRejections()
-      InstanceService.startInstance.returns(rejectionPromise)
+      InstanceService.startInstance.rejects(startInstanceError)
       InstanceContainerCreated(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(startInstanceError.message)
