@@ -200,6 +200,18 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
       })
     })
 
+    it('should throw task fatal if the delete container step gets a 500 error', function (done) {
+      var updateConflict = Boom.conflict("Container was not updated, instance's container has changed")
+      InstanceService.updateContainerInspect.yieldsAsync(updateConflict)
+      Docker.prototype.removeContainerAsync.rejects(Boom.badImplementation())
+      InstanceContainerCreated(ctx.data).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err).to.be.instanceOf(TaskFatalError)
+        expect(err.message).to.equal('instance.container.created: Failed to delete container')
+        done()
+      })
+    })
+
     it('should callback with error if start instance failed failed', function (done) {
       var startInstanceError = new Error('Start instance error')
       InstanceService.startInstance.rejects(startInstanceError)
