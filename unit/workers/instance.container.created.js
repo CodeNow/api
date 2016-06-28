@@ -200,8 +200,8 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
       })
     })
 
-    it('should throw task fatal if the delete container step gets a 500 error', function (done) {
-      var updateConflict = Boom.conflict("Container was not updated, instance's container has changed")
+    it('should throw task fatal if the delete container step gets a 400 error', function (done) {
+      var updateConflict = Boom.badRequest("Yup, this is a bad thing that should not be retried")
       InstanceService.updateContainerInspect.yieldsAsync(updateConflict)
       Docker.prototype.removeContainerAsync.rejects(Boom.badImplementation())
       InstanceContainerCreated(ctx.data).asCallback(function (err) {
