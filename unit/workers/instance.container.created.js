@@ -7,6 +7,7 @@ var Promise = require('bluebird')
 var clone = require('101/clone')
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
+require('sinon-as-promised')(Promise)
 
 var Code = require('code')
 var sinon = require('sinon')
@@ -57,9 +58,9 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
       }
     }
     ctx.cv = new ContextVersion({ _id: '123' })
-    sinon.stub(ContextVersion, 'recoverAsync').returns(Promise.resolve(ctx.cv))
-    sinon.stub(InstanceService, 'updateContainerInspect').yieldsAsync(null, ctx.mockInstance)
-    sinon.stub(InstanceService, 'startInstance').returns(Promise.resolve(ctx.mockInstance))
+    sinon.stub(ContextVersion, 'recoverAsync').resolves(ctx.cv)
+    sinon.stub(InstanceService, 'updateContainerInspect').resolves(ctx.mockInstance)
+    sinon.stub(InstanceService, 'startInstance').resolves(ctx.mockInstance)
     done()
   })
 
@@ -154,7 +155,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
     })
     it('should fail if updateContainerInspect failed', function (done) {
       var mongoError = new Error('Mongo error')
-      InstanceService.updateContainerInspect.yieldsAsync(mongoError)
+      InstanceService.updateContainerInspect.rejects(mongoError)
       InstanceContainerCreated(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
