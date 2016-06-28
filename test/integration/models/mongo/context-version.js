@@ -34,7 +34,7 @@ var messenger = require('socket/messenger')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 var mongoFactory = require('../../fixtures/factory')
 var Context = require('models/mongo/context.js')
-var ContextVersion = require('models/mongo/context-version.js')
+var ContextVersion = require('models/mongo/context-version')
 var InfraCodeVersion = require('models/mongo/infra-code-version.js')
 var User = require('models/mongo/user.js')
 
@@ -78,19 +78,26 @@ describe('ContextVersion ModelIntegration Tests', function () {
         })
       })
 
+      it('should update the build.hash property on the return value', function (done) {
+        var hash = 'abcdef'
+        ContextVersion.updateBuildHash(ctx.cv, hash)
+          .then(function (cv) {
+            // expect build.hash updated on document
+            expect(cv.build.hash).to.equal(hash)
+          })
+          .asCallback(done)
+      })
       it('should update the build.hash property on the document', function (done) {
         var hash = 'abcdef'
-        ctx.cv.updateBuildHash(hash, function (err) {
-          if (err) { return done(err) }
-          // expect build.hash updated on document
-          expect(ctx.cv.build.hash).to.equal(hash)
-          // expect build.hash updated on document in database
-          ContextVersion.findById(ctx.cv._id, function (err, cv) {
-            if (err) { return done(err) }
-            expect(cv.build.hash).to.equal(hash)
-            done()
+        ContextVersion.updateBuildHash(ctx.cv, hash)
+          .then(function () {
+            return ContextVersion.findByIdAsync(ctx.cv._id)
           })
-        })
+          .then(function (cv) {
+            // expect build.hash updated on document
+            expect(cv.build.hash).to.equal(hash)
+          })
+          .asCallback(done)
       })
     })
 
@@ -149,12 +156,12 @@ describe('ContextVersion ModelIntegration Tests', function () {
       })
 
       it('should find the oldest pending dupe', function (done) {
-        ctx.cv.findPendingDupe(function (err, oldestStartedDupe) {
-          if (err) { return done(err) }
-          expect(oldestStartedDupe).to.exist()
-          expect(oldestStartedDupe._id.toString()).to.equal(ctx.startedDupes[0]._id.toString())
-          done()
-        })
+        ContextVersion.findPendingDupe(ctx.cv)
+          .then(function (oldestStartedDupe) {
+            expect(oldestStartedDupe).to.exist()
+            expect(oldestStartedDupe._id.toString()).to.equal(ctx.startedDupes[0]._id.toString())
+          })
+          .asCallback(done)
       })
     })
 
@@ -213,12 +220,12 @@ describe('ContextVersion ModelIntegration Tests', function () {
       })
 
       it('should find the oldest pending dupe', function (done) {
-        ctx.cv.findCompletedDupe(function (err, youngestCompletedDupe) {
-          if (err) { return done(err) }
-          expect(youngestCompletedDupe).to.exist()
-          expect(youngestCompletedDupe._id.toString()).to.equal(last(ctx.completedDupes)._id.toString())
-          done()
-        })
+        ContextVersion.findCompletedDupe(ctx.cv)
+          .then(function (youngestCompletedDupe) {
+            expect(youngestCompletedDupe).to.exist()
+            expect(youngestCompletedDupe._id.toString()).to.equal(last(ctx.completedDupes)._id.toString())
+          })
+          .asCallback(done)
       })
     })
 
@@ -262,8 +269,8 @@ describe('ContextVersion ModelIntegration Tests', function () {
         sinon.spy(ContextVersion, '_startBuild')
         sinon.spy(ContextVersion.prototype, 'setBuildStartedAsync')
         sinon.spy(ContextVersion.prototype, 'populateOwnerAsync')
-        sinon.spy(ContextVersion.prototype, 'dedupeBuildAsync')
-        sinon.spy(ContextVersion.prototype, 'getAndUpdateHashAsync')
+        sinon.spy(ContextVersion, 'dedupeBuild')
+        sinon.spy(ContextVersion, 'getAndUpdateHash')
         sinon.spy(rabbitMQ, 'createImageBuilderContainer')
 
         sinon.stub(Hermes, 'hermesSingletonFactory').returns({
@@ -284,8 +291,8 @@ describe('ContextVersion ModelIntegration Tests', function () {
         ContextVersion.prototype.dedupeAsync.restore()
         ContextVersion.prototype.setBuildStartedAsync.restore()
         ContextVersion.prototype.populateOwnerAsync.restore()
-        ContextVersion.prototype.dedupeBuildAsync.restore()
-        ContextVersion.prototype.getAndUpdateHashAsync.restore()
+        ContextVersion.dedupeBuild.restore()
+        ContextVersion.getAndUpdateHash.restore()
         done()
       })
       describe('failures', function () {
@@ -324,7 +331,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
             }
           }
           it('should call modifyAppCodeVersionWithLatestCommitAsync, dedupeAsync, _startBuild,' +
-            'setBuildStartedAsync, populateOwnerAsync, and dedupeBuildAsync', function (done) {
+            'setBuildStartedAsync, populateOwnerAsync, and dedupeBuild', function (done) {
             ContextVersion.buildSelf(ctx.cv, ctx.mockSessionUser, opts, ctx.domain)
               .then(function () {
                 sinon.assert.calledWith(
@@ -345,7 +352,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                   ctx.mockSessionUser,
                   opts
                 )
-                sinon.assert.calledOnce(ContextVersion.prototype.dedupeBuildAsync)
+                sinon.assert.calledOnce(ContextVersion.dedupeBuild)
                 sinon.assert.calledWith(
                   ContextVersion.prototype.populateOwnerAsync,
                   ctx.mockSessionUser
@@ -436,11 +443,11 @@ describe('ContextVersion ModelIntegration Tests', function () {
                       sinon.assert.notCalled(ContextVersion.prototype.dedupeAsync)
                       sinon.assert.calledOnce(ContextVersion.prototype.setBuildStartedAsync)
 
-                      sinon.assert.calledOnce(ContextVersion.prototype.getAndUpdateHashAsync)
+                      sinon.assert.calledOnce(ContextVersion.getAndUpdateHash)
                       sinon.assert.calledWith(
                         ContextVersion.prototype.populateOwnerAsync,
                         ctx.mockSessionUser)
-                      sinon.assert.notCalled(ContextVersion.prototype.dedupeBuildAsync)
+                      sinon.assert.notCalled(ContextVersion.dedupeBuild)
                     })
                     .asCallback(done)
                 })
@@ -504,7 +511,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
         sinon.spy(ContextVersion, 'removeByIdAsync')
         sinon.spy(ContextVersion, '_startBuild')
         sinon.spy(ContextVersion.prototype, 'setBuildStartedAsync')
-        sinon.spy(ContextVersion.prototype, 'dedupeBuildAsync')
+        sinon.spy(ContextVersion, 'dedupeBuild')
         sinon.spy(ContextVersion.prototype, 'populateOwnerAsync')
         sinon.spy(rabbitMQ, 'createImageBuilderContainer')
 
@@ -524,7 +531,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
         messenger.messageRoom.restore()
         ContextVersion.prototype.setBuildStartedAsync.restore()
         ContextVersion.prototype.populateOwnerAsync.restore()
-        ContextVersion.prototype.dedupeBuildAsync.restore()
+        ContextVersion.dedupeBuild.restore()
         done()
       })
       describe('dedupeBuild', function () {
@@ -550,7 +557,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           messenger.messageRoom.reset()
           ContextVersion.prototype.setBuildStartedAsync.reset()
           ContextVersion.prototype.populateOwnerAsync.reset()
-          ContextVersion.prototype.dedupeBuildAsync.reset()
+          ContextVersion.dedupeBuild.reset()
           ContextVersion.createDeepCopy(ctx.mockSessionUser, ctx.startedCv, function (err, copiedCv) {
             if (err) {
               return done(err)
@@ -573,7 +580,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
               // the build._id should have changed
               expect(contextVersion.build._id.toString(), 'cv build id').to.not.equal(oldBuildId)
               sinon.assert.calledOnce(ContextVersion.prototype.setBuildStartedAsync)
-              sinon.assert.calledOnce(ContextVersion.prototype.dedupeBuildAsync)
+              sinon.assert.calledOnce(ContextVersion.dedupeBuild)
               sinon.assert.notCalled(ContextVersion.prototype.populateOwnerAsync)
               sinon.assert.notCalled(rabbitMQ.createImageBuilderContainer)
             })
@@ -589,8 +596,8 @@ describe('ContextVersion ModelIntegration Tests', function () {
           }
           it('should ignore calling dedupeBuild when noCache', function (done) {
             ContextVersion._startBuild(ctx.copiedCv, ctx.mockSessionUser, opts, ctx.domain)
-              .then(function (contextVersion) {
-                sinon.assert.notCalled(ContextVersion.prototype.dedupeBuildAsync)
+              .then(function () {
+                sinon.assert.notCalled(ContextVersion.dedupeBuild)
               })
               .asCallback(done)
           })
@@ -1278,392 +1285,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
         done()
       })
     }) // end 'addAppCodeVersionQuery'
-
-    describe('updateBuildHash', function () {
-      var cv
-
-      beforeEach(function (done) {
-        cv = new ContextVersion({
-          build: {hash: 'old-hash'}
-        })
-        sinon.stub(cv, 'update').yieldsAsync(null)
-        done()
-      })
-
-      afterEach(function (done) {
-        cv.update.restore()
-        done()
-      })
-
-      it('should use the correct query', function (done) {
-        var hash = 'random-hash'
-        var expectedQuery = {
-          $set: {
-            'build.hash': hash
-          }
-        }
-        cv.updateBuildHash(hash, function (err) {
-          if (err) {
-            return done(err)
-          }
-          expect(cv.update.calledOnce).to.be.true()
-          expect(cv.update.calledWith(expectedQuery)).to.be.true()
-          done()
-        })
-      })
-
-      it('should set the hash on the context version', function (done) {
-        var hash = 'brand-new-hash'
-        cv.updateBuildHash(hash, function (err) {
-          if (err) {
-            return done(err)
-          }
-          expect(cv.build.hash).to.equal(hash)
-          done()
-        })
-      })
-
-      it('should correctly handle update errors', function (done) {
-        var updateError = new Error('Update is too cool to work right now.')
-        cv.update.yieldsAsync(updateError)
-        cv.updateBuildHash('rando', function (err) {
-          expect(err).to.exist()
-          expect(err).to.equal(updateError)
-          done()
-        })
-      })
-    }) // end 'updateBuildHash'
-
-    describe('findPendingDupe', function () {
-      var cv
-      var dupe
-      var cvTimestamp = 20
-
-      beforeEach(function (done) {
-        cv = new ContextVersion({
-          build: {
-            _id: 'id-a',
-            hash: 'hash-a',
-            started: new Date(cvTimestamp)
-          }
-        })
-        dupe = new ContextVersion({
-          build: {
-            _id: 'id-b',
-            hash: 'hash-b',
-            started: new Date(cvTimestamp - 10)
-          }
-        })
-        sinon.stub(ContextVersion, 'find').yieldsAsync(null, [dupe])
-        done()
-      })
-
-      afterEach(function (done) {
-        ContextVersion.find.restore()
-        done()
-      })
-
-      it('uses the correct ContextVersion.find query', function (done) {
-        var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
-          'build.completed': {$exists: false},
-          'build.hash': cv.build.hash,
-          'build._id': {$ne: cv.build._id},
-          advanced: false,
-          $or: [
-            { 'buildDockerfilePath': { $exists: false } },
-            { 'buildDockerfilePath': null }
-          ]
-        })
-
-        cv.findPendingDupe(function (err) {
-          if (err) {
-            return done(err)
-          }
-          expect(ContextVersion.find.calledOnce).to.be.true()
-          expect(ContextVersion.find.firstCall.args[0])
-            .to.deep.equal(expectedQuery)
-          done()
-        })
-      })
-
-      it('uses the correct ContextVersion.find options', function (done) {
-        var expectedOptions = {
-          sort: 'build.started',
-          limit: 1
-        }
-
-        cv.findPendingDupe(function (err) {
-          if (err) {
-            return done(err)
-          }
-          expect(ContextVersion.find.calledOnce).to.be.true()
-          expect(ContextVersion.find.firstCall.args[2])
-            .to.deep.equal(expectedOptions)
-          done()
-        })
-      })
-
-      it('handles ContextVersion.find errors', function (done) {
-        var findError = new Error('API is upset, and does not want to work.')
-        ContextVersion.find.yieldsAsync(findError)
-
-        cv.findPendingDupe(function (err) {
-          expect(err).to.equal(findError)
-          done()
-        })
-      })
-
-      it('yields null if oldest pending is younger than itself', function (done) {
-        ContextVersion.find.yieldsAsync(null, [
-          new ContextVersion({
-            build: {
-              _id: 'id-b',
-              hash: 'hash-b',
-              started: new Date(cvTimestamp + 10)
-            }
-          })
-        ])
-
-        cv.findPendingDupe(function (err, pendingDuplicate) {
-          if (err) {
-            return done(err)
-          }
-          expect(pendingDuplicate).to.be.null()
-          done()
-        })
-      })
-
-      it('yields nothing if the oldest pending is null', function (done) {
-        ContextVersion.find.yieldsAsync(null, [])
-
-        cv.findPendingDupe(function (err, pendingDuplicate) {
-          if (err) {
-            return done(err)
-          }
-          expect(pendingDuplicate).to.not.exist()
-          done()
-        })
-      })
-
-      it('yields the oldest pending duplicate when applicable', function (done) {
-        cv.findPendingDupe(function (err, pendingDuplicate) {
-          if (err) {
-            return done(err)
-          }
-          expect(pendingDuplicate).to.equal(dupe)
-          done()
-        })
-      })
-    }) // end 'findPendingDupe'
-
-    describe('findCompletedDupe', function () {
-      var cv
-      var dupe
-
-      beforeEach(function (done) {
-        cv = new ContextVersion({
-          build: {
-            _id: 'id-a',
-            hash: 'hash-a'
-          }
-        })
-        dupe = new ContextVersion({
-          build: {
-            _id: 'id-b',
-            hash: 'hash-b'
-          }
-        })
-        sinon.stub(ContextVersion, 'find').yieldsAsync(null, [dupe])
-        done()
-      })
-
-      afterEach(function (done) {
-        ContextVersion.find.restore()
-        done()
-      })
-
-      it('uses the correct ContextVersion.find query', function (done) {
-        var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
-          'build.completed': {$exists: true},
-          'build.hash': cv.build.hash,
-          'build._id': {$ne: cv.build._id},
-          advanced: false,
-          $or: [
-            {'buildDockerfilePath': {$exists: false}},
-            {'buildDockerfilePath': null}
-          ]
-        })
-
-        cv.findCompletedDupe(function (err) {
-          if (err) {
-            return done(err)
-          }
-          expect(ContextVersion.find.calledOnce).to.be.true()
-          expect(ContextVersion.find.firstCall.args[0])
-            .to.deep.equal(expectedQuery)
-          done()
-        })
-      })
-
-      it('uses the correct ContextVersion.find options', function (done) {
-        var expectedOptions = {
-          sort: '-build.started',
-          limit: 1
-        }
-
-        cv.findCompletedDupe(function (err) {
-          if (err) {
-            return done(err)
-          }
-          expect(ContextVersion.find.calledOnce).to.be.true()
-          expect(ContextVersion.find.firstCall.args[2])
-            .to.deep.equal(expectedOptions)
-          done()
-        })
-      })
-
-      it('yields the correct duplicate', function (done) {
-        cv.findCompletedDupe(function (err, completedDupe) {
-          if (err) {
-            return done(err)
-          }
-          expect(completedDupe).to.equal(dupe)
-          done()
-        })
-      })
-    }) // end 'findCompletedDupe'
-
-    describe('dedupeBuild', function () {
-      var cv
-      var dupe
-      var hash = 'icv-hash'
-
-      beforeEach(function (done) {
-        cv = new ContextVersion({
-          infraCodeVersion: 'infra-code-version-id',
-          owner: {github: 1}
-        })
-        dupe = new ContextVersion({
-          infraCodeVersion: 'infra-code-version-id',
-          owner: {github: 1}
-        })
-        sinon.stub(InfraCodeVersion, 'findByIdAndGetHash')
-          .yieldsAsync(null, hash)
-        sinon.stub(cv, 'updateBuildHash').yieldsAsync()
-        sinon.stub(cv, 'findPendingDupe').yieldsAsync(null, dupe)
-        sinon.stub(cv, 'findCompletedDupe').yieldsAsync(null, dupe)
-        sinon.stub(cv, 'copyBuildFromContextVersion')
-          .yieldsAsync(null, dupe)
-        done()
-      })
-
-      afterEach(function (done) {
-        InfraCodeVersion.findByIdAndGetHash.restore()
-        cv.updateBuildHash.restore()
-        cv.findPendingDupe.restore()
-        cv.findCompletedDupe.restore()
-        cv.copyBuildFromContextVersion.restore()
-        done()
-      })
-
-      it('should find the hash via InfraCodeVersion', function (done) {
-        cv.dedupeBuild(function (err) {
-          if (err) { return done(err) }
-          expect(InfraCodeVersion.findByIdAndGetHash.calledOnce).to.be.true()
-          expect(InfraCodeVersion.findByIdAndGetHash.calledWith(
-            cv.infraCodeVersion
-          )).to.be.true()
-          done()
-        })
-      })
-
-      it('should set the hash returned by InfraCodeVersion', function (done) {
-        cv.dedupeBuild(function (err) {
-          if (err) { return done(err) }
-          expect(cv.updateBuildHash.calledOnce).to.be.true()
-          expect(cv.updateBuildHash.calledWith(hash)).to.be.true()
-          done()
-        })
-      })
-
-      it('should find pending duplicates', function (done) {
-        cv.dedupeBuild(function (err) {
-          if (err) { return done(err) }
-          expect(cv.findPendingDupe.calledOnce).to.be.true()
-          done()
-        })
-      })
-
-      it('should not find completed duplicates with one pending', function (done) {
-        cv.dedupeBuild(function (err) {
-          if (err) { return done(err) }
-          expect(cv.findCompletedDupe.callCount).to.equal(0)
-          done()
-        })
-      })
-
-      it('should find completed duplicates without one pending', function (done) {
-        cv.findPendingDupe.yieldsAsync(null, null)
-
-        cv.dedupeBuild(function (err) {
-          if (err) { return done(err) }
-          expect(cv.findCompletedDupe.calledOnce).to.be.true()
-          done()
-        })
-      })
-
-      it('should handle completed duplicate lookup errors', function (done) {
-        var completedErr = new Error('API is not feeling well, try later.')
-        cv.findPendingDupe.yieldsAsync(null, null)
-        cv.findCompletedDupe.yieldsAsync(completedErr, null)
-
-        cv.dedupeBuild(function (err) {
-          expect(err).to.equal(completedErr)
-          done()
-        })
-      })
-
-      it('should dedupe cvs with the same owner', function (done) {
-        cv.dedupeBuild(function (err, result) {
-          if (err) { return done(err) }
-          expect(result).to.equal(dupe)
-          done()
-        })
-      })
-
-      it('should not dedupe a cv with a different owner', function (done) {
-        dupe.owner.github = 2
-        cv.dedupeBuild(function (err, result) {
-          if (err) { return done(err) }
-          expect(result).to.equal(cv)
-          done()
-        })
-      })
-
-      it('should replace itself if a duplicate was found', function (done) {
-        cv.dedupeBuild(function (err) {
-          if (err) { return done(err) }
-          expect(cv.copyBuildFromContextVersion.calledOnce).to.be.true()
-          expect(cv.copyBuildFromContextVersion.calledWith(dupe))
-            .to.be.true()
-          done()
-        })
-      })
-
-      it('should not replace itself without a duplicate', function (done) {
-        cv.findPendingDupe.yieldsAsync(null, null)
-        cv.findCompletedDupe.yieldsAsync(null, null)
-
-        cv.dedupeBuild(function (err) {
-          if (err) { return done(err) }
-          expect(cv.copyBuildFromContextVersion.callCount).to.equal(0)
-          expect(cv.copyBuildFromContextVersion.calledWith(dupe))
-            .to.be.false()
-          done()
-        })
-      })
-    }) // end 'dedupeBuild'
-
     describe('populateOwner', function () {
       beforeEach(function (done) {
         ctx.c = new Context()
@@ -1879,16 +1500,16 @@ describe('ContextVersion ModelIntegration Tests', function () {
         keypather.set(sessionUser, 'accounts.github.id', 1234)
         sinon.stub(contextVersion, 'setBuildStartedAsync').resolves(contextVersion)
         sinon.stub(contextVersion, 'populateOwnerAsync').resolves(contextVersion)
-        sinon.stub(contextVersion, 'dedupeBuildAsync').resolves(contextVersion)
-        sinon.stub(contextVersion, 'getAndUpdateHashAsync').resolves()
+        sinon.stub(ContextVersion, 'dedupeBuild').resolves(contextVersion)
+        sinon.stub(ContextVersion, 'getAndUpdateHash').resolves()
         sinon.stub(rabbitMQ, 'createImageBuilderContainer').resolves()
         done()
       })
       afterEach(function (done) {
         contextVersion.setBuildStartedAsync.restore()
         contextVersion.populateOwnerAsync.restore()
-        contextVersion.dedupeBuildAsync.restore()
-        contextVersion.getAndUpdateHashAsync.restore()
+        ContextVersion.dedupeBuild.restore()
+        ContextVersion.getAndUpdateHash.restore()
         rabbitMQ.createImageBuilderContainer.restore()
         done()
       })
@@ -1901,12 +1522,12 @@ describe('ContextVersion ModelIntegration Tests', function () {
           }
           done()
         })
-        it('should call setBuildStartedAsync, dedupeBuildAsync, and populateOwnerAsync before rabbit', function (done) {
+        it('should call setBuildStartedAsync, dedupeBuild, and populateOwnerAsync before rabbit', function (done) {
           ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
             .then(function (contextVersion) {
               sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
-              sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
-              sinon.assert.notCalled(contextVersion.getAndUpdateHashAsync)
+              sinon.assert.calledOnce(ContextVersion.dedupeBuild)
+              sinon.assert.notCalled(ContextVersion.getAndUpdateHash)
               sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
             })
             .asCallback(done)
@@ -1935,13 +1556,13 @@ describe('ContextVersion ModelIntegration Tests', function () {
           }
           done()
         })
-        it('should call setBuildStartedAsync, populateOwnerAsync, and getAndUpdateHashAsync', function (done) {
+        it('should call setBuildStartedAsync, populateOwnerAsync, and getAndUpdateHash', function (done) {
           ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
             .then(function (contextVersion) {
               sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
               sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
-              sinon.assert.calledOnce(contextVersion.getAndUpdateHashAsync)
-              sinon.assert.notCalled(contextVersion.dedupeBuildAsync)
+              sinon.assert.calledOnce(ContextVersion.getAndUpdateHash)
+              sinon.assert.notCalled(ContextVersion.dedupeBuild)
             })
             .asCallback(done)
         })
@@ -1969,8 +1590,8 @@ describe('ContextVersion ModelIntegration Tests', function () {
               manual: true
             }
           }
-          contextVersion.dedupeBuildAsync.restore()
-          sinon.stub(contextVersion, 'dedupeBuildAsync', function () {
+          ContextVersion.dedupeBuild.restore()
+          sinon.stub(ContextVersion, 'dedupeBuild', function () {
             contextVersion._doc.build._id = '13245dsf'
             // Can't use .resolves() because I need this function to wait until this is called to
             // modify the original cv
@@ -1982,7 +1603,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
             .then(function (contextVersion) {
               sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
-              sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
+              sinon.assert.calledOnce(ContextVersion.dedupeBuild)
               sinon.assert.notCalled(contextVersion.populateOwnerAsync)
               sinon.assert.notCalled(rabbitMQ.createImageBuilderContainer)
             })
