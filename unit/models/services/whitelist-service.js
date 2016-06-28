@@ -31,7 +31,8 @@ describe('auth/whitelist unit test: ', function () {
       mockSessionUser = {
         accounts: {
           github: {
-            accessToken: 'accessToken!'
+            accessToken: 'accessToken!',
+            username: 'Myztiq'
           }
         }
       }
