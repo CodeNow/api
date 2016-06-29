@@ -41,6 +41,65 @@ describe('ContextService Unit Test', function () {
     done()
   })
 
+  describe('#findContext', function () {
+    beforeEach(function (done) {
+      ctx.context = new Context({
+        _id: '507f1f77bcf86cd799439011'
+      })
+      sinon.stub(Context, 'findByIdAsync').resolves(ctx.context)
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx = {}
+      Context.findByIdAsync.restore()
+      done()
+    })
+
+    it('should fail build lookup failed', function (done) {
+      Context.findByIdAsync.rejects(new Error('Mongo error'))
+      ContextService.findContext('507f1f77bcf86cd799439011')
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Mongo error')
+        done()
+      })
+    })
+
+    it('should fail if context was not found', function (done) {
+      Context.findByIdAsync.resolves(null)
+      ContextService.findContext('507f1f77bcf86cd799439011')
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.isBoom).to.equal(true)
+        expect(err.output.statusCode).to.equal(404)
+        expect(err.output.payload.message).to.equal('Context not found')
+        done()
+      })
+    })
+
+    it('should return build', function (done) {
+      ContextService.findContext('507f1f77bcf86cd799439011')
+      .then(function (build) {
+        expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
+      })
+      .asCallback(done)
+    })
+
+    it('should call Context.findByIdAsync with correct params', function (done) {
+      ContextService.findContext('507f1f77bcf86cd799439011')
+      .then(function (build) {
+        sinon.assert.calledOnce(Context.findByIdAsync)
+        sinon.assert.calledWith(Context.findByIdAsync, '507f1f77bcf86cd799439011')
+      })
+      .asCallback(done)
+    })
+  })
+
   describe('createNew', function () {
     beforeEach(function (done) {
       ctx.sessionUser = {
