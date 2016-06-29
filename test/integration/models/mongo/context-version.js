@@ -264,7 +264,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
       })
       beforeEach(function (done) {
         sinon.spy(ContextVersion.prototype, 'modifyAppCodeVersionWithLatestCommitAsync')
-        sinon.spy(ContextVersion.prototype, 'dedupeAsync')
         sinon.spy(ContextVersion, 'removeByIdAsync')
         sinon.spy(ContextVersion, '_startBuild')
         sinon.spy(ContextVersion.prototype, 'setBuildStartedAsync')
@@ -288,7 +287,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
         Hermes.hermesSingletonFactory.restore()
         messenger.messageRoom.restore()
         ContextVersion.prototype.modifyAppCodeVersionWithLatestCommitAsync.restore()
-        ContextVersion.prototype.dedupeAsync.restore()
         ContextVersion.prototype.setBuildStartedAsync.restore()
         ContextVersion.prototype.populateOwnerAsync.restore()
         ContextVersion.dedupeBuild.restore()
@@ -314,7 +312,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
             .catch(function (err) {
               expect(err.message).to.contain('cannot build a context version that is already building or built')
               sinon.assert.notCalled(ContextVersion.prototype.modifyAppCodeVersionWithLatestCommitAsync)
-              sinon.assert.notCalled(ContextVersion.prototype.dedupeAsync)
               sinon.assert.notCalled(ContextVersion.removeByIdAsync)
               sinon.assert.notCalled(ContextVersion._startBuild)
             })
@@ -330,7 +327,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
               manual: true
             }
           }
-          it('should call modifyAppCodeVersionWithLatestCommitAsync, dedupeAsync, _startBuild,' +
+          it('should call modifyAppCodeVersionWithLatestCommitAsync, _startBuild,' +
             'setBuildStartedAsync, populateOwnerAsync, and dedupeBuild', function (done) {
             ContextVersion.buildSelf(ctx.cv, ctx.mockSessionUser, opts, ctx.domain)
               .then(function () {
@@ -338,7 +335,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
                   ContextVersion.prototype.modifyAppCodeVersionWithLatestCommitAsync,
                   ctx.mockSessionUser
                 )
-                sinon.assert.calledOnce(ContextVersion.prototype.dedupeAsync)
                 sinon.assert.notCalled(ContextVersion.removeByIdAsync)
                 sinon.assert.calledWith(
                   ContextVersion._startBuild,
@@ -375,101 +371,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
                 }))
               })
               .asCallback(done)
-          })
-        })
-        describe('dedupe build flow', function () {
-          describe('dedupe checks', function () {
-            beforeEach(function (done) {
-              mongoFactory.createStartedCv(ctx.mockSessionUser._id, null, function (err, cv) {
-                if (err) {
-                  return done(err)
-                }
-                ctx.startedCv = cv
-                ctx.startedCv.infraCodeVersion = ctx.icv._id
-                ctx.startedCv.save(done)
-              })
-            })
-            describe('dedupe', function () {
-              beforeEach(function (done) {
-                ContextVersion.createDeepCopy(ctx.mockSessionUser, ctx.startedCv, function (err, copiedCv) {
-                  if (err) {
-                    return done(err)
-                  }
-                  ctx.copiedCv = copiedCv
-                  ctx.copiedCv.save(done)
-                })
-              })
-              it('should dedup to the completed build, and not call _startBuild', function (done) {
-                var opts = {
-                  message: 'manual build',
-                  triggeredAction: {
-                    manual: true
-                  }
-                }
-                ContextVersion.buildSelf(ctx.copiedCv, ctx.mockSessionUser, opts, ctx.domain)
-                  .then(function (contextVersion) {
-                    expect(contextVersion._id.toString(), 'cv id')
-                      .to.equal(ctx.startedCv._id.toString())
-                    sinon.assert.calledOnce(
-                      ContextVersion.prototype.modifyAppCodeVersionWithLatestCommitAsync
-                    )
-                    sinon.assert.calledWith(
-                      ContextVersion.prototype.modifyAppCodeVersionWithLatestCommitAsync,
-                      ctx.mockSessionUser
-                    )
-                    sinon.assert.calledOnce(ContextVersion.prototype.dedupeAsync)
-                    sinon.assert.calledOnce(ContextVersion.removeByIdAsync)
-                    sinon.assert.notCalled(ContextVersion._startBuild)
-                    sinon.assert.notCalled(rabbitMQ.createImageBuilderContainer)
-                    // The copied cv should be deleted
-                    return ContextVersion.findByIdAsync(ctx.copiedCv._id)
-                      .then(function (shouldBeEmpty) {
-                        expect(shouldBeEmpty).to.equal(null)
-                      })
-                  })
-                  .asCallback(done)
-              })
-              describe('deduping with noCache', function () {
-                var opts = {
-                  message: 'manual build',
-                  triggeredAction: {
-                    manual: true
-                  },
-                  noCache: true
-                }
-                it('should attempt to skip all dedup functions with noCache', function (done) {
-                  ContextVersion.buildSelf(ctx.copiedCv, ctx.mockSessionUser, opts, ctx.domain)
-                    .then(function () {
-                      sinon.assert.notCalled(ContextVersion.prototype.dedupeAsync)
-                      sinon.assert.calledOnce(ContextVersion.prototype.setBuildStartedAsync)
-
-                      sinon.assert.calledOnce(ContextVersion.getAndUpdateHash)
-                      sinon.assert.calledWith(
-                        ContextVersion.prototype.populateOwnerAsync,
-                        ctx.mockSessionUser)
-                      sinon.assert.notCalled(ContextVersion.dedupeBuild)
-                    })
-                    .asCallback(done)
-                })
-                it('should build the given cv', function (done) {
-                  ContextVersion.buildSelf(ctx.copiedCv, ctx.mockSessionUser, opts, ctx.domain)
-                    .then(function (contextVersion) {
-                      expect(contextVersion._id.toString(), 'cv id')
-                        .to.equal(ctx.copiedCv._id.toString())
-                      sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
-                        manualBuild: true,
-                        sessionUserGithubId: ctx.mockSessionUser.accounts.github.id,
-                        ownerUsername: contextVersion.owner.username,
-                        contextId: contextVersion.context.toString(),
-                        contextVersionId: contextVersion._id.toString(),
-                        noCache: true,
-                        tid: ctx.domain.runnableData.tid
-                      }))
-                    })
-                    .asCallback(done)
-                })
-              })
-            })
           })
         })
       })
@@ -1353,14 +1254,12 @@ describe('ContextVersion ModelIntegration Tests', function () {
         sessionUser = {}
         keypather.set(sessionUser, 'accounts.github.id', 1234)
         sinon.stub(contextVersion, 'modifyAppCodeVersionWithLatestCommitAsync').resolves(contextVersion)
-        sinon.stub(contextVersion, 'dedupeAsync').resolves(contextVersion)
         sinon.stub(ContextVersion, 'removeByIdAsync').resolves()
         sinon.stub(ContextVersion, '_startBuild').resolves(contextVersion)
         done()
       })
       afterEach(function (done) {
         contextVersion.modifyAppCodeVersionWithLatestCommitAsync.restore()
-        contextVersion.dedupeAsync.restore()
         ContextVersion.removeByIdAsync.restore()
         ContextVersion._startBuild.restore()
         done()
@@ -1388,15 +1287,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
           }
           done()
         })
-        it('should attempt to call dedupeAsync, but not remove, before starting the build', function (done) {
-          ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
-            .then(function (contextVersion) {
-              sinon.assert.calledOnce(contextVersion.dedupeAsync)
-              sinon.assert.notCalled(ContextVersion.removeByIdAsync)
-              sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts, domain)
-            })
-            .asCallback(done)
-        })
         it('should try to start the build of a normal build', function (done) {
           ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
             .then(function (contextVersion) {
@@ -1412,16 +1302,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
           }
           done()
         })
-        it('should skip calling dedupAsync', function (done) {
-          opts = {
-            noCache: true
-          }
-          ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
-            .then(function (contextVersion) {
-              sinon.assert.notCalled(contextVersion.dedupeAsync)
-            })
-            .asCallback(done)
-        })
         it('should attempt to start a no-cached build', function (done) {
           opts = {
             noCache: true
@@ -1429,46 +1309,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
           ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
             .then(function (contextVersion) {
               sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts, domain)
-            })
-            .asCallback(done)
-        })
-      })
-      describe('dedup build flow', function () {
-        var newCv
-        beforeEach(function (done) {
-          newCv = new ContextVersion({
-            createdBy: {github: 1000},
-            owner: {
-              github: 2874589,
-              username: 'hello'
-            },
-            build: {
-              started: new Date()
-            },
-            context: ctx.c._id
-          })
-          opts = {
-            triggeredAction: {
-              manual: true
-            }
-          }
-          contextVersion.dedupeAsync.restore()
-          sinon.stub(contextVersion, 'dedupeAsync').resolves(newCv)
-          done()
-        })
-        it('should not call _startBuild when a dedupe happens', function (done) {
-          ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
-            .then(function () {
-              sinon.assert.notCalled(ContextVersion._startBuild)
-            })
-            .asCallback(done)
-        })
-        it('should remove itself, and return the dupe cv', function (done) {
-          ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
-            .then(function (shouldBeNewCv) {
-              expect(shouldBeNewCv).to.equal(newCv)
-              sinon.assert.calledOnce(contextVersion.dedupeAsync)
-              sinon.assert.calledOnce(ContextVersion.removeByIdAsync)
             })
             .asCallback(done)
         })
