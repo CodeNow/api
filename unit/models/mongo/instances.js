@@ -50,44 +50,49 @@ describe('Instance Model Tests', function () {
     it('should error if no container', function (done) {
       var instance = mongoFactory.createNewInstance('no-container')
       instance.container = {}
-      try {
-        instance.assertNotStartingOrStopping()
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function () {
         done(new Error('Should never happen'))
-      } catch (err) {
+      })
+      .catch(function (err) {
         expect(err.message).to.equal('Instance does not have a container')
         done()
-      }
+      })
     })
 
     it('should error if container starting', function (done) {
       var instance = mongoFactory.createNewInstance('container-starting')
       instance.container.inspect.State.Starting = true
-      try {
-        instance.assertNotStartingOrStopping()
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function () {
         done(new Error('Should never happen'))
-      } catch (err) {
+      })
+      .catch(function (err) {
         expect(err.message).to.equal('Instance is already starting')
         done()
-      }
+      })
     })
 
     it('should error if container stopping', function (done) {
       var instance = mongoFactory.createNewInstance('container-stopping')
       instance.container.inspect.State.Stopping = true
-      try {
-        instance.assertNotStartingOrStopping()
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function () {
         done(new Error('Should never happen'))
-      } catch (err) {
+      })
+      .catch(function (err) {
         expect(err.message).to.equal('Instance is already stopping')
         done()
-      }
+      })
     })
 
     it('should return instance itself', function (done) {
       var instance = mongoFactory.createNewInstance('container-stopping')
-      var result = instance.assertNotStartingOrStopping()
-      expect(result).to.equal(instance)
-      done()
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function (result) {
+        expect(result).to.equal(instance)
+      })
+      .asCallback(done)
     })
   })
 

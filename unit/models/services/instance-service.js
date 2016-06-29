@@ -1057,7 +1057,7 @@ describe('InstanceService', function () {
         }
       }
       ctx.instance = mongoFactory.createNewInstance('testy', {})
-      sinon.stub(Instance.prototype, 'assertNotStartingOrStopping').returns(true)
+      sinon.stub(Instance, 'assertNotStartingOrStopping').returns(ctx.instance)
       sinon.stub(InstanceService, 'findInstance').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStartingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'startInstanceContainer').resolves()
@@ -1067,7 +1067,7 @@ describe('InstanceService', function () {
     })
 
     afterEach(function (done) {
-      Instance.prototype.assertNotStartingOrStopping.restore()
+      Instance.assertNotStartingOrStopping.restore()
       InstanceService.findInstance.restore()
       Instance.markAsStartingAsync.restore()
       rabbitMQ.startInstanceContainer.restore()
@@ -1116,7 +1116,7 @@ describe('InstanceService', function () {
 
     it('should fail assertNotStartingOrStopping failed', function (done) {
       var testErr = new Error('Mongo error')
-      Instance.prototype.assertNotStartingOrStopping.throws(testErr)
+      Instance.assertNotStartingOrStopping.throws(testErr)
       InstanceService.startInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1147,7 +1147,7 @@ describe('InstanceService', function () {
         sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
         sinon.assert.calledOnce(PermissionService.ensureOwnerOrModerator)
         sinon.assert.calledWith(PermissionService.ensureOwnerOrModerator, ctx.sessionUser, ctx.instance)
-        sinon.assert.calledOnce(Instance.prototype.assertNotStartingOrStopping)
+        sinon.assert.calledOnce(Instance.assertNotStartingOrStopping)
         sinon.assert.calledOnce(Instance.markAsStartingAsync)
         sinon.assert.calledWith(Instance.markAsStartingAsync, ctx.instance._id, ctx.instance.container.dockerContainer)
         sinon.assert.calledOnce(rabbitMQ.startInstanceContainer)
@@ -1167,7 +1167,7 @@ describe('InstanceService', function () {
         sinon.assert.callOrder(
           InstanceService.findInstance,
           PermissionService.ensureOwnerOrModerator,
-          Instance.prototype.assertNotStartingOrStopping,
+          Instance.assertNotStartingOrStopping,
           Instance.markAsStartingAsync,
           rabbitMQ.startInstanceContainer)
       })
@@ -1179,7 +1179,7 @@ describe('InstanceService', function () {
       InstanceService.findInstance.resolves(instance)
       InstanceService.startInstance('ab1', ctx.sessionUser)
       .tap(function (instance) {
-        sinon.assert.calledOnce(Instance.prototype.assertNotStartingOrStopping)
+        sinon.assert.calledOnce(Instance.assertNotStartingOrStopping)
         sinon.assert.notCalled(Instance.markAsStartingAsync)
         sinon.assert.notCalled(rabbitMQ.startInstanceContainer)
         sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
@@ -1203,7 +1203,7 @@ describe('InstanceService', function () {
         }
       }
       ctx.instance = mongoFactory.createNewInstance('testy', {})
-      sinon.stub(Instance.prototype, 'assertNotStartingOrStopping').returns(true)
+      sinon.stub(Instance, 'assertNotStartingOrStopping').returns(ctx.instance)
       sinon.stub(InstanceService, 'findInstance').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStartingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'restartInstance').resolves()
@@ -1212,7 +1212,7 @@ describe('InstanceService', function () {
     })
 
     afterEach(function (done) {
-      Instance.prototype.assertNotStartingOrStopping.restore()
+      Instance.assertNotStartingOrStopping.restore()
       InstanceService.findInstance.restore()
       Instance.markAsStartingAsync.restore()
       rabbitMQ.restartInstance.restore()
@@ -1260,7 +1260,7 @@ describe('InstanceService', function () {
 
     it('should fail assertNotStartingOrStopping failed', function (done) {
       var testErr = new Error('Mongo error')
-      Instance.prototype.assertNotStartingOrStopping.throws(testErr)
+      Instance.assertNotStartingOrStopping.throws(testErr)
       InstanceService.restartInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1291,7 +1291,7 @@ describe('InstanceService', function () {
         sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
         sinon.assert.calledOnce(PermissionService.ensureOwnerOrModerator)
         sinon.assert.calledWith(PermissionService.ensureOwnerOrModerator, ctx.sessionUser, ctx.instance)
-        sinon.assert.calledOnce(Instance.prototype.assertNotStartingOrStopping)
+        sinon.assert.calledOnce(Instance.assertNotStartingOrStopping)
         sinon.assert.calledOnce(Instance.markAsStartingAsync)
         sinon.assert.calledWith(Instance.markAsStartingAsync, ctx.instance._id, ctx.instance.container.dockerContainer)
         sinon.assert.calledOnce(rabbitMQ.restartInstance)
@@ -1311,7 +1311,7 @@ describe('InstanceService', function () {
         sinon.assert.callOrder(
           InstanceService.findInstance,
           PermissionService.ensureOwnerOrModerator,
-          Instance.prototype.assertNotStartingOrStopping,
+          Instance.assertNotStartingOrStopping,
           Instance.markAsStartingAsync,
           rabbitMQ.restartInstance)
       })
@@ -1386,7 +1386,7 @@ describe('InstanceService', function () {
         }
       }
       ctx.instance = mongoFactory.createNewInstance('testy', {})
-      sinon.stub(Instance.prototype, 'assertNotStartingOrStopping').returns(true)
+      sinon.stub(Instance, 'assertNotStartingOrStopping').returns(ctx.instance)
       sinon.stub(InstanceService, 'findInstance').resolves(ctx.instance)
       sinon.stub(Instance, 'markAsStoppingAsync').resolves(ctx.instance)
       sinon.stub(rabbitMQ, 'stopInstanceContainer').resolves()
@@ -1395,7 +1395,7 @@ describe('InstanceService', function () {
     })
 
     afterEach(function (done) {
-      Instance.prototype.assertNotStartingOrStopping.restore()
+      Instance.assertNotStartingOrStopping.restore()
       InstanceService.findInstance.restore()
       Instance.markAsStoppingAsync.restore()
       rabbitMQ.stopInstanceContainer.restore()
@@ -1443,7 +1443,7 @@ describe('InstanceService', function () {
 
     it('should fail assertNotStartingOrStopping failed', function (done) {
       var testErr = new Error('Mongo error')
-      Instance.prototype.assertNotStartingOrStopping.throws(testErr)
+      Instance.assertNotStartingOrStopping.throws(testErr)
       InstanceService.stopInstance('ab1', ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -1474,7 +1474,7 @@ describe('InstanceService', function () {
         sinon.assert.calledWith(InstanceService.findInstance, 'ab1')
         sinon.assert.calledOnce(PermissionService.ensureOwnerOrModerator)
         sinon.assert.calledWith(PermissionService.ensureOwnerOrModerator, ctx.sessionUser, ctx.instance)
-        sinon.assert.calledOnce(Instance.prototype.assertNotStartingOrStopping)
+        sinon.assert.calledOnce(Instance.assertNotStartingOrStopping)
         sinon.assert.calledOnce(Instance.markAsStoppingAsync)
         sinon.assert.calledWith(Instance.markAsStoppingAsync, ctx.instance._id, ctx.instance.container.dockerContainer)
         sinon.assert.calledOnce(rabbitMQ.stopInstanceContainer)
@@ -1494,7 +1494,7 @@ describe('InstanceService', function () {
         sinon.assert.callOrder(
           InstanceService.findInstance,
           PermissionService.ensureOwnerOrModerator,
-          Instance.prototype.assertNotStartingOrStopping,
+          Instance.assertNotStartingOrStopping,
           Instance.markAsStoppingAsync,
           rabbitMQ.stopInstanceContainer)
       })
@@ -1750,14 +1750,14 @@ describe('InstanceService', function () {
           }
         }
       }
-      sinon.stub(Instance.prototype, 'assertNotStartingOrStopping').returns(true)
+      sinon.stub(Instance, 'assertNotStartingOrStopping').returns(ctx.instance)
       sinon.stub(Instance, 'markAsStoppingAsync').resolves(mockInstance)
       sinon.stub(rabbitMQ, 'killInstanceContainer')
       done()
     })
 
     afterEach(function (done) {
-      Instance.prototype.assertNotStartingOrStopping.restore()
+      Instance.assertNotStartingOrStopping.restore()
       Instance.markAsStoppingAsync.restore()
       rabbitMQ.killInstanceContainer.restore()
       done()
@@ -1765,7 +1765,7 @@ describe('InstanceService', function () {
 
     it('should fail if instance.assertNotStartingOrStopping fails', function (done) {
       var error = new Error('notStartingOrStopping error')
-      Instance.prototype.assertNotStartingOrStopping.throws(error)
+      Instance.assertNotStartingOrStopping.throws(error)
       InstanceService.killInstance(mockInstance)
         .asCallback(function (err) {
           expect(err).to.exist()
