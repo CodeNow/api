@@ -294,7 +294,9 @@ describe('BDD - Create Build and Deploy Instance', function () {
           var cV2 = build2.contextVersions.models[0]
           var count = createCount(2, function (err) {
             if (err) { return cb(err) }
-            expect(cV1.attrs.build).to.deep.equal(cV2.attrs.build)
+            expect(cV1.attrs.build._id).to.deep.equal(cV2.attrs.build._id)
+            expect(cV1.attrs.build.containerStarted).to.deep.equal(cV2.attrs.build.containerStarted)
+            expect(cV1.attrs.build.completed).to.deep.equal(cV2.attrs.build.completed)
             cb()
           })
           require('./fixtures/mocks/github/user')(user)
