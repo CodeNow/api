@@ -178,7 +178,7 @@ describe('Context Version Unit Test', function () {
         'build.completed': {$exists: false},
         'build.hash': cv.build.hash,
         'build._id': {$ne: cv.build._id},
-        failed: { $ne: true },
+        'build.failed': { $ne: true },
         'owner.github': cv.owner.github,
         $or: [
           { 'buildDockerfilePath': { $exists: false } },
@@ -303,7 +303,7 @@ describe('Context Version Unit Test', function () {
         'build.completed': {$exists: true},
         'build.hash': cv.build.hash,
         'build._id': {$ne: cv.build._id},
-        failed: { $ne: true },
+        'build.failed': { $ne: true },
         'owner.github': cv.owner.github,
         advanced: false,
         $or: [
