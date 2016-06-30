@@ -10,13 +10,14 @@ var lab = exports.lab = Lab.script()
 var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
-
 var Boom = require('dat-middleware').Boom
+
 var ContextVersion = require('models/mongo/context-version')
 var InstanceContainerCreated = require('workers/instance.container.created')
 var InstanceService = require('models/services/instance-service')
 var rabbitMQ = require('models/rabbitmq')
 var TaskFatalError = require('ponos').TaskFatalError
+var User = require('models/mongo/user')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -24,16 +25,14 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('InstanceContainerCreated: ' + moduleName, function () {
+describe('InstanceContainerCreated Unit tests', function () {
   var ctx
 
   beforeEach(function (done) {
     ctx = {}
     ctx.mockInstance = {
       _id: '555',
+      shortHash: 'abc',
       network: {
         hostIp: '0.0.0.0'
       },
@@ -58,7 +57,15 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         }
       }
     }
+    ctx.user = {
+      accounts: {
+        github: {
+          id: 123123
+        }
+      }
+    }
     ctx.cv = new ContextVersion({ _id: '123' })
+    sinon.stub(User, 'findByGithubIdAsync').resolves(ctx.user)
     sinon.stub(ContextVersion, 'recoverAsync').resolves(ctx.cv)
     sinon.stub(InstanceService, 'updateContainerInspect').yieldsAsync(null, ctx.mockInstance)
     sinon.stub(InstanceService, 'startInstance').resolves(ctx.mockInstance)
@@ -67,6 +74,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
   })
 
   afterEach(function (done) {
+    User.findByGithubIdAsync.restore()
     rabbitMQ.khronosDeleteContainer.restore()
     ContextVersion.recoverAsync.restore()
     InstanceService.updateContainerInspect.restore()
@@ -99,8 +107,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         sinon.assert.calledWith(InstanceService.updateContainerInspect,
           query, updateData)
         sinon.assert.calledOnce(InstanceService.startInstance)
-        sinon.assert.calledWith(InstanceService.startInstance, ctx.mockInstance,
-          ctx.data.inspectData.Config.Labels.sessionUserGithubId, ctx.data.inspectData.Config.Labels.tid)
+        sinon.assert.calledWith(InstanceService.startInstance, ctx.mockInstance.shortHash, ctx.user)
         done()
       })
     })
@@ -189,6 +196,20 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
       })
     })
 
+    it('should callback with error if user lookup failed', function (done) {
+      var userLookupError = new Error('Mongo error')
+      User.findByGithubIdAsync.rejects(userLookupError)
+      InstanceContainerCreated(ctx.data).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.message).to.equal(userLookupError.message)
+        sinon.assert.calledOnce(ContextVersion.recoverAsync)
+        sinon.assert.calledOnce(InstanceService.updateContainerInspect)
+        sinon.assert.calledOnce(User.findByGithubIdAsync)
+        sinon.assert.notCalled(InstanceService.startInstance)
+        done()
+      })
+    })
+
     it('should delete the container if it got a 409', function (done) {
       var updateConflict = Boom.conflict("Container was not updated, instance's container has changed")
       InstanceService.updateContainerInspect.yieldsAsync(updateConflict)
@@ -203,7 +224,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
       })
     })
 
-    it('should callback with error if start instance failed failed', function (done) {
+    it('should callback with error if start instance failed', function (done) {
       var startInstanceError = new Error('Start instance error')
       InstanceService.startInstance.rejects(startInstanceError)
       InstanceContainerCreated(ctx.data).asCallback(function (err) {
@@ -211,6 +232,7 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
         expect(err.message).to.equal(startInstanceError.message)
         sinon.assert.calledOnce(ContextVersion.recoverAsync)
         sinon.assert.calledOnce(InstanceService.updateContainerInspect)
+        sinon.assert.calledOnce(User.findByGithubIdAsync)
         sinon.assert.calledOnce(InstanceService.startInstance)
         done()
       })

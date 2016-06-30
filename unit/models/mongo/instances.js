@@ -46,37 +46,53 @@ describe('Instance Model Tests', function () {
     ctx = {}
     done()
   })
-  describe('starting or stopping state detection', function () {
-    it('should not error if container is not starting or stopping', function (done) {
-      var instance = mongoFactory.createNewInstance('container-not-starting-or-stopping')
-      instance.isNotStartingOrStopping(function (err) {
-        expect(err).to.be.null()
-        done()
-      })
-    })
+  describe('assertNotStartingOrStopping', function () {
     it('should error if no container', function (done) {
       var instance = mongoFactory.createNewInstance('no-container')
       instance.container = {}
-      instance.isNotStartingOrStopping(function (err) {
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
         expect(err.message).to.equal('Instance does not have a container')
         done()
       })
     })
+
     it('should error if container starting', function (done) {
       var instance = mongoFactory.createNewInstance('container-starting')
       instance.container.inspect.State.Starting = true
-      instance.isNotStartingOrStopping(function (err) {
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
         expect(err.message).to.equal('Instance is already starting')
         done()
       })
     })
+
     it('should error if container stopping', function (done) {
       var instance = mongoFactory.createNewInstance('container-stopping')
       instance.container.inspect.State.Stopping = true
-      instance.isNotStartingOrStopping(function (err) {
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
         expect(err.message).to.equal('Instance is already stopping')
         done()
       })
+    })
+
+    it('should return instance itself', function (done) {
+      var instance = mongoFactory.createNewInstance('container-stopping')
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function (result) {
+        expect(result).to.equal(instance)
+      })
+      .asCallback(done)
     })
   })
 
