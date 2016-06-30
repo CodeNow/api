@@ -78,77 +78,6 @@ describe('BDD - Create Build and Deploy Instance', function () {
       })
     })
 
-    describe('duplicate build', function () {
-      // 1
-      it('should deploy an instance deduped context versions', function (done) {
-        require('./fixtures/mocks/github/user-orgs')(11111, 'Runnable')
-
-        var count = createCount(2, done)
-        primus.expectAction('start', count.next)
-
-        async.waterfall([
-          createVersion,
-          addAppCodeVersions,
-          createBuild,
-          buildBuild
-        ], function (err, newBuild) {
-          if (err) { return done(err) }
-          expect(ctx.instance.build._id).to.equal(newBuild._id)
-          expects.updatedHosts(ctx.user, ctx.instance, count.next)
-        })
-        function createVersion (cb) {
-          var newVersion = ctx.context.createVersion({
-            infraCodeVersion: ctx.contextVersion.attrs.infraCodeVersion
-          }, function (err) {
-            cb(err, newVersion)
-          })
-        }
-        function addAppCodeVersions (newVersion, cb) {
-          async.each(ctx.contextVersion.appCodeVersions.models, function (appCodeVersion, cb) {
-            var body = pick(appCodeVersion.attrs, ['repo', 'branch', 'commit'])
-            var username = body.repo.split('/')[0]
-            var repoName = body.repo.split('/')[1]
-            require('./fixtures/mocks/github/repos-username-repo')(ctx.user, repoName)
-            require('./fixtures/mocks/github/repos-username-repo-hooks')(ctx.user, repoName)
-            require('./fixtures/mocks/github/repos-keys-get')(username, repoName, true)
-            newVersion.appCodeVersions.create(body, cb)
-          }, function (err) {
-            cb(err, newVersion)
-          })
-        }
-        function createBuild (newVersion, cb) {
-          var newBuild = ctx.user.createBuild({
-            contextVersions: [ newVersion.id() ]
-          }, function (err) {
-            cb(err, newBuild)
-          })
-        }
-        function buildBuild (newBuild, cb) {
-          var count2 = createCount(2, function (err) {
-            cb(err, newBuild)
-          })
-          var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next)
-          dispatch.on('started', function () {
-            // expect dedupe to work
-            expect(newBuild.attrs.contexts).to.deep.equal(ctx.build.attrs.contexts)
-            expect(newBuild.attrs.contextVersions).to.deep.equal(ctx.build.attrs.contextVersions)
-            updateInstanceWithBuild(newBuild, function (err) {
-              count2.next(err)
-            })
-          })
-        }
-        function updateInstanceWithBuild (newBuild, cb) {
-          require('./fixtures/mocks/github/user')(ctx.user)
-          require('./fixtures/mocks/github/user')(ctx.user)
-          require('./fixtures/mocks/github/user')(ctx.user)
-          var count = createCount(cb)
-          primus.expectAction('start', count.inc().next)
-          ctx.instance.update({
-            build: newBuild.id()
-          }, count.inc().next)
-        }
-      })
-    })
     describe('modified build', function () {
       describe('appCodeVersions', function () {
         describe('change commit', function () {
@@ -294,7 +223,9 @@ describe('BDD - Create Build and Deploy Instance', function () {
           var cV2 = build2.contextVersions.models[0]
           var count = createCount(2, function (err) {
             if (err) { return cb(err) }
-            expect(cV1.attrs.build).to.deep.equal(cV2.attrs.build)
+            expect(cV1.attrs.build._id).to.deep.equal(cV2.attrs.build._id)
+            expect(cV1.attrs.build.containerStarted).to.deep.equal(cV2.attrs.build.containerStarted)
+            expect(cV1.attrs.build.completed).to.deep.equal(cV2.attrs.build.completed)
             cb()
           })
           require('./fixtures/mocks/github/user')(user)

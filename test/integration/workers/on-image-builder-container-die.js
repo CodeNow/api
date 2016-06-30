@@ -28,23 +28,18 @@ var stream = require('stream')
 var User = require('models/mongo/user.js')
 
 describe('OnImageBuilderContainerDie Integration Tests', function () {
-  before(mongooseControl.start)
   var ctx = {}
   beforeEach(function (done) {
     ctx = {}
     done()
   })
+
+  before(mongooseControl.start)
   before(dock.start.bind(ctx))
+  beforeEach(require('../../functional/fixtures/clean-mongo').removeEverything)
+  afterEach(require('../../functional/fixtures/clean-mongo').removeEverything)
   after(dock.stop.bind(ctx))
-  beforeEach(deleteMongoDocs)
-  afterEach(deleteMongoDocs)
-  function deleteMongoDocs (done) {
-    var count = createCount(4, done)
-    ContextVersion.remove({}, count.next)
-    Instance.remove({}, count.next)
-    Build.remove({}, count.next)
-    User.remove({}, count.next)
-  }
+  after(mongooseControl.stop)
   function createStreamFunction (failed, errored) {
     var originalGetContainer = Dockerode.prototype.getContainer
     return function (done) {
@@ -160,7 +155,9 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
 
       beforeEach(function (done) {
         sinon.stub(rabbitMQ, 'createInstanceContainer')
+        sinon.stub(rabbitMQ, 'clearContainerMemory')
         sinon.stub(rabbitMQ, 'instanceUpdated')
+        sinon.stub(rabbitMQ, 'instanceDeployed')
         sinon.stub(messenger, 'messageRoom')
         sinon.spy(Instance, 'emitInstanceUpdates')
         sinon.spy(Instance.prototype, 'emitInstanceUpdate')
@@ -178,7 +175,9 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
       })
       afterEach(function (done) {
         rabbitMQ.createInstanceContainer.restore()
+        rabbitMQ.clearContainerMemory.restore()
         rabbitMQ.instanceUpdated.restore()
+        rabbitMQ.instanceDeployed.restore()
         messenger.messageRoom.restore()
         messenger._emitInstanceUpdateAction.restore()
         messenger.emitContextVersionUpdate.restore()
@@ -290,8 +289,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         it('should update the UI with a socket event', function (done) {
           var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user, 1)
           OnImageBuilderContainerDie(job)
-            .asCallback(function (err) {
-              if (err) { return done(err) }
+            .then(function () {
               sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
 
               sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
@@ -351,20 +349,20 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
 
               sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
-              ContextVersion.findOne(ctx.cv._id, function (err, cv) {
-                if (err) { return done(err) }
-                expect(cv.build.completed).to.exist()
-                expect(cv.build.failed).to.be.true()
-                Build.findBy('contextVersions', cv._id, function (err, builds) {
-                  if (err) { return done(err) }
-                  builds.forEach(function (build) {
-                    expect(build.completed).to.exist()
-                    expect(build.failed).to.be.true()
-                  })
-                  done()
-                })
+              return ContextVersion.findOneAsync(ctx.cv._id)
+            })
+            .then(function (cv) {
+              expect(cv.build.completed).to.exist()
+              expect(cv.build.failed).to.be.true()
+              return Build.findByAsync('contextVersions', cv._id)
+            })
+            .then(function (builds) {
+              builds.forEach(function (build) {
+                expect(build.completed).to.exist()
+                expect(build.failed).to.be.true()
               })
             })
+            .asCallback(done)
         })
       })
       describe('With 2 CVs, one that dedups', function () {
@@ -375,13 +373,12 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             mockFactory.createBuild(ctx.githubId, ctx.cv2, function (err, build) {
               if (err) { return done(err) }
               ctx.build2 = build
-              ctx.cv2.copyBuildFromContextVersion(ctx.cv, function (err) {
-                if (err) { return done(err) }
-                ContextVersion.findById(ctx.cv2._id, function (err, cv) {
+              ContextVersion.copyBuildFromContextVersion(ctx.cv2, ctx.cv)
+                .asCallback(function (err, cv) {
+                  if (err) { return done(err) }
                   ctx.cv2 = cv
                   done(err)
                 })
-              })
             })
           })
         })
@@ -405,8 +402,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
           it('should update the instance with the second cv, and update both cvs', function (done) {
             var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user)
             OnImageBuilderContainerDie(job)
-              .asCallback(function (err) {
-                if (err) { return done(err) }
+              .then(function () {
                 sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
                 sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
                 sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
@@ -489,31 +485,25 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
                   ownerUsername: ctx.user.accounts.github.username,
                   sessionUserGithubId: ctx.user.accounts.github.id.toString()
                 })
-                Instance.findById(ctx.instance._id, function (err, instance) {
-                  if (err) {
-                    return done(err)
-                  }
-                  expect(instance.contextVersion.build.completed).to.exist()
-                  ContextVersion.findBy('build._id', ctx.build._id, function (err, cvs) {
-                    if (err) {
-                      return done(err)
-                    }
-                    expect(cvs.length).to.equal(2)
-                    cvs.forEach(function (cv) {
-                      expect(cv.build.completed).to.exist()
-                    })
-                    Build.findBy('contextVersions', ctx.cv2._id, function (err, builds) {
-                      if (err) {
-                        return done(err)
-                      }
-                      builds.forEach(function (build) {
-                        expect(build.completed).to.exist()
-                      })
-                      done()
-                    })
-                  })
+                return Instance.findByIdAsync(ctx.instance._id)
+              })
+              .then(function (instance) {
+                expect(instance.contextVersion.build.completed).to.exist()
+                return ContextVersion.findByAsync('build._id', ctx.build._id)
+              })
+              .then(function (cvs) {
+                expect(cvs.length).to.equal(2)
+                cvs.forEach(function (cv) {
+                  expect(cv.build.completed).to.exist()
+                })
+                return Build.findByAsync('contextVersions', ctx.cv2._id)
+              })
+              .then(function (builds) {
+                builds.forEach(function (build) {
+                  expect(build.completed).to.exist()
                 })
               })
+              .asCallback(done)
           })
         })
       })
