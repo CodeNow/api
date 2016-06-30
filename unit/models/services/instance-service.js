@@ -565,7 +565,7 @@ describe('InstanceService', function () {
             'container.ports': sinon.match.object,
             'network.hostIp': '127.0.0.1'
           })
-          sinon.assert.notCalled(Instance.prototype.invalidateContainerDNS)
+          sinon.assert.calledOnce(Instance.prototype.invalidateContainerDNS)
           done()
         })
     })
