@@ -1170,6 +1170,7 @@ describe('BuildService', function () {
             sinon.assert.calledWithExactly(
               Build.createAsync,
               {
+                contextVersions: undefined,
                 owner: {
                   github: mockGithubUserId
                 },
@@ -1194,6 +1195,7 @@ describe('BuildService', function () {
       it('should reject when contextVersions not valid objectIds', function (done) {
         BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
           contextVersions: ['dsafasdfasdf'],
+          createdBy: owner,
           owner: owner
         })
           .asCallback(function (err) {
@@ -1204,6 +1206,7 @@ describe('BuildService', function () {
       it('should reject when contextVersions not array', function (done) {
         BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
           contextVersions: 'asdfsadfasdf',
+          createdBy: owner,
           owner: owner
         })
           .asCallback(function (err) {
@@ -1212,9 +1215,20 @@ describe('BuildService', function () {
           })
       })
 
+      it('should reject when createdBy doesn\'t exist', function (done) {
+        BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
+          contextVersions: [VALID_OBJECT_ID],
+          owner: owner
+        })
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            done()
+            })
+      })
       it('should reject when owner doesn\'t exist', function (done) {
         BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
-          contextVersions: [VALID_OBJECT_ID]
+          contextVersions: [VALID_OBJECT_ID],
+          createdBy: owner
         })
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -1239,6 +1253,7 @@ describe('BuildService', function () {
     describe('validation successes', function () {
       it('should allow without cv', function (done) {
         BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
+          createdBy: owner,
           owner: owner
         })
           .asCallback(function (err) {
@@ -1250,6 +1265,7 @@ describe('BuildService', function () {
       it('should allow with cv and owner', function (done) {
         BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
           contextVersions: [VALID_OBJECT_ID],
+          createdBy: owner,
           owner: owner
         })
           .asCallback(function (err) {
