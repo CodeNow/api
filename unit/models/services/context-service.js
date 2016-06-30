@@ -82,10 +82,10 @@ describe('ContextService Unit Test', function () {
       })
     })
 
-    it('should return build', function (done) {
+    it('should return context', function (done) {
       ContextService.findContext('507f1f77bcf86cd799439011')
-      .then(function (build) {
-        expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
+      .then(function (context) {
+        expect(context._id.toString()).to.equal('507f1f77bcf86cd799439011')
       })
       .asCallback(done)
     })
@@ -95,6 +95,86 @@ describe('ContextService Unit Test', function () {
       .then(function (build) {
         sinon.assert.calledOnce(Context.findByIdAsync)
         sinon.assert.calledWith(Context.findByIdAsync, '507f1f77bcf86cd799439011')
+      })
+      .asCallback(done)
+    })
+  })
+
+  describe('#findContextAndAssert', function () {
+    beforeEach(function (done) {
+      ctx.context = new Context({
+        _id: '507f1f77bcf86cd799439011'
+      })
+      sinon.stub(ContextService, 'findContext').resolves(ctx.context)
+      sinon.stub(PermisionService, 'ensureOwnerOrModerator').resolves()
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx = {}
+      ContextService.findContext.restore()
+      PermisionService.ensureOwnerOrModerator.restore()
+      done()
+    })
+
+    it('should fail build lookup failed', function (done) {
+      ContextService.findContext.rejects(new Error('Mongo error'))
+      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Mongo error')
+        done()
+      })
+    })
+
+    it('should fail if perm check failed', function (done) {
+      PermisionService.ensureOwnerOrModerator.rejects(new Error('Not an owner'))
+      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      .then(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
+        expect(err.message).to.equal('Not an owner')
+        done()
+      })
+    })
+
+    it('should return context', function (done) {
+      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      .then(function (context) {
+        expect(context._id.toString()).to.equal('507f1f77bcf86cd799439011')
+      })
+      .asCallback(done)
+    })
+
+    it('should call ContextService.findContext with correct params', function (done) {
+      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      .then(function (build) {
+        sinon.assert.calledOnce(ContextService.findContext)
+        sinon.assert.calledWith(ContextService.findContext, '507f1f77bcf86cd799439011')
+      })
+      .asCallback(done)
+    })
+
+    it('should call PermisionService.ensureOwnerOrModerator with correct params', function (done) {
+      var sessionUser = { _id: 'user-id' }
+      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', sessionUser)
+      .then(function (build) {
+        sinon.assert.calledOnce(PermisionService.ensureOwnerOrModerator)
+        sinon.assert.calledWith(PermisionService.ensureOwnerOrModerator, sessionUser, ctx.context)
+      })
+      .asCallback(done)
+    })
+
+    it('should call all functions in correct order', function (done) {
+      var sessionUser = { _id: 'user-id' }
+      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', sessionUser)
+      .then(function (build) {
+        sinon.assert.callOrder(
+          ContextService.findContext,
+          PermisionService.ensureOwnerOrModerator)
       })
       .asCallback(done)
     })
