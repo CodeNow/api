@@ -1018,7 +1018,7 @@ describe('BuildService', function () {
         },
         contextVersion: mockContextVersion._id
       }
-      sinon.stub(BuildService, 'validateCreateOpts').resolves()
+      sinon.stub(BuildService, 'validateOpts').resolves()
       sinon.stub(PermissionService, 'isOwnerOf').resolves()
       sinon.stub(ContextVersion, 'findByIdAsync').resolves(mockContextVersion)
       sinon.stub(Build, 'createAsync').resolves(mockBuild)
@@ -1026,7 +1026,7 @@ describe('BuildService', function () {
     })
 
     afterEach(function (done) {
-      BuildService.validateCreateOpts.restore()
+      BuildService.validateOpts.restore()
       PermissionService.isOwnerOf.restore()
       ContextVersion.findByIdAsync.restore()
       Build.createAsync.restore()
@@ -1036,7 +1036,7 @@ describe('BuildService', function () {
     describe('validation errors', function () {
       it('should reject when the validator fails', function (done) {
         var error = new Error('Validator Fail')
-        BuildService.validateCreateOpts.rejects(error)
+        BuildService.validateOpts.rejects(error)
         BuildService.createBuild({}, mockUser)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -1192,7 +1192,7 @@ describe('BuildService', function () {
     }
     describe('validation errors', function () {
       it('should reject when contextVersions not valid objectIds', function (done) {
-        BuildService.validateCreateOpts({
+        BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
           contextVersions: ['dsafasdfasdf'],
           owner: owner
         })
@@ -1202,7 +1202,7 @@ describe('BuildService', function () {
           })
       })
       it('should reject when contextVersions not array', function (done) {
-        BuildService.validateCreateOpts({
+        BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
           contextVersions: 'asdfsadfasdf',
           owner: owner
         })
@@ -1213,7 +1213,7 @@ describe('BuildService', function () {
       })
 
       it('should reject when owner doesn\'t exist', function (done) {
-        BuildService.validateCreateOpts({
+        BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
           contextVersions: [VALID_OBJECT_ID]
         })
           .asCallback(function (err) {
@@ -1222,7 +1222,7 @@ describe('BuildService', function () {
           })
       })
       it('should reject when owner isn\'t string or number', function (done) {
-        BuildService.validateCreateOpts({
+        BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
           owner: {
             github: {
               more: 'asdfsdafasdf'
@@ -1238,7 +1238,7 @@ describe('BuildService', function () {
 
     describe('validation errors', function () {
       it('should allow without cv', function (done) {
-        BuildService.validateCreateOpts({
+        BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
           owner: owner
         })
           .asCallback(function (err) {
@@ -1248,7 +1248,7 @@ describe('BuildService', function () {
       })
 
       it('should allow with cv and owner', function (done) {
-        BuildService.validateCreateOpts({
+        BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
           contextVersions: [VALID_OBJECT_ID],
           owner: owner
         })
