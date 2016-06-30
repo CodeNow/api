@@ -1229,14 +1229,14 @@ describe('BuildService', function () {
             }
           }
         })
-          .asCallback(function (err) {
-            expect(err).to.exist()
-            done()
-          })
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          done()
+        })
       })
     })
 
-    describe('validation errors', function () {
+    describe('validation successes', function () {
       it('should allow without cv', function (done) {
         BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
           owner: owner

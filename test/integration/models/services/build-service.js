@@ -67,6 +67,7 @@ describe('Build Services Integration Tests', function () {
         BuildService.createBuild(body, mockSessionUser)
           .then(function (build) {
             expect(build).to.exist()
+            expect(build.contextVersion.toString()).to.equal(mockCv._id.toString())
           })
           .asCallback(done)
       })
