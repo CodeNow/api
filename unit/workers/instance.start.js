@@ -216,7 +216,7 @@ describe('Workers: Instance Start', function () {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
-      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'starting', false)
+      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'starting', true)
       done()
     })
   })
@@ -226,8 +226,8 @@ describe('Workers: Instance Start', function () {
       sinon.assert.callOrder(
         Instance.findOneStartingAsync,
         ContextVersion.findByIdAsync,
-        Docker.prototype.startUserContainerAsync,
-        InstanceService.emitInstanceUpdate)
+        InstanceService.emitInstanceUpdate,
+        Docker.prototype.startUserContainerAsync)
       done()
     })
   })
