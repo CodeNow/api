@@ -981,4 +981,37 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       done()
     })
   }) // end redeployIsolation
+
+  describe('khronosDeleteContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        containerId: 'efgh',
+        dockerHost: '10.10.10.10'
+      }
+      ctx.rabbitMQ.khronosDeleteContainer(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish,
+        'khronos:containers:delete',
+        data)
+      done()
+    })
+
+    it('should throw an error when isolationId is missing', function (done) {
+      var data = { }
+      expect(ctx.rabbitMQ.khronosDeleteContainer.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  }) // end khronosDeleteContainer
 })

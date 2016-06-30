@@ -397,40 +397,22 @@ describe('Instance Model Tests', function () {
       done()
     })
 
-    it('should not invalidate without a docker host', function (done) {
-      delete instance.container.dockerHost
+    it('should not invalidate without a elasticHostname', function (done) {
+      delete instance.elasticHostname
       instance.invalidateContainerDNS()
-      expect(pubsub.publish.callCount).to.equal(0)
-      done()
-    })
-
-    it('should not invalidate without a local ip address', function (done) {
-      delete instance.container.inspect.NetworkSettings.IPAddress
-      instance.invalidateContainerDNS()
-      expect(pubsub.publish.callCount).to.equal(0)
-      done()
-    })
-
-    it('should not invalidate with a malformed docker host ip', function (done) {
-      instance.container.dockerHost = 'skkfksrandom'
-      instance.invalidateContainerDNS()
-      expect(pubsub.publish.callCount).to.equal(0)
+      sinon.assert.notCalled(pubsub.publish)
       done()
     })
 
     it('should publish the correct invalidation event via redis', function (done) {
-      var hostIp = '10.20.128.1'
-      var localIp = '172.17.14.55'
-      var instance = mongoFactory.createNewInstance('b', {
-        dockerHost: 'http://' + hostIp + ':4242',
-        IPAddress: localIp
-      })
+      var elasticHostname = 'the-host.com'
+      instance.elasticHostname = elasticHostname
       instance.invalidateContainerDNS()
-      expect(pubsub.publish.calledOnce).to.be.true()
-      expect(pubsub.publish.calledWith(
-        process.env.REDIS_DNS_INVALIDATION_KEY + ':' + hostIp,
-        localIp
-      )).to.be.true()
+      sinon.assert.calledOnce(pubsub.publish)
+      sinon.assert.calledWith(pubsub.publish,
+        process.env.REDIS_DNS_INVALIDATION_KEY,
+        elasticHostname
+      )
       done()
     })
   })

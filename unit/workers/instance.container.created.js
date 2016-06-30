@@ -13,9 +13,9 @@ require('sinon-as-promised')(require('bluebird'))
 
 var Boom = require('dat-middleware').Boom
 var ContextVersion = require('models/mongo/context-version')
-var Docker = require('models/apis/docker')
 var InstanceContainerCreated = require('workers/instance.container.created')
 var InstanceService = require('models/services/instance-service')
+var rabbitMQ = require('models/rabbitmq')
 var TaskFatalError = require('ponos').TaskFatalError
 
 var afterEach = lab.afterEach
@@ -62,15 +62,15 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
     sinon.stub(ContextVersion, 'recoverAsync').resolves(ctx.cv)
     sinon.stub(InstanceService, 'updateContainerInspect').yieldsAsync(null, ctx.mockInstance)
     sinon.stub(InstanceService, 'startInstance').resolves(ctx.mockInstance)
-    sinon.stub(Docker.prototype, 'removeContainerAsync').resolves(null)
+    sinon.stub(rabbitMQ, 'khronosDeleteContainer')
     done()
   })
 
   afterEach(function (done) {
+    rabbitMQ.khronosDeleteContainer.restore()
     ContextVersion.recoverAsync.restore()
     InstanceService.updateContainerInspect.restore()
     InstanceService.startInstance.restore()
-    Docker.prototype.removeContainerAsync.restore()
     done()
   })
 
@@ -194,20 +194,11 @@ describe('InstanceContainerCreated: ' + moduleName, function () {
       InstanceService.updateContainerInspect.yieldsAsync(updateConflict)
       InstanceContainerCreated(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
-        sinon.assert.calledOnce(Docker.prototype.removeContainerAsync)
-        sinon.assert.calledWith(Docker.prototype.removeContainerAsync, ctx.data.id)
-        done()
-      })
-    })
-
-    it('should throw task fatal if the delete container step gets a 400 error', function (done) {
-      var updateConflict = Boom.conflict("Container was not updated, instance's container has changed")
-      InstanceService.updateContainerInspect.yieldsAsync(updateConflict)
-      Docker.prototype.removeContainerAsync.rejects(Boom.badRequest())
-      InstanceContainerCreated(ctx.data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.container.created: Failed to delete container')
+        sinon.assert.calledOnce(rabbitMQ.khronosDeleteContainer)
+        sinon.assert.calledWith(rabbitMQ.khronosDeleteContainer, {
+          dockerHost: ctx.data.host,
+          containerId: ctx.data.id
+        })
         done()
       })
     })
