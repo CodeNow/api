@@ -469,6 +469,34 @@ describe('OnImageBuilderContainerDie', function () {
           done()
         })
     })
+    it('should return a list of instances', function (done) {
+      var cvs = [
+        {
+          _id: 'cv1',
+          build: {
+            message: 'autodeploy',
+            triggeredAction: {
+              manual: false,
+              appCodeVersion: {
+                repo: 'codenow/api',
+                branch: 'master',
+                commit: '21312'
+              }
+            }
+          }
+        }
+      ]
+      OnImageBuilderContainerDie._handleAutoDeploy(cvs)
+        .asCallback(function (err, instances) {
+          expect(err).to.not.exist()
+          expect(instances).to.have.length(2)
+          expect(instances).to.deep.equal([
+            { _id: 'id-1', contextVersion: { _id: 'cv-1' } },
+            { _id: 'id-2', contextVersion: { _id: 'cv-2' } }
+          ])
+          done()
+        })
+    })
   })
 
   describe('_createContainersIfSuccessful ', function () {
