@@ -12,6 +12,7 @@ var Code = require('code')
 var expect = Code.expect
 
 var api = require('../../fixtures/api-control')
+var MongoWhitelist = require('models/mongo/user-whitelist')
 
 var request = require('request')
 var uuid = require('uuid')
@@ -36,16 +37,12 @@ describe('DELETE /auth/whitelist/:name - 404', function () {
   })
   beforeEach(function (done) {
     ctx.name = randStr(5)
-    var opts = {
-      method: 'POST',
-      url: process.env.FULL_API_DOMAIN + '/auth/whitelist',
-      json: true,
-      body: { name: ctx.name },
-      jar: ctx.j
-    }
-    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
-    require('../../fixtures/mocks/github/users-username')(2828361, ctx.name)
-    request(opts, done)
+    MongoWhitelist.create({
+      name: ctx.name,
+      lowerName: ctx.name.toLowerCase(),
+      githubId: 2828361,
+      allowed: true
+    }, done)
   })
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
 
