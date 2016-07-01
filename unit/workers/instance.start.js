@@ -7,6 +7,7 @@ require('sinon-as-promised')(require('bluebird'))
 var Boom = require('dat-middleware').Boom
 var Code = require('code')
 var Lab = require('lab')
+var moment = require('moment')
 var omit = require('101/omit')
 var sinon = require('sinon')
 var TaskError = require('ponos').TaskError
@@ -38,7 +39,8 @@ describe('Workers: Instance Start', function () {
     tid: 'some-tid-id'
   }
   var testCV = new ContextVersion({
-    _id: testCvId
+    _id: testCvId,
+    created: new Date()
   })
   var testInstance = new Instance({
     _id: testInstanceId,
@@ -175,6 +177,19 @@ describe('Workers: Instance Start', function () {
     Worker(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(TaskError)
       expect(err.message).to.contain('container does not exist')
+      done()
+    })
+  })
+
+  it('should TaskFatal if docker startContainer 404 after more than 5 minutes', function (done) {
+    ContextVersion.findByIdAsync.resolves({
+      _id: testCvId,
+      created: moment().subtract(8, 'minutes').toDate()
+    })
+    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.be.an.instanceOf(TaskFatalError)
+      expect(err.message).to.contain('Container does not exist after')
       done()
     })
   })
