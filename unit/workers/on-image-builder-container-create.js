@@ -3,15 +3,19 @@
  */
 'use strict'
 
+require('sinon-as-promised')(require('bluebird'))
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
+var Boom = require('dat-middleware').Boom
 var clone = require('101/clone')
 var Code = require('code')
+var moment = require('moment')
 var noop = require('101/noop')
 var path = require('path')
 var sinon = require('sinon')
 var TaskFatalError = require('ponos').TaskFatalError
+var TaskError = require('ponos').TaskError
 
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
@@ -34,6 +38,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
     host: 'http://10.0.0.1:4242',
     inspectData: {
       Id: testContainerId,
+      Created: moment().format(),
       Config: {
         Labels: {
           'contextVersion.build._id': testCvBuildId
@@ -85,7 +90,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       sinon.stub(ContextVersion, 'updateAsync')
       sinon.stub(ContextVersion, 'findAsync')
       sinon.stub(messenger, 'emitContextVersionUpdate')
-      sinon.stub(Docker.prototype, 'startContainerAsync')
+      sinon.stub(Docker.prototype, 'startContainerAsync').resolves()
       sinon.stub(InstanceService, 'emitInstanceUpdateByCvBuildId')
       done()
     })
@@ -137,9 +142,28 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       })
     })
 
+    it('should fatal error if no container and created was more than 5 minutes ago', function (done) {
+      testJob.inspectData.Created = moment().subtract(6, 'minutes').format()
+      Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err.message).to.match(/after 5 minutes/)
+        done()
+      })
+    })
+
+    it('should error if no container and created was less than 5 minutes ago', function (done) {
+      Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
+      OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
+        expect(err).to.be.an.instanceof(TaskError)
+        console.log(err.message)
+        expect(err.message).to.match(/not exist/)
+        done()
+      })
+    })
+
     it('should start container', function (done) {
       ContextVersion.updateAsync.returns(1)
-      Docker.prototype.startContainerAsync.returns()
       ContextVersion.findAsync.returns([])
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
@@ -156,7 +180,6 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       var cv2 = { cv: 2, toJSON: noop }
       ContextVersion.updateAsync.returns(1)
       ContextVersion.findAsync.returns([cv1, cv2])
-      Docker.prototype.startContainerAsync.returns()
       messenger.emitContextVersionUpdate.returns()
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
