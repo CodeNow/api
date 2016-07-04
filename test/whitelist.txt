@@ -12,9 +12,6 @@
 ./test/functional/auth-whitelist/get/200.js
 ./test/functional/auth-whitelist/get/204.js
 ./test/functional/auth-whitelist/get/404.js
-./test/functional/auth-whitelist/post/201.js
-./test/functional/auth-whitelist/post/404.js
-./test/functional/auth-whitelist/post/409.js
 ./test/functional/auth/delete/200.js
 ./test/functional/bdd-context-version-deduping.js
 ./test/functional/bdd-debug-containers.js
