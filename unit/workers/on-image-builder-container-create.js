@@ -156,7 +156,6 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(TaskError)
-        console.log(err.message)
         expect(err.message).to.match(/not exist/)
         done()
       })
