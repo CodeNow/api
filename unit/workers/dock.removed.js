@@ -546,7 +546,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
             expect(call2[0]).to.deep.equal(testData[1])
             expect(call2[1]).to.be.null()
             expect(call2[2]).to.equal('update')
-            expect(call2[3]).to.be.true()
+            expect(call2[3]).to.be.false()
             done()
           })
       })
