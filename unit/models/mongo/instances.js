@@ -1466,28 +1466,28 @@ describe('Instance Model Tests', function () {
     beforeEach(function (done) {
       ctx.instance = mongoFactory.createNewInstance()
       ctx.mockCv = mongoFactory.createNewVersion({})
-      sinon.stub(Version, 'findById').yieldsAsync(null, ctx.mockCv)
-      sinon.stub(ctx.instance, 'update').yieldsAsync(null)
+      sinon.stub(Version, 'findByIdAsync').resolves(ctx.mockCv)
+      sinon.stub(ctx.instance, 'updateAsync').resolves(ctx.instance)
       done()
     })
 
     afterEach(function (done) {
-      Version.findById.restore()
+      Version.findByIdAsync.restore()
       done()
     })
 
     it('should update the context version', function (done) {
       var originalCvId = ctx.instance.contextVersion._id
-      ctx.instance.updateCv(function (err) {
+      ctx.instance.updateCv().asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(Version.findById)
-        sinon.assert.calledWith(Version.findById, originalCvId, {'build.log': 0}, sinon.match.func)
-        sinon.assert.calledOnce(ctx.instance.update)
-        sinon.assert.calledWith(ctx.instance.update, {
+        sinon.assert.calledOnce(Version.findByIdAsync)
+        sinon.assert.calledWith(Version.findByIdAsync, originalCvId, {'build.log': 0})
+        sinon.assert.calledOnce(ctx.instance.updateAsync)
+        sinon.assert.calledWith(ctx.instance.updateAsync, {
           $set: {
             contextVersion: ctx.mockCv.toJSON()
           }
-        }, sinon.match.func)
+        })
         done()
       })
     })
@@ -1495,13 +1495,13 @@ describe('Instance Model Tests', function () {
     describe('when the db fails', function () {
       var TestErr = new Error('Test Err')
       beforeEach(function (done) {
-        Version.findById.yieldsAsync(TestErr)
+        Version.findByIdAsync.rejects(TestErr)
         done()
       })
       it('should pass the error through', function (done) {
-        ctx.instance.updateCv(function (err) {
+        ctx.instance.updateCv().asCallback(function (err) {
           expect(err).to.equal(TestErr)
-          sinon.assert.notCalled(ctx.instance.update)
+          sinon.assert.notCalled(ctx.instance.updateAsync)
           done()
         })
       })
@@ -1509,14 +1509,14 @@ describe('Instance Model Tests', function () {
 
     describe('when there are not found context versions', function () {
       beforeEach(function (done) {
-        Version.findById.yieldsAsync(null, null)
+        Version.findByIdAsync.resolves(null)
         done()
       })
       it('should throw the error', function (done) {
-        ctx.instance.updateCv(function (err) {
+        ctx.instance.updateCv().asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/no.context.version.found/i)
-          sinon.assert.notCalled(ctx.instance.update)
+          sinon.assert.notCalled(ctx.instance.updateAsync)
           done()
         })
       })

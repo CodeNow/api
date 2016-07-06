@@ -135,7 +135,7 @@ describe('OnImageBuilderContainerDie', function () {
   describe('_handleBuildComplete', function () {
     beforeEach(function (done) {
       ctx.instanceStub = {
-        updateCvAsync: sinon.stub()
+        updateCv: sinon.stub()
       }
       ctx.contextVersions = [ctx.mockContextVersion]
       ctx.buildInfo = {}
@@ -166,7 +166,7 @@ describe('OnImageBuilderContainerDie', function () {
             if (err) { return done(err) }
             sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
             sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-            sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+            sinon.assert.calledOnce(ctx.instanceStub.updateCv)
             sinon.assert.calledWith(
               ContextVersion.updateBuildCompletedByContainerAsync,
               ctx.data.id,
@@ -199,7 +199,7 @@ describe('OnImageBuilderContainerDie', function () {
                 if (err) { return done(err) }
                 sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
                 sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-                sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+                sinon.assert.calledOnce(ctx.instanceStub.updateCv)
                 sinon.assert.calledWith(
                   ContextVersion.updateBuildCompletedByContainerAsync,
                   ctx.data.id,
@@ -224,7 +224,7 @@ describe('OnImageBuilderContainerDie', function () {
               .asCallback(function (err) {
                 sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
                 sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-                sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+                sinon.assert.calledOnce(ctx.instanceStub.updateCv)
                 expectErr(ctx.err, done)(err)
               })
           })
@@ -240,7 +240,7 @@ describe('OnImageBuilderContainerDie', function () {
           OnImageBuilderContainerDie._handleBuildComplete(ctx.job, ctx.buildInfo)
             .asCallback(function (err) {
               sinon.assert.notCalled(Instance.findByContextVersionIdsAsync)
-              sinon.assert.notCalled(ctx.instanceStub.updateCvAsync)
+              sinon.assert.notCalled(ctx.instanceStub.updateCv)
               expectErr(ctx.err, done)(err)
             })
         })
@@ -257,7 +257,7 @@ describe('OnImageBuilderContainerDie', function () {
             .asCallback(function (err) {
               sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
               sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-              sinon.assert.calledOnce(ctx.instanceStub.updateCvAsync)
+              sinon.assert.calledOnce(ctx.instanceStub.updateCv)
               expectErr(ctx.err, done)(err)
             })
         })
