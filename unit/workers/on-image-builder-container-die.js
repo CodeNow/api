@@ -134,7 +134,7 @@ describe('OnImageBuilderContainerDie', function () {
 
   describe('_handleBuildComplete', function () {
     beforeEach(function (done) {
-      ctx.instanceStub = {}
+      ctx.instanceStub = new Instance({})
       ctx.contextVersions = [ctx.mockContextVersion]
       ctx.buildInfo = {}
       ctx.job = {}
