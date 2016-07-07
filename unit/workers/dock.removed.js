@@ -541,7 +541,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
             expect(call1[0]).to.deep.equal(testData[0])
             expect(call1[1]).to.be.null()
             expect(call1[2]).to.equal('update')
-            expect(call1[3]).to.be.true()
+            expect(call1[3]).to.be.false()
             var call2 = InstanceService.emitInstanceUpdate.getCall(1).args
             expect(call2[0]).to.deep.equal(testData[1])
             expect(call2[1]).to.be.null()
