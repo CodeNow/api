@@ -56,6 +56,7 @@ describe('auth/whitelist unit test: ', function () {
       sinon.stub(userWhitelist, 'createAsync').resolves()
       sinon.stub(orion.users, 'create').resolves()
       sinon.stub(rabbitMQ, 'publishASGCreate')
+      sinon.stub(rabbitMQ, 'publishUserWhitelisted')
       done()
     })
 
@@ -65,6 +66,7 @@ describe('auth/whitelist unit test: ', function () {
       userWhitelist.createAsync.restore()
       orion.users.create.restore()
       rabbitMQ.publishASGCreate.restore()
+      rabbitMQ.publishUserWhitelisted.restore()
       done()
     })
 
@@ -169,6 +171,22 @@ describe('auth/whitelist unit test: ', function () {
               remote_created_at: Math.floor(new Date().getTime() / 1000)
             }]
           })
+          done()
+        })
+    })
+
+    it('should publish a `user.whitelisted` event', function (done) {
+      whitelistService.createWhitelist(mockOrgName, mockSessionUser)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(rabbitMQ.publishUserWhitelisted)
+          sinon.assert.calledWithExactly(
+            rabbitMQ.publishUserWhitelisted,
+            {
+              githubId: mockGithubOrg.id.toString(),
+              orgName: mockGithubOrg.login
+            }
+          )
           done()
         })
     })
