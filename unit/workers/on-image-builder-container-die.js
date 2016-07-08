@@ -134,9 +134,7 @@ describe('OnImageBuilderContainerDie', function () {
 
   describe('_handleBuildComplete', function () {
     beforeEach(function (done) {
-      ctx.instanceStub = {
-        updateCv: sinon.stub()
-      }
+      ctx.instanceStub = new Instance({})
       ctx.contextVersions = [ctx.mockContextVersion]
       ctx.buildInfo = {}
       ctx.job = {}
@@ -144,6 +142,7 @@ describe('OnImageBuilderContainerDie', function () {
       sinon.stub(Build, 'updateFailedByContextVersionIdsAsync')
       sinon.stub(Build, 'updateCompletedByContextVersionIdsAsync')
       sinon.stub(Instance, 'findByContextVersionIdsAsync').resolves([ctx.instanceStub])
+      sinon.stub(Instance.prototype, 'updateCv').resolves()
       done()
     })
     afterEach(function (done) {
@@ -151,6 +150,7 @@ describe('OnImageBuilderContainerDie', function () {
       Build.updateFailedByContextVersionIdsAsync.restore()
       Build.updateCompletedByContextVersionIdsAsync.restore()
       Instance.findByContextVersionIdsAsync.restore()
+      Instance.prototype.updateCv.restore()
       done()
     })
     describe('success', function () {
@@ -166,7 +166,7 @@ describe('OnImageBuilderContainerDie', function () {
             if (err) { return done(err) }
             sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
             sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-            sinon.assert.calledOnce(ctx.instanceStub.updateCv)
+            sinon.assert.calledOnce(Instance.prototype.updateCv)
             sinon.assert.calledWith(
               ContextVersion.updateBuildCompletedByContainerAsync,
               ctx.data.id,
@@ -199,7 +199,7 @@ describe('OnImageBuilderContainerDie', function () {
                 if (err) { return done(err) }
                 sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
                 sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-                sinon.assert.calledOnce(ctx.instanceStub.updateCv)
+                sinon.assert.calledOnce(Instance.prototype.updateCv)
                 sinon.assert.calledWith(
                   ContextVersion.updateBuildCompletedByContainerAsync,
                   ctx.data.id,
@@ -224,7 +224,7 @@ describe('OnImageBuilderContainerDie', function () {
               .asCallback(function (err) {
                 sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
                 sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-                sinon.assert.calledOnce(ctx.instanceStub.updateCv)
+                sinon.assert.calledOnce(Instance.prototype.updateCv)
                 expectErr(ctx.err, done)(err)
               })
           })
@@ -240,7 +240,7 @@ describe('OnImageBuilderContainerDie', function () {
           OnImageBuilderContainerDie._handleBuildComplete(ctx.job, ctx.buildInfo)
             .asCallback(function (err) {
               sinon.assert.notCalled(Instance.findByContextVersionIdsAsync)
-              sinon.assert.notCalled(ctx.instanceStub.updateCv)
+              sinon.assert.notCalled(Instance.prototype.updateCv)
               expectErr(ctx.err, done)(err)
             })
         })
@@ -257,7 +257,7 @@ describe('OnImageBuilderContainerDie', function () {
             .asCallback(function (err) {
               sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
               sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [ctx.mockContextVersion._id])
-              sinon.assert.calledOnce(ctx.instanceStub.updateCv)
+              sinon.assert.calledOnce(Instance.prototype.updateCv)
               expectErr(ctx.err, done)(err)
             })
         })
@@ -466,6 +466,34 @@ describe('OnImageBuilderContainerDie', function () {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
           sinon.assert.calledOnce(InstanceService.updateBuildByRepoAndBranch)
+          done()
+        })
+    })
+    it('should return a list of instances', function (done) {
+      var cvs = [
+        {
+          _id: 'cv1',
+          build: {
+            message: 'autodeploy',
+            triggeredAction: {
+              manual: false,
+              appCodeVersion: {
+                repo: 'codenow/api',
+                branch: 'master',
+                commit: '21312'
+              }
+            }
+          }
+        }
+      ]
+      OnImageBuilderContainerDie._handleAutoDeploy(cvs)
+        .asCallback(function (err, instances) {
+          expect(err).to.not.exist()
+          expect(instances).to.have.length(2)
+          expect(instances).to.deep.equal([
+            { _id: 'id-1', contextVersion: { _id: 'cv-1' } },
+            { _id: 'id-2', contextVersion: { _id: 'cv-2' } }
+          ])
           done()
         })
     })
