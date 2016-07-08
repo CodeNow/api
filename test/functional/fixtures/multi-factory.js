@@ -4,7 +4,6 @@
 'use strict'
 
 var async = require('async')
-var authMiddlewares = require('middlewares/auth')
 var ContextVersionService = require('models/services/context-version-service')
 var createCount = require('callback-count')
 var defaults = require('101/defaults')
@@ -59,10 +58,6 @@ module.exports = {
     if (isFunction(opts)) {
       cb = opts
       opts = {}
-    }
-    if (!authMiddlewares.requireWhitelist.isSinonProxy) {
-      // Duck it, we never need to restore this stub anyways right?
-      sinon.stub(authMiddlewares, 'requireWhitelist').callsArg(2)
     }
     log.trace({}, 'createUser')
     var host = require('./host')
