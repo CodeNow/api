@@ -256,7 +256,6 @@ describe('InstanceContainerDiedWorker', function () {
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.level).to.equal('warning')
         expect(err.message).to.equal('instance.container.died: Instance not found')
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.calledWith(InstanceService.modifyExistingContainerInspect,
