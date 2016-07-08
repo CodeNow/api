@@ -1,7 +1,6 @@
 ./test/functional/actions-analyze-info/get/200.js
 ./test/functional/actions-analyze/get/200.js
 ./test/functional/actions-analyze/get/400.js
-./test/functional/actions-github.js
 ./test/functional/actions-internal/deprovision-clusters.js
 ./test/functional/actions-moderate/delete/204.js
 ./test/functional/actions-moderate/post/200.js
@@ -22,8 +21,6 @@
 ./test/functional/bdd-deploy-instance.js
 ./test/functional/bdd-instance-dependencies.js
 ./test/functional/bdd-isolation.js
-./test/functional/builds-id-actions-build/post/201.js
-./test/functional/builds-id-actions-build/post/index.js
 ./test/functional/builds-id-actions-copy.js
 ./test/functional/builds.js
 ./test/functional/contexts-id-versions-id-appcodeversions-id-action-apply-transform-rules/index.js
@@ -41,8 +38,6 @@
 ./test/functional/github-proxy.js
 ./test/functional/instance-dependency-health.js
 ./test/functional/instances-id-actions-redeploy/post/index.js
-./test/functional/instances-id-actions-restart/put/index.js
-./test/functional/instances-id-actions-start/put/index.js
 ./test/functional/instances-id-containers-id-files-id.js
 ./test/functional/instances-id-containers-id-files.js
 ./test/functional/instances-id-dependencies-id/put/200.js

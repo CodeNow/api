@@ -46,37 +46,53 @@ describe('Instance Model Tests', function () {
     ctx = {}
     done()
   })
-  describe('starting or stopping state detection', function () {
-    it('should not error if container is not starting or stopping', function (done) {
-      var instance = mongoFactory.createNewInstance('container-not-starting-or-stopping')
-      instance.isNotStartingOrStopping(function (err) {
-        expect(err).to.be.null()
-        done()
-      })
-    })
+  describe('assertNotStartingOrStopping', function () {
     it('should error if no container', function (done) {
       var instance = mongoFactory.createNewInstance('no-container')
       instance.container = {}
-      instance.isNotStartingOrStopping(function (err) {
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
         expect(err.message).to.equal('Instance does not have a container')
         done()
       })
     })
+
     it('should error if container starting', function (done) {
       var instance = mongoFactory.createNewInstance('container-starting')
       instance.container.inspect.State.Starting = true
-      instance.isNotStartingOrStopping(function (err) {
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
         expect(err.message).to.equal('Instance is already starting')
         done()
       })
     })
+
     it('should error if container stopping', function (done) {
       var instance = mongoFactory.createNewInstance('container-stopping')
       instance.container.inspect.State.Stopping = true
-      instance.isNotStartingOrStopping(function (err) {
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function () {
+        done(new Error('Should never happen'))
+      })
+      .catch(function (err) {
         expect(err.message).to.equal('Instance is already stopping')
         done()
       })
+    })
+
+    it('should return instance itself', function (done) {
+      var instance = mongoFactory.createNewInstance('container-stopping')
+      Instance.assertNotStartingOrStopping(instance)
+      .tap(function (result) {
+        expect(result).to.equal(instance)
+      })
+      .asCallback(done)
     })
   })
 
@@ -397,40 +413,22 @@ describe('Instance Model Tests', function () {
       done()
     })
 
-    it('should not invalidate without a docker host', function (done) {
-      delete instance.container.dockerHost
+    it('should not invalidate without a elasticHostname', function (done) {
+      delete instance.elasticHostname
       instance.invalidateContainerDNS()
-      expect(pubsub.publish.callCount).to.equal(0)
-      done()
-    })
-
-    it('should not invalidate without a local ip address', function (done) {
-      delete instance.container.inspect.NetworkSettings.IPAddress
-      instance.invalidateContainerDNS()
-      expect(pubsub.publish.callCount).to.equal(0)
-      done()
-    })
-
-    it('should not invalidate with a malformed docker host ip', function (done) {
-      instance.container.dockerHost = 'skkfksrandom'
-      instance.invalidateContainerDNS()
-      expect(pubsub.publish.callCount).to.equal(0)
+      sinon.assert.notCalled(pubsub.publish)
       done()
     })
 
     it('should publish the correct invalidation event via redis', function (done) {
-      var hostIp = '10.20.128.1'
-      var localIp = '172.17.14.55'
-      var instance = mongoFactory.createNewInstance('b', {
-        dockerHost: 'http://' + hostIp + ':4242',
-        IPAddress: localIp
-      })
+      var elasticHostname = 'the-host.com'
+      instance.elasticHostname = elasticHostname
       instance.invalidateContainerDNS()
-      expect(pubsub.publish.calledOnce).to.be.true()
-      expect(pubsub.publish.calledWith(
-        process.env.REDIS_DNS_INVALIDATION_KEY + ':' + hostIp,
-        localIp
-      )).to.be.true()
+      sinon.assert.calledOnce(pubsub.publish)
+      sinon.assert.calledWith(pubsub.publish,
+        process.env.REDIS_DNS_INVALIDATION_KEY,
+        elasticHostname
+      )
       done()
     })
   })
@@ -1468,28 +1466,28 @@ describe('Instance Model Tests', function () {
     beforeEach(function (done) {
       ctx.instance = mongoFactory.createNewInstance()
       ctx.mockCv = mongoFactory.createNewVersion({})
-      sinon.stub(Version, 'findById').yieldsAsync(null, ctx.mockCv)
-      sinon.stub(ctx.instance, 'update').yieldsAsync(null)
+      sinon.stub(Version, 'findByIdAsync').resolves(ctx.mockCv)
+      sinon.stub(ctx.instance, 'updateAsync').resolves(ctx.instance)
       done()
     })
 
     afterEach(function (done) {
-      Version.findById.restore()
+      Version.findByIdAsync.restore()
       done()
     })
 
     it('should update the context version', function (done) {
       var originalCvId = ctx.instance.contextVersion._id
-      ctx.instance.updateCv(function (err) {
+      ctx.instance.updateCv().asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(Version.findById)
-        sinon.assert.calledWith(Version.findById, originalCvId, {'build.log': 0}, sinon.match.func)
-        sinon.assert.calledOnce(ctx.instance.update)
-        sinon.assert.calledWith(ctx.instance.update, {
+        sinon.assert.calledOnce(Version.findByIdAsync)
+        sinon.assert.calledWith(Version.findByIdAsync, originalCvId, {'build.log': 0})
+        sinon.assert.calledOnce(ctx.instance.updateAsync)
+        sinon.assert.calledWith(ctx.instance.updateAsync, {
           $set: {
             contextVersion: ctx.mockCv.toJSON()
           }
-        }, sinon.match.func)
+        })
         done()
       })
     })
@@ -1497,13 +1495,13 @@ describe('Instance Model Tests', function () {
     describe('when the db fails', function () {
       var TestErr = new Error('Test Err')
       beforeEach(function (done) {
-        Version.findById.yieldsAsync(TestErr)
+        Version.findByIdAsync.rejects(TestErr)
         done()
       })
       it('should pass the error through', function (done) {
-        ctx.instance.updateCv(function (err) {
+        ctx.instance.updateCv().asCallback(function (err) {
           expect(err).to.equal(TestErr)
-          sinon.assert.notCalled(ctx.instance.update)
+          sinon.assert.notCalled(ctx.instance.updateAsync)
           done()
         })
       })
@@ -1511,14 +1509,14 @@ describe('Instance Model Tests', function () {
 
     describe('when there are not found context versions', function () {
       beforeEach(function (done) {
-        Version.findById.yieldsAsync(null, null)
+        Version.findByIdAsync.resolves(null)
         done()
       })
       it('should throw the error', function (done) {
-        ctx.instance.updateCv(function (err) {
+        ctx.instance.updateCv().asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/no.context.version.found/i)
-          sinon.assert.notCalled(ctx.instance.update)
+          sinon.assert.notCalled(ctx.instance.updateAsync)
           done()
         })
       })
