@@ -20,6 +20,7 @@ var generateKey = require('./key-factory')
 var logger = require('middlewares/logger')(__filename)
 var primus = require('./primus')
 var async = require('async')
+var authMiddlewares = require('middlewares/auth')
 
 var log = logger.log
 
@@ -59,6 +60,10 @@ module.exports = {
     if (isFunction(opts)) {
       cb = opts
       opts = {}
+    }
+    if (!authMiddlewares.requireWhitelist.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      sinon.stub(authMiddlewares, 'requireWhitelist').callsArg(2)
     }
     log.trace({}, 'createUser')
     var host = require('./host')
