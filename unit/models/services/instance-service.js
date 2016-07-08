@@ -1512,7 +1512,7 @@ describe('InstanceService', function () {
         createdBy: {
           github: 123454
         },
-        updateCvAsync: sinon.stub().returns(Promise.resolve()),
+        updateCv: sinon.stub().returns(Promise.resolve()),
         populateModelsAsync: sinon.stub().returns(Promise.resolve()),
         populateOwnerAndCreatedByAsync: sinon.stub().returns(Promise.resolve())
       }
@@ -1536,7 +1536,7 @@ describe('InstanceService', function () {
           expect(err).to.equal(testErr)
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
-          sinon.assert.notCalled(instance.updateCvAsync)
+          sinon.assert.notCalled(instance.updateCv)
           sinon.assert.notCalled(messenger.emitInstanceUpdate)
           done()
         })
@@ -1553,7 +1553,7 @@ describe('InstanceService', function () {
           expect(err).to.equal(testErr)
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
-          sinon.assert.notCalled(instance.updateCvAsync)
+          sinon.assert.notCalled(instance.updateCv)
           sinon.assert.notCalled(messenger.emitInstanceUpdate)
           done()
         })
@@ -1568,7 +1568,7 @@ describe('InstanceService', function () {
           expect(err.message).to.equal(testErr.message)
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
-          sinon.assert.notCalled(instance.updateCvAsync)
+          sinon.assert.notCalled(instance.updateCv)
           done()
         })
     })
@@ -1592,7 +1592,7 @@ describe('InstanceService', function () {
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.calledOnce(messenger.emitInstanceUpdate)
           sinon.assert.calledWith(messenger.emitInstanceUpdate, instance, updateMessage)
-          sinon.assert.notCalled(instance.updateCvAsync)
+          sinon.assert.notCalled(instance.updateCv)
           sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, messenger.emitInstanceUpdate)
           done()
         })
@@ -1605,8 +1605,8 @@ describe('InstanceService', function () {
           sinon.assert.calledOnce(instance.populateModelsAsync)
           sinon.assert.calledOnce(instance.populateOwnerAndCreatedByAsync)
           sinon.assert.calledOnce(messenger.emitInstanceUpdate)
-          sinon.assert.calledOnce(instance.updateCvAsync)
-          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, instance.updateCvAsync, messenger.emitInstanceUpdate)
+          sinon.assert.calledOnce(instance.updateCv)
+          sinon.assert.callOrder(instance.populateModelsAsync, instance.populateOwnerAndCreatedByAsync, instance.updateCv, messenger.emitInstanceUpdate)
           done()
         })
     })
