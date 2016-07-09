@@ -184,7 +184,8 @@ describe('auth/whitelist unit test: ', function () {
             rabbitMQ.publishUserWhitelisted,
             {
               githubId: mockGithubOrg.id.toString(),
-              orgName: mockGithubOrg.login
+              orgName: mockGithubOrg.login,
+              createdAt: sinon.match.number
             }
           )
           done()
