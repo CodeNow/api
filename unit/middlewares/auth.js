@@ -50,7 +50,7 @@ describe('middlewares/auth', function () {
       it('should log the user out and throw unauthorized error', function (done) {
         authMiddleware.requireWhitelist(req, res, next)
           .catch(function (err) {
-            expect(err.isBoom).to.be.true
+            expect(err.isBoom).to.be.true()
             expect(err.output.statusCode).to.equal(401)
             expect(err.message).to.contain('access token')
           })
@@ -71,7 +71,7 @@ describe('middlewares/auth', function () {
       it('should throw unauthorized error', function (done) {
         authMiddleware.requireWhitelist(req, res, next)
           .catch(function (err) {
-            expect(err.isBoom).to.be.true
+            expect(err.isBoom).to.be.true()
             expect(err.output.statusCode).to.equal(401)
             expect(err.message).to.contain('not part of an organization')
           })
