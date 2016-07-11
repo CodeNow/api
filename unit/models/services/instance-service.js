@@ -2571,6 +2571,34 @@ describe('InstanceService', function () {
           .asCallback(done)
       })
 
+      describe('`shouldNotAutofork` property on masterPod', function () {
+        it('should set the `shouldNotAutofork` property when the intance is a masterPod', function (done) {
+          instance.masterPod = true
+          opts = { shouldNotAutofork: true }
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.calledOnce(instance.setAsync)
+              sinon.assert.calledWithExactly(
+                instance.setAsync,
+                { shouldNotAutofork: true }
+              )
+            })
+            .asCallback(done)
+        })
+
+        it('should not set the `shouldNotAutofork` property when the intance is not a masterPod', function (done) {
+          instance.masterPod = false
+          opts = { shouldNotAutofork: true }
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/instance.*masterPod/i)
+              sinon.assert.notCalled(instance.setAsync)
+              done()
+            })
+        })
+      })
+
       describe('`locked` property in isolated instances', function () {
         var isolationID
         beforeEach(function (done) {
