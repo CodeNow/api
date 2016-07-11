@@ -1223,7 +1223,7 @@ describe('BuildService', function () {
           .asCallback(function (err) {
             expect(err).to.exist()
             done()
-            })
+          })
       })
       it('should reject when owner doesn\'t exist', function (done) {
         BuildService.validateOpts(BuildService.CREATE_SCHEMA, {
