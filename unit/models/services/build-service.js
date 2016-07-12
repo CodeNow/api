@@ -972,7 +972,6 @@ describe('BuildService', function () {
           )
           expect(result.user).to.equal(mockInstanceUser)
           expect(result.build).to.equal(mockBuild)
-          expect(result.contextVersion).to.equal(mockContextVersion)
           done()
         })
       })
