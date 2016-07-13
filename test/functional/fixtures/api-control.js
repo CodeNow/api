@@ -1,11 +1,18 @@
 'use strict'
 
-var async = require('async')
+var authMiddlewares = require('middlewares/auth')
+var sinon = require('sinon')
+if (!authMiddlewares.requireWhitelist.isSinonProxy) {
+  // Duck it, we never need to restore this stub anyways right?
+  sinon.stub(authMiddlewares, 'requireWhitelist').callsArg(2)
+}
+
 var api = require('../../../app')
+var async = require('async')
 var cleanMongo = require('./clean-mongo')
 var exec = require('child_process').exec
-var put = require('101/put')
 var Hermes = require('runnable-hermes')
+var put = require('101/put')
 
 module.exports = {
   start: startApi,

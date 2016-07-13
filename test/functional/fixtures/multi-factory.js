@@ -3,23 +3,22 @@
  */
 'use strict'
 
-var EventEmitter = require('events').EventEmitter
+var async = require('async')
+var ContextVersionService = require('models/services/context-version-service')
 var createCount = require('callback-count')
+var defaults = require('101/defaults')
+var dockerMockEvents = require('./docker-mock-events')
+var EventEmitter = require('events').EventEmitter
+var generateKey = require('./key-factory')
 var isFunction = require('101/is-function')
 var isObject = require('101/is-object')
+var logger = require('middlewares/logger')(__filename)
+var MongoUser = require('models/mongo/user')
+var primus = require('./primus')
 var Promise = require('bluebird')
 var randStr = require('randomstring').generate
 var sinon = require('sinon')
 var uuid = require('uuid')
-var defaults = require('101/defaults')
-
-var ContextVersionService = require('models/services/context-version-service')
-var MongoUser = require('models/mongo/user')
-var dockerMockEvents = require('./docker-mock-events')
-var generateKey = require('./key-factory')
-var logger = require('middlewares/logger')(__filename)
-var primus = require('./primus')
-var async = require('async')
 
 var log = logger.log
 
