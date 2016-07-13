@@ -20,7 +20,6 @@ var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
 var Version = require('models/mongo/context-version')
-var objectId = require('objectid')
 var pubsub = require('models/redis/pubsub')
 var Promise = require('bluebird')
 
@@ -1468,31 +1467,27 @@ describe('Instance Model Tests', function () {
       ctx.instance = mongoFactory.createNewInstance()
       ctx.mockCv = mongoFactory.createNewVersion({})
       sinon.stub(Version, 'findByIdAsync').resolves(ctx.mockCv)
-      sinon.stub(Instance, 'findOneAndUpdateAsync').resolves(ctx.instance)
+      sinon.stub(ctx.instance, 'updateAsync').resolves(ctx.instance)
       done()
     })
 
     afterEach(function (done) {
       Version.findByIdAsync.restore()
-      Instance.findOneAndUpdateAsync.restore()
       done()
     })
 
     it('should update the context version', function (done) {
-      var originalCvId = ctx.instance.contextVersion._id.toString()
+      var originalCvId = ctx.instance.contextVersion._id
       ctx.instance.updateCv().asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Version.findByIdAsync)
         sinon.assert.calledWith(Version.findByIdAsync, originalCvId, {'build.log': 0})
-        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
-        sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
-          _id: ctx.instance._id,
-          'contextVersion._id': objectId(originalCvId)
-        }, {
+        sinon.assert.calledOnce(ctx.instance.updateAsync)
+        sinon.assert.calledWith(ctx.instance.updateAsync, {
           $set: {
             contextVersion: ctx.mockCv.toJSON()
           }
-        }, { new: true })
+        })
         done()
       })
     })
@@ -1506,7 +1501,7 @@ describe('Instance Model Tests', function () {
       it('should pass the error through', function (done) {
         ctx.instance.updateCv().asCallback(function (err) {
           expect(err).to.equal(TestErr)
-          sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
+          sinon.assert.notCalled(ctx.instance.updateAsync)
           done()
         })
       })
@@ -1521,7 +1516,7 @@ describe('Instance Model Tests', function () {
         ctx.instance.updateCv().asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/no.context.version.found/i)
-          sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
+          sinon.assert.notCalled(ctx.instance.updateAsync)
           done()
         })
       })
