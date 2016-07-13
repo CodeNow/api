@@ -3,7 +3,7 @@
 require('loadenv')()
 
 var Lab = require('lab')
-var Code = require('Code')
+var Code = require('code')
 
 var lab = exports.lab = Lab.script()
 
