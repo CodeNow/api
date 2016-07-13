@@ -55,8 +55,8 @@ describe('Messenger: ' + moduleName, function () {
 
       sinon.assert.calledOnce(Messenger.messageRoom)
       sinon.assert.calledWith(Messenger.messageRoom, 'org', 'test', {
-        event: 'INSTANCE_UPDATE',
         action: 'jump',
+        event: 'INSTANCE_UPDATE',
         data: testInstance
       })
       done()
@@ -72,7 +72,6 @@ describe('Messenger: ' + moduleName, function () {
 
       sinon.assert.calledOnce(rabbitMQ.instanceDeleted)
       sinon.assert.calledWith(rabbitMQ.instanceDeleted, {
-        action: 'delete',
         instance: testInstance,
         timestamp: sinon.match.number
       })
@@ -93,13 +92,27 @@ describe('Messenger: ' + moduleName, function () {
 
       sinon.assert.calledOnce(rabbitMQ.instanceCreated)
       sinon.assert.calledWith(rabbitMQ.instanceCreated, {
-        action: 'post',
         instance: testInstance,
         timestamp: sinon.match.number
       })
 
       sinon.assert.notCalled(rabbitMQ.instanceDeleted)
       sinon.assert.notCalled(rabbitMQ.instanceUpdated)
+
+      done()
+    })
+
+    it('should not call any event if isolation', function (done) {
+      var testInstance = {
+        owner: {
+          github: 'test'
+        }
+      }
+      Messenger._emitInstanceUpdateAction(testInstance, 'isolation')
+
+      sinon.assert.notCalled(rabbitMQ.instanceUpdated)
+      sinon.assert.notCalled(rabbitMQ.instanceDeleted)
+      sinon.assert.notCalled(rabbitMQ.instanceCreated)
 
       done()
     })
@@ -114,7 +127,6 @@ describe('Messenger: ' + moduleName, function () {
 
       sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
       sinon.assert.calledWith(rabbitMQ.instanceUpdated, {
-        action: 'jump',
         instance: testInstance,
         timestamp: sinon.match.number
       })
