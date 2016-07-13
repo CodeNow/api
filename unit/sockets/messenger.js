@@ -1,28 +1,131 @@
 'use strict'
-
 require('loadenv')()
 
+require('sinon-as-promised')(require('bluebird'))
+var Code = require('code')
+var createCount = require('callback-count')
+var lab = exports.lab = require('lab').script()
+var path = require('path')
 var sinon = require('sinon')
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
+
+var errorModule = require('error')
+var GitHub = require('models/apis/github')
+var Messenger = require('socket/messenger')
+var rabbitMQ = require('models/rabbitmq')
+var User = require('models/mongo/user')
+
 var describe = lab.describe
 var it = lab.it
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
-var Code = require('code')
 var expect = Code.expect
-
-var GitHub = require('models/apis/github')
-var Messenger = require('socket/messenger')
-var User = require('models/mongo/user')
-var createCount = require('callback-count')
-var errorModule = require('error')
-require('sinon-as-promised')(require('bluebird'))
-
-var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('Messenger: ' + moduleName, function () {
+  describe('emitInstanceUpdate', function () {
+    beforeEach(function (done) {
+      sinon.stub(Messenger, 'messageRoom')
+      sinon.stub(rabbitMQ, 'instanceDeleted')
+      sinon.stub(rabbitMQ, 'instanceCreated')
+      sinon.stub(rabbitMQ, 'instanceUpdated')
+      done()
+    })
+    afterEach(function (done) {
+      Messenger.messageRoom.restore()
+      rabbitMQ.instanceDeleted.restore()
+      rabbitMQ.instanceCreated.restore()
+      rabbitMQ.instanceUpdated.restore()
+      done()
+    })
+
+    it('should throw error if missing instance', function (done) {
+      expect(function () {
+        Messenger._emitInstanceUpdateAction()
+      }).to.throw(Error, 'emitInstanceUpdate missing instance')
+      done()
+    })
+
+    it('should send instance update to room', function (done) {
+      var testInstance = {
+        owner: {
+          github: 'test'
+        }
+      }
+      Messenger._emitInstanceUpdateAction(testInstance, 'jump')
+
+      sinon.assert.calledOnce(Messenger.messageRoom)
+      sinon.assert.calledWith(Messenger.messageRoom, 'org', 'test', {
+        event: 'INSTANCE_UPDATE',
+        action: 'jump',
+        data: testInstance
+      })
+      done()
+    })
+
+    it('should call instanceDeleted if delete event', function (done) {
+      var testInstance = {
+        owner: {
+          github: 'test'
+        }
+      }
+      Messenger._emitInstanceUpdateAction(testInstance, 'delete')
+
+      sinon.assert.calledOnce(rabbitMQ.instanceDeleted)
+      sinon.assert.calledWith(rabbitMQ.instanceDeleted, {
+        action: 'delete',
+        instance: testInstance,
+        timestamp: sinon.match.number
+      })
+
+      sinon.assert.notCalled(rabbitMQ.instanceCreated)
+      sinon.assert.notCalled(rabbitMQ.instanceUpdated)
+
+      done()
+    })
+
+    it('should call instanceCreated if post event', function (done) {
+      var testInstance = {
+        owner: {
+          github: 'test'
+        }
+      }
+      Messenger._emitInstanceUpdateAction(testInstance, 'post')
+
+      sinon.assert.calledOnce(rabbitMQ.instanceCreated)
+      sinon.assert.calledWith(rabbitMQ.instanceCreated, {
+        action: 'post',
+        instance: testInstance,
+        timestamp: sinon.match.number
+      })
+
+      sinon.assert.notCalled(rabbitMQ.instanceDeleted)
+      sinon.assert.notCalled(rabbitMQ.instanceUpdated)
+
+      done()
+    })
+
+    it('should call instanceUpdated', function (done) {
+      var testInstance = {
+        owner: {
+          github: 'test'
+        }
+      }
+      Messenger._emitInstanceUpdateAction(testInstance, 'jump')
+
+      sinon.assert.calledOnce(rabbitMQ.instanceUpdated)
+      sinon.assert.calledWith(rabbitMQ.instanceUpdated, {
+        action: 'jump',
+        instance: testInstance,
+        timestamp: sinon.match.number
+      })
+
+      sinon.assert.notCalled(rabbitMQ.instanceDeleted)
+      sinon.assert.notCalled(rabbitMQ.instanceCreated)
+
+      done()
+    })
+  })
+
   describe('emitInstanceUpdate', function () {
     beforeEach(function (done) {
       sinon.stub(Messenger, '_emitInstanceUpdateAction')
