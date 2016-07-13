@@ -38,8 +38,8 @@ describe('middlewares/domains unit test: ' + moduleName, function () {
 
   afterEach(function (done) {
     delete process.domain.runnableData
-    process.domain.exit()
     process.domain.dispose()
+    process.domain.exit()
     done()
   })
 
