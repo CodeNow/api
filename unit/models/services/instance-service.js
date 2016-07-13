@@ -2372,7 +2372,7 @@ describe('InstanceService', function () {
             ContextVersion.findByIdAsync.onFirstCall().resolves()
             InstanceService.createInstance(validBody, ctx.mockSessionUser)
               .catch(function (err) {
-                expect(err.message).to.equal('contextVersion not found')
+                expect(err.message).to.equal('Context Version not found')
               })
               .asCallback(done)
           })
@@ -2403,7 +2403,7 @@ describe('InstanceService', function () {
             ContextVersion.findByIdAsync.onSecondCall().resolves()
             InstanceService.createInstance(validBody, ctx.mockSessionUser)
               .catch(function (err) {
-                expect(err.message).to.equal('contextVersion not found the second time')
+                expect(err.message).to.equal('Context Version not found')
               })
               .asCallback(done)
           })
@@ -3273,7 +3273,7 @@ describe('InstanceService', function () {
           .then(throwErr(done))
           .catch(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.match(/contextVersion.*not.*found/i)
+            expect(err.message).to.equal('Context Version not found')
             sinon.assert.notCalled(instance.setAsync)
           })
           .asCallback(done)
