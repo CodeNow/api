@@ -6,6 +6,7 @@
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
+var Boom = require('dat-middleware').Boom
 var clone = require('101/clone')
 var Code = require('code')
 var sinon = require('sinon')
@@ -177,6 +178,16 @@ describe('isolation.match-commit', function () {
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err, res) {
           expect(err).to.exist()
           expect(err).to.deep.equal(testErr)
+          done()
+        })
+      })
+
+      it('should throw fatal error if updateInstanceCommitToNewCommit failed with 404', function (done) {
+        InstanceService.updateInstanceCommitToNewCommit.rejects(Boom.notFound('Context Version not found'))
+        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err, res) {
+          expect(err).to.exist()
+          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err.message).to.equal('isolation.match-commit: Failed to match commits. Some entities were removed')
           done()
         })
       })

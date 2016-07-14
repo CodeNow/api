@@ -380,11 +380,11 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
         var cv = new ContextVersion({})
         ContextVersion.findById.yields(null, cv)
         Instance.prototype.update.yields(null, instance)
-        User.prototype.findGithubUsernameByGithubId.yields(new Error('Mongo error'))
         done()
       })
 
       it('should callback with error', function (done) {
+        User.prototype.findGithubUsernameByGithubId.yields(new Error('Mongo error'))
         Worker(testData)
           .asCallback(function (err) {
             expect(err.message).to.contain('Mongo error')
@@ -393,6 +393,20 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
             sinon.assert.calledOnce(Build.findById)
             sinon.assert.calledOnce(ContextVersion.findById)
             sinon.assert.calledOnce(Instance.prototype.update)
+            sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
+            done()
+          })
+      })
+
+      it('should throw TaskFatalError', function (done) {
+        var testErr = new Error(JSON.stringify({
+          message: 'Not Found'
+        }))
+        User.prototype.findGithubUsernameByGithubId.yields(testErr)
+        Worker(testData)
+          .asCallback(function (err) {
+            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err.message).to.contain('instance owner not found on github (404)')
             sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
             done()
           })

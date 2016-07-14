@@ -1366,6 +1366,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       it('uses the correct ContextVersion.find query', function (done) {
         var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
           'build.completed': {$exists: false},
+          'build.failed': { $ne: true },
           'build.hash': cv.build.hash,
           'build._id': {$ne: cv.build._id},
           advanced: false,
@@ -1485,6 +1486,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       it('uses the correct ContextVersion.find query', function (done) {
         var expectedQuery = ContextVersion.addAppCodeVersionQuery(cv, {
           'build.completed': {$exists: true},
+          'build.failed': { $ne: true },
           'build.hash': cv.build.hash,
           'build._id': {$ne: cv.build._id},
           advanced: false,
