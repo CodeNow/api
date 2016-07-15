@@ -44,6 +44,7 @@ function ensureIndexes (cb) {
 var publishedEvents = [
   'container.network.attached',
   'dock.removed',
+  'docker.events-stream.connected',
   'docker.events-stream.disconnected'
 ]
 
