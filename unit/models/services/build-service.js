@@ -146,11 +146,11 @@ describe('BuildService', function () {
       .asCallback(done)
     })
 
-    it('should call BuildService.findBuildAndAssert with correct params', function (done) {
+    it('should call BuildService.findBuild with correct params', function (done) {
       BuildService.findBuildAndAssert('507f1f77bcf86cd799439011', {})
       .then(function (build) {
-        sinon.assert.calledOnce(BuildService.findBuildAndAssert)
-        sinon.assert.calledWith(BuildService.findBuildAndAssert, '507f1f77bcf86cd799439011')
+        sinon.assert.calledOnce(BuildService.findBuild)
+        sinon.assert.calledWith(BuildService.findBuild, '507f1f77bcf86cd799439011')
       })
       .asCallback(done)
     })
