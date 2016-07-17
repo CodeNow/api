@@ -2372,7 +2372,7 @@ describe('InstanceService', function () {
             ContextVersion.findByIdAsync.onFirstCall().resolves()
             InstanceService.createInstance(validBody, ctx.mockSessionUser)
               .catch(function (err) {
-                expect(err.message).to.equal('contextVersion not found')
+                expect(err.message).to.equal('Context Version not found')
               })
               .asCallback(done)
           })
@@ -2403,7 +2403,7 @@ describe('InstanceService', function () {
             ContextVersion.findByIdAsync.onSecondCall().resolves()
             InstanceService.createInstance(validBody, ctx.mockSessionUser)
               .catch(function (err) {
-                expect(err.message).to.equal('contextVersion not found the second time')
+                expect(err.message).to.equal('Context Version not found')
               })
               .asCallback(done)
           })
@@ -2569,6 +2569,34 @@ describe('InstanceService', function () {
             )
           })
           .asCallback(done)
+      })
+
+      describe('`shouldNotAutofork` property on masterPod', function () {
+        it('should set the `shouldNotAutofork` property when the intance is a masterPod', function (done) {
+          instance.masterPod = true
+          opts = { shouldNotAutofork: true }
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.calledOnce(instance.setAsync)
+              sinon.assert.calledWithExactly(
+                instance.setAsync,
+                { shouldNotAutofork: true }
+              )
+            })
+            .asCallback(done)
+        })
+
+        it('should not set the `shouldNotAutofork` property when the intance is not a masterPod', function (done) {
+          instance.masterPod = false
+          opts = { shouldNotAutofork: true }
+          InstanceService.updateInstance(instance, opts, sessionUser)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/instance.*masterPod/i)
+              sinon.assert.notCalled(instance.setAsync)
+              done()
+            })
+        })
       })
 
       describe('`locked` property in isolated instances', function () {
@@ -2973,6 +3001,11 @@ describe('InstanceService', function () {
         isIsolationGroupMaster: false,
         contextVersion: {
           _id: oldContextVersionId,
+          build: {
+            triggeredAction: {
+              manual: false
+            }
+          },
           appCodeVersions: [{
             repo: oldLowerRepoName,
             branch: oldLowerBranchName,
@@ -3144,9 +3177,10 @@ describe('InstanceService', function () {
 
     describe('Isolation', function () {
       describe('Match Commits', function () {
-        it('should match the commit if its isolated', function (done) {
+        it('should match the commit if its isolated and the triggered action is manual', function (done) {
           instance.isolated = isolationId
           instance.isIsolationGroupMaster = true
+          instance.contextVersion.build.triggeredAction.manual = true
           InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
             .then(function () {
               sinon.assert.calledOnce(rabbitMQ.matchCommitInIsolationInstances)
@@ -3155,6 +3189,26 @@ describe('InstanceService', function () {
                 instanceId: instance._id.toString(),
                 sessionUserGithubId: sessionUserGithubId
               })
+            })
+            .asCallback(done)
+        })
+
+        it('should not match the commit if its not isolated', function (done) {
+          instance.isolated = null
+          instance.contextVersion.build.triggeredAction.manual = true
+          InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.notCalled(rabbitMQ.matchCommitInIsolationInstances)
+            })
+            .asCallback(done)
+        })
+
+        it('should not match the commit if the triggered action is not manual', function (done) {
+          instance.isolated = isolationId
+          instance.isIsolationGroupMaster = true
+          InstanceService._setNewContextVersionOnInstance(instance, opts, sessionUser)
+            .then(function () {
+              sinon.assert.notCalled(rabbitMQ.matchCommitInIsolationInstances)
             })
             .asCallback(done)
         })
@@ -3245,7 +3299,7 @@ describe('InstanceService', function () {
           .then(throwErr(done))
           .catch(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.match(/contextVersion.*not.*found/i)
+            expect(err.message).to.equal('Context Version not found')
             sinon.assert.notCalled(instance.setAsync)
           })
           .asCallback(done)
