@@ -56,7 +56,7 @@ describe('BuildService', function () {
 
     it('should fail build lookup failed', function (done) {
       Build.findByIdAsync.rejects(new Error('Mongo error'))
-      BuildService.findBuild('507f1f77bcf86cd799439011', {})
+      BuildService.findBuild('507f1f77bcf86cd799439011')
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -357,7 +357,7 @@ describe('BuildService', function () {
         BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
         .tap(function () {
           sinon.assert.calledOnce(BuildService.findBuild)
-          sinon.assert.calledWith(BuildService.findBuild, '507f1f77bcf86cd799439011', ctx.sessionUser)
+          sinon.assert.calledWith(BuildService.findBuild, '507f1f77bcf86cd799439011')
         })
         .asCallback(done)
       })
