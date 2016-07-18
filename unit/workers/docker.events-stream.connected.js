@@ -14,6 +14,7 @@ var TaskFatalError = require('ponos').TaskFatalError
 var dockerEventStreamConnected = require('workers/docker.events-stream.connected')
 var messenger = require('socket/messenger')
 var rabbitMQ = require('models/rabbitmq')
+var SendGrid = require('models/apis/sendgrid')
 var UserWhitelist = require('models/mongo/user-whitelist')
 
 var lab = exports.lab = Lab.script()
@@ -36,6 +37,7 @@ describe('docker.events-stream.connected unit test', function () {
     sinon.stub(UserWhitelist, 'updateAsync').resolves(1)
     sinon.stub(rabbitMQ, 'firstDockCreated').returns()
     sinon.stub(messenger, 'emitFirstDockCreated').returns()
+    sinon.stub(SendGrid.prototype, 'dockCreated').returns()
     done()
   })
 
@@ -43,6 +45,7 @@ describe('docker.events-stream.connected unit test', function () {
     UserWhitelist.updateAsync.restore()
     rabbitMQ.firstDockCreated.restore()
     messenger.emitFirstDockCreated.restore()
+    SendGrid.prototype.dockCreated.restore()
     done()
   })
 
@@ -158,6 +161,15 @@ describe('docker.events-stream.connected unit test', function () {
           { $set: { firstDockCreated: true } })
       })
       .asCallback(done)
+    })
+
+    it('should call sendgrid.dockCreated to send the email', function (done) {
+      dockerEventStreamConnected(testJob)
+        .tap(function () {
+          sinon.assert.calledOnce(SendGrid.prototype.dockCreated)
+          sinon.assert.calledWith(SendGrid.prototype.dockCreated, parseInt(testOrg, 10))
+        })
+        .asCallback(done)
     })
 
     it('should call messenger.emitFirstDockCreated with correct params', function (done) {
