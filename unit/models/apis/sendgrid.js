@@ -178,7 +178,7 @@ describe('sendgrid: ' + moduleName, function () {
             sinon.assert.calledOnce(sendgrid.sendEmail)
             var sendEmailOptions = sendgrid.sendEmail.args[0][0]
 
-            expect(sendEmailOptions.email, 'email').to.equal('praful@runnable.com')
+            expect(sendEmailOptions.email, 'email').to.equal('signup@runnable.com')
             expect(sendEmailOptions.from, 'from').to.equal('support@runnable.com')
             expect(sendEmailOptions.fromname, 'fromname').to.equal('Runnable Support')
             expect(sendEmailOptions.subject, 'subject').to.equal('Your infrastructure is ready')
