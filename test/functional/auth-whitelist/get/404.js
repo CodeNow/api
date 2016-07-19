@@ -55,7 +55,6 @@ describe('GET /auth/whitelist/:name', function () {
       expect(err).to.be.null()
       expect(res).to.exist()
       expect(res.statusCode).to.equal(404)
-      expect(body.message).to.match(/userwhitelist not found/i)
       require('../../fixtures/check-whitelist')([ctx.name], done)
     })
   })
