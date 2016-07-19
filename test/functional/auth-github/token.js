@@ -17,9 +17,7 @@ var request = require('request')
 var api = require('../fixtures/api-control')
 var Github = require('models/apis/github')
 var getUserEmails = require('../fixtures/mocks/github/get-user-emails')
-var querystring = require('querystring')
 var randStr = require('randomstring').generate
-var url = require('url')
 var uuid = require('uuid')
 
 describe('/auth/github with whitelist', function () {
