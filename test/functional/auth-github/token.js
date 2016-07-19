@@ -51,33 +51,6 @@ describe('/auth/github with whitelist', function () {
   afterEach(require('../fixtures/clean-mongo').removeEverything)
   afterEach(require('../fixtures/clean-ctx')(ctx))
 
-  describe('user not in the whitelist', function () {
-    var tokenUrl = baseUrl + 'token'
-    beforeEach(function (done) {
-      ctx.username = randStr(5)
-      ctx.testToken = uuid()
-      done()
-    })
-
-    it('should not let the user authenticate', function (done) {
-      require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken)
-      require('../fixtures/mocks/github/user-orgs')(1001, randStr(5))
-      request.post({
-        url: tokenUrl,
-        json: true,
-        body: { accessToken: ctx.testToken },
-        qs: { username: ctx.username },
-        followRedirect: false
-      }, function (err, res) {
-        if (err) { return done(err) }
-        expect(res.statusCode).to.equal(302)
-        var qs = querystring.parse(url.parse(res.headers.location).query)
-        expect(qs).to.contain({ whitelist: 'false' })
-        done()
-      })
-    })
-  })
-
   describe('user in the whitelist', function () {
     var tokenUrl = baseUrl + 'token'
     before(function (done) {
