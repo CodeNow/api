@@ -73,6 +73,8 @@ describe('Dependencies - /instances/:id/dependencies/:hostname', function () {
 
       it('should return a depedency', function (done) {
         var deps = ctx.instanceWithDep.fetchDependencies(function (err, data) {
+          console.log('err', err)
+          console.log('data', data)
           if (err) { return done(err) }
           expectInstanceDep(data, ctx.instance)
           deps.models[0].update({
