@@ -34,12 +34,6 @@ function makeGraphNodeFromInstance (instance) {
   }
 }
 
-function makeNetworkingNodeFromInstance (instance) {
-  var node = makeGraphNodeFromInstance(instance)
-  node.network = instance.network
-  return node
-}
-
 describe('Instance Model Integration Tests', function () {
   before(mongooseControl.start)
   var ctx
@@ -809,18 +803,6 @@ describe('Instance Model Integration Tests', function () {
         ctx[name] = instance
         done(null, instance)
       })
-    }
-  }
-  function createExpectedConnection (opts) {
-    var name = opts.name
-    var parentName = opts.parentName || name
-    return {
-      instanceId: ctx[name]._id,
-      name: name,
-      elasticHostname: (parentName + '-staging-' + ctx.mockUsername + '.runnableapp.com').toLowerCase(),
-      network: {
-        hostIp: '127.0.0.1'
-      }
     }
   }
 
