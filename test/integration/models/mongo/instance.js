@@ -869,8 +869,7 @@ describe('Instance Model Integration Tests', function () {
           ctx.hello.getDependencies(function (err, dependencies) {
             expect(dependencies).to.be.array()
             expect(dependencies.length).to.equal(1)
-            var expected = createExpectedConnection({name: 'adelle'})
-            expect(dependencies[0]).to.deep.equal(expected)
+            expect(dependencies[0]._id).to.deep.equal(ctx['adelle']._id)
             done(err)
           })
         })
@@ -885,9 +884,9 @@ describe('Instance Model Integration Tests', function () {
             ctx.hello.getDependencies(function (err, dependencies) {
               expect(dependencies).to.be.array()
               expect(dependencies.length).to.equal(2)
-              var expected0 = createExpectedConnection({name: 'goodbye'})
-              var expected1 = createExpectedConnection({name: 'adelle'})
-              expect(dependencies).to.deep.includes([expected0, expected1])
+              var ids = dependencies.map(pluck('_id.toString()'))
+              expect(ids).to.deep.include(ctx.goodbye._id.toString())
+              expect(ids).to.deep.include(ctx.adelle._id.toString())
               done(err)
             })
           })
@@ -935,8 +934,8 @@ describe('Instance Model Integration Tests', function () {
             ctx.hello.getDependencies(function (err, dependencies) {
               expect(dependencies).to.be.array()
               expect(dependencies.length).to.equal(1)
-              var expected = createExpectedConnection({name: 'fb1-adelle', parentName: 'adelle'})
-              expect(dependencies[0]).to.deep.equal(expected)
+              expect(dependencies[0]._id).to.deep.equal(ctx['fb1-adelle']._id)
+              expect(dependencies[0].elasticHostname).to.deep.equal(ctx['fb1-adelle'].elasticHostname)
               done(err)
             })
           })
@@ -952,9 +951,9 @@ describe('Instance Model Integration Tests', function () {
             ctx.hello.getDependencies(function (err, dependencies) {
               expect(dependencies).to.be.array()
               expect(dependencies.length).to.equal(2)
-              var expected0 = createExpectedConnection({name: 'goodbye'})
-              var expected1 = createExpectedConnection({name: 'fb1-adelle', parentName: 'adelle'})
-              expect(dependencies).to.deep.includes([expected0, expected1])
+              var ids = dependencies.map(pluck('_id.toString()'))
+              expect(ids).to.deep.include(ctx.goodbye._id.toString())
+              expect(ids).to.deep.include(ctx['fb1-adelle']._id.toString())
               done(err)
             })
           })
@@ -1028,12 +1027,7 @@ describe('Instance Model Integration Tests', function () {
             }
             expect(dependencies).to.be.array()
             expect(dependencies.length).to.equal(1)
-            var expected = createExpectedConnection({
-              name: fb1GoodbyeName,
-              parentName: 'goodbye',
-              isolated: ctx['fb1-hello']._id.toString()
-            })
-            expect(dependencies[0]).to.deep.equal(expected)
+            expect(dependencies[0]._id).to.deep.equal(ctx[fb1GoodbyeName]._id)
             done()
           })
         })
@@ -1051,13 +1045,9 @@ describe('Instance Model Integration Tests', function () {
               }
               expect(dependencies).to.be.array()
               expect(dependencies.length).to.equal(2)
-              var expected0 = createExpectedConnection({
-                name: fb1GoodbyeName,
-                parentName: 'goodbye',
-                isolated: ctx['fb1-hello']._id.toString()
-              })
-              var expected1 = createExpectedConnection({name: 'adelle'})
-              expect(dependencies).to.deep.includes([expected0, expected1])
+              var ids = dependencies.map(pluck('_id.toString()'))
+              expect(ids).to.deep.include(ctx[fb1GoodbyeName]._id.toString())
+              expect(ids).to.deep.include(ctx.adelle._id.toString())
               done()
             })
           })
@@ -1314,7 +1304,6 @@ describe('Instance Model Integration Tests', function () {
         var i = instances[0]
         var d = instances[1]
         var shortD = makeGraphNodeFromInstance(d)
-        var shortDWithNetworking = makeNetworkingNodeFromInstance(d)
 
         i.addDependency(d, d.elasticHostname, function (err, limitedInstance) {
           expect(err).to.be.null()
@@ -1326,7 +1315,8 @@ describe('Instance Model Integration Tests', function () {
             expect(deps).to.be.an.array()
             expect(deps).to.have.length(1)
             // getDeps adds networking to the result
-            expect(deps[0]).to.deep.equal(shortDWithNetworking)
+            expect(deps[0]._id).to.deep.equal(d._id)
+            expect(deps[0].elasticHostname).to.deep.equal(d.elasticHostname)
             done()
           })
         })
@@ -1364,8 +1354,6 @@ describe('Instance Model Integration Tests', function () {
           var i = instances[0]
           var d = instances[2]
           var shortD = makeGraphNodeFromInstance(d)
-          var shortDWithNetworking = makeNetworkingNodeFromInstance(d)
-          var shortBWithNetworking = makeNetworkingNodeFromInstance(instances[1])
           i.addDependency(d, function (err, limitedInstance) {
             expect(err).to.be.null()
             expect(limitedInstance).to.exist()
@@ -1375,8 +1363,9 @@ describe('Instance Model Integration Tests', function () {
               expect(err).to.be.null()
               expect(deps).to.be.an.array()
               expect(deps).to.have.length(2)
-              expect(deps).to.deep.contain(shortDWithNetworking)
-              expect(deps).to.deep.contain(shortBWithNetworking)
+              var ids = deps.map(pluck('_id.toString()'))
+              expect(ids).to.deep.include(instances[2]._id.toString())
+              expect(ids).to.deep.include(instances[1]._id.toString())
               done()
             })
           })
