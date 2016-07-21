@@ -15,11 +15,6 @@ var error = require('error')
 var objectId = require('objectid')
 var pluck = require('101/pluck')
 var mongoose = require('mongoose')
-var find = require('101/find')
-var Graph = require('models/apis/graph')
-var async = require('async')
-var hasProps = require('101/has-properties')
-var pick = require('101/pick')
 var Promise = require('bluebird')
 
 var Instance = require('models/mongo/instance')
@@ -29,6 +24,20 @@ require('sinon-as-promised')
 
 function newObjectId () {
   return new mongoose.Types.ObjectId()
+}
+
+function makeGraphNodeFromInstance (instance) {
+  return {
+    instanceId: instance._id,
+    elasticHostname: instance.elasticHostname,
+    name: instance.name
+  }
+}
+
+function makeNetworkingNodeFromInstance (instance) {
+  var node = makeGraphNodeFromInstance(instance)
+  node.network = instance.network
+  return node
 }
 
 describe('Instance Model Integration Tests', function () {
@@ -793,7 +802,7 @@ describe('Instance Model Integration Tests', function () {
   })
   function createNewInstance (name, opts) {
     return function (done) {
-      mongoFactory.createInstanceWithProps(ctx.mockSessionUser._id, opts, function (err, instance) {
+      mongoFactory.createInstanceWithProps(ctx.mockSessionUser, opts, function (err, instance) {
         if (err) {
           return done(err)
         }
@@ -805,36 +814,20 @@ describe('Instance Model Integration Tests', function () {
   function createExpectedConnection (opts) {
     var name = opts.name
     var parentName = opts.parentName || name
-    var dep = {
-      'shortHash': ctx[name].shortHash,
-      'lowerName': name.toLowerCase(),
-      'name': name,
-      'id': ctx[name]._id.toString(),
-      'hostname': parentName.toLowerCase() + '-staging-someowner.runnableapp.com',
-      'owner': {
-        'github': 1234
-      },
-      'contextVersion': {
-        'context': ctx[name].contextVersion.context.toString()
-      },
-
-      'network': {
-        'hostIp': '127.0.0.1'
+    return {
+      instanceId: ctx[name]._id,
+      name: name,
+      elasticHostname: (parentName + '-staging-' + ctx.mockUsername + '.runnableapp.com').toLowerCase(),
+      network: {
+        hostIp: '127.0.0.1'
       }
     }
-    if (opts.isIsolationGroupMaster) {
-      dep.isIsolationGroupMaster = opts.isIsolationGroupMaster
-    }
-    if (opts.isolated) {
-      dep.isolated = opts.isolated
-    }
-    return dep
   }
 
   describe('setDependenciesFromEnvironment', function () {
-    var ownerName = 'someowner'
+    var ownerName = 'TEST-login'
     beforeEach(function (done) {
-      ctx.mockUsername = 'TEST-login'
+      ctx.mockUsername = ownerName
       ctx.mockSessionUser = {
         _id: 1234,
         findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
@@ -877,7 +870,7 @@ describe('Instance Model Integration Tests', function () {
             expect(dependencies).to.be.array()
             expect(dependencies.length).to.equal(1)
             var expected = createExpectedConnection({name: 'adelle'})
-            expect(dependencies[0]).to.deep.include(expected)
+            expect(dependencies[0]).to.deep.equal(expected)
             done(err)
           })
         })
@@ -934,7 +927,7 @@ describe('Instance Model Integration Tests', function () {
           // Set the dep to a branch
           ctx.hello.addDependency(ctx['fb1-adelle'], 'adelle-staging-' + ownerName + '.runnableapp.com', done)
         })
-        it('should add a new dep for each env, when starting with none', function (done) {
+        it('should not remove the existing dep, when not adding any new ones', function (done) {
           ctx.hello.setDependenciesFromEnvironment(ownerName, function (err) {
             if (err) {
               return done(err)
@@ -943,7 +936,7 @@ describe('Instance Model Integration Tests', function () {
               expect(dependencies).to.be.array()
               expect(dependencies.length).to.equal(1)
               var expected = createExpectedConnection({name: 'fb1-adelle', parentName: 'adelle'})
-              expect(dependencies[0]).to.deep.include(expected)
+              expect(dependencies[0]).to.deep.equal(expected)
               done(err)
             })
           })
@@ -1252,109 +1245,60 @@ describe('Instance Model Integration Tests', function () {
     })
   })
 
-  describe('dependencies', { timeout: 10000 }, function () {
-    var instances = []
+  describe('dependencies', { timeout: 1000000000 }, function () {
     beforeEach(function (done) {
-      var names = [ 'A', 'B', 'C' ]
-      while (instances.length < names.length) {
-        instances.push(mongoFactory.createNewInstance(names[instances.length]))
+      ctx = {}
+      ctx.mockUsername = 'TEST-login'
+      ctx.mockSessionUser = {
+        _id: 1234,
+        findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
+          login: ctx.mockUsername,
+          avatar_url: 'TEST-avatar_url'
+        }),
+        accounts: {
+          github: {
+            id: 1234,
+            username: ctx.mockUsername
+          }
+        }
       }
+      ctx.deps = {}
       done()
     })
-
+    var instances = []
+    beforeEach(createNewInstance('A', {
+      name: 'A',
+      masterPod: true
+    }))
+    beforeEach(createNewInstance('B', {
+      name: 'B',
+      masterPod: true
+    }))
+    beforeEach(createNewInstance('C', {
+      name: 'C',
+      masterPod: true
+    }))
     beforeEach(function (done) {
-      // this deletes all the things out of the graph
-      var graph = new Graph()
-      graph.graph
-        .cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
-        .on('end', done)
-        .resume()
+      instances = []
+      var names = [ 'A', 'B', 'C' ]
+      names.forEach(function (name) {
+        instances.push(ctx[name])
+      })
+      done()
     })
 
     it('should be able to generate a graph node data structure', function (done) {
       var generated = instances[0].generateGraphNode()
-      var expected = {
-        label: 'Instance',
-        props: {
-          id: instances[0].id.toString(),
-          shortHash: instances[0].shortHash.toString(),
-          name: instances[0].name,
-          lowerName: instances[0].lowerName,
-          'owner_github': instances[0].owner.github, // eslint-disable-line quote-props
-          'contextVersion_context': // eslint-disable-line quote-props
-          instances[0].contextVersion.context.toString()
-        }
-      }
+      var expected = makeGraphNodeFromInstance(instances[0])
       expect(generated).to.deep.equal(expected)
       done()
     })
 
-    it('should be able to put an instance in the graph db', function (done) {
-      var i = instances[0]
-      i.upsertIntoGraph(function (err) {
-        expect(err).to.be.null()
-        i.getSelfFromGraph(function (err, selfNode) {
-          expect(err).to.be.null()
-          expect(selfNode.id).to.equal(i.id.toString())
-          done()
-        })
-      })
-    })
-
-    it('should upsert, not created duplicate', function (done) {
-      var graph = new Graph()
-      var i = instances[0]
-      i.upsertIntoGraph(function (err) {
-        expect(err).to.be.null()
-        i.lowerName = 'new-' + i.lowerName
-        i.upsertIntoGraph(function (err) {
-          expect(err).to.be.null()
-          // have to manually check the db
-          var nodes = {}
-          graph.graph
-            .cypher('MATCH (n:Instance) RETURN n')
-            .on('data', function (d) {
-              if (!nodes[d.n.id]) {
-                nodes[d.n.id] = d.n
-              } else {
-                err = new Error('duplicate node ' + d.n.id)
-              }
-            })
-            .on('end', function () {
-              expect(err).to.be.null()
-              expect(Object.keys(nodes)).to.have.length(1)
-              expect(nodes[i.id.toString()].lowerName).to.equal('new-a')
-              done()
-            })
-            .on('error', done)
-        })
-      })
-    })
-
     describe('with instances in the graph', function () {
       var nodeFields = [
-        'contextVersion',
-        'hostname',
-        'id',
-        'lowerName',
-        'name',
-        'owner',
-        'shortHash'
+        'elasticHostname',
+        'instanceId'
       ]
-      beforeEach(function (done) {
-        async.forEach(
-          instances,
-          function (i, cb) { i.upsertIntoGraph(cb) },
-          done)
-      })
-
-      it('should give us the count of instance in the graph', function (done) {
-        Instance.getGraphNodeCount(function (err, count) {
-          expect(err).to.be.null()
-          expect(count).to.equal(3)
-          done()
-        })
-      })
 
       it('should give us no dependencies when none are defined', function (done) {
         var i = instances[0]
@@ -1369,22 +1313,20 @@ describe('Instance Model Integration Tests', function () {
       it('should allow us to add first dependency', function (done) {
         var i = instances[0]
         var d = instances[1]
-        var shortD = pick(d.toJSON(), nodeFields)
-        shortD.hostname = 'somehostname'
-        shortD.contextVersion = {
-          context: shortD.contextVersion.context.toString()
-        }
-        i.addDependency(d, 'somehostname', function (err, limitedInstance) {
+        var shortD = makeGraphNodeFromInstance(d)
+        var shortDWithNetworking = makeNetworkingNodeFromInstance(d)
+
+        i.addDependency(d, d.elasticHostname, function (err, limitedInstance) {
           expect(err).to.be.null()
           expect(limitedInstance).to.exist()
-          expect(Object.keys(limitedInstance)).to.only.contain(nodeFields)
+          expect(Object.keys(limitedInstance)).to.contain(nodeFields)
           expect(limitedInstance).to.deep.equal(shortD)
           i.getDependencies(function (err, deps) {
             expect(err).to.be.null()
             expect(deps).to.be.an.array()
             expect(deps).to.have.length(1)
-            expect(Object.keys(deps[0])).to.contain(nodeFields)
-            expect(deps[0]).to.deep.equal(shortD)
+            // getDeps adds networking to the result
+            expect(deps[0]).to.deep.equal(shortDWithNetworking)
             done()
           })
         })
@@ -1392,17 +1334,14 @@ describe('Instance Model Integration Tests', function () {
 
       describe('with a dependency attached', function () {
         beforeEach(function (done) {
-          instances[0].addDependency(instances[1], 'somehostname', done)
+          instances[0].addDependency(instances[1], done)
         })
 
         it('should give the network for a dependency', function (done) {
-          var network = { hostIp: '1.2.3.4' }
-          sinon.stub(Instance, 'findById').yieldsAsync(null, { network: network })
           var i = instances[0]
           i.getDependencies(function (err, deps) {
             if (err) { return done(err) }
-            expect(deps[0].network).to.deep.equal(network)
-            Instance.findById.restore()
+            expect(deps[0].network).to.deep.equal(instances[1].network)
             done()
           })
         })
@@ -1410,7 +1349,7 @@ describe('Instance Model Integration Tests', function () {
         it('should allow us to remove the dependency', function (done) {
           var i = instances[0]
           var d = instances[1]
-          i.removeDependency(d, function (err) {
+          i.removeDependency(d._id, function (err) {
             expect(err).to.be.null()
             i.getDependencies(function (err, deps) {
               expect(err).to.be.null()
@@ -1424,12 +1363,10 @@ describe('Instance Model Integration Tests', function () {
         it('should be able to add a second dependency', function (done) {
           var i = instances[0]
           var d = instances[2]
-          var shortD = pick(d.toJSON(), nodeFields)
-          shortD.contextVersion = {
-            context: shortD.contextVersion.context.toString()
-          }
-          shortD.hostname = 'somehostname'
-          i.addDependency(d, 'somehostname', function (err, limitedInstance) {
+          var shortD = makeGraphNodeFromInstance(d)
+          var shortDWithNetworking = makeNetworkingNodeFromInstance(d)
+          var shortBWithNetworking = makeNetworkingNodeFromInstance(instances[1])
+          i.addDependency(d, function (err, limitedInstance) {
             expect(err).to.be.null()
             expect(limitedInstance).to.exist()
             expect(Object.keys(limitedInstance)).to.contain(nodeFields)
@@ -1438,8 +1375,8 @@ describe('Instance Model Integration Tests', function () {
               expect(err).to.be.null()
               expect(deps).to.be.an.array()
               expect(deps).to.have.length(2)
-              expect(Object.keys(deps[1])).to.contain(nodeFields)
-              expect(deps).to.deep.contain(shortD)
+              expect(deps).to.deep.contain(shortDWithNetworking)
+              expect(deps).to.deep.contain(shortBWithNetworking)
               done()
             })
           })
@@ -1448,47 +1385,12 @@ describe('Instance Model Integration Tests', function () {
         it('should be able to get dependent', function (done) {
           var dependent = instances[0]
           var dependency = instances[1]
-          var shortD = pick(dependent.toJSON(), nodeFields)
-          shortD.contextVersion = {
-            context: shortD.contextVersion.context.toString()
-          }
-          shortD.hostname = 'somehostname'
           dependency.getDependents(function (err, dependents) {
             expect(err).to.be.null()
             expect(dependents).to.be.an.array()
             expect(dependents).to.have.length(1)
-            expect(Object.keys(dependents[0])).to.contain(nodeFields)
-            expect(shortD).to.deep.contain(dependents[0])
+            expect(dependents[0]._id).to.deep.equal(dependent._id)
             done()
-          })
-        })
-
-        it('should be able to chain dependencies', function (done) {
-          var i = instances[1]
-          var d = instances[2]
-          var shortD = pick(d, nodeFields)
-          shortD.contextVersion = {
-            context: shortD.contextVersion.context.toString()
-          }
-          shortD.hostname = 'somehostname'
-          i.addDependency(d, 'somehostname', function (err, limitedInstance) {
-            expect(err).to.be.null()
-            expect(limitedInstance).to.exist()
-            expect(Object.keys(limitedInstance)).to.contain(nodeFields)
-            expect(limitedInstance).to.deep.equal(shortD)
-            i.getDependencies(function (err, deps) {
-              expect(err).to.be.null()
-              expect(deps).to.be.an.array()
-              expect(deps).to.have.length(1)
-              expect(Object.keys(deps[0])).to.contain(nodeFields)
-              expect(deps[0]).to.deep.equal(shortD)
-              instances[0].getDependencies(function (err, deps) {
-                expect(err).to.be.null()
-                expect(deps).to.be.an.array()
-                expect(deps).to.have.length(1)
-                done()
-              })
-            })
           })
         })
 
@@ -1500,133 +1402,44 @@ describe('Instance Model Integration Tests', function () {
             var dependent1 = instances[0]
             var dependent2 = instances[2]
             var dependency = instances[1]
-            var shortD1 = pick(dependent1.toJSON(), nodeFields)
-            shortD1.contextVersion = {
-              context: shortD1.contextVersion.context.toString()
-            }
-            shortD1.hostname = 'somehostname'
-            var shortD2 = pick(dependent2.toJSON(), nodeFields)
-            shortD2.contextVersion = {
-              context: shortD2.contextVersion.context.toString()
-            }
-            shortD2.hostname = 'somehostname'
             dependency.getDependents(function (err, dependents) {
               expect(err).to.be.null()
               expect(dependents).to.be.an.array()
               expect(dependents).to.have.length(2)
-              expect(Object.keys(dependents[0])).to.contain(nodeFields)
-              expect(Object.keys(dependents[1])).to.contain(nodeFields)
-              expect(dependents).to.deep.contain(shortD1)
-              expect(dependents).to.deep.contain(shortD2)
+              var ids = dependents.map(pluck('_id.toString()'))
+              expect(ids).to.deep.include(dependent1._id.toString())
+              expect(ids).to.deep.include(dependent2._id.toString())
               done()
             })
-          })
-        })
-
-        describe('with chained depedencies', function () {
-          beforeEach(function (done) {
-            instances[1].addDependency(instances[2], 'somehostname2', done)
-          })
-
-          it('should be able to recurse dependencies', function (done) {
-            var i = instances[0]
-            i.getDependencies({ recurse: true }, function (err, deps) {
-              if (err) { return done(err) }
-              expect(deps).to.be.an.array()
-              expect(deps).to.have.length(1)
-              expect(deps[0].id).to.equal(instances[1].id.toString())
-              expect(deps[0].dependencies).to.be.an.array()
-              expect(deps[0].dependencies).to.have.length(1)
-              expect(deps[0].dependencies[0].id).to.equal(instances[2].id.toString())
-              done()
-            })
-          })
-
-          it('should be able to flatten recursed dependencies', function (done) {
-            var i = instances[0]
-            i.getDependencies({ recurse: true, flatten: true }, function (err, deps) {
-              if (err) { return done(err) }
-              expect(deps).to.be.an.array()
-              expect(deps).to.have.length(2)
-              expect(deps.map(pluck('id'))).to.only.include([
-                instances[1].id.toString(),
-                instances[2].id.toString()
-              ])
-              var dep1 = find(deps, hasProps({ id: instances[1].id.toString() }))
-              var dep2 = find(deps, hasProps({ id: instances[2].id.toString() }))
-              expect(dep1.dependencies).to.have.length(1)
-              expect(dep1.dependencies[0].id).to.equal(instances[2].id.toString())
-              expect(dep2.dependencies).to.have.length(0)
-              done()
-            })
-          })
-
-          it('should not follow circles while flattening, but not include iteself', function (done) {
-            async.series([
-              function (cb) {
-                instances[2].addDependency(instances[0], 'circlehost', cb)
-              },
-              function (cb) {
-                var i = instances[0]
-                i.getDependencies({ recurse: true, flatten: true }, function (err, deps) {
-                  if (err) { return done(err) }
-                  expect(deps).to.be.an.array()
-                  expect(deps).to.have.length(2)
-                  expect(deps.map(pluck('id'))).to.not.include(instances[0]._id.toString())
-                  expect(deps.map(pluck('id'))).to.include(instances[1]._id.toString())
-                  expect(deps.map(pluck('id'))).to.include(instances[2]._id.toString())
-                  cb()
-                })
-              }
-            ], done)
-          })
-
-          it('should not follow circles', function (done) {
-            async.series([
-              function (cb) {
-                instances[2].addDependency(instances[0], 'circlehost', cb)
-              },
-              function (cb) {
-                var i = instances[0]
-                i.getDependencies({ recurse: true }, function (err, deps) {
-                  if (err) { return done(err) }
-                  expect(deps).to.be.an.array()
-                  expect(deps).to.have.length(1)
-                  expect(deps[0].id).to.equal(instances[1].id.toString())
-                  expect(deps[0].dependencies).to.be.an.array()
-                  expect(deps[0].dependencies).to.have.length(1)
-                  expect(deps[0].dependencies[0].id).to.equal(instances[2].id.toString())
-                  expect(deps[0].dependencies[0].dependencies)
-                    .to.be.an.array(instances[0].id.toString())
-                  cb()
-                })
-              }
-            ], done)
           })
         })
       })
     })
 
     describe('addDependency', function () {
-      var instance = mongoFactory.createNewInstance('goooush')
-      var dependant = mongoFactory.createNewInstance('splooosh')
+      beforeEach(createNewInstance('goooush', {
+        name: 'goooush',
+        masterPod: true
+      }))
+      beforeEach(createNewInstance('splooosh', {
+        name: 'splooosh',
+        masterPod: true
+      }))
 
       beforeEach(function (done) {
-        sinon.spy(instance, 'invalidateContainerDNS')
-        sinon.stub(async, 'series').yieldsAsync()
+        sinon.spy(ctx.goooush, 'invalidateContainerDNS')
         done()
       })
 
       afterEach(function (done) {
-        instance.invalidateContainerDNS.restore()
-        async.series.restore()
+        ctx.goooush.invalidateContainerDNS.restore()
         done()
       })
 
       it('should invalidate dns cache entries', function (done) {
-        instance.addDependency(dependant, 'wooo.com', function (err) {
+        ctx.goooush.addDependency(ctx.splooosh, 'wooo.com', function (err) {
           if (err) { done(err) }
-          expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
+          expect(ctx.goooush.invalidateContainerDNS.calledOnce).to.be.true()
           done()
         })
       })

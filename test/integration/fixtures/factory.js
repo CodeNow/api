@@ -70,7 +70,7 @@ var factory = module.exports = {
           return cb(err)
         }
         if (props.branch) {
-          sinon.stub(instance, 'getMainBranchName').returns('branch1')
+          sinon.stub(instance, 'getMainBranchName').returns(props.branch)
         }
         var hostname = instance.getElasticHostname(username).toLowerCase()
         instance.set({
