@@ -500,7 +500,7 @@ describe('Isolation Services Model', function () {
       mockMasterInstance.getDependenciesAsync = sinon.stub().resolves([mockDependencyNode, mockOtherDependencyNode])
       mockMasterInstance.getElasticHostname = sinon.stub().returns('foo-api-staging-barnow.runnableapp.com')
       mockMasterInstance._doc = mockMasterInstance
-      mockMasterInstance.addDependencyAsync = sinon.stub().resolves()
+      mockMasterInstance.addDependency = sinon.stub().resolves()
       mockMasterInstance.removeDependencyAsync = sinon.stub().resolves()
       mockChildInstance.getElasticHostname = sinon.stub().returns('deadbe--mongodb-staging-barnow.runnableapp.com')
       done()
@@ -548,9 +548,9 @@ describe('Isolation Services Model', function () {
       IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockMasterInstance.addDependencyAsync)
+          sinon.assert.calledOnce(mockMasterInstance.addDependency)
           sinon.assert.calledWithExactly(
-            mockMasterInstance.addDependencyAsync,
+            mockMasterInstance.addDependency,
             mockChildInstance,
             'mongodb-staging-barnow.runnableapp.com'
           )

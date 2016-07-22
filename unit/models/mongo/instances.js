@@ -628,7 +628,7 @@ describe('Instance Model Tests', function () {
           mongoFactory.createNewInstance('adelle', {masterPod: true})
         ]
         sinon.stub(Instance, 'find').yieldsAsync(null, masterInstances)
-        sinon.stub(instance, 'addDependency').yieldsAsync()
+        sinon.stub(instance, 'addDependency').resolves()
         sinon.stub(instance, 'removeDependency').yieldsAsync()
         done()
       })

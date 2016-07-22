@@ -150,10 +150,7 @@ describe('Isolation Services Integration Tests', function () {
   function makeDependecies (master, dependents) {
     if (!dependents) { return null }
     return Promise.each(dependents, function (dependentInstance) {
-      return master.addDependencyAsync(
-        dependentInstance,
-        dependentInstance.getElasticHostname(ctx.mockUsername)
-      )
+      return master.addDependency(dependentInstance)
     })
   }
 

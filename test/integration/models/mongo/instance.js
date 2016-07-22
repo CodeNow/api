@@ -907,7 +907,7 @@ describe('Instance Model Integration Tests', function () {
         })
         beforeEach(function (done) {
           // Set the dep to a branch
-          ctx.hello.addDependency(ctx['fb1-adelle'], 'adelle-staging-' + ownerName + '.runnableapp.com', done)
+          ctx.hello.addDependency(ctx['fb1-adelle']).asCallback(done)
         })
         it('should not remove the existing dep, when not adding any new ones', function (done) {
           ctx.hello.setDependenciesFromEnvironment(ownerName, function (err) {
@@ -1268,11 +1268,6 @@ describe('Instance Model Integration Tests', function () {
     })
 
     describe('with instances in the graph', function () {
-      var nodeFields = [
-        'elasticHostname',
-        'instanceId'
-      ]
-
       it('should give us no dependencies when none are defined', function (done) {
         var i = instances[0]
         i.getDependencies(function (err, deps) {
@@ -1286,28 +1281,28 @@ describe('Instance Model Integration Tests', function () {
       it('should allow us to add first dependency', function (done) {
         var i = instances[0]
         var d = instances[1]
-        var shortD = makeGraphNodeFromInstance(d)
 
-        i.addDependency(d, d.elasticHostname, function (err, limitedInstance) {
-          expect(err).to.be.null()
-          expect(limitedInstance).to.exist()
-          expect(Object.keys(limitedInstance)).to.contain(nodeFields)
-          expect(limitedInstance).to.deep.equal(shortD)
-          i.getDependencies(function (err, deps) {
+        i.addDependency(d)
+          .asCallback(function (err, limitedInstance) {
             expect(err).to.be.null()
-            expect(deps).to.be.an.array()
-            expect(deps).to.have.length(1)
-            // getDeps adds networking to the result
-            expect(deps[0]._id).to.deep.equal(d._id)
-            expect(deps[0].elasticHostname).to.deep.equal(d.elasticHostname)
-            done()
+            expect(limitedInstance).to.exist()
+            expect(limitedInstance.instanceId).to.deep.equal(d._id)
+            i.getDependencies(function (err, deps) {
+              expect(err).to.be.null()
+              expect(deps).to.be.an.array()
+              expect(deps).to.have.length(1)
+              // getDeps adds networking to the result
+              expect(deps[0]._id).to.deep.equal(d._id)
+              expect(deps[0].elasticHostname).to.deep.equal(d.elasticHostname)
+              done()
+            })
           })
-        })
       })
 
       describe('with a dependency attached', function () {
         beforeEach(function (done) {
-          instances[0].addDependency(instances[1], done)
+          instances[0].addDependency(instances[1])
+            .asCallback(done)
         })
 
         it('should give the network for a dependency', function (done) {
@@ -1336,22 +1331,21 @@ describe('Instance Model Integration Tests', function () {
         it('should be able to add a second dependency', function (done) {
           var i = instances[0]
           var d = instances[2]
-          var shortD = makeGraphNodeFromInstance(d)
-          i.addDependency(d, function (err, limitedInstance) {
-            expect(err).to.be.null()
-            expect(limitedInstance).to.exist()
-            expect(Object.keys(limitedInstance)).to.contain(nodeFields)
-            expect(limitedInstance).to.deep.equal(shortD)
-            i.getDependencies(function (err, deps) {
+          i.addDependency(d)
+            .asCallback(function (err, limitedInstance) {
               expect(err).to.be.null()
-              expect(deps).to.be.an.array()
-              expect(deps).to.have.length(2)
-              var ids = deps.map(pluck('_id.toString()'))
-              expect(ids).to.deep.include(instances[2]._id.toString())
-              expect(ids).to.deep.include(instances[1]._id.toString())
-              done()
+              expect(limitedInstance).to.exist()
+              expect(limitedInstance.instanceId).to.deep.equal(d._id)
+              i.getDependencies(function (err, deps) {
+                expect(err).to.be.null()
+                expect(deps).to.be.an.array()
+                expect(deps).to.have.length(2)
+                var ids = deps.map(pluck('_id.toString()'))
+                expect(ids).to.deep.include(instances[2]._id.toString())
+                expect(ids).to.deep.include(instances[1]._id.toString())
+                done()
+              })
             })
-          })
         })
 
         it('should be able to get dependent', function (done) {
@@ -1368,7 +1362,8 @@ describe('Instance Model Integration Tests', function () {
 
         describe('instance with 2 dependents', function () {
           beforeEach(function (done) {
-            instances[2].addDependency(instances[1], 'somehostname', done)
+            instances[2].addDependency(instances[1])
+              .asCallback(done)
           })
           it('should be able to get dependents', function (done) {
             var dependent1 = instances[0]
@@ -1409,11 +1404,12 @@ describe('Instance Model Integration Tests', function () {
       })
 
       it('should invalidate dns cache entries', function (done) {
-        ctx.goooush.addDependency(ctx.splooosh, 'wooo.com', function (err) {
-          if (err) { done(err) }
-          expect(ctx.goooush.invalidateContainerDNS.calledOnce).to.be.true()
-          done()
-        })
+        ctx.goooush.addDependency(ctx.splooosh)
+          .asCallback(function (err) {
+            if (err) { done(err) }
+            expect(ctx.goooush.invalidateContainerDNS.calledOnce).to.be.true()
+            done()
+          })
       })
     })
 
