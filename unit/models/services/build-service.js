@@ -97,7 +97,7 @@ describe('BuildService', function () {
       .asCallback(done)
     })
   })
-  describe('#findBuildAndAssert', function () {
+  describe('#findBuildAndAssertAccess', function () {
     beforeEach(function (done) {
       ctx.build = new Build({
         _id: '507f1f77bcf86cd799439011'
@@ -116,7 +116,7 @@ describe('BuildService', function () {
 
     it('should fail build lookup failed', function (done) {
       BuildService.findBuild.rejects(new Error('Mongo error'))
-      BuildService.findBuildAndAssert('507f1f77bcf86cd799439011', {})
+      BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -128,7 +128,7 @@ describe('BuildService', function () {
 
     it('should fail if perm check failed', function (done) {
       PermisionService.ensureModelAccess.rejects(new Error('Not an owner'))
-      BuildService.findBuildAndAssert('507f1f77bcf86cd799439011', {})
+      BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -139,7 +139,7 @@ describe('BuildService', function () {
     })
 
     it('should return build', function (done) {
-      BuildService.findBuildAndAssert('507f1f77bcf86cd799439011', {})
+      BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function (build) {
         expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
       })
@@ -147,7 +147,7 @@ describe('BuildService', function () {
     })
 
     it('should call BuildService.findBuild with correct params', function (done) {
-      BuildService.findBuildAndAssert('507f1f77bcf86cd799439011', {})
+      BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function (build) {
         sinon.assert.calledOnce(BuildService.findBuild)
         sinon.assert.calledWith(BuildService.findBuild, '507f1f77bcf86cd799439011')
@@ -157,7 +157,7 @@ describe('BuildService', function () {
 
     it('should call PermisionService.ensureModelAccess with correct params', function (done) {
       var sessionUser = { _id: 'user-id' }
-      BuildService.findBuildAndAssert('507f1f77bcf86cd799439011', sessionUser)
+      BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
         sinon.assert.calledOnce(PermisionService.ensureModelAccess)
         sinon.assert.calledWith(PermisionService.ensureModelAccess, sessionUser, ctx.build)
@@ -167,7 +167,7 @@ describe('BuildService', function () {
 
     it('should call all functions in correct order', function (done) {
       var sessionUser = { _id: 'user-id' }
-      BuildService.findBuildAndAssert('507f1f77bcf86cd799439011', sessionUser)
+      BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
         sinon.assert.callOrder(
           BuildService.findBuild,

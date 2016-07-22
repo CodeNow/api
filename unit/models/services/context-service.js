@@ -100,7 +100,7 @@ describe('ContextService Unit Test', function () {
     })
   })
 
-  describe('#findContextAndAssert', function () {
+  describe('#findContextAndAssertAccess', function () {
     beforeEach(function (done) {
       ctx.context = new Context({
         _id: '507f1f77bcf86cd799439011'
@@ -119,7 +119,7 @@ describe('ContextService Unit Test', function () {
 
     it('should fail build lookup failed', function (done) {
       ContextService.findContext.rejects(new Error('Mongo error'))
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -131,7 +131,7 @@ describe('ContextService Unit Test', function () {
 
     it('should fail if perm check failed', function (done) {
       PermisionService.ensureOwnerOrModerator.rejects(new Error('Not an owner'))
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -142,7 +142,7 @@ describe('ContextService Unit Test', function () {
     })
 
     it('should return context', function (done) {
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function (context) {
         expect(context._id.toString()).to.equal('507f1f77bcf86cd799439011')
       })
@@ -150,7 +150,7 @@ describe('ContextService Unit Test', function () {
     })
 
     it('should call ContextService.findContext with correct params', function (done) {
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function (build) {
         sinon.assert.calledOnce(ContextService.findContext)
         sinon.assert.calledWith(ContextService.findContext, '507f1f77bcf86cd799439011')
@@ -160,7 +160,7 @@ describe('ContextService Unit Test', function () {
 
     it('should call PermisionService.ensureOwnerOrModerator with correct params', function (done) {
       var sessionUser = { _id: 'user-id' }
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', sessionUser)
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
         sinon.assert.calledOnce(PermisionService.ensureOwnerOrModerator)
         sinon.assert.calledWith(PermisionService.ensureOwnerOrModerator, sessionUser, ctx.context)
@@ -170,7 +170,7 @@ describe('ContextService Unit Test', function () {
 
     it('should call all functions in correct order', function (done) {
       var sessionUser = { _id: 'user-id' }
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', sessionUser)
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
         sinon.assert.callOrder(
           ContextService.findContext,
