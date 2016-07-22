@@ -17,7 +17,7 @@ require('sinon-as-promised')(Promise)
 
 var ContextVersionService = require('models/services/context-version-service')
 var ContextVersion = require('models/mongo/context-version')
-var UserWhitelist = require('models/mongo/user-whitelist')
+var OrganizationService = require('models/services/organization-service')
 
 describe('ContextVersionService', function () {
   var ctx = {}
@@ -88,12 +88,12 @@ describe('ContextVersionService', function () {
     }
 
     beforeEach(function (done) {
-      sinon.stub(UserWhitelist, 'findOneAsync')
+      sinon.stub(OrganizationService, 'getByGithubId')
       done()
     })
 
     afterEach(function (done) {
-      UserWhitelist.findOneAsync.restore()
+      OrganizationService.getByGithubId.restore()
       done()
     })
 
@@ -107,7 +107,7 @@ describe('ContextVersionService', function () {
     })
 
     it('should reject if the organization was not found', function (done) {
-      UserWhitelist.findOneAsync.returns(Promise.resolve(null))
+      OrganizationService.getByGithubId.resolves(null)
       ContextVersionService.checkOwnerAllowed(contextVersion)
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -118,7 +118,7 @@ describe('ContextVersionService', function () {
     })
 
     it('should reject if the organizartion is not allowed', function (done) {
-      UserWhitelist.findOneAsync.returns(Promise.resolve({ allowed: false }))
+      OrganizationService.getByGithubId.resolves({ allowed: false })
       ContextVersionService.checkOwnerAllowed(contextVersion)
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -129,7 +129,7 @@ describe('ContextVersionService', function () {
     })
 
     it('should resolve if the organization is allowed', function (done) {
-      UserWhitelist.findOneAsync.returns(Promise.resolve({ allowed: true }))
+      OrganizationService.getByGithubId.resolves({ allowed: true })
       ContextVersionService.checkOwnerAllowed(contextVersion)
         .asCallback(function (err) {
           expect(err).to.not.exist()
