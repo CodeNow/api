@@ -501,7 +501,7 @@ describe('Isolation Services Model', function () {
       mockMasterInstance.getElasticHostname = sinon.stub().returns('foo-api-staging-barnow.runnableapp.com')
       mockMasterInstance._doc = mockMasterInstance
       mockMasterInstance.addDependency = sinon.stub().resolves()
-      mockMasterInstance.removeDependencyAsync = sinon.stub().resolves()
+      mockMasterInstance.removeDependency = sinon.stub().resolves()
       mockChildInstance.getElasticHostname = sinon.stub().returns('deadbe--mongodb-staging-barnow.runnableapp.com')
       done()
     })
@@ -562,9 +562,9 @@ describe('Isolation Services Model', function () {
       IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockMasterInstance.removeDependencyAsync)
+          sinon.assert.calledOnce(mockMasterInstance.removeDependency)
           sinon.assert.calledWithExactly(
-            mockMasterInstance.removeDependencyAsync,
+            mockMasterInstance.removeDependency,
             mockDependencyNode
           )
           done()
@@ -576,9 +576,9 @@ describe('Isolation Services Model', function () {
     it('should ignore other dependencies that were in the graph', function (done) {
       IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
         .asCallback(function (err) {
-          expect(err).to.not.exist(mockMasterInstance.removeDependencyAsync)
-          for (var i = 0; i < mockMasterInstance.removeDependencyAsync.callCount; ++i) {
-            var callCheck = mockMasterInstance.removeDependencyAsync.getCall(i).notCalledWith(
+          expect(err).to.not.exist(mockMasterInstance.removeDependency)
+          for (var i = 0; i < mockMasterInstance.removeDependency.callCount; ++i) {
+            var callCheck = mockMasterInstance.removeDependency.getCall(i).notCalledWith(
               mockOtherDependencyNode
             )
             expect(callCheck).to.be.true()

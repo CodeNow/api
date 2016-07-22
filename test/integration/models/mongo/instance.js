@@ -1317,15 +1317,16 @@ describe('Instance Model Integration Tests', function () {
         it('should allow us to remove the dependency', function (done) {
           var i = instances[0]
           var d = instances[1]
-          i.removeDependency(d._id, function (err) {
-            expect(err).to.be.null()
-            i.getDependencies(function (err, deps) {
+          i.removeDependency(d._id)
+            .asCallback(function (err) {
               expect(err).to.be.null()
-              expect(deps).to.be.an.array()
-              expect(deps).to.have.length(0)
-              done()
+              i.getDependencies(function (err, deps) {
+                expect(err).to.be.null()
+                expect(deps).to.be.an.array()
+                expect(deps).to.have.length(0)
+                done()
+              })
             })
-          })
         })
 
         it('should be able to add a second dependency', function (done) {

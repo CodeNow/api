@@ -629,7 +629,7 @@ describe('Instance Model Tests', function () {
         ]
         sinon.stub(Instance, 'find').yieldsAsync(null, masterInstances)
         sinon.stub(instance, 'addDependency').resolves()
-        sinon.stub(instance, 'removeDependency').yieldsAsync()
+        sinon.stub(instance, 'removeDependency').resolves()
         done()
       })
       afterEach(function (done) {
@@ -973,11 +973,12 @@ describe('Instance Model Tests', function () {
     })
 
     it('should invalidate dns cache entries', function (done) {
-      instance.removeDependency(dependant, function (err) {
-        if (err) { done(err) }
-        expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
-        done()
-      })
+      instance.removeDependency(dependant._id)
+        .asCallback(function (err) {
+          if (err) { done(err) }
+          expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
+          done()
+        })
     })
   })
 
