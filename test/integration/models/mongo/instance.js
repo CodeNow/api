@@ -13,6 +13,7 @@ var expect = Code.expect
 var sinon = require('sinon')
 var error = require('error')
 var objectId = require('objectid')
+var pick = require('101/pick')
 var pluck = require('101/pluck')
 var mongoose = require('mongoose')
 var Promise = require('bluebird')
@@ -1217,7 +1218,7 @@ describe('Instance Model Integration Tests', function () {
     })
   })
 
-  describe('dependencies', { timeout: 1000000000 }, function () {
+  describe('dependencies', { timeout: 1000 }, function () {
     beforeEach(function (done) {
       ctx = {}
       ctx.mockUsername = 'TEST-login'
@@ -1413,6 +1414,88 @@ describe('Instance Model Integration Tests', function () {
           expect(ctx.goooush.invalidateContainerDNS.calledOnce).to.be.true()
           done()
         })
+      })
+    })
+
+    describe('removeSelfFromGraph', function () {
+      beforeEach(createNewInstance('api', {
+        name: 'api',
+        masterPod: true
+      }))
+      beforeEach(function (done) {
+        createNewInstance('web', {
+          name: 'web',
+          masterPod: true,
+          dependencies: [
+            ctx.api.generateGraphNode()
+          ]
+        })(done)
+      })
+      beforeEach(function (done) {
+        createNewInstance('fb1-api', {
+          name: 'fb1-api',
+          masterPod: false,
+          branch: 'fb1',
+          parent: ctx.api.shortHash
+        })(done)
+      })
+      beforeEach(function (done) {
+        createNewInstance('charon', {
+          name: 'charon',
+          masterPod: true,
+          dependencies: [
+            ctx['fb1-api'].generateGraphNode()
+          ]
+        })(done)
+      })
+      beforeEach(function (done) {
+        createNewInstance('link', {
+          name: 'link',
+          masterPod: true,
+          dependencies: [
+            ctx['fb1-api'].generateGraphNode()
+          ]
+        })(done)
+      })
+
+      beforeEach(function (done) {
+        done()
+      })
+
+      afterEach(function (done) {
+        done()
+      })
+
+      it('should remove api from web', function (done) {
+        ctx.api.removeSelfFromGraph()
+          .then(function () {
+            return Instance.findByIdAsync(ctx.web._id)
+          })
+          .then(function (updatedWeb) {
+            expect(updatedWeb.dependencies.length).to.equal(0)
+          })
+          .asCallback(done)
+      })
+
+      var depFields = ['instanceId', 'name', 'elasticHostname']
+      //
+      it('should replace fb1-api with api in charon and link', function (done) {
+        ctx['fb1-api'].removeSelfFromGraph()
+          .then(function () {
+            return Promise.props({
+              charon: Instance.findByIdAsync(ctx.charon._id),
+              link: Instance.findByIdAsync(ctx.link._id)
+            })
+          })
+          .then(function (results) {
+            expect(results.charon.dependencies[0]).to.exist()
+            var apiNode = ctx.api.generateGraphNode()
+            var charonDeps = pick(results.charon.dependencies[0], depFields)
+            var linkDeps = pick(results.link.dependencies[0], depFields)
+            expect(charonDeps).to.deep.equal(apiNode)
+            expect(linkDeps).to.deep.equal(apiNode)
+          })
+          .asCallback(done)
       })
     })
   })
