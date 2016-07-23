@@ -467,32 +467,31 @@ describe('Isolation Services Model', function () {
   describe('#_updateDependenciesForInstanceWithChildren', function () {
     var mockMasterInstance = {
       lowerName: 'foo-api',
+      name: 'foo-api',
       isolated: 'deadbeefdeadbeefdeadbeef',
       owner: { username: 'barnow' },
       isIsolationGroupMaster: true,
       contextVersion: {
         context: 'a312213123122'
-      }
+      },
+      elasticHostname: 'foo-api'
     }
     var mockOtherDependencyNode = {
-      lowerName: 'redis',
-      contextVersion: {
-        context: 'eweqw232131'
-      }
+      instanceId: 'sadasdsadsad',
+      name: 'redis',
+      elasticHostname: 'redis'
     }
     var mockDependencyNode = {
-      lowerName: 'mongodb',
-      contextVersion: {
-        context: 'cxfsdfg22'
-      }
+      instanceId: 'frf123fqwf3f',
+      name: 'mongodb',
+      elasticHostname: 'mongodb'
     }
     var mockChildInstance = {
       lowerName: 'deadbe--mongodb',
-      contextVersion: {
-        context: mockDependencyNode.contextVersion.context
-      },
+      name: 'deadbe--mongodb',
       owner: { username: 'barnow' },
-      isolated: 'deadbeefdeadbeefdeadbeef'
+      isolated: 'deadbeefdeadbeefdeadbeef',
+      elasticHostname: 'mongodb'
     }
     var children = [mockMasterInstance, mockChildInstance]
 
@@ -506,7 +505,7 @@ describe('Isolation Services Model', function () {
       done()
     })
     describe('Errors', function () {
-      it('should throw an error if the instance doesn\'t have an contextId', function (done) {
+      it('should throw an error if the instance doesn\'t have an elasticHostname', function (done) {
         IsolationService._updateDependenciesForInstanceWithChildren(
           mockMasterInstance,
           [{
@@ -517,19 +516,19 @@ describe('Isolation Services Model', function () {
         )
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.include('is missing a contextId')
+            expect(err.message).to.include('is missing an elasticHostname')
             done()
           })
       })
-      it('should throw an error if the instance doesn\'t have an contextId', function (done) {
+      it('should throw an error if the instance doesn\'t have an elasticHostname', function (done) {
         mockMasterInstance.getDependenciesAsync.resolves([{}])
         IsolationService._updateDependenciesForInstanceWithChildren(
           mockMasterInstance,
-          children
+          [{}]
         )
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.include('is missing a contextId')
+            expect(err.message).to.include('is missing an elasticHostname')
             done()
           })
       })
@@ -551,8 +550,7 @@ describe('Isolation Services Model', function () {
           sinon.assert.calledOnce(mockMasterInstance.addDependency)
           sinon.assert.calledWithExactly(
             mockMasterInstance.addDependency,
-            mockChildInstance,
-            'mongodb-staging-barnow.runnableapp.com'
+            mockChildInstance
           )
           done()
         })
@@ -565,7 +563,7 @@ describe('Isolation Services Model', function () {
           sinon.assert.calledOnce(mockMasterInstance.removeDependency)
           sinon.assert.calledWithExactly(
             mockMasterInstance.removeDependency,
-            mockDependencyNode
+            mockDependencyNode.instanceId
           )
           done()
         })
@@ -579,7 +577,7 @@ describe('Isolation Services Model', function () {
           expect(err).to.not.exist(mockMasterInstance.removeDependency)
           for (var i = 0; i < mockMasterInstance.removeDependency.callCount; ++i) {
             var callCheck = mockMasterInstance.removeDependency.getCall(i).notCalledWith(
-              mockOtherDependencyNode
+              mockOtherDependencyNode.instanceId
             )
             expect(callCheck).to.be.true()
           }
@@ -1205,6 +1203,7 @@ describe('Isolation Services Model', function () {
       _id: 'foobar',
       createdBy: { github: 4 },
       owner: { username: 'owner' },
+      elasticHostname: 'foobar',
       setDependenciesFromEnvironmentAsync: sinon.stub()
     }
     var mockChildInstances
@@ -1401,7 +1400,6 @@ describe('Isolation Services Model', function () {
             rabbitMQ.deleteInstance,
             { instanceId: mockChildInstance._id }
           )
-          sinon.assert.calledOnce(mockChildInstance.removeSelfFromGraph)
           done()
         })
     })
@@ -1412,7 +1410,6 @@ describe('Isolation Services Model', function () {
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(rabbitMQ.deleteInstance)
-          sinon.assert.calledTwice(mockChildInstance.removeSelfFromGraph)
           done()
         })
     })

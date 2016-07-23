@@ -91,7 +91,7 @@ describe('Instance Delete Worker', function () {
             expect(err).to.be.instanceOf(TaskFatalError)
             expect(err.data.validationError).to.exist()
             expect(err.data.validationError.message)
-              .to.match(/job.+required/)
+              .to.match(/InstanceDeleteWorker.+required/)
             done()
           })
         })

@@ -1352,13 +1352,14 @@ describe('Instance Model Integration Tests', function () {
         it('should be able to get dependent', function (done) {
           var dependent = instances[0]
           var dependency = instances[1]
-          dependency.getDependents(function (err, dependents) {
-            expect(err).to.be.null()
-            expect(dependents).to.be.an.array()
-            expect(dependents).to.have.length(1)
-            expect(dependents[0]._id).to.deep.equal(dependent._id)
-            done()
-          })
+          dependency.getDependents()
+            .asCallback(function (err, dependents) {
+              expect(err).to.be.null()
+              expect(dependents).to.be.an.array()
+              expect(dependents).to.have.length(1)
+              expect(dependents[0]._id).to.deep.equal(dependent._id)
+              done()
+            })
         })
 
         describe('instance with 2 dependents', function () {
@@ -1370,15 +1371,16 @@ describe('Instance Model Integration Tests', function () {
             var dependent1 = instances[0]
             var dependent2 = instances[2]
             var dependency = instances[1]
-            dependency.getDependents(function (err, dependents) {
-              expect(err).to.be.null()
-              expect(dependents).to.be.an.array()
-              expect(dependents).to.have.length(2)
-              var ids = dependents.map(pluck('_id.toString()'))
-              expect(ids).to.deep.include(dependent1._id.toString())
-              expect(ids).to.deep.include(dependent2._id.toString())
-              done()
-            })
+            dependency.getDependents()
+              .asCallback(function (err, dependents) {
+                expect(err).to.be.null()
+                expect(dependents).to.be.an.array()
+                expect(dependents).to.have.length(2)
+                var ids = dependents.map(pluck('_id.toString()'))
+                expect(ids).to.deep.include(dependent1._id.toString())
+                expect(ids).to.deep.include(dependent2._id.toString())
+                done()
+              })
           })
         })
       })
