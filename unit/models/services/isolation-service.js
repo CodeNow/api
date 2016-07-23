@@ -476,13 +476,13 @@ describe('Isolation Services Model', function () {
       },
       elasticHostname: 'foo-api'
     }
-    var mockOtherDependencyNode = {
-      instanceId: 'sadasdsadsad',
+    var mockOtherDependencyInstance = {
+      _id: 'sadasdsadsad',
       name: 'redis',
       elasticHostname: 'redis'
     }
-    var mockDependencyNode = {
-      instanceId: 'frf123fqwf3f',
+    var mockDependencyInstance = {
+      _id: 'frf123fqwf3f',
       name: 'mongodb',
       elasticHostname: 'mongodb'
     }
@@ -496,7 +496,10 @@ describe('Isolation Services Model', function () {
     var children = [mockMasterInstance, mockChildInstance]
 
     beforeEach(function (done) {
-      mockMasterInstance.getDependenciesAsync = sinon.stub().resolves([mockDependencyNode, mockOtherDependencyNode])
+      mockMasterInstance.getDependenciesAsync = sinon.stub().resolves([
+        mockDependencyInstance,
+        mockOtherDependencyInstance
+      ])
       mockMasterInstance.getElasticHostname = sinon.stub().returns('foo-api-staging-barnow.runnableapp.com')
       mockMasterInstance._doc = mockMasterInstance
       mockMasterInstance.addDependency = sinon.stub().resolves()
@@ -563,7 +566,7 @@ describe('Isolation Services Model', function () {
           sinon.assert.calledOnce(mockMasterInstance.removeDependency)
           sinon.assert.calledWithExactly(
             mockMasterInstance.removeDependency,
-            mockDependencyNode.instanceId
+            mockDependencyInstance._id
           )
           done()
         })
@@ -577,7 +580,7 @@ describe('Isolation Services Model', function () {
           expect(err).to.not.exist(mockMasterInstance.removeDependency)
           for (var i = 0; i < mockMasterInstance.removeDependency.callCount; ++i) {
             var callCheck = mockMasterInstance.removeDependency.getCall(i).notCalledWith(
-              mockOtherDependencyNode.instanceId
+              mockOtherDependencyInstance._id
             )
             expect(callCheck).to.be.true()
           }
