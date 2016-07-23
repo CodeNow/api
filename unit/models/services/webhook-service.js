@@ -422,9 +422,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
           })
       })
       it('should respond with 403 if no whitelist found', function (done) {
-        var err = new Error('Not found')
-        err.statusCode = 404
-        OrganizationService.getByGithubId.rejects(err)
+        OrganizationService.getByGithubId.resolves(null)
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
             expect(err.output.statusCode).to.equal(403)
