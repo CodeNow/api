@@ -77,8 +77,6 @@ Api.prototype.start = function (cb) {
 Api.prototype.stop = function (cb) {
   log.trace('stop')
   cb = cb || error.logIfErr
-  var self = this
-
   var count = createCount(closeDbConnections)
   // stop github ssh key generator
   keyGen.stop(count.inc().next)
