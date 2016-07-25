@@ -103,7 +103,6 @@ Api.prototype.stop = function (cb) {
       var next = dbCount.inc().next
       mongooseControl.stop(function (err) {
         if (err) { return next(err) }
-        self.stopListeningToSignals()
         next()
       })
       return
