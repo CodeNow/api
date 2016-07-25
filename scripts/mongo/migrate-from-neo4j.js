@@ -27,7 +27,7 @@ Instances.findAsync({})
         }
         count++
         if (!dryRun) {
-          return i.addDependency(depInstance)
+          return addDependency(i, depInstance)
         }
       })
   })
@@ -39,7 +39,8 @@ Instances.findAsync({})
     console.error('error happened', err)
     return process.exit(1)
   })
-function generateGraphNode (instance) {
+
+function generateGraphNodeNeo (instance) {
   return {
     label: 'Instance',
     props: {
@@ -53,6 +54,67 @@ function generateGraphNode (instance) {
         keypather.get(instance, 'contextVersion.context.toString()')
     }
   }
+}
+
+/**
+ * Goes through a given instance's dependencies, looking for a match for the given elasticHostname
+ *
+ * @param {Instance} instance        - Instance with dependencies to search through
+ * @param {String}   elasticHostname - elastic hostname to search
+ *
+ * @returns {GraphNode|null} Either the matching node for the given hostname, or null
+ */
+function getDepFromInstance (instance, elasticHostname) {
+  if (keypather.get(instance, 'dependencies.length')) {
+    var deps = instance.dependencies.filter(function (dep) {
+      return dep.elasticHostname === elasticHostname
+    })
+    return deps.length ? deps[0] : null
+  }
+}
+function generateGraphNode (instance) {
+  return {
+    elasticHostname: instance.elasticHostname,
+    instanceId: instance._id,
+    name: instance.name
+  }
+}
+/**
+ * Adds the given instance to THIS instance's dependency list
+ *
+ * @param    {Instance} thisInstance - this instance to add dependencies to
+ * @param    {Instance} instance     - instance to become a dependent
+ *
+ * @returns  {Promise}         When the dependency has been added
+ * @resolves {Instance}        This instance, updated
+ * @throws   {Boom.badRequest} If the update failed
+ * @throws   {Error}           Any Mongo error
+ */
+function addDependency (thisInstance, instance) {
+  var elasticHostname = instance.elasticHostname.toLowerCase()
+
+  return Instances.findOneAndUpdateAsync({
+    _id: thisInstance._id
+  }, {
+    $push: {
+      dependencies: generateGraphNode(instance)
+    }
+  })
+    .tap(function (updatedInstance) {
+      if (!updatedInstance) {
+        // the update failed
+        throw new Error('Instance deps not updated!', {
+          dependency: instance._id.toString(),
+          dependent: thisInstance._id.toString()
+        })
+      }
+    })
+    .then(function (instance) {
+      return getDepFromInstance(instance, elasticHostname)
+    })
+    .finally(function () {
+      thisInstance.invalidateContainerDNS()
+    })
 }
 
 function getDepsFromNeo (thisInstance) {
@@ -71,7 +133,7 @@ function getDepsFromNeo (thisInstance) {
 
   function _getDeps (instance) {
     // hack to get valid starting node if we pass an existing node
-    var start = generateGraphNode(instance)
+    var start = generateGraphNodeNeo(instance)
     if (start.hostname) {
       delete start.hostname
     }
