@@ -1,0 +1,2 @@
+# Full details of this base image can be found here: https://hub.docker.com/_/elasticsearch/
+FROM elasticsearch:2.3

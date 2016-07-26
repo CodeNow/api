@@ -12,10 +12,12 @@ var sinon = require('sinon')
 var Promise = require('bluebird')
 var pluck = require('101/pluck')
 var assign = require('101/assign')
+var createCount = require('callback-count')
 
 var mongoFactory = require('../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 var IsolationService = require('models/services/isolation-service.js')
+var ObjectId = require('mongoose').Types.ObjectId
 require('sinon-as-promised')(require('bluebird'))
 
 describe('Isolation Services Integration Tests', function () {
@@ -49,34 +51,49 @@ describe('Isolation Services Integration Tests', function () {
     }
     done()
   })
-  function createNewInstance (name, isolatedOpts) {
+  function createNewInstance (name, isolatedOpts, contextId) {
     return function (done) {
       isolatedOpts = isolatedOpts || {}
       var opts = assign({
         name: name,
         username: ctx.mockUsername
       }, isolatedOpts)
-      mongoFactory.createInstanceWithProps(ctx.mockSessionUser._id, opts, function (err, instance) {
+      var count = createCount(1, function (err) {
         if (err) {
           return done(err)
         }
-        ctx[name] = instance
-        done(null, instance)
+        mongoFactory.createInstanceWithProps(ctx.mockSessionUser, opts, function (err, instance) {
+          if (err) {
+            return done(err)
+          }
+          ctx[name] = instance
+          done(null, instance)
+        })
       })
+      if (contextId) {
+        count.inc()
+        mongoFactory.createStartedCv(ctx.mockSessionUser._id, {
+          context: contextId
+        }, function (err, cv) {
+          opts.cv = cv
+          count.next(err)
+        })
+      }
+      count.next()
     }
   }
-  var createNewInstanceAsync = function (name, isolatedOpts) {
+  var createNewInstanceAsync = function (name, isolatedOpts, contextId) {
     return Promise.fromCallback(function (cb) {
-      createNewInstance(name, isolatedOpts)(cb)
+      createNewInstance(name, isolatedOpts, contextId)(cb)
     })
   }
-  beforeEach(createNewInstance('Frontend'))
-  beforeEach(createNewInstance('Api'))
-  beforeEach(createNewInstance('Link'))
-  beforeEach(createNewInstance('RabbitMQ'))
-  beforeEach(createNewInstance('MongoDB'))
-  beforeEach(createNewInstance('CodependentDatabase1'))
-  beforeEach(createNewInstance('CodependentDatabase2'))
+  beforeEach(createNewInstance('Frontend', { masterPod: true }))
+  beforeEach(createNewInstance('Api', { masterPod: true }))
+  beforeEach(createNewInstance('Link', { masterPod: true }))
+  beforeEach(createNewInstance('RabbitMQ', { masterPod: true }))
+  beforeEach(createNewInstance('MongoDB', { masterPod: true }))
+  beforeEach(createNewInstance('CodependentDatabase1', { masterPod: true }))
+  beforeEach(createNewInstance('CodependentDatabase2', { masterPod: true }))
   beforeEach(function (done) {
     sinon.stub(ctx.Frontend, 'getMainBranchName').returns('master')
     sinon.stub(ctx.Api, 'getMainBranchName').returns('master')
@@ -133,10 +150,7 @@ describe('Isolation Services Integration Tests', function () {
   function makeDependecies (master, dependents) {
     if (!dependents) { return null }
     return Promise.each(dependents, function (dependentInstance) {
-      return master.addDependencyAsync(
-        dependentInstance,
-        dependentInstance.getElasticHostname(ctx.mockUsername)
-      )
+      return master.addDependency(dependentInstance)
     })
   }
 
@@ -169,19 +183,23 @@ describe('Isolation Services Integration Tests', function () {
   }
 
   function createForks (masterName, childNameArray) {
+    var isolationId = new ObjectId()
     function createInstance (instanceName, isMaster) {
       var dashes = isMaster ? '-' : '--'
       var isolationOpts = {}
+      var name = instanceName
+      isolationOpts.branch = 'branch1'
       if (isMaster) {
         isolationOpts.isIsolationGroupMaster = true
+        isolationOpts.isolated = isolationId
+        name = 'branch1-' + instanceName
       } else {
-        isolationOpts.isolated = forked[masterName]._id
+        isolationOpts.isolated = isolationId
+        name = forked[masterName].shortHash + dashes + instanceName
       }
-      return createNewInstanceAsync(ctx[masterName].shortHash + dashes + instanceName, isolationOpts)
+      return createNewInstanceAsync(name, isolationOpts, ctx[instanceName].contextVersion.context)
         .then(function (instanceModel) {
           forked[instanceName] = instanceModel
-          sinon.stub(instanceModel, 'getMainBranchName').returns('branch1')
-          instanceModel.contextVersion.appCodeVersions = [{ lowerRepo: instanceName.toLowerCase() }]
           return instanceModel
         })
     }

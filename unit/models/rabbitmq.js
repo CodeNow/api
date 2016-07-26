@@ -218,14 +218,12 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       ctx.validJobData = {
         containerId: '123',
         instanceId: '55555',
-        sessionUserGithubId: '9494949',
-        tid: '000000'
+        sessionUserGithubId: '9494949'
       }
       // missing containerId
       ctx.invalidJobData = {
         instanceId: '55555',
-        sessionUserGithubId: '9494949',
-        tid: '000000'
+        sessionUserGithubId: '9494949'
       }
       done()
     })
@@ -718,6 +716,89 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
   })
 
+  describe('firstDockCreated', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        githubId: 123
+      }
+      ctx.rabbitMQ.firstDockCreated(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'first.dock.created', data)
+      done()
+    })
+    it('should throw an error when parameters are missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.firstDockCreated.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  })
+
+  describe('deleteContextVersion', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        contextVersionId: 1234
+      }
+      ctx.rabbitMQ.deleteContextVersion(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'context-version.delete', data)
+      done()
+    })
+    it('should throw an error when parameters are missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.deleteContextVersion.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  })
+
+  describe('contextVersionDeleted', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var cv = { _id: 1 }
+      var data = {
+        contextVersion: cv
+      }
+      ctx.rabbitMQ.contextVersionDeleted(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'context-version.deleted', data)
+      done()
+    })
+    it('should throw an error when parameters are missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.deleteContextVersion.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  })
+
   describe('publishContainerImageBuilderStarted', function () {
     beforeEach(function (done) {
       sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
@@ -749,4 +830,214 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       done()
     })
   }) // end publishContainerImageBuilderStarted
+
+  describe('publishDockRemoved', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        githubId: 1234,
+        host: 'http://10.0.0.1:4242'
+      }
+      ctx.rabbitMQ.publishDockRemoved(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish,
+        'dock.removed',
+        data)
+      done()
+    })
+
+    it('should throw an error when host is missing', function (done) {
+      var data = { githubId: 1234 }
+      expect(ctx.rabbitMQ.publishDockRemoved.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+
+    it('should throw an error when githubId is missing', function (done) {
+      var data = { host: 'http://10.0.0.1:4242' }
+      expect(ctx.rabbitMQ.publishDockRemoved.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  }) // end publishDockRemoved
+
+  describe('clearContainerMemory', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        containerId: 'abcd'
+      }
+      ctx.rabbitMQ.clearContainerMemory(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish,
+        'container.resource.clear',
+        data)
+      done()
+    })
+
+    it('should throw an error when containerId is missing', function (done) {
+      var data = {}
+      expect(ctx.rabbitMQ.clearContainerMemory.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  }) // end clearContainerMemory
+
+  describe('killInstanceContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        containerId: 'abcd',
+        instanceId: 'efgh'
+      }
+      ctx.rabbitMQ.killInstanceContainer(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish,
+        'instance.kill',
+        data)
+      done()
+    })
+
+    it('should throw an error when containerId is missing', function (done) {
+      var data = { instanceId: 'efgh' }
+      expect(ctx.rabbitMQ.killInstanceContainer.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+
+    it('should throw an error when instanceId is missing', function (done) {
+      var data = { containerId: 'abcd' }
+      expect(ctx.rabbitMQ.killInstanceContainer.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  }) // end killInstanceContainer
+
+  describe('killIsolation', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        isolationId: 'efgh',
+        triggerRedeploy: true
+      }
+      ctx.rabbitMQ.killIsolation(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish,
+        'isolation.kill',
+        data)
+      done()
+    })
+
+    it('should throw an error when isolationId is missing', function (done) {
+      var data = { }
+      expect(ctx.rabbitMQ.killIsolation.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  }) // end killIsolation
+
+  describe('redeployIsolation', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        isolationId: 'efgh'
+      }
+      ctx.rabbitMQ.redeployIsolation(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish,
+        'isolation.redeploy',
+        data)
+      done()
+    })
+
+    it('should throw an error when isolationId is missing', function (done) {
+      var data = { }
+      expect(ctx.rabbitMQ.redeployIsolation.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  }) // end redeployIsolation
+
+  describe('khronosDeleteContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        containerId: 'efgh',
+        dockerHost: '10.10.10.10'
+      }
+      ctx.rabbitMQ.khronosDeleteContainer(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish,
+        'khronos:containers:delete',
+        data)
+      done()
+    })
+
+    it('should throw an error when isolationId is missing', function (done) {
+      var data = { }
+      expect(ctx.rabbitMQ.khronosDeleteContainer.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  }) // end khronosDeleteContainer
 })

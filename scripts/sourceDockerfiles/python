@@ -2,8 +2,6 @@ FROM python:<python-version>
 
 ENV PYTHON_VERSION <python-version>
 
-RUN apt-get update -y && apt-get upgrade -y && apt-get install -y libzmq3-dev  python-zmq
-
 <before-main-repo>
 #default dst:home
 #default run:pip install -r 'requirements.txt'

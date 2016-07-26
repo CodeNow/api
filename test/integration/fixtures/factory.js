@@ -15,7 +15,9 @@ var ContextVersion = require('models/mongo/context-version.js')
 var InfraCodeVersion = require('models/mongo/infra-code-version.js')
 var Instance = require('models/mongo/instance.js')
 var ObjectId = mongoose.Types.ObjectId
+var Promise = require('bluebird')
 var User = require('models/mongo/user.js')
+var sinon = require('sinon')
 
 var VALID_GITHUB_ID = 1
 var VALID_OBJECT_ID = '507c7f79bcf86cd7994f6c0e'
@@ -37,21 +39,59 @@ var factory = module.exports = {
       }
     }, cb)
   },
-  createInstanceWithProps: function (ownerGithubId, props, cb) {
+  createContext: function (owner, cb) {
+    var ownerGithubId = (typeof owner === 'string' || typeof owner === 'number')
+      ? owner
+      : owner.accounts.github.id
+    Context.create({
+      name: uuid(),
+      owner: {
+        github: ownerGithubId
+      }
+    }, cb)
+  },
+  createInstanceWithProps: function (owner, props, cb) {
     if (isFunction(props)) {
       cb = props
       props = null
     }
+    var username = (typeof owner === 'string' || typeof owner === 'number')
+      ? 'owner'
+      : owner.accounts.github.username
+    var ownerGithubId = (typeof owner === 'string' || typeof owner === 'number')
+      ? owner
+      : owner.accounts.github.id
+    props = props || {}
+    props.username = props.username || username
     var count = createCount(1, function () {
       var data = factory.instanceTemplate(ownerGithubId, props)
       Instance.create(data, function (err, instance) {
-        if (err) { return cb(err) }
-        cb(null, instance, props.build, props.cv)
+        if (err) {
+          return cb(err)
+        }
+        if (props.branch) {
+          sinon.stub(instance, 'getMainBranchName').returns(props.branch)
+        }
+        var hostname = instance.getElasticHostname(username).toLowerCase()
+        instance.set({
+          elasticHostname: hostname,
+          hostname: hostname
+        }, function (err, instance) {
+          if (err) {
+            return cb(err)
+          }
+          instance.save(function (err, instance) {
+            if (err) {
+              return cb(err)
+            }
+            cb(null, instance, props.build, props.cv)
+          })
+        })
       })
     })
     if (!props.build) {
       count.inc()
-      factory.createBuild(ownerGithubId, function (err, build, cv) {
+      factory.createBuild(ownerGithubId, props.cv, function (err, build, cv) {
         if (err) { return count.next(err) }
         props.build = build
         props.cv = cv
@@ -96,6 +136,9 @@ var factory = module.exports = {
       props = null
     }
     props = props || {build: {}}
+    if (!props.build) {
+      props.build = {}
+    }
     defaults(props.build, {
       _id: '012345678901234567890123',
       hash: uuid(),
@@ -108,7 +151,8 @@ var factory = module.exports = {
     })
     var data = this.cvTemplate(
       ownerGithubId,
-      props.build
+      props.build,
+      props
     )
     ContextVersion.create(data, cb)
   },
@@ -126,7 +170,8 @@ var factory = module.exports = {
     })
     var data = this.cvTemplate(
       ownerGithubId,
-      props.build
+      props.build,
+      props
     )
     ContextVersion.create(data, cb)
   },
@@ -167,18 +212,19 @@ var factory = module.exports = {
     )
     ContextVersion.create(data, cb)
   },
-  cvTemplate: function (ownerGithubId, buildExtend) {
+  cvTemplate: function (ownerGithubId, buildExtend, opts) {
+    opts = opts || {}
     var cv = {
       infraCodeVersion: new ObjectId(),
       createdBy: {
         github: ownerGithubId
       },
-      context: new ObjectId(),
+      context: opts.context || new ObjectId(),
       owner: {
         github: ownerGithubId
       },
       advanced: true,
-      appCodeVersions: [],
+      appCodeVersions: opts.appCodeVersions || [],
       __v: 0,
       dockerHost: 'http://127.0.0.1:4242'
     }
@@ -236,7 +282,7 @@ var factory = module.exports = {
       props.isolated = VALID_OBJECT_ID
     }
     return {
-      shortHash: shortHash.slice(0, shortHash.indexOf('-')),
+      shortHash: shortHash.slice(0, 6),
       name: name,
       lowerName: name.toLowerCase(),
       owner: {
@@ -249,15 +295,17 @@ var factory = module.exports = {
       },
       isolated: props.isolated,
       isIsolationGroupMaster: props.isIsolationGroupMaster,
-      parent: 'sdf',
+      parent: props.parent || 'sdf',
       build: props.build._id,
       contextVersion: props.cv,
       locked: props.locked,
       created: new Date(),
-      env: [],
+      masterPod: props.masterPod || false,
+      env: props.env || [],
       network: {
         hostIp: '127.0.0.1'
-      }
+      },
+      dependencies: props.dependencies || []
     }
   },
   getNextId: function () {
@@ -323,7 +371,7 @@ var factory = module.exports = {
   },
 
   createNewInstance: function (name, opts) {
-    // jshint maxcomplexity:12
+    // jshint maxcomplexity:10
     opts = opts || {}
     var container = {
       dockerContainer: opts.containerId || VALID_OBJECT_ID,
@@ -361,7 +409,12 @@ var factory = module.exports = {
       network: {
         hostIp: '1.1.1.100'
       },
+      env: opts.env || [],
+      isolated: opts.isolated,
+      isIsolationGroupMaster: opts.isIsolationGroupMaster,
       imagePull: opts.imagePull || null
     })
   }
 }
+
+Promise.promisifyAll(factory)

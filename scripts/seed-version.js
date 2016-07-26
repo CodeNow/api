@@ -61,43 +61,31 @@ var sources = [{
   body: fs.readFileSync('./scripts/sourceDockerfiles/mysql').toString()
 }, {
   name: 'Consul-Server',
-  body: 'FROM gliderlabs/consul-server:0.5\n' +
-    'EXPOSE 8400 8500 8600 53'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/consul-server').toString()
+}, {
+  name: 'HBase',
+  body: fs.readFileSync('./scripts/sourceDockerfiles/hbase').toString()
 }, {
   name: 'Cassandra',
-  body: '# View more information about this dockerfile here: ' +
-    'https://registry.hub.docker.com/u/spotify/cassandra/\n' +
-    'FROM spotify/cassandra\n\n' +
-    '# Open ports on server\n' +
-    'EXPOSE 7199 7000 7001 9160 9042 22 8012 61621'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/cassandra').toString()
 }, {
   name: 'MongoDB',
-  body: '# Full list of versions available here:' +
-    ' https://registry.hub.docker.com/_/mongo/tags/manage/\n' +
-    'FROM mongo:2.8.0\n'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/mongodb').toString()
 }, {
   name: 'Redis',
-  body: '# Full list of versions available here:' +
-    ' https://registry.hub.docker.com/_/redis/tags/manage/\n' +
-    'FROM redis:2.8.9\n'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/redis').toString()
 }, {
   name: 'ElasticSearch',
-  body: '# Full details of this base image can be found here:' +
-    ' https://registry.hub.docker.com/u/dockerfile/elasticsearch/\n' +
-    'FROM elasticsearch\n'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/elasticsearch').toString()
 }, {
   name: 'Memcached',
   body: fs.readFileSync('./scripts/sourceDockerfiles/memcached').toString()
 }, {
   name: 'Nginx',
-  body: '# Full list of versions available here:' +
-    ' https://registry.hub.docker.com/_/nginx/tags/manage/\n' +
-    'FROM nginx:1.7.9\n'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/nginx').toString()
 }, {
   name: 'RabbitMQ',
-  body: '# Full list of versions available here:' +
-    ' https://registry.hub.docker.com/_/rabbitmq/tags/manage/\n' +
-    'FROM rabbitmq:3.4.2\n'
+  body: fs.readFileSync('./scripts/sourceDockerfiles/rabbitmq').toString()
 }, {
   name: 'RethinkDB',
   body: fs.readFileSync('./scripts/sourceDockerfiles/rethinkdb').toString()

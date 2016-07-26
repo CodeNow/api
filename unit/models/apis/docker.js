@@ -65,6 +65,7 @@ var dockerLogs = {
 
 describe('docker: ' + moduleName, function () {
   var model = new Docker()
+  var testMemory = 12341234
   var ctx
 
   describe('constructor', function () {
@@ -146,6 +147,7 @@ describe('docker: ' + moduleName, function () {
             privateKey: 'private2'
           }
         ],
+        getUserContainerMemoryLimit: sinon.stub().returns(testMemory),
         toJSON: function () {
           var json = clone(ctx.mockContextVersion)
           delete json.toJSON
@@ -194,118 +196,82 @@ describe('docker: ' + moduleName, function () {
   }) // end createSwarmConstraints
 
   describe('_handleCreateContainerError', function () {
+    var mockOrgId = '12345'
+    var mockCreateOpts = {
+      Labels: {
+        'com.docker.swarm.constraints': '["org==' + mockOrgId + '"]'
+      },
+      Memory: 1024
+    }
+
     beforeEach(function (done) {
-      sinon.stub(Docker, '_isConstraintFailure')
-      sinon.stub(Docker, '_isOutOfResources')
-      sinon.stub(Docker.prototype, 'createContainer')
       sinon.stub(monitor, 'event')
       sinon.stub(error, 'log')
       done()
     })
 
     afterEach(function (done) {
-      Docker._isConstraintFailure.restore()
-      Docker._isOutOfResources.restore()
-      Docker.prototype.createContainer.restore()
       monitor.event.restore()
       error.log.restore()
       done()
     })
 
-    it('should report an error if there is no dock for an org', function (done) {
-      var testOpts = {
-        Labels: {
-          'com.docker.swarm.constraints': 'fluff'
-        }
-      }
-      Docker._isConstraintFailure.returns(true)
-      Docker.prototype.createContainer.yieldsAsync()
+    it('should shortcircut if create options are invalid', function (done) {
+      model._handleCreateContainerError(new Error('wow'), 'neat', function (err) {
+        expect(err).to.equal(err)
+        expect(err.data).to.not.exist()
+        done()
+      })
+    })
 
-      model._handleCreateContainerError({}, testOpts, function (err) {
-        expect(err).to.exist()
+    it('should alert if there is no dock for an org', function (done) {
+      var noNodeErr = new Error(
+        'flufzzz' + 'unable to find a node that satisfies' + 'wowowo0092'
+      )
+      model._handleCreateContainerError(noNodeErr, mockCreateOpts, function (err) {
+        expect(err).to.equal(noNodeErr)
         expect(err.data.level).to.equal('critical')
         sinon.assert.calledOnce(monitor.event)
-        sinon.assert.calledWith(monitor.event, {
-          title: sinon.match(/dock.*org/),
-          text: sinon.match(/dock.*org/),
-          alert_type: 'error'
-        })
+        sinon.assert.calledWith(monitor.event, sinon.match({
+          title: sinon.match('Cannot find dock for org: ' + mockOrgId),
+          text: sinon.match(/Container create options:/),
+          alert_type: sinon.match('error')
+        }))
         sinon.assert.calledOnce(error.log)
         sinon.assert.calledWith(error.log, err)
         done()
       })
     })
 
-    it('should alert datadog and rollbar if our of resources', function (done) {
-      var testOpts = {
-        Memory: 999999,
-        Labels: {}
-      }
-      testOpts.Labels['com.docker.swarm.constraints'] = 'test'
-      Docker._isConstraintFailure.returns(false)
-      Docker._isOutOfResources.returns(true)
-      monitor.event.returns()
-      error.log.returns()
-
-      model._handleCreateContainerError({}, testOpts, function (err) {
-        expect(err).to.exist()
-        sinon.assert.notCalled(Docker.prototype.createContainer)
+    it('should alert if our of resources', function (done) {
+      var resourceErr = new Error(
+        'somethingsomething' + 'no resources available to schedule' + 'wozie'
+      )
+      model._handleCreateContainerError(resourceErr, mockCreateOpts, function (err) {
+        expect(err).to.equal(resourceErr)
+        expect(err.data.level).to.equal('error')
         sinon.assert.calledOnce(monitor.event)
+        sinon.assert.calledWith(monitor.event, sinon.match({
+          title: sinon.match('Out of dock resources for org: ' + mockOrgId),
+          text: sinon.match(/Container create options:/),
+          alert_type: sinon.match('error')
+        }))
         sinon.assert.calledOnce(error.log)
-        sinon.assert.calledWith(
-          error.log, {
-            data: {
-              level: 'critical'
-            }
-          }
-        )
+        sinon.assert.calledWith(error.log, err)
         done()
       })
     })
 
-    it('should cb paseed err if not special', function (done) {
-      var testErr = 'unicorn'
-
-      Docker._isConstraintFailure.returns(false)
-      Docker._isOutOfResources.returns(false)
-
+    it('should pass the error through if it is not special', function (done) {
+      var testErr = new Error('unicorns rule!')
       model._handleCreateContainerError(testErr, {}, function (err) {
         expect(err).to.equal(testErr)
-        expect(Docker.prototype.createContainer.called)
-          .to.be.false()
-
+        expect(monitor.event.called).to.be.false()
+        expect(error.log.called).to.be.false()
         done()
       })
     })
   }) // end _handleCreateContainerError
-
-  describe('_isConstraintFailure', function () {
-    it('should return true if constraint failure', function (done) {
-      var out = Docker._isConstraintFailure(new Error('unable to find a node that satisfies'))
-      expect(out).to.be.true()
-      done()
-    })
-
-    it('should return false if not constraint failure', function (done) {
-      var out = Docker._isConstraintFailure(new Error('no resources available to schedule'))
-      expect(out).to.be.false()
-      done()
-    })
-  }) // end _isConstraintFailure
-
-  describe('_isOutOfResources', function () {
-    it('should return true if out of resources', function (done) {
-      var out = Docker._isOutOfResources(new Error('no resources available to schedule'))
-      expect(out).to.be.true()
-      done()
-    })
-
-    it('should return false if not constraint failure', function (done) {
-      var out = Docker._isOutOfResources(new Error('unable to find a node that satisfies'))
-      expect(out).to.be.false()
-      done()
-    })
-  }) // end _isOutOfResources
 
   describe('_isImageNotFoundErr', function () {
     it('should return true if error matches', function (done) {
@@ -420,8 +386,40 @@ describe('docker: ' + moduleName, function () {
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
             Env: ctx.mockEnv,
             HostConfig: {
+              Binds: ['/var/run/docker.sock:/var/run/docker.sock'],
               CapDrop: process.env.CAP_DROP.split(','),
-              Binds: ['/var/run/docker.sock:/var/run/docker.sock']
+              Memory: process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES,
+              MemoryReservation: testMemory
+            },
+            Labels: ctx.mockLabels
+          }
+
+          sinon.assert.calledOnce(Docker.prototype.createContainer)
+          sinon.assert.calledWith(Docker.prototype.createContainer, expected)
+          done()
+        })
+      })
+
+      it('should create an image builder container with more memory than the max memory', function (done) {
+        var newMemory = process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES + 10000
+        ctx.mockContextVersion.getUserContainerMemoryLimit.returns(newMemory)
+        var opts = {
+          manualBuild: true,
+          sessionUser: ctx.mockSessionUser,
+          contextVersion: ctx.mockContextVersion,
+          noCache: false,
+          tid: '000-0000-0000-0000'
+        }
+        model.createImageBuilder(opts, function (err) {
+          if (err) { return done(err) }
+          var expected = {
+            Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
+            Env: ctx.mockEnv,
+            HostConfig: {
+              Binds: ['/var/run/docker.sock:/var/run/docker.sock'],
+              CapDrop: process.env.CAP_DROP.split(','),
+              Memory: newMemory,
+              MemoryReservation: newMemory
             },
             Labels: ctx.mockLabels
           }
@@ -472,7 +470,9 @@ describe('docker: ' + moduleName, function () {
             Env: ctx.mockEnv,
             HostConfig: {
               CapDrop: process.env.CAP_DROP.split(','),
-              Binds: ['/var/run/docker.sock:/var/run/docker.sock']
+              Binds: ['/var/run/docker.sock:/var/run/docker.sock'],
+              Memory: process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES,
+              MemoryReservation: testMemory
             },
             Labels: ctx.mockLabels
           }
@@ -522,7 +522,9 @@ describe('docker: ' + moduleName, function () {
                   '/var/run/docker.sock:/var/run/docker.sock',
                   process.env.DOCKER_IMAGE_BUILDER_CACHE + ':/cache:rw',
                   process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE + ':/layer-cache:rw'
-                ]
+                ],
+                Memory: process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES,
+                MemoryReservation: testMemory
               },
               Labels: ctx.mockLabels
             })
@@ -633,7 +635,7 @@ describe('docker: ' + moduleName, function () {
         sessionUser: ctx.mockSessionUser
       })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
-        .to.equal('["org==owner","node==~ip-10-0-0-1.owner"]')
+        .to.equal('["org==owner"]')
       done()
     })
 
@@ -678,7 +680,6 @@ describe('docker: ' + moduleName, function () {
       it('should return an array of ENV for image builder container', function (done) {
         var opts = ctx.opts
         var buildOpts = {
-          Memory: process.env.BUILD_MEMORY_LIMIT_BYTES,
           forcerm: true,
           nocache: true
         }
@@ -728,7 +729,6 @@ describe('docker: ' + moduleName, function () {
       it('should return conditional container env', function (done) {
         var envs = model._createImageBuilderEnv(ctx.opts)
         var buildOpts = {
-          Memory: process.env.BUILD_MEMORY_LIMIT_BYTES,
           forcerm: true
         }
         expect(envs).to.contain([
@@ -1032,6 +1032,34 @@ describe('docker: ' + moduleName, function () {
     })
   })
 
+  describe('killContainer', function () {
+    beforeEach(function (done) {
+      sinon.stub(model, '_containerAction').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      model._containerAction.restore()
+      done()
+    })
+    it('should call _containerAction with correct options', function (done) {
+      model.killContainer('some-container-id', function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(model._containerAction)
+        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'kill', { })
+        done()
+      })
+    })
+    it('should call _containerAction and callback with an error', function (done) {
+      var dockerErr = new Error('Docker error')
+      model._containerAction.yieldsAsync(dockerErr)
+      model.killContainer('some-container-id', function (err) {
+        expect(err).to.equal(dockerErr)
+        sinon.assert.calledOnce(model._containerAction)
+        done()
+      })
+    })
+  })
+
   describe('restartContainer', function () {
     beforeEach(function (done) {
       ctx.resp = { restarted: true }
@@ -1057,6 +1085,40 @@ describe('docker: ' + moduleName, function () {
       model.restartContainer('some-container-id', function (err, resp) {
         expect(err).to.equal(dockerErr)
         expect(resp).to.not.exist()
+        sinon.assert.calledOnce(model._containerAction)
+        done()
+      })
+    })
+  })
+
+  describe('clearContainerMemory', function () {
+    var testId = 'some-container-id'
+    beforeEach(function (done) {
+      sinon.stub(model, '_containerAction')
+      done()
+    })
+    afterEach(function (done) {
+      model._containerAction.restore()
+      done()
+    })
+    it('should call _containerAction with correct args', function (done) {
+      model._containerAction.yieldsAsync()
+      model.clearContainerMemory(testId, function (err, resp) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(model._containerAction)
+        sinon.assert.calledWith(model._containerAction, testId, 'update', {
+          Memory: 4194304,
+          MemoryReservation: 1
+        })
+        done()
+      })
+    })
+
+    it('should call _containerAction and callback with an error', function (done) {
+      var dockerErr = new Error('Docker error')
+      model._containerAction.yieldsAsync(dockerErr)
+      model.clearContainerMemory(testId, function (err, resp) {
+        expect(err).to.equal(dockerErr)
         sinon.assert.calledOnce(model._containerAction)
         done()
       })
@@ -1191,6 +1253,8 @@ describe('docker: ' + moduleName, function () {
   })
 
   describe('createUserContainer', function () {
+    var testMemory = 512000
+
     beforeEach(function (done) {
       ctx.mockInstance = {
         _id: '123456789012345678901234',
@@ -1222,7 +1286,7 @@ describe('docker: ' + moduleName, function () {
             privateKey: 'private2'
           }
         ],
-        getUserContainerMemoryLimit: sinon.stub().returns(1234)
+        getUserContainerMemoryLimit: sinon.stub().returns(testMemory)
       }
       ctx.opts = {
         instance: ctx.mockInstance,
@@ -1267,7 +1331,44 @@ describe('docker: ' + moduleName, function () {
             HostConfig: {
               CapDrop: process.env.CAP_DROP.split(','),
               PublishAllPorts: true,
-              Memory: 1234
+              Memory: process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES,
+              MemoryReservation: testMemory
+            }
+          }
+
+          sinon.assert.calledOnce(ctx.mockContextVersion.getUserContainerMemoryLimit)
+          sinon.assert.calledWith(
+            Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
+          )
+
+          expect(container).to.equal(ctx.mockContainer)
+          done()
+        })
+      })
+
+      it('should create a container with more than the maximum allowed memory', function (done) {
+        var newMemoryLimit = process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES + 1000
+        ctx.mockContextVersion.getUserContainerMemoryLimit.returns(newMemoryLimit)
+
+        model.createUserContainer(ctx.opts, function (err, container) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Docker.prototype._createUserContainerLabels, ctx.opts, sinon.match.func
+          )
+          var expectedCreateOpts = {
+            Labels: ctx.mockLabels,
+            Env: [
+              'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash,
+              'FOO=1',
+              'URL=' + ctx.mockInstance.shortHash + '-1.runnableapp.com',
+              'BAR=' + ctx.mockInstance.shortHash + '-1.runnableapp.com'
+            ],
+            Image: ctx.mockContextVersion.build.dockerTag,
+            HostConfig: {
+              CapDrop: process.env.CAP_DROP.split(','),
+              PublishAllPorts: true,
+              Memory: newMemoryLimit,
+              MemoryReservation: newMemoryLimit
             }
           }
 

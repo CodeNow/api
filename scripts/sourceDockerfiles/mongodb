@@ -1,0 +1,2 @@
+# Full list of versions available here: https://hub.docker.com/_/mongo/
+FROM mongo:3.2

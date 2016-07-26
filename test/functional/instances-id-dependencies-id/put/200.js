@@ -16,8 +16,9 @@ var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 var multi = require('../../fixtures/multi-factory')
 var primus = require('../../fixtures/primus')
 var createCount = require('callback-count')
+var uuid = require('uuid')
 
-describe('Dependencies - /instances/:id/dependencies', function () {
+describe('Dependencies - /instances/:id/dependencies/:hostname', function () {
   var ctx = {}
 
   before(api.start.bind(ctx))
@@ -62,7 +63,8 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           env: [
             'other=' + ctx.elasticHostname
           ],
-          build: ctx.build.id()
+          build: ctx.build.id(),
+          name: uuid()
         }
         primus.expectActionCount('start', 2, count.next)
         ctx.instance2 = ctx.user.createInstance(body2, count.next)

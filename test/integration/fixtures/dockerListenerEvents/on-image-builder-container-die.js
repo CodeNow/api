@@ -15,6 +15,7 @@ module.exports = function (contextVersion, container, user, exitCode) {
     inspectData: {
       Id: container.id,
       Memory: 0,
+      MemoryReservation: 0,
       MemorySwap: 0,
       Image: 'registry.runnable.com/runnable/image-builder:d1.6.2-v4.0.4',
       Config: {

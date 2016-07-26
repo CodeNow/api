@@ -7,7 +7,7 @@ module.exports = function (data) {
   var repo = data.name || 'hellonode'
   var branch = data.branch || 'master'
   var ownerId = data.ownerId || 429706
-  var committer = data.committer || owner
+  var committer = data.commitPusher || owner
   return {
     ping: {
       url: url.format({
