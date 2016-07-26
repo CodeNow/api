@@ -1,0 +1,20 @@
+{
+  "from": "java",
+  "defaultTag": "openjdk-7",
+  "ports": [8080],
+  "templateEnv": [
+    "MAVEN_VERSION"
+  ],
+  "env": {},
+  "generalCommands": [
+    "javac Main.java",
+    "mvn install"
+  ],
+  "defaultMainCommands": [
+    "java Main",
+    "mvn"
+  ],
+  "defaultWorkDir": "",
+  "cmd": "",
+  "entryPoint": ""
+}
