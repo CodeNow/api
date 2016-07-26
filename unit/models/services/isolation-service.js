@@ -467,46 +467,48 @@ describe('Isolation Services Model', function () {
   describe('#_updateDependenciesForInstanceWithChildren', function () {
     var mockMasterInstance = {
       lowerName: 'foo-api',
+      name: 'foo-api',
       isolated: 'deadbeefdeadbeefdeadbeef',
       owner: { username: 'barnow' },
       isIsolationGroupMaster: true,
       contextVersion: {
         context: 'a312213123122'
-      }
+      },
+      elasticHostname: 'foo-api'
     }
-    var mockOtherDependencyNode = {
-      lowerName: 'redis',
-      contextVersion: {
-        context: 'eweqw232131'
-      }
+    var mockOtherDependencyInstance = {
+      _id: 'sadasdsadsad',
+      name: 'redis',
+      elasticHostname: 'redis'
     }
-    var mockDependencyNode = {
-      lowerName: 'mongodb',
-      contextVersion: {
-        context: 'cxfsdfg22'
-      }
+    var mockDependencyInstance = {
+      _id: 'frf123fqwf3f',
+      name: 'mongodb',
+      elasticHostname: 'mongodb'
     }
     var mockChildInstance = {
       lowerName: 'deadbe--mongodb',
-      contextVersion: {
-        context: mockDependencyNode.contextVersion.context
-      },
+      name: 'deadbe--mongodb',
       owner: { username: 'barnow' },
-      isolated: 'deadbeefdeadbeefdeadbeef'
+      isolated: 'deadbeefdeadbeefdeadbeef',
+      elasticHostname: 'mongodb'
     }
     var children = [mockMasterInstance, mockChildInstance]
 
     beforeEach(function (done) {
-      mockMasterInstance.getDependenciesAsync = sinon.stub().resolves([mockDependencyNode, mockOtherDependencyNode])
+      mockMasterInstance.getDependenciesAsync = sinon.stub().resolves([
+        mockDependencyInstance,
+        mockOtherDependencyInstance
+      ])
       mockMasterInstance.getElasticHostname = sinon.stub().returns('foo-api-staging-barnow.runnableapp.com')
       mockMasterInstance._doc = mockMasterInstance
-      mockMasterInstance.addDependencyAsync = sinon.stub().resolves()
-      mockMasterInstance.removeDependencyAsync = sinon.stub().resolves()
+      mockMasterInstance.addDependency = sinon.stub().resolves()
+      mockMasterInstance.removeDependency = sinon.stub().resolves()
       mockChildInstance.getElasticHostname = sinon.stub().returns('deadbe--mongodb-staging-barnow.runnableapp.com')
       done()
     })
     describe('Errors', function () {
-      it('should throw an error if the instance doesn\'t have an contextId', function (done) {
+      it('should throw an error if the instance doesn\'t have an elasticHostname', function (done) {
         IsolationService._updateDependenciesForInstanceWithChildren(
           mockMasterInstance,
           [{
@@ -517,19 +519,19 @@ describe('Isolation Services Model', function () {
         )
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.include('is missing a contextId')
+            expect(err.message).to.include('is missing an elasticHostname')
             done()
           })
       })
-      it('should throw an error if the instance doesn\'t have an contextId', function (done) {
+      it('should throw an error if the instance doesn\'t have an elasticHostname', function (done) {
         mockMasterInstance.getDependenciesAsync.resolves([{}])
         IsolationService._updateDependenciesForInstanceWithChildren(
           mockMasterInstance,
-          children
+          [{}]
         )
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.include('is missing a contextId')
+            expect(err.message).to.include('is missing an elasticHostname')
             done()
           })
       })
@@ -548,11 +550,10 @@ describe('Isolation Services Model', function () {
       IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockMasterInstance.addDependencyAsync)
+          sinon.assert.calledOnce(mockMasterInstance.addDependency)
           sinon.assert.calledWithExactly(
-            mockMasterInstance.addDependencyAsync,
-            mockChildInstance,
-            'mongodb-staging-barnow.runnableapp.com'
+            mockMasterInstance.addDependency,
+            mockChildInstance
           )
           done()
         })
@@ -562,10 +563,10 @@ describe('Isolation Services Model', function () {
       IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockMasterInstance.removeDependencyAsync)
+          sinon.assert.calledOnce(mockMasterInstance.removeDependency)
           sinon.assert.calledWithExactly(
-            mockMasterInstance.removeDependencyAsync,
-            mockDependencyNode
+            mockMasterInstance.removeDependency,
+            mockDependencyInstance._id
           )
           done()
         })
@@ -576,10 +577,10 @@ describe('Isolation Services Model', function () {
     it('should ignore other dependencies that were in the graph', function (done) {
       IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
         .asCallback(function (err) {
-          expect(err).to.not.exist(mockMasterInstance.removeDependencyAsync)
-          for (var i = 0; i < mockMasterInstance.removeDependencyAsync.callCount; ++i) {
-            var callCheck = mockMasterInstance.removeDependencyAsync.getCall(i).notCalledWith(
-              mockOtherDependencyNode
+          expect(err).to.not.exist(mockMasterInstance.removeDependency)
+          for (var i = 0; i < mockMasterInstance.removeDependency.callCount; ++i) {
+            var callCheck = mockMasterInstance.removeDependency.getCall(i).notCalledWith(
+              mockOtherDependencyInstance._id
             )
             expect(callCheck).to.be.true()
           }
@@ -1205,12 +1206,13 @@ describe('Isolation Services Model', function () {
       _id: 'foobar',
       createdBy: { github: 4 },
       owner: { username: 'owner' },
+      elasticHostname: 'foobar',
       setDependenciesFromEnvironmentAsync: sinon.stub()
     }
     var mockChildInstances
     var mockChildInstance = {
       _id: 'childInstanceId',
-      removeSelfFromGraphAsync: sinon.stub()
+      removeSelfFromGraph: sinon.stub()
     }
 
     beforeEach(function (done) {
@@ -1224,7 +1226,7 @@ describe('Isolation Services Model', function () {
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       mockInstance.setDependenciesFromEnvironmentAsync.reset()
-      mockChildInstance.removeSelfFromGraphAsync.reset()
+      mockChildInstance.removeSelfFromGraph.reset()
       done()
     })
 
@@ -1401,7 +1403,6 @@ describe('Isolation Services Model', function () {
             rabbitMQ.deleteInstance,
             { instanceId: mockChildInstance._id }
           )
-          sinon.assert.calledOnce(mockChildInstance.removeSelfFromGraphAsync)
           done()
         })
     })
@@ -1412,7 +1413,6 @@ describe('Isolation Services Model', function () {
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(rabbitMQ.deleteInstance)
-          sinon.assert.calledTwice(mockChildInstance.removeSelfFromGraphAsync)
           done()
         })
     })

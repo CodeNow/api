@@ -102,7 +102,8 @@ var factory = module.exports = {
       network: {
         hostIp: '1.1.1.100'
       },
-      hostname: 'asdasdasdasdasdsdw',
+      hostname: opts.hostname || 'asdasdasdasdasdsdw',
+      elasticHostname: opts.hostname || 'asdasdasdasdasdsdw',
       env: opts.env || [],
       isolated: opts.isolated,
       isIsolationGroupMaster: opts.isIsolationGroupMaster,
