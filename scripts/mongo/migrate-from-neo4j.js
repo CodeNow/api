@@ -25,7 +25,10 @@ Instances.findAsync({})
   })
   .each(function (i) {
     // fetch all the dependencies for each instance
-    return getDepsFromNeo(i)
+    return clearDependency(i)
+      .then(function () {
+        return getDepsFromNeo(i)
+      })
       .tap(function (deps) {
         console.log('This instance ', i.name, 'has', deps.length, 'dependencies')
       })
@@ -52,19 +55,23 @@ Instances.findAsync({})
   })
 
 function generateGraphNodeNeo (instance) {
-  return {
+  var node = {
     label: 'Instance',
     props: {
-      id: instance._id.toString(),
+      id: instance.id.toString(),
       shortHash: instance.shortHash,
       name: instance.name,
       lowerName: instance.lowerName,
       // eslint dislikes quoted props and non-camelcase keys. such contradiction
       'owner_github': keypather.get(instance, 'owner.github'), // eslint-disable-line quote-props
       'contextVersion_context': // eslint-disable-line quote-props
-        keypather.get(instance, 'contextVersion.context.toString()')
+        keypather.get(instance, 'contextVersion.context').toString()
     }
   }
+  if (instance.isolated) {
+    node.props.isolated = instance.isolated
+  }
+  return node
 }
 
 /**
@@ -90,6 +97,19 @@ function generateGraphNode (instance) {
     name: instance.name
   }
 }
+
+function clearDependency (thisInstance) {
+  if (dryRun) {
+    return Promise.resolve(thisInstance)
+  }
+  return Instances.findOneAndUpdateAsync({
+    _id: thisInstance._id
+  }, {
+    $set: {
+      dependencies: []
+    }
+  })
+}
 /**
  * Adds the given instance to THIS instance's dependency list
  *
@@ -103,12 +123,13 @@ function generateGraphNode (instance) {
  */
 function addDependency (thisInstance, instance) {
   var elasticHostname = instance.elasticHostname.toLowerCase()
-
+  var node = generateGraphNode(instance)
+  console.log('\nInstance', thisInstance.name, 'adding dep', JSON.stringify(node))
   return Instances.findOneAndUpdateAsync({
     _id: thisInstance._id
   }, {
     $push: {
-      dependencies: generateGraphNode(instance)
+      dependencies: node
     }
   })
     .tap(function (updatedInstance) {
