@@ -8,6 +8,7 @@ var Code = require('code')
 var Promise = require('bluebird')
 var clone = require('101/clone')
 var omit = require('101/omit')
+var pick = require('101/pick')
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
@@ -109,7 +110,7 @@ describe('BuildService', function () {
     afterEach(function (done) {
       ctx = {}
       BuildService.findBuild.restore()
-      PermisionService.ensureModelAccess.restore()
+      PermissionService.ensureModelAccess.restore()
       done()
     })
 
@@ -126,7 +127,7 @@ describe('BuildService', function () {
     })
 
     it('should fail if perm check failed', function (done) {
-      PermisionService.ensureModelAccess.rejects(new Error('Not an owner'))
+      PermissionService.ensureModelAccess.rejects(new Error('Not an owner'))
       BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
