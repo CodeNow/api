@@ -82,7 +82,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           }, function (err) {
             expect(err).to.exist()
             expect(err.output.statusCode).to.equal(404)
-            expect(err.message).to.match(/new dependency/i)
+            expect(err.message).to.match(/Instance not found/i)
             ctx.instanceWithDep.fetchDependencies(function (err, data) {
               if (err) { return done(err) }
               expectInstanceDep(data, ctx.instance)

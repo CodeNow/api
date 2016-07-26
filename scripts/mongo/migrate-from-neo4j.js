@@ -10,17 +10,25 @@ var mongoose = require('mongoose')
 
 var Instances = require('models/mongo/instance')
 var Graph = require('models/apis/graph')
+
 mongoose.connect(process.env.MONGO)
 var Promise = require('bluebird')
 
+var client = new Graph()
 var dryRun = !process.env.ACTUALLY_RUN
 
 console.log('dryRun?', !!dryRun)
 var count = 0
 Instances.findAsync({})
+  .tap(function (instances) {
+    console.log('updating', instances.length, 'instances')
+  })
   .each(function (i) {
     // fetch all the dependencies for each instance
     return getDepsFromNeo(i)
+      .tap(function (deps) {
+        console.log('This instance ', i.name, 'has', deps.length, 'dependencies')
+      })
       .each(function (depInstance) {
         if (!depInstance) {
           return 'bad dep'
@@ -29,6 +37,9 @@ Instances.findAsync({})
         if (!dryRun) {
           return addDependency(i, depInstance)
         }
+      })
+      .catch(function (err) {
+        console.error('This instance ', i.name, 'has failed due to ', err)
       })
   })
   .then(function () {
@@ -148,7 +159,6 @@ function getDepsFromNeo (thisInstance) {
     }]
     return Promise.fromCallback(
       function (cb) {
-        var client = new Graph()
         client.graph.getNodes(start, steps, cb)
       },
       {multiArgs: true}
