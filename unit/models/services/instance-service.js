@@ -2094,13 +2094,6 @@ describe('InstanceService', function () {
               })
               .asCallback(done)
           })
-          it('should upsert itself', function (done) {
-            InstanceService.createInstance(body, ctx.mockSessionUser)
-              .then(function () {
-                sinon.assert.calledOnce(ctx.mockInstance.upsertIntoGraphAsync)
-              })
-              .asCallback(done)
-          })
           it('should not set dependencies (since the envs weren\'t updated', function (done) {
             InstanceService.createInstance(body, ctx.mockSessionUser)
               .then(function () {
@@ -2840,14 +2833,6 @@ describe('InstanceService', function () {
           .asCallback(done)
       })
 
-      it('should upsert the dependencies into graph', function (done) {
-        InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
-          .then(function () {
-            sinon.assert.calledOnce(instance.upsertIntoGraphAsync)
-          })
-          .asCallback(done)
-      })
-
       it('should set dependencies from environment, if there are any new envs', function (done) {
         InstanceService._saveInstanceAndEmitUpdate(instance, contextVersion, opts, sessionUser)
           .then(function () {
@@ -2952,7 +2937,6 @@ describe('InstanceService', function () {
           .catch(function (err) {
             expect(err).to.exist()
             expect(err).to.equal(err)
-            sinon.assert.calledOnce(instance.upsertIntoGraphAsync)
             sinon.assert.notCalled(instance.emitInstanceUpdateAsync)
           })
           .asCallback(done)

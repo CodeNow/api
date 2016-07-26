@@ -19,9 +19,6 @@ var multi = require('./fixtures/multi-factory')
 // var expects = require('./fixtures/expects')
 var async = require('async')
 var primus = require('./fixtures/primus')
-var pluck = require('101/pluck')
-var find = require('101/find')
-var hasProps = require('101/has-properties')
 var createCount = require('callback-count')
 var rabbitMQ = require('models/rabbitmq')
 
@@ -35,20 +32,6 @@ describe('BDD - Instance Dependencies', function () {
   after(primus.disconnect)
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
-  // Uncomment if you want to clear the (graph) database every time
-  beforeEach(function (done) {
-    if (process.env.GRAPH_DATABASE_TYPE === 'neo4j') {
-      var Neo4j = require('runna4j')
-      var client = new Neo4j()
-      var err
-      client.cypher('MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n, r')
-        .on('error', function (e) { err = e })
-        .on('end', function () { done(err) })
-        .on('data', function () {})
-    } else {
-      done()
-    }
-  })
   after(require('./fixtures/mocks/api-client').clean)
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
@@ -206,39 +189,6 @@ describe('BDD - Instance Dependencies', function () {
         envs.push('API=' + ctx.webInstance.attrs.lowerName + '-staging-' +
           ctx.user.attrs.accounts.github.username + '.' + process.env.USER_CONTENT_DOMAIN)
         ctx.apiInstance.update({ env: envs }, done)
-      })
-
-      it('should allow recursive deps', function (done) {
-        ctx.webInstance.fetchDependencies({ recurse: true }, function (err, deps) {
-          if (err) { return done(err) }
-          expect(deps).to.have.length(1)
-          expect(deps[0].lowerName).to.equal(ctx.apiInstance.attrs.lowerName)
-          expect(deps[0].dependencies).to.be.an.array()
-          expect(deps[0].dependencies).to.have.length(1)
-          expect(deps[0].dependencies[0]).to.deep.contain({
-            id: ctx.webInstance.attrs._id,
-            shortHash: ctx.webInstance.attrs.shortHash,
-            lowerName: ctx.webInstance.attrs.lowerName
-          })
-          expect(deps[0].dependencies[0].dependencies).to.have.length(0)
-          done()
-        })
-      })
-
-      it('should allow recursive, flat deps, and should remove self from list', function (done) {
-        // asking web for dependencies recursivly and flat, we should not expect to see ourselves in the
-        // top level when it's circular
-        ctx.webInstance.fetchDependencies({ recurse: true, flatten: true }, function (err, deps) {
-          if (err) { return done(err) }
-          expect(deps).to.have.length(1)
-          expect(deps.map(pluck('lowerName'))).to.only.contain([
-            ctx.apiInstance.attrs.lowerName
-          ])
-          var apiDep = find(deps, hasProps({ id: ctx.apiInstance.attrs.id.toString() }))
-          expect(apiDep.dependencies).to.have.length(1)
-          expect(apiDep.dependencies[0].id).to.equal(ctx.webInstance.attrs.id.toString())
-          done()
-        })
       })
 
       it('should update the deps of an instance', function (done) {
