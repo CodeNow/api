@@ -2,10 +2,17 @@
   "from": "java",
   "defaultTag": "openjdk-7",
   "ports": [],
+  "templateEnv": [
+    "MAVEN_VERSION"
+  ],
   "env": {},
-  "generalCommands": [],
+  "generalCommands": [
+    "javac Main.java",
+    "mvn install"
+  ],
   "defaultMainCommands": [
-    "javac Main.java"
+    "java Main",
+    "mvn"
   ],
   "defaultWorkDir": "",
   "cmd": "",
