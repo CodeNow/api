@@ -170,7 +170,7 @@ describe('BuildService', function () {
       BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
         sinon.assert.callOrder(
-          Build.findByIdAsync,
+          BuildService.findBuild,
           PermissionService.ensureModelAccess)
       })
       .asCallback(done)
