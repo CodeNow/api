@@ -1,0 +1,13 @@
+{
+  "from": "java",
+  "defaultTag": "openjdk-7",
+  "ports": [],
+  "env": {},
+  "generalCommands": [],
+  "defaultMainCommands": [
+    "javac Main.java"
+  ],
+  "defaultWorkDir": "",
+  "cmd": "",
+  "entryPoint": ""
+}
