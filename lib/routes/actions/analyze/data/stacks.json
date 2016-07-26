@@ -19,7 +19,8 @@
     "ports": "3000, 9292",
     "startCommand": ["rails server -b 0.0.0.0"],
     "preEnvMarker": "<%= ENV[\"",
-    "postEnvMarker": "]%>\""
+    "postEnvMarker": "]%>\"",
+    "dependencyOnly": false
   },
   
   "nodejs": {
@@ -45,7 +46,8 @@
     "ports": "80, 8000, 8080, 3000",
     "startCommand": ["npm start", "node app.js"],
     "preEnvMarker": "process.env",
-    "postEnvMarker": ""
+    "postEnvMarker": "",
+    "dependencyOnly": false
   },
 
   "python": {
@@ -68,7 +70,8 @@
     "ports": "80",
     "startCommand": ["python main.py"],
     "preEnvMarker": "os.environ['",
-    "postEnvMarker": "']"
+    "postEnvMarker": "']",
+    "dependencyOnly": false
   },
 
   "ruby": {
@@ -95,7 +98,8 @@
     "ports": "3000, 9292, 80",
     "startCommand": ["/bin/bash -l -c 'bundle exec rake server'", "/bin/bash -l -c 'ruby main.rb'"],
     "preEnvMarker": "os.environ['",
-    "postEnvMarker": "']"
+    "postEnvMarker": "']",
+    "dependencyOnly": false
   },
 
   "go": {
@@ -110,9 +114,9 @@
     "ports": "80",
     "startCommand": ["./main"],
     "preEnvMarker": "os.Getenv('",
-    "postEnvMarker": "')"
+    "postEnvMarker": "')",
+    "dependencyOnly": false
   },
-
 
   "php": {
     "name": "PHP",
@@ -142,7 +146,8 @@
     "ports": "80, 8080, 8000",
     "startCommand": ["apache2 -DFOREGROUND"],
     "preEnvMarker": "",
-    "postEnvMarker": ""
+    "postEnvMarker": "",
+    "dependencyOnly": false
   },
 
   "java": {
@@ -161,6 +166,43 @@
     "ports": "",
     "startCommand": ["java","Main"],
     "preEnvMarker": "",
-    "postEnvMarker": ""
+    "postEnvMarker": "",
+    "dependencyOnly": true
+  },
+
+  "maven": {
+    "name": "Java/Maven",
+    "versions": [
+      "3.3.9",
+      "3.3.3",
+      "3.2.5"
+    ],
+    "defaultVersion": "3.3.9",
+    "dependencies": ["java"],
+    "ports": "8080",
+    "startCommand": ["mvn"],
+    "preEnvMarker": "",
+    "postEnvMarker": "",
+    "dependencyOnly": false
+  },
+
+  "tomcat": {
+    "name": "Tomcat",
+    "versions": [
+      "6-jre7",
+      "6-jre8",
+      "7-jre7",
+      "7-jre8",
+      "8-jre7",
+      "8-jre8",
+      "8.5-jre8",
+      "9-jre8"
+    ],
+    "defaultVersion": "8-jre7",
+    "ports": "8080",
+    "startCommand": ["catalina.sh", "run"],
+    "preEnvMarker": "",
+    "postEnvMarker": "",
+    "dependencyOnly": false
   }
 }
