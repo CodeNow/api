@@ -143,5 +143,24 @@
     "startCommand": ["apache2 -DFOREGROUND"],
     "preEnvMarker": "",
     "postEnvMarker": ""
+  },
+
+  "java": {
+    "name": "Java",
+    "versions": [
+      "openjdk-6",
+      "openjdk-6-jre",
+      "openjdk-7",
+      "openjdk-7-jre",
+      "openjdk-8",
+      "openjdk-8-jre",
+      "openjdk-9",
+      "openjdk-9-jre"
+    ],
+    "defaultVersion": "openjdk-7",
+    "ports": "",
+    "startCommand": ["java","Main"],
+    "preEnvMarker": "",
+    "postEnvMarker": ""
   }
 }
