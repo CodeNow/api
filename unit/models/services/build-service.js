@@ -16,7 +16,7 @@ var BuildService = require('models/services/build-service')
 var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
 var ContextService = require('models/services/context-service')
-var PermisionService = require('models/services/permission-service')
+var PermissionService = require('models/services/permission-service')
 var User = require('models/mongo/user')
 var Runnable = require('models/apis/runnable')
 
@@ -103,14 +103,14 @@ describe('BuildService', function () {
         _id: '507f1f77bcf86cd799439011'
       })
       sinon.stub(BuildService, 'findBuild').resolves(ctx.build)
-      sinon.stub(PermisionService, 'ensureModelAccess').resolves()
+      sinon.stub(PermissionService, 'ensureModelAccess').resolves()
       done()
     })
 
     afterEach(function (done) {
       ctx = {}
       BuildService.findBuild.restore()
-      PermisionService.ensureModelAccess.restore()
+      PermissionService.ensureModelAccess.restore()
       done()
     })
 
@@ -127,7 +127,7 @@ describe('BuildService', function () {
     })
 
     it('should fail if perm check failed', function (done) {
-      PermisionService.ensureModelAccess.rejects(new Error('Not an owner'))
+      PermissionService.ensureModelAccess.rejects(new Error('Not an owner'))
       BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
@@ -155,12 +155,12 @@ describe('BuildService', function () {
       .asCallback(done)
     })
 
-    it('should call PermisionService.ensureModelAccess with correct params', function (done) {
+    it('should call PermissionService.ensureModelAccess with correct params', function (done) {
       var sessionUser = { _id: 'user-id' }
       BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
-        sinon.assert.calledOnce(PermisionService.ensureModelAccess)
-        sinon.assert.calledWith(PermisionService.ensureModelAccess, sessionUser, ctx.build)
+        sinon.assert.calledOnce(PermissionService.ensureModelAccess)
+        sinon.assert.calledWith(PermissionService.ensureModelAccess, sessionUser, ctx.build)
       })
       .asCallback(done)
     })
@@ -171,7 +171,7 @@ describe('BuildService', function () {
       .then(function (build) {
         sinon.assert.callOrder(
           BuildService.findBuild,
-          PermisionService.ensureModelAccess)
+          PermissionService.ensureModelAccess)
       })
       .asCallback(done)
     })
