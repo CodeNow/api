@@ -16,6 +16,7 @@ var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
+var rabbitMQ = require('models/rabbitmq')
 var Worker = require('workers/instance.start')
 
 var lab = exports.lab = Lab.script()
@@ -77,18 +78,18 @@ describe('Workers: Instance Start', function () {
       }
     })
     sinon.stub(Instance, 'findOneStartingAsync').resolves(testInstance)
-    sinon.stub(Instance, 'setContainerErrorAsync')
+    sinon.stub(rabbitMQ, 'instanceContainerErrored')
     sinon.stub(ContextVersion, 'findByIdAsync').resolves(testCV)
-    sinon.stub(Docker.prototype, 'startUserContainerAsync').resolves()
+    sinon.stub(Docker.prototype, 'startContainerAsync').resolves()
     sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
     done()
   })
 
   afterEach(function (done) {
     Instance.findOneStartingAsync.restore()
-    Instance.setContainerErrorAsync.restore()
+    rabbitMQ.instanceContainerErrored.restore()
     ContextVersion.findByIdAsync.restore()
-    Docker.prototype.startUserContainerAsync.restore()
+    Docker.prototype.startContainerAsync.restore()
     InstanceService.emitInstanceUpdate.restore()
     done()
   })
@@ -168,7 +169,7 @@ describe('Workers: Instance Start', function () {
   })
   it('should fail if docker startContainer failed', function (done) {
     var error = new Error('Docker error')
-    Docker.prototype.startUserContainerAsync.rejects(error)
+    Docker.prototype.startContainerAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
@@ -177,7 +178,7 @@ describe('Workers: Instance Start', function () {
   })
 
   it('should TaskError if docker startContainer 404', function (done) {
-    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(TaskError)
       expect(err.message).to.contain('container does not exist')
@@ -186,7 +187,7 @@ describe('Workers: Instance Start', function () {
   })
 
   it('should TaskError if docker startContainer 404 and no created', function (done) {
-    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(TaskError)
       expect(err.message).to.contain('container does not exist')
@@ -198,7 +199,7 @@ describe('Workers: Instance Start', function () {
     testInstance.container.inspect = {
       Created: Date.now()
     }
-    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(TaskError)
       expect(err.message).to.contain('container does not exist')
@@ -210,8 +211,8 @@ describe('Workers: Instance Start', function () {
     testInstance.container.inspect = {
       Created: 1
     }
-    Instance.setContainerErrorAsync.resolves()
-    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    rabbitMQ.instanceContainerErrored.resolves()
+    Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(TaskFatalError)
       expect(err.message).to.contain('Please rebuild without cache')
@@ -219,28 +220,26 @@ describe('Workers: Instance Start', function () {
     })
   })
 
-  it('should TaskFatalError if setContainerErrorAsync error', function (done) {
+  it('should instanceContainerErrored if docker startContainer 404 and past 5 min', function (done) {
     testInstance.container.inspect = {
       Created: 1
     }
-    Instance.setContainerErrorAsync.rejects(new Error('should ignore'))
-    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    var testError = new TaskFatalError(
+      'instance.start',
+      'Sorry, your container got lost. Please rebuild without cache',
+      { job: testData }
+    )
+    rabbitMQ.instanceContainerErrored.resolves()
+    Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(TaskFatalError)
       expect(err.message).to.contain('Please rebuild without cache')
-      done()
-    })
-  })
-
-  it('should setContainerError if docker startContainer 404 and past 5 min', function (done) {
-    testInstance.container.inspect = {
-      Created: 1
-    }
-    Instance.setContainerErrorAsync.resolves()
-    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
-    Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskFatalError)
-      expect(err.message).to.contain('Please rebuild without cache')
+      sinon.assert.calledOnce(rabbitMQ.instanceContainerErrored)
+      sinon.assert.calledWith(rabbitMQ.instanceContainerErrored, {
+        instanceId: testData.instanceId,
+        containerId: testData.containerId,
+        error: testError
+      })
       done()
     })
   })
@@ -273,8 +272,8 @@ describe('Workers: Instance Start', function () {
   it('should call startContainer', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
-      sinon.assert.calledOnce(Docker.prototype.startUserContainerAsync)
-      sinon.assert.calledWith(Docker.prototype.startUserContainerAsync, dockerContainer, testCV)
+      sinon.assert.calledOnce(Docker.prototype.startContainerAsync)
+      sinon.assert.calledWith(Docker.prototype.startContainerAsync, dockerContainer, testCV)
       done()
     })
   })
@@ -293,7 +292,7 @@ describe('Workers: Instance Start', function () {
         Instance.findOneStartingAsync,
         ContextVersion.findByIdAsync,
         InstanceService.emitInstanceUpdate,
-        Docker.prototype.startUserContainerAsync)
+        Docker.prototype.startContainerAsync)
       done()
     })
   })
