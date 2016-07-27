@@ -144,6 +144,66 @@ describe('Instance Model Tests', function () {
     })
   })
 
+  describe('setContainerError', function () {
+    var testInstance = 'tester'
+    var instanceId = '12312341234'
+    var containerId = '12412424235'
+    var testErr = new Error('something bad happened')
+    testErr.data = 'some dat'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdate')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAndUpdate.restore()
+      done()
+    })
+
+    it('should set error on instance', function (done) {
+      Instance.findOneAndUpdate.yieldsAsync(null, testInstance)
+      Instance.setContainerError(instanceId, containerId, testErr, function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.equal(testInstance)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        sinon.assert.calledWith(Instance.findOneAndUpdate, {
+          _id: instanceId,
+          'container.dockerContainer': containerId
+        }, {
+          $set: {
+            container: {
+              error: {
+                message: testErr.message,
+                stack: testErr.stack,
+                data: testErr.data
+              }
+            }
+          }
+        })
+        done()
+      })
+    })
+
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOneAndUpdate.yieldsAsync(mongoError)
+      Instance.setContainerError(instanceId, containerId, testErr, function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        done()
+      })
+    })
+
+    it('should return null if instance was not found', function (done) {
+      Instance.findOneAndUpdate.yieldsAsync(null, null)
+      Instance.setContainerError(instanceId, containerId, testErr, function (err, instance) {
+        expect(err.output.statusCode).to.equal(404)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        done()
+      })
+    })
+  })
+
   describe('markAsStarting', function () {
     var mockInstance = {
       _id: '507f1f77bcf86cd799439011'
