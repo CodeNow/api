@@ -12,9 +12,6 @@
 ./test/functional/auth-whitelist/get/200.js
 ./test/functional/auth-whitelist/get/204.js
 ./test/functional/auth-whitelist/get/404.js
-./test/functional/auth-whitelist/post/201.js
-./test/functional/auth-whitelist/post/404.js
-./test/functional/auth-whitelist/post/409.js
 ./test/functional/auth/delete/200.js
 ./test/functional/bdd-context-version-deduping.js
 ./test/functional/bdd-debug-containers.js
@@ -36,7 +33,6 @@
 ./test/functional/contexts-id-versions.js
 ./test/functional/csrf-validation.js
 ./test/functional/github-proxy.js
-./test/functional/instance-dependency-health.js
 ./test/functional/instances-id-actions-redeploy/post/index.js
 ./test/functional/instances-id-containers-id-files-id.js
 ./test/functional/instances-id-containers-id-files.js
