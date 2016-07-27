@@ -37,43 +37,47 @@ describe('Workers: Instance Start', function () {
     sessionUserGithubId: testSessionUserGithubId,
     tid: 'some-tid-id'
   }
-  var testCV = new ContextVersion({
-    _id: testCvId
-  })
-  var testInstance = new Instance({
-    _id: testInstanceId,
-    name: 'name1',
-    shortHash: 'asd51a1',
-    masterPod: true,
-    owner: {
-      github: 124,
-      username: 'codenow',
-      gravatar: ''
-    },
-    createdBy: {
-      github: 125,
-      username: 'runnabear',
-      gravatar: ''
-    },
-    container: {
-      dockerContainer: dockerContainer
-    },
-    network: {
-      hostIp: '0.0.0.0'
-    },
-    build: '507f191e810c19729de860e2',
-    contextVersion: {
-      _id: testCvId,
-      appCodeVersions: [
-        {
-          lowerBranch: 'develop',
-          additionalRepo: false
-        }
-      ]
-    }
-  })
+  var testCV
+  var testInstance
+
   beforeEach(function (done) {
+    testCV = new ContextVersion({
+      _id: testCvId
+    })
+    testInstance = new Instance({
+      _id: testInstanceId,
+      name: 'name1',
+      shortHash: 'asd51a1',
+      masterPod: true,
+      owner: {
+        github: 124,
+        username: 'codenow',
+        gravatar: ''
+      },
+      createdBy: {
+        github: 125,
+        username: 'runnabear',
+        gravatar: ''
+      },
+      container: {
+        dockerContainer: dockerContainer
+      },
+      network: {
+        hostIp: '0.0.0.0'
+      },
+      build: '507f191e810c19729de860e2',
+      contextVersion: {
+        _id: testCvId,
+        appCodeVersions: [
+          {
+            lowerBranch: 'develop',
+            additionalRepo: false
+          }
+        ]
+      }
+    })
     sinon.stub(Instance, 'findOneStartingAsync').resolves(testInstance)
+    sinon.stub(Instance, 'setContainerErrorAsync')
     sinon.stub(ContextVersion, 'findByIdAsync').resolves(testCV)
     sinon.stub(Docker.prototype, 'startUserContainerAsync').resolves()
     sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
@@ -82,6 +86,7 @@ describe('Workers: Instance Start', function () {
 
   afterEach(function (done) {
     Instance.findOneStartingAsync.restore()
+    Instance.setContainerErrorAsync.restore()
     ContextVersion.findByIdAsync.restore()
     Docker.prototype.startUserContainerAsync.restore()
     InstanceService.emitInstanceUpdate.restore()
@@ -133,6 +138,7 @@ describe('Workers: Instance Start', function () {
       })
     })
   })
+
   it('should fail if findOneStartingAsync failed', function (done) {
     var error = new Error('Mongo error')
     Instance.findOneStartingAsync.rejects(error)
@@ -175,6 +181,66 @@ describe('Workers: Instance Start', function () {
     Worker(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(TaskError)
       expect(err.message).to.contain('container does not exist')
+      done()
+    })
+  })
+
+  it('should TaskError if docker startContainer 404 and no created', function (done) {
+    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.be.an.instanceOf(TaskError)
+      expect(err.message).to.contain('container does not exist')
+      done()
+    })
+  })
+
+  it('should TaskError if docker startContainer 404', function (done) {
+    testInstance.container.inspect = {
+      Created: Date.now()
+    }
+    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.be.an.instanceOf(TaskError)
+      expect(err.message).to.contain('container does not exist')
+      done()
+    })
+  })
+
+  it('should TaskFatalError if docker startContainer 404 and past 5 min', function (done) {
+    testInstance.container.inspect = {
+      Created: 1
+    }
+    Instance.setContainerErrorAsync.resolves()
+    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.be.an.instanceOf(TaskFatalError)
+      expect(err.message).to.contain('Please rebuild without cache')
+      done()
+    })
+  })
+
+  it('should TaskFatalError if setContainerErrorAsync error', function (done) {
+    testInstance.container.inspect = {
+      Created: 1
+    }
+    Instance.setContainerErrorAsync.rejects(new Error('should ignore'))
+    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.be.an.instanceOf(TaskFatalError)
+      expect(err.message).to.contain('Please rebuild without cache')
+      done()
+    })
+  })
+
+  it('should setContainerError if docker startContainer 404 and past 5 min', function (done) {
+    testInstance.container.inspect = {
+      Created: 1
+    }
+    Instance.setContainerErrorAsync.resolves()
+    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.be.an.instanceOf(TaskFatalError)
+      expect(err.message).to.contain('Please rebuild without cache')
       done()
     })
   })
