@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "8.0.0",
+  "version": "8.0.2",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -28,7 +28,6 @@
     "bunyan": "^1.4.0",
     "busboy": "^0.2.8",
     "callback-count": "~0.1.0",
-    "cluster-man": "^1.1.1",
     "code": "^1.4.0",
     "compression": "^1.0.11",
     "concat-stream": "^1.4.7",
