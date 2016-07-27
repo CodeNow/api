@@ -43,6 +43,7 @@ describe('worker utils unit test', function () {
         expect(err.message).to.equal('instance.start: Invalid Job')
         expect(err.data.queue).to.equal('instance.start')
         expect(err.data.job).to.equal(job)
+        expect(err.data.validationError.message).to.equal('"instanceId" must be a string')
         done()
       })
     })
