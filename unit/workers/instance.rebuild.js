@@ -80,7 +80,7 @@ describe('Worker: instance.rebuild unit test: ' + moduleName, function () {
           expect(err).to.be.instanceOf(TaskFatalError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
-            .to.match(/job.+required/)
+            .to.match(/instance.rebuild.job.+required/)
           done()
         })
       })
