@@ -4,6 +4,7 @@
 'use strict'
 
 require('sinon-as-promised')(require('bluebird'))
+var Boom = require('dat-middleware').Boom
 var Code = require('code')
 var Lab = require('lab')
 var omit = require('101/omit')
@@ -117,7 +118,7 @@ describe('Workers: Instance Start', function () {
     })
 
     it('should TaskFatalError if instance not found', function (done) {
-      Instance.setContainerError.resolves(null)
+      Instance.setContainerError.rejects(Boom.notFound())
       Worker(testData).asCallback(function (err) {
         expect(err).to.be.an.instanceOf(TaskFatalError)
         expect(err.message).to.equal('instance.container.errored: Instance not found')
