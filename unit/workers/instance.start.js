@@ -12,7 +12,6 @@ var sinon = require('sinon')
 var TaskError = require('ponos').TaskError
 var TaskFatalError = require('ponos').TaskFatalError
 
-var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
@@ -31,20 +30,15 @@ describe('Workers: Instance Start', function () {
   var testInstanceId = '5633e9273e2b5b0c0077fd41'
   var dockerContainer = '46080d6253c8db55b8bbb9408654896964b86c63e863f1b3b0301057d1ad92ba'
   var testSessionUserGithubId = 123123
-  var testCvId = '507f191e810c19729de860ea'
   var testData = {
     instanceId: testInstanceId,
     containerId: dockerContainer,
     sessionUserGithubId: testSessionUserGithubId,
     tid: 'some-tid-id'
   }
-  var testCV
   var testInstance
 
   beforeEach(function (done) {
-    testCV = new ContextVersion({
-      _id: testCvId
-    })
     testInstance = new Instance({
       _id: testInstanceId,
       name: 'name1',
@@ -66,20 +60,10 @@ describe('Workers: Instance Start', function () {
       network: {
         hostIp: '0.0.0.0'
       },
-      build: '507f191e810c19729de860e2',
-      contextVersion: {
-        _id: testCvId,
-        appCodeVersions: [
-          {
-            lowerBranch: 'develop',
-            additionalRepo: false
-          }
-        ]
-      }
+      build: '507f191e810c19729de860e2'
     })
     sinon.stub(Instance, 'findOneStartingAsync').resolves(testInstance)
     sinon.stub(rabbitMQ, 'instanceContainerErrored')
-    sinon.stub(ContextVersion, 'findByIdAsync').resolves(testCV)
     sinon.stub(Docker.prototype, 'startContainerAsync').resolves()
     sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
     done()
@@ -88,7 +72,6 @@ describe('Workers: Instance Start', function () {
   afterEach(function (done) {
     Instance.findOneStartingAsync.restore()
     rabbitMQ.instanceContainerErrored.restore()
-    ContextVersion.findByIdAsync.restore()
     Docker.prototype.startContainerAsync.restore()
     InstanceService.emitInstanceUpdate.restore()
     done()
@@ -158,15 +141,7 @@ describe('Workers: Instance Start', function () {
       done()
     })
   })
-  it('should fail fatally if ContextVersion.findByIdAsync returned no cv', function (done) {
-    ContextVersion.findByIdAsync.resolves(null)
-    Worker(testData).asCallback(function (err) {
-      expect(err).to.exist()
-      expect(err).to.be.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('instance.start: ContextVersion not found')
-      done()
-    })
-  })
+
   it('should fail if docker startContainer failed', function (done) {
     var error = new Error('Docker error')
     Docker.prototype.startContainerAsync.rejects(error)
@@ -224,11 +199,7 @@ describe('Workers: Instance Start', function () {
     testInstance.container.inspect = {
       Created: 1
     }
-    var testError = new TaskFatalError(
-      'instance.start',
-      'Sorry, your container got lost. Please rebuild without cache',
-      { job: testData }
-    )
+    var testError = 'instance.start: Sorry, your container got lost. Please rebuild without cache'
     rabbitMQ.instanceContainerErrored.resolves()
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
@@ -261,22 +232,16 @@ describe('Workers: Instance Start', function () {
       done()
     })
   })
-  it('should call ContextVersion.findByIdAsync', function (done) {
-    Worker(testData).asCallback(function (err) {
-      expect(err).to.not.exist()
-      sinon.assert.calledOnce(ContextVersion.findByIdAsync)
-      sinon.assert.calledWith(ContextVersion.findByIdAsync, testCvId)
-      done()
-    })
-  })
+
   it('should call startContainer', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(Docker.prototype.startContainerAsync)
-      sinon.assert.calledWith(Docker.prototype.startContainerAsync, dockerContainer, testCV)
+      sinon.assert.calledWith(Docker.prototype.startContainerAsync, dockerContainer)
       done()
     })
   })
+
   it('should call emitInstanceUpdate', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
@@ -285,12 +250,12 @@ describe('Workers: Instance Start', function () {
       done()
     })
   })
+
   it('should call out to various models and helper methods in the correct order', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.callOrder(
         Instance.findOneStartingAsync,
-        ContextVersion.findByIdAsync,
         InstanceService.emitInstanceUpdate,
         Docker.prototype.startContainerAsync)
       done()
