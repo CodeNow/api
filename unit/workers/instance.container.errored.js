@@ -4,18 +4,14 @@
 'use strict'
 
 require('sinon-as-promised')(require('bluebird'))
-var Boom = require('dat-middleware').Boom
 var Code = require('code')
 var Lab = require('lab')
 var omit = require('101/omit')
 var sinon = require('sinon')
-var TaskError = require('ponos').TaskError
 var TaskFatalError = require('ponos').TaskFatalError
 
-var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
-var rabbitMQ = require('models/rabbitmq')
 var Worker = require('workers/instance.container.errored')
 
 var lab = exports.lab = Lab.script()

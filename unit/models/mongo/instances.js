@@ -151,22 +151,22 @@ describe('Instance Model Tests', function () {
     var testErr = new Error('something bad happened')
     testErr.data = 'some dat'
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findOneAndUpdate')
+      sinon.stub(Instance, 'findOneAndUpdateAsync')
       done()
     })
 
     afterEach(function (done) {
-      Instance.findOneAndUpdate.restore()
+      Instance.findOneAndUpdateAsync.restore()
       done()
     })
 
     it('should set error on instance', function (done) {
-      Instance.findOneAndUpdate.yieldsAsync(null, testInstance)
-      Instance.setContainerError(instanceId, containerId, testErr, function (err, instance) {
+      Instance.findOneAndUpdateAsync.resolves(testInstance)
+      Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
         if (err) { return done(err) }
         expect(instance).to.equal(testInstance)
-        sinon.assert.calledOnce(Instance.findOneAndUpdate)
-        sinon.assert.calledWith(Instance.findOneAndUpdate, {
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
           _id: instanceId,
           'container.dockerContainer': containerId
         }, {
@@ -186,19 +186,19 @@ describe('Instance Model Tests', function () {
 
     it('should return an error if mongo call failed', function (done) {
       var mongoError = new Error('Mongo error')
-      Instance.findOneAndUpdate.yieldsAsync(mongoError)
-      Instance.setContainerError(instanceId, containerId, testErr, function (err, instance) {
+      Instance.findOneAndUpdateAsync.rejects(mongoError)
+      Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
         expect(err).to.equal(mongoError)
-        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
         done()
       })
     })
 
     it('should return null if instance was not found', function (done) {
-      Instance.findOneAndUpdate.yieldsAsync(null, null)
-      Instance.setContainerError(instanceId, containerId, testErr, function (err, instance) {
+      Instance.findOneAndUpdateAsync.resolves(null, null)
+      Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
         expect(err.output.statusCode).to.equal(404)
-        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
         done()
       })
     })
