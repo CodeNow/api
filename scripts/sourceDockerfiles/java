@@ -1,0 +1,19 @@
+# # Full list of versions available here: https://registry.hub.docker.com/_/node/java/manage/\n' +
+FROM java:<java-version>
+
+
+# Install maven
+RUN apt-get update  
+RUN apt-get install -y maven
+
+# Add repository files to container
+<before-main-repo>
+#default run: mvn dependency:resolve && mvn verify && mvn package
+<after-main-repo>
+
+# Open up ports on the container
+EXPOSE <user-specified-ports>
+
+# Command to start the app
+CMD <start-command>
+# CMD ["/usr/lib/jvm/java-8-openjdk-amd64/bin/java", "-jar", "target/sparkexample-jar-with-dependencies.jar"]  
