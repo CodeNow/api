@@ -158,11 +158,11 @@ describe('BuildService', function () {
     it('should call PermissionService.ensureModelAccess with correct params', function (done) {
       var sessionUser = { _id: 'user-id' }
       BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', sessionUser)
-        .then(function (build) {
-          sinon.assert.calledOnce(PermissionService.ensureModelAccess)
-          sinon.assert.calledWith(PermissionService.ensureModelAccess, sessionUser, ctx.build)
-        })
-        .asCallback(done)
+      .then(function (build) {
+        sinon.assert.calledOnce(PermissionService.ensureModelAccess)
+        sinon.assert.calledWith(PermissionService.ensureModelAccess, sessionUser, ctx.build)
+      })
+      .asCallback(done)
     })
 
     it('should call all functions in correct order', function (done) {

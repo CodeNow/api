@@ -20,12 +20,12 @@ var ContextVersion = require('models/mongo/context-version')
 var Runnable = require('models/apis/runnable')
 // internal (being tested)
 var ContextService = require('models/services/context-service')
-var PermisionService = require('models/services/permission-service')
+var PermissionService = require('models/services/permission-service')
 
 describe('ContextService Unit Test', function () {
   var ctx = {}
   beforeEach(function (done) {
-    sinon.stub(PermisionService, 'isOwnerOf').returns({})
+    sinon.stub(PermissionService, 'isOwnerOf').returns({})
     sinon.stub(Context, 'createAsync').returns()
     sinon.stub(Context.prototype, 'save').yieldsAsync()
     sinon.stub(ContextVersion, 'createDeepCopy').yieldsAsync()
@@ -33,7 +33,7 @@ describe('ContextService Unit Test', function () {
     done()
   })
   afterEach(function (done) {
-    PermisionService.isOwnerOf.restore()
+    PermissionService.isOwnerOf.restore()
     Context.createAsync.restore()
     Context.prototype.save.restore()
     ContextVersion.createDeepCopy.restore()
@@ -106,14 +106,14 @@ describe('ContextService Unit Test', function () {
         _id: '507f1f77bcf86cd799439011'
       })
       sinon.stub(ContextService, 'findContext').resolves(ctx.context)
-      sinon.stub(PermisionService, 'ensureOwnerOrModerator').resolves()
+      sinon.stub(PermissionService, 'ensureOwnerOrModerator').resolves()
       done()
     })
 
     afterEach(function (done) {
       ctx = {}
       ContextService.findContext.restore()
-      PermisionService.ensureOwnerOrModerator.restore()
+      PermissionService.ensureOwnerOrModerator.restore()
       done()
     })
 
@@ -130,7 +130,7 @@ describe('ContextService Unit Test', function () {
     })
 
     it('should fail if perm check failed', function (done) {
-      PermisionService.ensureOwnerOrModerator.rejects(new Error('Not an owner'))
+      PermissionService.ensureOwnerOrModerator.rejects(new Error('Not an owner'))
       ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
@@ -158,12 +158,12 @@ describe('ContextService Unit Test', function () {
       .asCallback(done)
     })
 
-    it('should call PermisionService.ensureOwnerOrModerator with correct params', function (done) {
+    it('should call PermissionService.ensureOwnerOrModerator with correct params', function (done) {
       var sessionUser = { _id: 'user-id' }
       ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
-        sinon.assert.calledOnce(PermisionService.ensureOwnerOrModerator)
-        sinon.assert.calledWith(PermisionService.ensureOwnerOrModerator, sessionUser, ctx.context)
+        sinon.assert.calledOnce(PermissionService.ensureOwnerOrModerator)
+        sinon.assert.calledWith(PermissionService.ensureOwnerOrModerator, sessionUser, ctx.context)
       })
       .asCallback(done)
     })
@@ -174,7 +174,7 @@ describe('ContextService Unit Test', function () {
       .then(function (build) {
         sinon.assert.callOrder(
           ContextService.findContext,
-          PermisionService.ensureOwnerOrModerator)
+          PermissionService.ensureOwnerOrModerator)
       })
       .asCallback(done)
     })
@@ -260,7 +260,7 @@ describe('ContextService Unit Test', function () {
     })
 
     it('should fail if permission check failed', function (done) {
-      PermisionService.isOwnerOf.rejects(new Error('Not an owner'))
+      PermissionService.isOwnerOf.rejects(new Error('Not an owner'))
       var payload = {
         name: 'code'
       }
@@ -298,8 +298,8 @@ describe('ContextService Unit Test', function () {
       }
       ContextService.createNew(ctx.sessionUser, clone(payload))
       .tap(function () {
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledWith(PermisionService.isOwnerOf, ctx.sessionUser, payload)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
+        sinon.assert.calledWith(PermissionService.isOwnerOf, ctx.sessionUser, payload)
       })
       .asCallback(done)
     })
@@ -310,11 +310,11 @@ describe('ContextService Unit Test', function () {
       }
       ContextService.createNew(ctx.sessionUser, clone(payload))
       .tap(function () {
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
         payload.owner = {
           github: ctx.sessionUser.accounts.github.id
         }
-        sinon.assert.calledWith(PermisionService.isOwnerOf, ctx.sessionUser, payload)
+        sinon.assert.calledWith(PermissionService.isOwnerOf, ctx.sessionUser, payload)
       })
       .asCallback(done)
     })
@@ -346,7 +346,7 @@ describe('ContextService Unit Test', function () {
       .tap(function () {
         var finalPayload = clone(payload)
         delete finalPayload['some']
-        sinon.assert.calledWith(PermisionService.isOwnerOf, ctx.sessionUser, finalPayload)
+        sinon.assert.calledWith(PermissionService.isOwnerOf, ctx.sessionUser, finalPayload)
         sinon.assert.calledWith(Context.createAsync, finalPayload)
       })
       .asCallback(done)
@@ -397,7 +397,7 @@ describe('ContextService Unit Test', function () {
       ContextService.createNew(ctx.sessionUser, clone(payload))
       .tap(function () {
         sinon.assert.callOrder(
-          PermisionService.isOwnerOf,
+          PermissionService.isOwnerOf,
           Context.createAsync)
       })
       .asCallback(done)

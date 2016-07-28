@@ -33,7 +33,6 @@
 ./test/functional/contexts-id-versions.js
 ./test/functional/csrf-validation.js
 ./test/functional/github-proxy.js
-./test/functional/instance-dependency-health.js
 ./test/functional/instances-id-actions-redeploy/post/index.js
 ./test/functional/instances-id-containers-id-files-id.js
 ./test/functional/instances-id-containers-id-files.js
