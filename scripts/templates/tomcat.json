@@ -5,7 +5,7 @@
   "env": {},
   "generalCommands": [],
   "defaultMainCommands": [
-    "catalina.sh run",
+    "catalina.sh run"
   ],
   "defaultWorkDir": "",
   "cmd": "",
