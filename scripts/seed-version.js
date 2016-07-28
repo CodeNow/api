@@ -85,9 +85,11 @@ var sources = [{
   body: fs.readFileSync('./scripts/sourceDockerfiles/nginx').toString()
 }, {
   name: 'Tomcat',
+  isSource: true,
   body: fs.readFileSync('./scripts/sourceDockerfiles/tomcat').toString()
 }, {
   name: 'Java',
+  isSource: true,
   body: fs.readFileSync('./scripts/sourceDockerfiles/java').toString()
 }, {
   name: 'RabbitMQ',
