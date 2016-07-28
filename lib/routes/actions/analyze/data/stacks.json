@@ -1,27 +1,4 @@
 {
-  "rails": {
-    "name": "Rails",
-    "versions": [
-      "4.1.14",
-      "4.1.15",
-      "4.1.16",
-      "4.2.1",
-      "4.2.2",
-      "4.2.3",
-      "4.2.4",
-      "4.2.5",
-      "4.2.6",
-      "4.2.7",
-      "5.0.0"
-    ],
-    "defaultVersion": "4.2.7",
-    "dependencies": ["ruby"],
-    "ports": "3000, 9292",
-    "startCommand": ["rails server -b 0.0.0.0"],
-    "preEnvMarker": "<%= ENV[\"",
-    "postEnvMarker": "]%>\"",
-    "dependencyOnly": false
-  },
   
   "nodejs": {
     "name": "Node.js",
@@ -101,7 +78,31 @@
     "postEnvMarker": "']",
     "dependencyOnly": false
   },
-  
+
+  "rails": {
+    "name": "Rails",
+    "versions": [
+      "4.1.14",
+      "4.1.15",
+      "4.1.16",
+      "4.2.1",
+      "4.2.2",
+      "4.2.3",
+      "4.2.4",
+      "4.2.5",
+      "4.2.6",
+      "4.2.7",
+      "5.0.0"
+    ],
+    "defaultVersion": "4.2.7",
+    "dependencies": ["ruby"],
+    "ports": "3000, 9292",
+    "startCommand": ["rails server -b 0.0.0.0"],
+    "preEnvMarker": "<%= ENV[\"",
+    "postEnvMarker": "]%>\"",
+    "dependencyOnly": false
+  },
+
   "go": {
     "name": "Go",
     "versions": [
