@@ -148,8 +148,7 @@ describe('Instance Model Tests', function () {
     var testInstance = 'tester'
     var instanceId = '12312341234'
     var containerId = '12412424235'
-    var testErr = new Error('something bad happened')
-    testErr.data = 'some dat'
+    var testErr = 'something bad happened'
     beforeEach(function (done) {
       sinon.stub(Instance, 'findOneAndUpdateAsync')
       done()
@@ -171,13 +170,15 @@ describe('Instance Model Tests', function () {
           'container.dockerContainer': containerId
         }, {
           $set: {
-            container: {
-              error: {
-                message: testErr.message,
-                stack: testErr.stack,
-                data: testErr.data
-              }
-            }
+            'container.error.message': testErr,
+            'container.inspect.State.Dead': false,
+            'container.inspect.State.Error': testErr,
+            'container.inspect.State.OOMKilled': false,
+            'container.inspect.State.Paused': false,
+            'container.inspect.State.Restarting': false,
+            'container.inspect.State.Running': false,
+            'container.inspect.State.Starting': false,
+            'container.inspect.State.Status': 'lost'
           }
         })
         done()
