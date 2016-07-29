@@ -11,6 +11,7 @@ var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
+var Boom = require('dat-middleware').Boom
 var Docker = require('models/apis/docker')
 var Worker = require('workers/instance.kill')
 var Instance = require('models/mongo/instance')
@@ -129,12 +130,22 @@ describe('Workers: Instance Kill', function () {
       done()
     })
   })
-  it('should fail if docker stopContainer failed', function (done) {
+  it('should fail if docker killContainer failed', function (done) {
     var error = new Error('Docker error')
     Docker.prototype.killContainerAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
+      done()
+    })
+  })
+  it('should fail fatally if docker container is not running', function (done) {
+    var error = Boom.create(500, 'Container 31231232 is not running')
+    Docker.prototype.killContainerAsync.rejects(error)
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.exist()
+      expect(err).to.be.instanceOf(TaskFatalError)
+      expect(err.message).to.equal('instance.kill: Instance not found')
       done()
     })
   })
