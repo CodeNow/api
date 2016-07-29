@@ -11,6 +11,7 @@ var sinon = require('sinon')
 
 var SendGridModel = require('models/apis/sendgrid')
 var Promise = require('bluebird')
+var UserWhitelist = require('models/mongo/user-whitelist')
 var lab = exports.lab = Lab.script()
 var noop = require('101/noop')
 
@@ -150,6 +151,44 @@ describe('sendgrid: ' + moduleName, function () {
             })
             .asCallback(done)
         })
+      })
+    })
+    describe('dockCreated', function () {
+      var org
+      beforeEach(function (done) {
+        org = {
+          name: 'Runnable',
+          github: 12312231
+        }
+        sinon.stub(UserWhitelist, 'findOneAsync').resolves(org)
+        sinon.stub(sendgrid, 'sendEmail')
+        done()
+      })
+      afterEach(function (done) {
+        sendgrid.sendEmail.restore()
+        UserWhitelist.findOneAsync.restore()
+        done()
+      })
+      it('should attempt to send emails with the given arguments', function (done) {
+        sendgrid.sendEmail.returns(Promise.resolve(true))
+
+        sendgrid.dockCreated(org.github)
+          .then(function () {
+            sinon.assert.calledOnce(UserWhitelist.findOneAsync)
+            sinon.assert.calledOnce(sendgrid.sendEmail)
+            var sendEmailOptions = sendgrid.sendEmail.args[0][0]
+
+            expect(sendEmailOptions.email, 'email').to.equal('signup@runnable.com')
+            expect(sendEmailOptions.from, 'from').to.equal('support@runnable.com')
+            expect(sendEmailOptions.fromname, 'fromname').to.equal('Runnable Support')
+            expect(sendEmailOptions.subject, 'subject').to.equal('Your infrastructure is ready')
+            expect(sendEmailOptions.template, 'template').to.be.a.string()
+            expect(sendEmailOptions.body, 'body').to.be.a.string()
+            expect(sendEmailOptions.htmlBody, 'htmlBody').to.be.a.string()
+            expect(sendEmailOptions.substitutions, 'substitutions').to.be.an.object()
+            expect(sendEmailOptions.substitutions['%org%'], '%org%').to.equal('Runnable')
+          })
+          .asCallback(done)
       })
     })
     describe('invite helper functions', function () {
