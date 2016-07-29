@@ -145,7 +145,7 @@ describe('Workers: Instance Kill', function () {
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err).to.be.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('instance.kill: Instance not found')
+      expect(err.message).to.equal('instance.kill: Container is not running')
       done()
     })
   })
