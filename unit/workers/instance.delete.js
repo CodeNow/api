@@ -275,11 +275,6 @@ describe('Instance Delete Worker', function () {
     })
 
     describe('no container', function () {
-      beforeEach(function (done) {
-
-        done()
-      })
-
       it('should not delete container if there is no container', function (done) {
         testInstance.container = null
         Instance.findByIdAsync.resolves(testInstance)
