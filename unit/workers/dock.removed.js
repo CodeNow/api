@@ -20,7 +20,7 @@ var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 var PermissionService = require('models/services/permission-service')
 var Worker = require('workers/dock.removed')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var errors = require('errors')
 
 describe('Worker: dock.removed unit test', function () {
@@ -54,47 +54,47 @@ describe('Worker: dock.removed unit test', function () {
     describe('invalid Job', function () {
       it('should throw a task fatal error if the job is missing a dockerhost', function (done) {
         Worker({}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('dock.removed: Invalid Job')
-          expect(err.data.validationError.message).to.contain('host')
-          expect(err.data.validationError.message).to.contain('required')
+          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err.message).to.match(/job failed validation/i)
+          expect(err.data.err.message).to.contain('host')
+          expect(err.data.err.message).to.contain('required')
           sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
           done()
         })
       })
       it('should throw a task fatal error if the job is missing a dockerhost', function (done) {
         Worker({host: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('dock.removed: Invalid Job')
-          expect(err.data.validationError.message).to.contain('host')
-          expect(err.data.validationError.message).to.contain('a string')
+          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err.message).to.match(/job failed validation/i)
+          expect(err.data.err.message).to.contain('host')
+          expect(err.data.err.message).to.contain('a string')
           sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
           done()
         })
       })
       it('should throw a task fatal error if foul dockerhost', function (done) {
         Worker({host: 'foul'}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('dock.removed: Invalid Job')
-          expect(err.data.validationError.message).to.contain('host')
-          expect(err.data.validationError.message).to.contain('must be a valid uri')
+          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err.message).to.match(/job failed validation/i)
+          expect(err.data.err.message).to.contain('host')
+          expect(err.data.err.message).to.contain('must be a valid uri')
           sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
           done()
         })
       })
       it('should throw a task fatal error if the job is missing entirely', function (done) {
         Worker().asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('dock.removed: Invalid Job')
+          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err.message).to.match(/job failed validation/i)
           sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
           done()
         })
       })
       it('should throw a task fatal error if the job is not an object', function (done) {
         Worker(true).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('dock.removed: Invalid Job')
-          expect(err.data.validationError.message).to.contain('must be an object')
+          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err.message).to.match(/job failed validation/i)
+          expect(err.data.err.message).to.contain('must be an object')
           sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
           done()
         })

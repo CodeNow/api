@@ -23,7 +23,7 @@ var Docker = require('models/apis/docker')
 var errors = require('errors')
 var joi = require('utils/joi')
 var Promise = require('bluebird')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var User = require('models/mongo/user')
 
 var ContainerImageBuilderCreate = require('workers/container.image-builder.create')
@@ -111,10 +111,10 @@ describe('ContainerImageBuilderCreate', function () {
         done()
       })
 
-      it('should reject with a `TaskFatalError`', function (done) {
+      it('should reject with a `WorkerStopError`', function (done) {
         ContainerImageBuilderCreate({}).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
       })
@@ -127,10 +127,10 @@ describe('ContainerImageBuilderCreate', function () {
         })
       })
 
-      it('should set the correct queue name in the data', function (done) {
+      it('should set the original error in the data', function (done) {
         ContainerImageBuilderCreate({}).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err.data.queue).to.equal('container.image-builder.create')
+          expect(err.data.err).to.equal(validationError)
           done()
         })
       })
@@ -138,7 +138,7 @@ describe('ContainerImageBuilderCreate', function () {
 
     it('should fatally reject with non-object `job`', function (done) {
       ContainerImageBuilderCreate(1234).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err).to.be.an.instanceof(WorkerStopError)
         done()
       })
     })
@@ -146,7 +146,7 @@ describe('ContainerImageBuilderCreate', function () {
     it('should fatally reject without `contextId`', function (done) {
       ContainerImageBuilderCreate(omit(validJob, 'contextId'))
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -156,7 +156,7 @@ describe('ContainerImageBuilderCreate', function () {
       invalidJob.contextId = { foo: 'bar' }
       ContainerImageBuilderCreate(invalidJob)
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -164,7 +164,7 @@ describe('ContainerImageBuilderCreate', function () {
     it('should fatally reject without `contextVersionId`', function (done) {
       ContainerImageBuilderCreate(omit(validJob, 'contextVersionId'))
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -174,7 +174,7 @@ describe('ContainerImageBuilderCreate', function () {
       invalidJob.contextVersionId = 12345666
       ContainerImageBuilderCreate(invalidJob)
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -182,7 +182,7 @@ describe('ContainerImageBuilderCreate', function () {
     it('should fatally reject without `sessionUserGithubId`', function (done) {
       ContainerImageBuilderCreate(omit(validJob, 'sessionUserGithubId'))
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -190,7 +190,7 @@ describe('ContainerImageBuilderCreate', function () {
     it('should fatally reject without `ownerUsername`', function (done) {
       ContainerImageBuilderCreate(omit(validJob, 'ownerUsername'))
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -200,7 +200,7 @@ describe('ContainerImageBuilderCreate', function () {
       invalidJob.ownerUsername = ['alpha', 'beta', 'gamma', 'delta', 'tau']
       ContainerImageBuilderCreate(invalidJob)
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -208,7 +208,7 @@ describe('ContainerImageBuilderCreate', function () {
     it('should fatally reject without `manualBuild`', function (done) {
       ContainerImageBuilderCreate(omit(validJob, 'manualBuild'))
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -218,7 +218,7 @@ describe('ContainerImageBuilderCreate', function () {
       invalidJob.manualBuild = 'pizza'
       ContainerImageBuilderCreate(invalidJob)
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -226,7 +226,7 @@ describe('ContainerImageBuilderCreate', function () {
     it('should fatally reject without `noCache`', function (done) {
       ContainerImageBuilderCreate(omit(validJob, 'noCache'))
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -236,7 +236,7 @@ describe('ContainerImageBuilderCreate', function () {
       invalidJob.noCache = 'sushi'
       ContainerImageBuilderCreate(invalidJob)
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -244,7 +244,7 @@ describe('ContainerImageBuilderCreate', function () {
     it('should fatally reject without `tid`', function (done) {
       ContainerImageBuilderCreate(omit(validJob, 'tid'))
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
     })
@@ -262,7 +262,7 @@ describe('ContainerImageBuilderCreate', function () {
     it('should fatally reject if owner is not allowed', function (done) {
       ContainerImageBuilderCreate(validJob)
         .asCallback(function (err) {
-          expect(err).to.be.an.instanceOf(TaskFatalError)
+          expect(err).to.be.an.instanceOf(WorkerStopError)
           done()
         })
     })
@@ -325,23 +325,12 @@ describe('ContainerImageBuilderCreate', function () {
 
       it('should fatally reject', function (done) {
         expect(rejectError).to.exist()
-        expect(rejectError).to.be.an.instanceof(TaskFatalError)
+        expect(rejectError).to.be.an.instanceof(WorkerStopError)
         done()
       })
 
       it('should set the correct error message', function (done) {
         expect(rejectError.message).to.match(/User not found/)
-        done()
-      })
-
-      it('should set the correct queue data', function (done) {
-        expect(rejectError.data.queue)
-          .to.equal('container.image-builder.create')
-        done()
-      })
-
-      it('should set the correct query data', function (done) {
-        expect(rejectError.data.githubId).to.equal(validJob.sessionUserId)
         done()
       })
     }) // end 'on user not found'
@@ -362,18 +351,12 @@ describe('ContainerImageBuilderCreate', function () {
 
       it('should fatally reject', function (done) {
         expect(rejectError).to.exist()
-        expect(rejectError).to.be.an.instanceof(TaskFatalError)
+        expect(rejectError).to.be.an.instanceof(WorkerStopError)
         done()
       })
 
       it('should set the correct error message', function (done) {
         expect(rejectError.message).to.match(/Context not found/)
-        done()
-      })
-
-      it('should set the correct queue data', function (done) {
-        expect(rejectError.data.queue)
-          .to.equal('container.image-builder.create')
         done()
       })
     }) // end 'on context not found'
@@ -394,7 +377,7 @@ describe('ContainerImageBuilderCreate', function () {
 
       it('should fatally reject', function (done) {
         expect(rejectError).to.exist()
-        expect(rejectError).to.be.an.instanceof(TaskFatalError)
+        expect(rejectError).to.be.an.instanceof(WorkerStopError)
         done()
       })
 
@@ -403,9 +386,8 @@ describe('ContainerImageBuilderCreate', function () {
         done()
       })
 
-      it('should set the correct queue data', function (done) {
-        expect(rejectError.data.queue)
-          .to.equal('container.image-builder.create')
+      it('should set the correct query data', function (done) {
+        expect(rejectError.data.query).to.deep.equal(expectedCVQuery)
         done()
       })
     }) // end 'on context version not found'

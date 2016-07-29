@@ -16,7 +16,7 @@ var InstanceService = require('models/services/instance-service')
 var IsolationService = require('models/services/isolation-service')
 var Promise = require('bluebird')
 var rabbitMQ = require('models/rabbitmq')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
@@ -205,8 +205,8 @@ describe('InstanceContainerDiedWorker', function () {
     it('should fail if validation failed: null', function (done) {
       InstanceContainerDied(null).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.container.died: Invalid Job')
+        expect(err).to.be.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         sinon.assert.notCalled(InstanceService.modifyExistingContainerInspect)
         sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
         done()
@@ -216,8 +216,8 @@ describe('InstanceContainerDiedWorker', function () {
     it('should fail if validation failed: {}', function (done) {
       InstanceContainerDied({}).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.container.died: Invalid Job')
+        expect(err).to.be.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         sinon.assert.notCalled(InstanceService.modifyExistingContainerInspect)
         sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
         done()
@@ -229,8 +229,8 @@ describe('InstanceContainerDiedWorker', function () {
       data.inspectData.Config.Labels = null
       InstanceContainerDied(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.container.died: Invalid Job')
+        expect(err).to.be.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         sinon.assert.notCalled(InstanceService.modifyExistingContainerInspect)
         sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
         done()
@@ -255,8 +255,8 @@ describe('InstanceContainerDiedWorker', function () {
       InstanceService.modifyExistingContainerInspect.rejects(conflictErr)
       InstanceContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.container.died: Instance not found')
+        expect(err).to.be.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Instance not found')
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.calledWith(InstanceService.modifyExistingContainerInspect,
           ctx.mockInstance._id, ctx.data.id, ctx.data.inspectData)

@@ -16,7 +16,7 @@ var Isolation = require('models/mongo/isolation')
 var Instance = require('models/mongo/instance')
 var rabbitMQ = require('models/rabbitmq/index')
 
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
@@ -65,8 +65,8 @@ describe('Workers: Isolation Redeploy', function () {
     it('should fatally fail if job is null', function (done) {
       Worker(null).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('isolation.redeploy: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -74,8 +74,8 @@ describe('Workers: Isolation Redeploy', function () {
     it('should fatally fail if job is {}', function (done) {
       Worker({}).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('isolation.redeploy: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -84,8 +84,8 @@ describe('Workers: Isolation Redeploy', function () {
       var data = omit(testData, 'isolationId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('isolation.redeploy: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -105,8 +105,8 @@ describe('Workers: Isolation Redeploy', function () {
     Isolation.findOneAndUpdateAsync.resolves(null)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
-      expect(err).to.be.an.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('isolation.redeploy: Isolation not found')
+      expect(err).to.be.an.instanceOf(WorkerStopError)
+      expect(err.message).to.equal('Isolation in state killed with redeployOnKilled not found')
       done()
     })
   })

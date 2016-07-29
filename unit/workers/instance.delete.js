@@ -13,7 +13,7 @@ var expect = require('code').expect
 var it = lab.it
 
 var Promise = require('bluebird')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
@@ -88,7 +88,7 @@ describe('Instance Delete Worker', function () {
         it('should throw a task fatal error if the job is missing entirely', function (done) {
           Worker().asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.data.validationError).to.exist()
             expect(err.data.validationError.message)
               .to.match(/instance.delete.job.+required/)
@@ -99,7 +99,7 @@ describe('Instance Delete Worker', function () {
         it('should throw a task fatal error if the job is missing a instanceId', function (done) {
           Worker({}).asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.data.validationError).to.exist()
             expect(err.data.validationError.message)
               .to.match(/instanceId.*required/i)
@@ -110,7 +110,7 @@ describe('Instance Delete Worker', function () {
         it('should throw a task fatal error if the job is not an object', function (done) {
           Worker(true).asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.data.validationError).to.exist()
             expect(err.data.validationError.message)
               .to.contain('must be an object')
@@ -121,7 +121,7 @@ describe('Instance Delete Worker', function () {
         it('should throw a task fatal error if the instanceId is not a string', function (done) {
           Worker({instanceId: {}}).asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.data.validationError).to.exist()
             expect(err.data.validationError.message)
               .to.match(/instanceId.*string/i)
@@ -141,12 +141,12 @@ describe('Instance Delete Worker', function () {
         })
       })
 
-      it('should reject when instance not found with TaskFatalError', function (done) {
+      it('should reject when instance not found with WorkerStopError', function (done) {
         Instance.findByIdAsync.resolves(null)
 
         Worker(testData).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.message).to.match(/instance not found/i)
           done()
         })

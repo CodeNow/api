@@ -8,7 +8,7 @@ var Code = require('code')
 var Lab = require('lab')
 var Promise = require('bluebird')
 var sinon = require('sinon')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var ContainerResourceClear = require('workers/container.resource.clear')
 var Docker = require('models/apis/docker')
@@ -38,7 +38,7 @@ describe('container.resource.clear unit test', function () {
       delete testJob.containerId
 
       ContainerResourceClear(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err).to.be.an.instanceof(WorkerStopError)
         expect(err.data.err.message).to.match(/containerId.*required/)
         done()
       })
@@ -48,7 +48,7 @@ describe('container.resource.clear unit test', function () {
       testJob.containerId = 123445
 
       ContainerResourceClear(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err).to.be.an.instanceof(WorkerStopError)
         expect(err.data.err.message).to.match(/containerId.*must be a string/)
         done()
       })
@@ -76,14 +76,14 @@ describe('container.resource.clear unit test', function () {
       })
     })
 
-    it('should TaskFatalError if 404', function (done) {
+    it('should WorkerStopError if 404', function (done) {
       Docker.prototype.clearContainerMemoryAsync.returns(Promise.reject({
         output: {
           statusCode: 404
         }
       }))
       ContainerResourceClear(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err).to.be.an.instanceof(WorkerStopError)
         sinon.assert.calledOnce(Docker.prototype.clearContainerMemoryAsync)
         sinon.assert.calledWith(Docker.prototype.clearContainerMemoryAsync, testId)
         done()

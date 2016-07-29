@@ -9,7 +9,7 @@ var Code = require('code')
 var Lab = require('lab')
 var omit = require('101/omit')
 var sinon = require('sinon')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
@@ -85,16 +85,16 @@ describe('Workers: Instance Stop', function () {
     it('should fatally fail if job is null', function (done) {
       Worker(null).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.stop: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
     it('should fatally fail if job is {}', function (done) {
       Worker({}).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.stop: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -102,8 +102,8 @@ describe('Workers: Instance Stop', function () {
       var data = omit(testData, 'instanceId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.stop: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -111,8 +111,8 @@ describe('Workers: Instance Stop', function () {
       var data = omit(testData, 'containerId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.stop: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -120,8 +120,8 @@ describe('Workers: Instance Stop', function () {
       var data = omit(testData, 'sessionUserGithubId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.stop: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -139,8 +139,8 @@ describe('Workers: Instance Stop', function () {
     Instance.findOneStoppingAsync.resolves(null)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
-      expect(err).to.be.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('instance.stop: Instance not found')
+      expect(err).to.be.instanceOf(WorkerStopError)
+      expect(err.message).to.equal('Instance not found')
       done()
     })
   })
@@ -154,11 +154,11 @@ describe('Workers: Instance Stop', function () {
     })
   })
 
-  it('should TaskFatalError if docker stopContainer 404', function (done) {
+  it('should WorkerStopError if docker startContainer 404', function (done) {
     Docker.prototype.stopContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskFatalError)
-      expect(err.message).to.contain('Please rebuild without cache')
+      expect(err).to.be.an.instanceOf(WorkerStopError)
+      expect(err.message).to.contain('container does not exist')
       done()
     })
   })

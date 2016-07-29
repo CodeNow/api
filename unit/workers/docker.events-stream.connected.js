@@ -9,7 +9,7 @@ var Lab = require('lab')
 var Promise = require('bluebird')
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var dockerEventStreamConnected = require('workers/docker.events-stream.connected')
 var messenger = require('socket/messenger')
@@ -50,7 +50,7 @@ describe('docker.events-stream.connected unit test', function () {
     it('should throw task fatal if missing host', function (done) {
       delete testJob.host
       dockerEventStreamConnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
         sinon.assert.notCalled(UserWhitelist.updateAsync)
         done()
       })
@@ -59,7 +59,7 @@ describe('docker.events-stream.connected unit test', function () {
     it('should throw task fatal if invalid host', function (done) {
       testJob.host = '10.0.0.1:3232'
       dockerEventStreamConnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
         sinon.assert.notCalled(UserWhitelist.updateAsync)
         done()
       })
@@ -68,7 +68,7 @@ describe('docker.events-stream.connected unit test', function () {
     it('should throw task fatal if missing org', function (done) {
       delete testJob.org
       dockerEventStreamConnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
         sinon.assert.notCalled(UserWhitelist.updateAsync)
         done()
       })
@@ -77,7 +77,7 @@ describe('docker.events-stream.connected unit test', function () {
     it('should throw task fatal if org not a string', function (done) {
       testJob.org = 12345
       dockerEventStreamConnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
         sinon.assert.notCalled(UserWhitelist.updateAsync)
         done()
       })
@@ -86,7 +86,7 @@ describe('docker.events-stream.connected unit test', function () {
     it('should throw task fatal if org not a number', function (done) {
       testJob.org = '12a45'
       dockerEventStreamConnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
         sinon.assert.notCalled(UserWhitelist.updateAsync)
         done()
       })
@@ -113,7 +113,7 @@ describe('docker.events-stream.connected unit test', function () {
         done(new Error('Should never happen'))
       })
       .catch(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
         expect(err.message).to.include('firstDockCreated was set before')
         done()
       })
@@ -126,7 +126,7 @@ describe('docker.events-stream.connected unit test', function () {
         done(new Error('Should never happen'))
       })
       .catch(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
         expect(err.message).to.include('Failed to create job or send websocket event')
         expect(err.data.err.message).to.equal('Primus error')
         done()
@@ -140,7 +140,7 @@ describe('docker.events-stream.connected unit test', function () {
         done(new Error('Should never happen'))
       })
       .catch(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
         expect(err.message).to.include('Failed to create job or send websocket event')
         expect(err.data.err.message).to.equal('Rabbit error')
         done()

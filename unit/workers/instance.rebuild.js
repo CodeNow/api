@@ -20,7 +20,7 @@ var sinon = require('sinon')
 var Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
 var Worker = require('workers/instance.rebuild')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 describe('Worker: instance.rebuild unit test', function () {
   var testInstanceId = '507f1f77bcf86cd799439011'
@@ -58,7 +58,7 @@ describe('Worker: instance.rebuild unit test', function () {
     describe('invalid Job', function () {
       it('should throw a task fatal error if the job is missing a instanceId', function (done) {
         Worker({}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
             .to.match(/instanceId.*required/i)
@@ -67,7 +67,7 @@ describe('Worker: instance.rebuild unit test', function () {
       })
       it('should throw a task fatal error if the instanceId is not a string', function (done) {
         Worker({instanceId: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
             .to.match(/instanceId.*string/i)
@@ -76,7 +76,7 @@ describe('Worker: instance.rebuild unit test', function () {
       })
       it('should throw a task fatal error if the job is missing entirely', function (done) {
         Worker().asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
             .to.match(/instance.rebuild.job.+required/)
@@ -85,7 +85,7 @@ describe('Worker: instance.rebuild unit test', function () {
       })
       it('should throw a task fatal error if the job is not an object', function (done) {
         Worker(true).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
             .to.contain('must be an object')
@@ -440,7 +440,7 @@ describe('Worker: instance.rebuild unit test', function () {
             sinon.assert.calledWith(Runnable.prototype.githubLogin, testUser.accounts.github.accessToken)
             sinon.assert.calledOnce(User.findByGithubIdAsync)
             sinon.assert.calledWith(User.findByGithubIdAsync, testInstance.createdBy.github)
-            sinon.assert.calledOnce(Runnable.prototype.newBuild)
+            sinon.assert.calledTwice(Runnable.prototype.newBuild)
             sinon.assert.calledWith(Runnable.prototype.newBuild, testInstance.build)
             sinon.assert.calledOnce(buildModel.deepCopy)
             sinon.assert.calledOnce(BuildService.buildBuild)

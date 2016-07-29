@@ -45,7 +45,7 @@
     "dockerode": "^2.2.8",
     "dogerode": "git://github.com/Runnable/dogerode#v0.1.1",
     "dotenv": "^0.4.0",
-    "error-cat": "^1.4.2",
+    "error-cat": "^3.0.0",
     "eson": "^0.5.0",
     "express": "^4.8.3",
     "express-session": "^1.12.1",
