@@ -1755,6 +1755,7 @@ describe('Instance Model Tests', function () {
     it('should query the database', function (done) {
       Instance.findIsolationMaster(id, function (err) {
         expect(err).to.not.exist()
+        sinon.assert.calledOnce(Instance.findOne)
         sinon.assert.calledWith(
           Instance.findOne,
           {
@@ -1794,7 +1795,8 @@ describe('Instance Model Tests', function () {
       Instance.findInstancesInIsolationWithSameRepoAndBranch(id, repo, branch, function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Instance.find)
-        sinon.assert.calledWith(Instance.find,
+        sinon.assert.calledWith(
+          Instance.find,
           {
             isolated: id,
             'contextVersion.appCodeVersions': {
