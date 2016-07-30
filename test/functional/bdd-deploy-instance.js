@@ -118,7 +118,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
         }
         function createBuild (newVersion, cb) {
           var newBuild = ctx.user.createBuild({
-            contextVersions: [ newVersion.id() ]
+            contextVersions: [ newVersion.id() ],
+            owner: {
+              github: ctx.user.json().accounts.github.id
+            }
           }, function (err) {
             cb(err, newBuild)
           })
@@ -189,7 +192,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
             }
             function createBuild (newVersion, cb) {
               var newBuild = ctx.user.createBuild({
-                contextVersions: [ newVersion.id() ]
+                contextVersions: [ newVersion.id() ],
+                owner: {
+                  github: ctx.user.json().accounts.github.id
+                }
               }, function (err) {
                 cb(err, newBuild)
               })
@@ -256,7 +262,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
             }
             function createBuild (newVersion, cb) {
               var newBuild = ctx.user.createBuild({
-                contextVersions: [ newVersion.id() ]
+                contextVersions: [ newVersion.id() ],
+                owner: {
+                  github: ctx.user.json().accounts.github.id
+                }
               }, function (err) {
                 cb(err, newBuild)
               })
@@ -354,7 +363,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
           }
           function createBuild (newVersion, cb) {
             var newBuild = ctx.user.createBuild({
-              contextVersions: [ newVersion.id() ]
+              contextVersions: [ newVersion.id() ],
+              owner: {
+                github: ctx.user.json().accounts.github.id
+              }
             }, function (err) {
               cb(err, newBuild)
             })
@@ -449,7 +461,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
         }
         function createBuild (newVersion, cb) {
           var newBuild = ctx.user.createBuild({
-            contextVersions: [ newVersion.id() ]
+            contextVersions: [ newVersion.id() ],
+            owner: {
+              github: ctx.user.json().accounts.github.id
+            }
           }, function (err) {
             cb(err, newVersion, newBuild)
           })
@@ -534,7 +549,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
         }
         function createBuild (newVersion, cb) {
           var newBuild = ctx.user.createBuild({
-            contextVersions: [ newVersion.id() ]
+            contextVersions: [ newVersion.id() ],
+            owner: {
+              github: ctx.user.json().accounts.github.id
+            }
           }, function (err) {
             cb(err, newVersion, newBuild)
           })
