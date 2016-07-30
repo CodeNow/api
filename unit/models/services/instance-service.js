@@ -176,7 +176,7 @@ describe('InstanceService', function () {
       }
       ctx.contextVersion = {
         _id: '123123',
-        context: '56789',
+        context: 'some-context-id',
         build: {
           hash: 'some-hash'
         }
@@ -212,7 +212,7 @@ describe('InstanceService', function () {
     })
     it('should fail if instances lookup failed', function (done) {
       var mongoError = new Error('Mongo error')
-      Instance.findInstancesLinkedToBranchAsync.rejects(mongoError)
+      Instance.findInstancesForBranchAndBuildHash.rejects(mongoError)
       InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -247,7 +247,7 @@ describe('InstanceService', function () {
           sinon.assert.calledWith(Instance.findInstancesForBranchAndBuildHash,
             'codenow/api',
             'master',
-            ctx.contextVersion.context,
+            ctx.contextVersion.context.toString(),
             ctx.contextVersion.build.hash
           )
           done()
