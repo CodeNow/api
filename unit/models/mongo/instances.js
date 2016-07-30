@@ -1755,7 +1755,8 @@ describe('Instance Model Tests', function () {
     it('should query the database', function (done) {
       Instance.findIsolationMaster(id, function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(
+        sinon.assert.calledOnce(Instance.findOne)
+        sinon.assert.calledWith(
           Instance.findOne,
           {
             isolated: id,
@@ -1793,11 +1794,11 @@ describe('Instance Model Tests', function () {
     it('should query the database', function (done) {
       Instance.findInstancesInIsolationWithSameRepoAndBranch(id, repo, branch, function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
           Instance.find,
           {
             isolated: id,
-            isIsolationGroupMaster: { $ne: true },
             'contextVersion.appCodeVersions': {
               $elemMatch: {
                 lowerRepo: repo.toLowerCase(),
