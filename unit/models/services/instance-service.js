@@ -176,7 +176,10 @@ describe('InstanceService', function () {
       }
       ctx.contextVersion = {
         _id: '123123',
-        context: '56789'
+        context: '56789',
+        build: {
+          hash: 'some-hash'
+        }
       }
       ctx.instances = [
         {
@@ -187,13 +190,13 @@ describe('InstanceService', function () {
         }
       ]
       sinon.stub(Build, 'findByContextVersionIdsAsync').resolves([ctx.build])
-      sinon.stub(Instance, 'findInstancesLinkedToBranchAsync').resolves(ctx.instances)
+      sinon.stub(Instance, 'findInstancesForBranchAndBuildHash').resolves(ctx.instances)
       sinon.stub(InstanceService, 'updateBuild').resolves(null)
       done()
     })
     afterEach(function (done) {
       Build.findByContextVersionIdsAsync.restore()
-      Instance.findInstancesLinkedToBranchAsync.restore()
+      Instance.findInstancesForBranchAndBuildHash.restore()
       InstanceService.updateBuild.restore()
       done()
     })
@@ -240,8 +243,13 @@ describe('InstanceService', function () {
       InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.findInstancesLinkedToBranchAsync)
-          sinon.assert.calledWith(Instance.findInstancesLinkedToBranchAsync, 'codenow/api', ' master')
+          sinon.assert.calledOnce(Instance.findInstancesForBranchAndBuildHash)
+          sinon.assert.calledWith(Instance.findInstancesForBranchAndBuildHash,
+            'codenow/api',
+            'master',
+            ctx.contextVersion.context,
+            ctx.contextVersion.build.hash
+          )
           done()
         })
     })
@@ -250,7 +258,7 @@ describe('InstanceService', function () {
       InstanceService.updateBuildByRepoAndBranch(ctx.contextVersion, 'codenow/api', ' master')
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.notCalled(Instance.findInstancesLinkedToBranchAsync)
+          sinon.assert.notCalled(Instance.findInstancesForBranchAndBuildHash)
           done()
         })
     })
