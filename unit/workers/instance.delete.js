@@ -275,12 +275,21 @@ describe('Instance Delete Worker', function () {
     })
 
     describe('no container', function () {
-      beforeEach(function (done) {
+      it('should not delete container if there is no container', function (done) {
         testInstance.container = null
-        done()
+        Instance.findByIdAsync.resolves(testInstance)
+        Worker(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
+          done()
+        })
       })
 
-      it('should not delete container if there is no container', function (done) {
+      it('should not delete container if there is no container.dockerContainer', function (done) {
+        testInstance.container = {
+          dockerContainer: null
+        }
+        Instance.findByIdAsync.resolves(testInstance)
         Worker(testData).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
