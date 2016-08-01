@@ -1,7 +1,6 @@
 'use strict'
 
 var ContextVersion = require('models/mongo/context-version')
-var Instance = require('models/mongo/instance')
 var Docker = require('models/apis/docker')
 var log = require('middlewares/logger')(__filename).log
 
