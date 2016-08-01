@@ -1,8 +1,6 @@
 'use strict'
 
 var ContextVersion = require('models/mongo/context-version')
-var Instance = require('models/mongo/instance')
-var Docker = require('models/apis/docker')
 var log = require('middlewares/logger')(__filename).log
 var mockOnBuilderDieMessage = require('../../integration/fixtures/dockerListenerEvents/on-image-builder-container-die')
 
@@ -27,8 +25,7 @@ function emitBuildComplete (cv, failure, user) {
     })
     return
   }
-  var signal = failure ? 'SIGKILL' : 'SIGINT'
-  var exitCode = failure ? 1: 0
+  var exitCode = failure ? 1 : 0
   console.log('xxxxxx11111', user)
   var job = mockOnBuilderDieMessage(
     cv,
@@ -38,5 +35,4 @@ function emitBuildComplete (cv, failure, user) {
     user,
     exitCode)
   console.log('xxxxxx', job)
-
 }

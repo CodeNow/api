@@ -72,7 +72,7 @@ module.exports = {
   start: startDock,
   stop: stopDock
 }
-var ctx = {}
+
 var started = false
 
 function startDock (done) {
