@@ -3,7 +3,6 @@ var async = require('async')
 var createCount = require('callback-count')
 var docker = require('./docker')
 var redis = require('models/redis')
-var dockerModuleMock = require('./mocks/docker-model')
 
 process.env.AUTO_RECONNECT = false // needed for test
 process.env.HOST_TAGS = 'default' // needed for test
@@ -80,8 +79,7 @@ var started = false
 function startDock (done) {
   if (started) { return done() }
   started = true
-  var count = createCount(3, done)
-  dockerModuleMock.setup(count.next)
+  var count = createCount(2, done)
   sauronMock.start(count.next)
 
   ctx.docker = docker.start(function (err) {
@@ -95,10 +93,9 @@ function startDock (done) {
 function stopDock (done) {
   if (!started) { return done() }
   started = false
-  var count = createCount(4, done)
+  var count = createCount(3, done)
   sauronMock.stop(count.next)
   redis.del(process.env.REDIS_HOST_KEYS, count.next)
-  dockerModuleMock.clean(count.next)
   dockerListener.stop(function (err) {
     if (err) { return count.next(err) }
     docker.stop(count.next)

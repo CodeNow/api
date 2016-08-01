@@ -42,6 +42,7 @@ function ensureIndexes (cb) {
 // we need to setup this before starting api.
 // this create exchanges that is used by api
 var publishedEvents = [
+  'container.life-cycle.started',
   'container.network.attached',
   'dock.removed',
   'docker.events-stream.connected',
