@@ -102,7 +102,7 @@ describe('isolation.match-commit', function () {
 
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
+          expect(err.message).to.match(/Invalid Job/)
           done()
         })
       })
@@ -112,7 +112,7 @@ describe('isolation.match-commit', function () {
 
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
+          expect(err.message).to.match(/Invalid Job/)
           done()
         })
       })
