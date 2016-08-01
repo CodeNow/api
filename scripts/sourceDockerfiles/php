@@ -10,6 +10,9 @@ RUN apt-get update && \
     libpng12-dev \
     libbz2-dev \
     libxslt-dev \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    pkg-config \
     libldap2-dev \
     php-pear \
     curl \
@@ -46,11 +49,11 @@ ENV PATH /composer/vendor/bin:$PATH
 # Allow Composer to be run as root
 ENV COMPOSER_ALLOW_SUPERUSER 1
 
-# Setup the Composer installer
-RUN curl -o /tmp/composer-setup.php https://getcomposer.org/installer \
-  && curl -o /tmp/composer-setup.sig https://composer.github.io/installer.sig \
-  && php -r "if (hash('SHA384', file_get_contents('/tmp/composer-setup.php')) !== trim(file_get_contents('/tmp/composer-setup.sig'))) { unlink('/tmp/composer-setup.php'); echo 'Invalid installer' . PHP_EOL; exit(1); }"
+# Install Mongo driver
+RUN pecl install mongodb && echo "extension=mongodb.so" > /usr/local/etc/php/conf.d/mongo.ini
 
+# Setup the Composer installer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 <before-main-repo>
 #default dst:/var/www/html/
