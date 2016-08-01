@@ -43,6 +43,7 @@ function ensureIndexes (cb) {
 // this create exchanges that is used by api
 var publishedEvents = [
   'container.network.attached',
+  'container.life-cycle.started',
   'dock.removed',
   'docker.events-stream.connected',
   'docker.events-stream.disconnected'

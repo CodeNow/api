@@ -515,7 +515,7 @@ module.exports = {
               })
 
               primus.expectActionCount('build_running', 1, function () {
-                dockerMockEvents.emitBuildComplete(cv)
+                dockerMockEvents.emitBuildComplete(cv, false, user)
               })
             })
           })
