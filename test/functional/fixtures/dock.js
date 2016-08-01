@@ -128,8 +128,8 @@ function startDock (done) {
   })
   dlMock.start(count.next)
   dockerModuleMock.setup(count.next)
-
 }
+
 function stopDock (done) {
   if (!started) { return done() }
   started = false
