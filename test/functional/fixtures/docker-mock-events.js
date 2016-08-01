@@ -2,13 +2,14 @@
 
 var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
-var dockerMock = require('docker-mock')
 var Docker = require('models/apis/docker')
 var log = require('middlewares/logger')(__filename).log
+var mockOnBuilderDieMessage = require('../../integration/fixtures/dockerListenerEvents/on-image-builder-container-die')
 
 module.exports.emitBuildComplete = emitBuildComplete
 
-function emitBuildComplete (cv, failure, error) {
+function emitBuildComplete (cv, failure, user) {
+  console.log('xxxxxx1213213123')
   log.trace({cv: cv, stack: new Error().stack}, 'emitBuildComplete')
   if (!cv) {
     var err = new Error('you forgot to pass cv to emitBuildComplete')
@@ -22,16 +23,20 @@ function emitBuildComplete (cv, failure, error) {
   if (!containerId) {
     ContextVersion.findById(cv._id, function (err, cv) {
       if (err) { throw err }
-      emitBuildComplete(cv, failure)
+      emitBuildComplete(cv, failure, user)
     })
     return
   }
-  var docker = new Docker()
   var signal = failure ? 'SIGKILL' : 'SIGINT'
-  require('./mocks/docker/build-logs.js')(failure, error)
-  // this will "kill" the container which will emit a die event
-  // and exitCode will be 0 for SIGINT and 1 for SIGKILL .. docker-mock
-  docker.docker.getContainer(containerId).kill({ signal: signal }, function (err) {
-    if (err) { throw err }
-  })
+  var exitCode = failure ? 1: 0
+  console.log('xxxxxx11111', user)
+  var job = mockOnBuilderDieMessage(
+    cv,
+    {
+      id: containerId
+    },
+    user,
+    exitCode)
+  console.log('xxxxxx', job)
+
 }

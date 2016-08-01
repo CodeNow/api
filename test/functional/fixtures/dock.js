@@ -1,7 +1,6 @@
 
 var async = require('async')
 var createCount = require('callback-count')
-var docker = require('./docker')
 var redis = require('models/redis')
 var dockerModuleMock = require('./mocks/docker-model')
 
@@ -79,11 +78,9 @@ var started = false
 function startDock (done) {
   if (started) { return done() }
   started = true
-  var count = createCount(3, done)
+  var count = createCount(2, done)
   dockerModuleMock.setup(count.next)
   sauronMock.start(count.next)
-
-  ctx.docker = docker.start(count.next)
 }
 function stopDock (done) {
   if (!started) { return done() }

@@ -122,7 +122,7 @@ describe('Building - Context Version Deduping', function () {
           if (err) { return done(err) }
           forkedInstance = inst
           // Now tail both and make sure they both start
-          dockerMockEvents.emitBuildComplete(ctx.cv)
+          dockerMockEvents.emitBuildComplete(ctx.cv, false, ctx.user)
         })
       })
     })
@@ -152,7 +152,7 @@ describe('Building - Context Version Deduping', function () {
             }
           })
           // Now tail the buildstream so we can check if the instances do not deploy
-          dockerMockEvents.emitBuildComplete(ctx.cv, true)
+          dockerMockEvents.emitBuildComplete(ctx.cv, true, ctx.user)
         })
       })
     })
@@ -183,7 +183,7 @@ describe('Building - Context Version Deduping', function () {
           })
         })
         // finish the build
-        dockerMockEvents.emitBuildComplete(ctx.cv, true)
+        dockerMockEvents.emitBuildComplete(ctx.cv, true, ctx.user)
       })
     })
   })
