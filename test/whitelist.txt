@@ -19,7 +19,6 @@
 ./test/functional/bdd-instance-dependencies.js
 ./test/functional/bdd-isolation.js
 ./test/functional/builds-id-actions-copy.js
-./test/functional/builds.js
 ./test/functional/contexts-id-versions-id-appcodeversions-id-action-apply-transform-rules/index.js
 ./test/functional/contexts-id-versions-id-appcodeversions-id-action-test-transform-rule/index.js
 ./test/functional/contexts-id-versions-id-appcodeversions-id/patch/200.js
@@ -80,6 +79,7 @@
 ./test/integration/models/mongo/teammate-invitation.js
 ./test/integration/models/mongo/user-whitelist.js
 ./test/integration/models/mongo/user.js
+./test/integration/models/services/build-service.js
 ./test/integration/models/services/instance-service.js
 ./test/integration/workers/on-image-builder-container-create.js
 ./test/integration/workers/on-image-builder-container-die.js
