@@ -287,7 +287,7 @@ describe('OnImageBuilderContainerDie', function () {
           done()
         })
     })
-    it('should call updateBuildByRepoAndBranch for each cv', function (done) {
+    it('should call updateBuildByRepoAndBranch for first cv', function (done) {
       var cvs = [
         {
           _id: 'cv1',
@@ -321,19 +321,13 @@ describe('OnImageBuilderContainerDie', function () {
       OnImageBuilderContainerDie._handleAutoDeploy(cvs)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledTwice(InstanceService.updateBuildByRepoAndBranch)
+          sinon.assert.calledOnce(InstanceService.updateBuildByRepoAndBranch)
           sinon.assert.calledWith(
             InstanceService.updateBuildByRepoAndBranch,
             cvs[0],
             'codenow/api',
             'master'
           )
-          sinon.assert.calledWith(
-            InstanceService.updateBuildByRepoAndBranch,
-            cvs[1],
-            'codenow/api',
-            'dev'
-           )
           done()
         })
     })
