@@ -11,6 +11,48 @@ var put = require('101/put')
 
 var Hermes = require('runnable-hermes')
 
+var dlMock = {
+  start: function (cb) {
+    var publishedEvents = [
+      'container.life-cycle.started'
+    ]
+    var opts = {
+      hostname: process.env.RABBITMQ_HOSTNAME,
+      password: process.env.RABBITMQ_PASSWORD,
+      port: process.env.RABBITMQ_PORT,
+      username: process.env.RABBITMQ_USERNAME,
+      name: '10.12.13.11.sauron'
+    }
+    var rabbitPublisher = new Hermes(put({
+      publishedEvents: publishedEvents
+    }, opts))
+      .on('error', function (err) {
+        console.log('rabbit publisher error', err)
+      })
+    this.rabbitPublisher = rabbitPublisher
+
+    async.series([
+      rabbitPublisher.connect.bind(rabbitPublisher)
+      // rabbitSubscriber.connect.bind(rabbitSubscriber),
+      // function (stepCb) {
+      //   rabbitSubscriber.subscribe('container.life-cycle.started', function (data, jobCb) {
+      //     data.containerIp = '10.12.10.121'
+      //     rabbitPublisher.publish('container.network.attached', data)
+      //     jobCb()
+      //   })
+      //   stepCb()
+      // }
+    ], cb)
+  },
+  stop: function (cb) {
+    async.series([
+      // this.rabbitSubscriber.unsubscribe.bind(this.rabbitSubscriber, 'container.life-cycle.started', null),
+      // this.rabbitSubscriber.close.bind(this.rabbitSubscriber),
+      this.rabbitPublisher.close.bind(this.rabbitPublisher)
+    ], cb)
+  }
+}
+
 // Sauron mock listens for `container.life-cycle.started` event and
 // publishes `container.network.attached`
 var sauronMock = {
@@ -78,14 +120,16 @@ var started = false
 function startDock (done) {
   if (started) { return done() }
   started = true
-  var count = createCount(2, done)
+  var count = createCount(3, done)
+  dlMock.start(count.next)
   dockerModuleMock.setup(count.next)
   sauronMock.start(count.next)
 }
 function stopDock (done) {
   if (!started) { return done() }
   started = false
-  var count = createCount(3, done)
+  var count = createCount(4, done)
+  dlMock.stop(count.next)
   sauronMock.stop(count.next)
   redis.del(process.env.REDIS_HOST_KEYS, count.next)
   dockerModuleMock.clean(count.next)
