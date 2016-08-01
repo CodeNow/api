@@ -120,10 +120,15 @@ var started = false
 function startDock (done) {
   if (started) { return done() }
   started = true
-  var count = createCount(3, done)
+  var count = createCount(2, function (err) {
+    if (err) {
+      return count.next(err)
+    }
+    sauronMock.start(count.next)
+  })
   dlMock.start(count.next)
   dockerModuleMock.setup(count.next)
-  sauronMock.start(count.next)
+
 }
 function stopDock (done) {
   if (!started) { return done() }
