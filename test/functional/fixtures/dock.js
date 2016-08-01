@@ -7,7 +7,6 @@ var dockerModuleMock = require('./mocks/docker-model')
 
 process.env.AUTO_RECONNECT = false // needed for test
 process.env.HOST_TAGS = 'default' // needed for test
-var dockerListener = require('docker-listener')
 
 var put = require('101/put')
 
@@ -84,23 +83,13 @@ function startDock (done) {
   dockerModuleMock.setup(count.next)
   sauronMock.start(count.next)
 
-  ctx.docker = docker.start(function (err) {
-    if (err) { return count.next(err) }
-    dockerListener.start(process.env.DOCKER_LISTENER_PORT, function (err) {
-      if (err) { return count.next(err) }
-      count.next()
-    })
-  })
+  ctx.docker = docker.start(count.next)
 }
 function stopDock (done) {
   if (!started) { return done() }
   started = false
-  var count = createCount(4, done)
+  var count = createCount(3, done)
   sauronMock.stop(count.next)
   redis.del(process.env.REDIS_HOST_KEYS, count.next)
   dockerModuleMock.clean(count.next)
-  dockerListener.stop(function (err) {
-    if (err) { return count.next(err) }
-    docker.stop(count.next)
-  })
 }
