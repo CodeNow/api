@@ -13,6 +13,7 @@ var expect = Code.expect
 var BuildService = require('models/services/build-service')
 var Runnable = require('@runnable/api-client')
 var Instance = require('models/mongo/instance')
+var InstanceService = require('models/services/instance-service')
 var User = require('models/mongo/user')
 
 var sinon = require('sinon')
@@ -347,11 +348,6 @@ describe('Worker: instance.rebuild unit test', function () {
           github: 456
         }
       }
-      var instanceModel = {
-        update: function (opts, cb) {
-          cb(updateError)
-        }
-      }
       var buildModel = {
         _id: 'new-build-id-1',
         deepCopy: function (cb) {
@@ -365,17 +361,16 @@ describe('Worker: instance.rebuild unit test', function () {
         Runnable.prototype.githubLogin.yields(null)
         Instance.findByIdAsync.resolves(testInstance)
         sinon.stub(Runnable.prototype, 'newBuild').returns(buildModel)
-        sinon.stub(Runnable.prototype, 'newInstance').returns(instanceModel)
-        sinon.spy(instanceModel, 'update')
         sinon.spy(buildModel, 'deepCopy')
         sinon.stub(BuildService, 'buildBuild').resolves(buildModel)
+        sinon.stub(InstanceService, 'updateInstance').rejects(updateError)
         done()
       })
 
       afterEach(function (done) {
         Runnable.prototype.newBuild.restore()
-        Runnable.prototype.newInstance.restore()
         BuildService.buildBuild.restore()
+        InstanceService.updateInstance.restore()
         done()
       })
 
@@ -397,8 +392,8 @@ describe('Worker: instance.rebuild unit test', function () {
               message: 'Recovery build',
               noCache: true
             }, testUser)
-            sinon.assert.calledOnce(instanceModel.update)
-            sinon.assert.calledWith(instanceModel.update, { build: buildModel._id })
+            sinon.assert.calledOnce(InstanceService.updateInstance)
+            sinon.assert.calledWith(InstanceService.updateInstance, testInstance, { build: buildModel._id }, testUser)
             done()
           })
       })
@@ -413,11 +408,6 @@ describe('Worker: instance.rebuild unit test', function () {
           github: 456
         }
       }
-      var instanceModel = {
-        update: function (opts, cb) {
-          cb(null, instanceModel)
-        }
-      }
       var buildModel = {
         _id: 'new-build-id-1',
         deepCopy: function (cb) {
@@ -428,17 +418,16 @@ describe('Worker: instance.rebuild unit test', function () {
         Runnable.prototype.githubLogin.yields(null)
         Instance.findByIdAsync.resolves(testInstance)
         sinon.stub(Runnable.prototype, 'newBuild').returns(buildModel)
-        sinon.stub(Runnable.prototype, 'newInstance').returns(instanceModel)
-        sinon.spy(instanceModel, 'update')
         sinon.spy(buildModel, 'deepCopy')
         sinon.stub(BuildService, 'buildBuild').resolves(buildModel)
+        sinon.stub(InstanceService, 'updateInstance').resolves(testInstance)
         done()
       })
 
       afterEach(function (done) {
-        Runnable.prototype.newInstance.restore()
         Runnable.prototype.newBuild.restore()
         BuildService.buildBuild.restore()
+        InstanceService.updateInstance.restore()
         done()
       })
       it('should callback with fatal error', function (done) {
@@ -459,10 +448,8 @@ describe('Worker: instance.rebuild unit test', function () {
               message: 'Recovery build',
               noCache: true
             }, testUser)
-            sinon.assert.calledOnce(Runnable.prototype.newInstance)
-            sinon.assert.calledWith(Runnable.prototype.newInstance, testInstance.shortHash)
-            sinon.assert.calledOnce(instanceModel.update)
-            sinon.assert.calledWith(instanceModel.update, { build: buildModel._id })
+            sinon.assert.calledOnce(InstanceService.updateInstance)
+            sinon.assert.calledWith(InstanceService.updateInstance, testInstance, { build: buildModel._id }, testUser)
             done()
           })
       })
