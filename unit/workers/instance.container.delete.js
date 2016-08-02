@@ -59,7 +59,7 @@ describe('instance.container.delete unit test', function () {
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
+          expect(err.message).to.match(/Invalid Job/)
           done()
         })
       })
@@ -69,7 +69,7 @@ describe('instance.container.delete unit test', function () {
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
+          expect(err.message).to.match(/Invalid Job/)
           done()
         })
       })
@@ -79,7 +79,7 @@ describe('instance.container.delete unit test', function () {
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
+          expect(err.message).to.match(/Invalid Job/)
           done()
         })
       })
@@ -89,7 +89,7 @@ describe('instance.container.delete unit test', function () {
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
+          expect(err.message).to.match(/Invalid Job/)
           done()
         })
       })
@@ -99,7 +99,7 @@ describe('instance.container.delete unit test', function () {
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
+          expect(err.message).to.match(/Invalid Job/)
           done()
         })
       })
@@ -109,7 +109,7 @@ describe('instance.container.delete unit test', function () {
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
+          expect(err.message).to.match(/Invalid Job/)
           done()
         })
       })
@@ -119,7 +119,7 @@ describe('instance.container.delete unit test', function () {
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
+          expect(err.message).to.match(/Invalid Job/)
           done()
         })
       })
@@ -129,7 +129,7 @@ describe('instance.container.delete unit test', function () {
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job Data/)
+          expect(err.message).to.match(/Invalid Job/)
           done()
         })
       })

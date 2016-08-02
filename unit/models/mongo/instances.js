@@ -144,6 +144,67 @@ describe('Instance Model Tests', function () {
     })
   })
 
+  describe('setContainerError', function () {
+    var testInstance = 'tester'
+    var instanceId = '12312341234'
+    var containerId = '12412424235'
+    var testErr = 'something bad happened'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdateAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAndUpdateAsync.restore()
+      done()
+    })
+
+    it('should set error on instance', function (done) {
+      Instance.findOneAndUpdateAsync.resolves(testInstance)
+      Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.equal(testInstance)
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+          _id: instanceId,
+          'container.dockerContainer': containerId
+        }, {
+          $set: {
+            'container.error.message': testErr,
+            'container.inspect.State.Dead': false,
+            'container.inspect.State.Error': testErr,
+            'container.inspect.State.OOMKilled': false,
+            'container.inspect.State.Paused': false,
+            'container.inspect.State.Restarting': false,
+            'container.inspect.State.Running': false,
+            'container.inspect.State.Starting': false,
+            'container.inspect.State.Status': 'lost'
+          }
+        })
+        done()
+      })
+    })
+
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOneAndUpdateAsync.rejects(mongoError)
+      Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        done()
+      })
+    })
+
+    it('should return null if instance was not found', function (done) {
+      Instance.findOneAndUpdateAsync.resolves(null, null)
+      Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
+        expect(err.output.statusCode).to.equal(404)
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        done()
+      })
+    })
+  })
+
   describe('markAsStarting', function () {
     var mockInstance = {
       _id: '507f1f77bcf86cd799439011'
@@ -1755,7 +1816,8 @@ describe('Instance Model Tests', function () {
     it('should query the database', function (done) {
       Instance.findIsolationMaster(id, function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(
+        sinon.assert.calledOnce(Instance.findOne)
+        sinon.assert.calledWith(
           Instance.findOne,
           {
             isolated: id,
@@ -1793,11 +1855,11 @@ describe('Instance Model Tests', function () {
     it('should query the database', function (done) {
       Instance.findInstancesInIsolationWithSameRepoAndBranch(id, repo, branch, function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
           Instance.find,
           {
             isolated: id,
-            isIsolationGroupMaster: { $ne: true },
             'contextVersion.appCodeVersions': {
               $elemMatch: {
                 lowerRepo: repo.toLowerCase(),
@@ -1825,7 +1887,6 @@ describe('Instance Model Tests', function () {
   describe('findInstancesLinkedToBranch', function () {
     var repo = 'repoName'
     var branch = 'branchName'
-    var contextId = newObjectId()
     beforeEach(function (done) {
       sinon.stub(Instance, 'find').yieldsAsync(null)
       done()
@@ -1836,13 +1897,12 @@ describe('Instance Model Tests', function () {
     })
 
     it('should query the database', function (done) {
-      Instance.findInstancesLinkedToBranch(repo, branch, contextId, function (err) {
+      Instance.findInstancesLinkedToBranch(repo, branch, function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Instance.find)
         sinon.assert.calledWith(
           Instance.find,
           {
-            'contextVersion.context': contextId,
             'contextVersion.appCodeVersions': {
               $elemMatch: {
                 lowerRepo: repo.toLowerCase(),
@@ -1857,33 +1917,12 @@ describe('Instance Model Tests', function () {
     })
 
     it('should not add the context ID if not passed', function (done) {
-      Instance.findInstancesLinkedToBranch(repo, branch, null, function (err) {
+      Instance.findInstancesLinkedToBranch(repo, branch, function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Instance.find)
         sinon.assert.calledWith(
           Instance.find,
           {
-            'contextVersion.appCodeVersions': {
-              $elemMatch: {
-                lowerRepo: repo.toLowerCase(),
-                lowerBranch: branch.toLowerCase(),
-                additionalRepo: { $ne: true }
-              }
-            }
-          }
-        )
-        done()
-      })
-    })
-
-    it('should handle the context ID being a string', function (done) {
-      Instance.findInstancesLinkedToBranch(repo, branch, contextId.toString(), function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(Instance.find)
-        sinon.assert.calledWith(
-          Instance.find,
-          {
-            'contextVersion.context': contextId,
             'contextVersion.appCodeVersions': {
               $elemMatch: {
                 lowerRepo: repo.toLowerCase(),
@@ -1900,11 +1939,81 @@ describe('Instance Model Tests', function () {
     it('should throw any database errors', function (done) {
       var dbErr = new Error('MongoErr')
       Instance.find.yieldsAsync(dbErr)
-      Instance.findInstancesLinkedToBranch(repo, branch, contextId, function (err) {
+      Instance.findInstancesLinkedToBranch(repo, branch, function (err) {
         expect(err).to.exist()
         expect(err).to.equal(dbErr)
         done()
       })
+    })
+  })
+
+  describe('findInstancesForBranchAndBuildHash', function () {
+    var repo = 'repoName'
+    var branch = 'branchName'
+    var contextId = newObjectId()
+    var buildHash = 'build-hash'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'find').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.find.restore()
+      done()
+    })
+
+    it('should query the database', function (done) {
+      Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, buildHash)
+      .tap(function () {
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
+          Instance.find,
+          {
+            'contextVersion.context': contextId,
+            'contextVersion.build.hash': buildHash,
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                lowerBranch: branch.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          }
+        )
+      })
+      .asCallback(done)
+    })
+
+    it('should query the database without build hash if null', function (done) {
+      Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, null)
+      .tap(function () {
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
+          Instance.find,
+          {
+            'contextVersion.context': contextId,
+            'contextVersion.build.hash': { $exists: false },
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                lowerBranch: branch.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          }
+        )
+      })
+      .asCallback(done)
+    })
+
+    it('should throw any database errors', function (done) {
+      var dbErr = new Error('MongoErr')
+      Instance.find.yieldsAsync(dbErr)
+      Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, buildHash)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(dbErr.message)
+          done()
+        })
     })
   })
 })

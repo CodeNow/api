@@ -122,15 +122,7 @@ describe('ContainerImageBuilderCreate', function () {
       it('should set the correct message', function (done) {
         ContainerImageBuilderCreate({}).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err.message).to.match(/failed.*validation/i)
-          done()
-        })
-      })
-
-      it('should set the original error in the data', function (done) {
-        ContainerImageBuilderCreate({}).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.data.err).to.equal(validationError)
+          expect(err.message).to.match(/Invalid Job/i)
           done()
         })
       })
@@ -384,11 +376,6 @@ describe('ContainerImageBuilderCreate', function () {
           .to.equal('container.image-builder.create')
         done()
       })
-
-      it('should set the correct query data', function (done) {
-        expect(rejectError.data.contextId).to.equal(validJob.contextId)
-        done()
-      })
     }) // end 'on context not found'
 
     describe('on context version not found', function () {
@@ -419,11 +406,6 @@ describe('ContainerImageBuilderCreate', function () {
       it('should set the correct queue data', function (done) {
         expect(rejectError.data.queue)
           .to.equal('container.image-builder.create')
-        done()
-      })
-
-      it('should set the correct query data', function (done) {
-        expect(rejectError.data.query).to.deep.equal(expectedCVQuery)
         done()
       })
     }) // end 'on context version not found'

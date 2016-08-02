@@ -14,6 +14,7 @@ var TaskFatalError = require('ponos').TaskFatalError
 var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
+var rabbitMQ = require('models/rabbitmq')
 var Worker = require('workers/instance.stop')
 
 var lab = exports.lab = Lab.script()
@@ -68,6 +69,7 @@ describe('Workers: Instance Stop', function () {
     sinon.stub(Instance, 'findOneStoppingAsync').resolves(testInstance)
     sinon.stub(Docker.prototype, 'stopContainerAsync').resolves()
     sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
+    sinon.stub(rabbitMQ, 'instanceContainerErrored')
     done()
   })
 
@@ -75,6 +77,7 @@ describe('Workers: Instance Stop', function () {
     Instance.findOneStoppingAsync.restore()
     Docker.prototype.stopContainerAsync.restore()
     InstanceService.emitInstanceUpdate.restore()
+    rabbitMQ.instanceContainerErrored.restore()
     done()
   })
 
@@ -151,11 +154,31 @@ describe('Workers: Instance Stop', function () {
     })
   })
 
-  it('should TaskFatalError if docker startContainer 404', function (done) {
+  it('should TaskFatalError if docker stopContainer 404', function (done) {
     Docker.prototype.stopContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(TaskFatalError)
-      expect(err.message).to.contain('container does not exist')
+      expect(err.message).to.contain('Please rebuild without cache')
+      done()
+    })
+  })
+
+  it('should instanceContainerErrored if docker stopContainer 404', function (done) {
+    testInstance.container.inspect = {
+      Created: 1
+    }
+    var testError = 'instance.stop: Sorry, your container got lost. Please rebuild without cache'
+    rabbitMQ.instanceContainerErrored.resolves()
+    Docker.prototype.stopContainerAsync.rejects(Boom.create(404, 'b'))
+    Worker(testData).asCallback(function (err) {
+      expect(err).to.be.an.instanceOf(TaskFatalError)
+      expect(err.message).to.contain('Please rebuild without cache')
+      sinon.assert.calledOnce(rabbitMQ.instanceContainerErrored)
+      sinon.assert.calledWith(rabbitMQ.instanceContainerErrored, {
+        instanceId: testData.instanceId,
+        containerId: testData.containerId,
+        error: testError
+      })
       done()
     })
   })
