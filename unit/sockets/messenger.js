@@ -19,7 +19,6 @@ var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 var expect = Code.expect
 
-
 describe('Messenger Unit tests', function () {
   describe('emitInstanceUpdate', function () {
     beforeEach(function (done) {
