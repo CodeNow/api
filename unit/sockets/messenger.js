@@ -5,7 +5,6 @@ require('sinon-as-promised')(require('bluebird'))
 var Code = require('code')
 var createCount = require('callback-count')
 var lab = exports.lab = require('lab').script()
-var path = require('path')
 var sinon = require('sinon')
 
 var errorModule = require('error')
@@ -19,9 +18,9 @@ var it = lab.it
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 var expect = Code.expect
-var moduleName = path.relative(process.cwd(), __filename)
 
-describe('Messenger: ' + moduleName, function () {
+
+describe('Messenger Unit tests', function () {
   describe('emitInstanceUpdate', function () {
     beforeEach(function (done) {
       sinon.stub(Messenger, 'messageRoom')
