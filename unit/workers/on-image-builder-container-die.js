@@ -266,11 +266,13 @@ describe('OnImageBuilderContainerDie', function () {
   })
 
   describe('_handleAutoDeploy', function () {
+    var updatedInstances
     beforeEach(function (done) {
-      sinon.stub(InstanceService, 'updateBuildByRepoAndBranch').resolves([
-        { _id: 'id-1', contextVersion: { _id: 'cv-1' } },
-        { _id: 'id-2', contextVersion: { _id: 'cv-2' } }
-      ])
+      updatedInstances = [
+        { _id: 'id-1', contextVersion: { _id: 'cv-1', build: { triggeredAction: { manual: true } } } },
+        { _id: 'id-2', contextVersion: { _id: 'cv-2', build: { triggeredAction: { manual: false } } } }
+      ]
+      sinon.stub(InstanceService, 'updateBuildByRepoAndBranch').resolves(updatedInstances)
       sinon.stub(rabbitMQ, 'instanceDeployed').returns()
       done()
     })
@@ -352,38 +354,6 @@ describe('OnImageBuilderContainerDie', function () {
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.notCalled(InstanceService.updateBuildByRepoAndBranch)
-          done()
-        })
-    })
-    it('should create instanceDeployed events', function (done) {
-      var cvs = [
-        {
-          _id: 'cv1',
-          build: {
-            message: 'autodeploy',
-            triggeredAction: {
-              manual: false,
-              appCodeVersion: {
-                repo: 'codenow/api',
-                branch: 'master',
-                commit: '21312'
-              }
-            }
-          }
-        }
-      ]
-      OnImageBuilderContainerDie._handleAutoDeploy(cvs)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledTwice(rabbitMQ.instanceDeployed)
-          sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
-            instanceId: 'id-1',
-            cvId: 'cv-1'
-          })
-          sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
-            instanceId: 'id-2',
-            cvId: 'cv-2'
-          })
           done()
         })
     })
@@ -484,10 +454,7 @@ describe('OnImageBuilderContainerDie', function () {
         .asCallback(function (err, instances) {
           expect(err).to.not.exist()
           expect(instances).to.have.length(2)
-          expect(instances).to.deep.equal([
-            { _id: 'id-1', contextVersion: { _id: 'cv-1' } },
-            { _id: 'id-2', contextVersion: { _id: 'cv-2' } }
-          ])
+          expect(instances).to.deep.equal(updatedInstances)
           done()
         })
     })
@@ -504,6 +471,11 @@ describe('OnImageBuilderContainerDie', function () {
         contextVersion: {
           _id: {
             toString: sinon.stub().returns(contextVersionId)
+          },
+          build: {
+            triggeredAction: {
+              manual: true
+            }
           }
         },
         _id: {
@@ -542,7 +514,7 @@ describe('OnImageBuilderContainerDie', function () {
       })
       done()
     })
-    it('should publish notification job to RabbitMQ if the build was succesful', function (done) {
+    it('should publish instanceDeployed job to RabbitMQ if the build was succesful and manual', function (done) {
       OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance], { failed: false })
       sinon.assert.calledOnce(rabbitMQ.instanceDeployed)
       sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
@@ -551,10 +523,10 @@ describe('OnImageBuilderContainerDie', function () {
       })
       done()
     })
-    it('should not publish notification job to RabbitMQ if build was manual', function (done) {
+    it('should not publish notification job to RabbitMQ if build was automatic', function (done) {
       ctx.instance.contextVersion.build = {
         triggeredAction: {
-          manual: true
+          manual: false
         }
       }
       OnImageBuilderContainerDie._createContainersIfSuccessful(job, [ctx.instance], { failed: false })
