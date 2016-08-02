@@ -90,8 +90,8 @@ describe('createInstanceContainer', function () {
         delete ctx.job.instanceId
         createInstanceContainer(ctx.job).asCallback(function (err) {
           expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('validation failed')
-          expect(err.data.err.message).to.match(/instanceId.*is required/)
+          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err.data.validationError.message).to.match(/instanceId.*is required/)
           done()
         })
       })
@@ -100,8 +100,8 @@ describe('createInstanceContainer', function () {
         delete ctx.job.contextVersionId
         createInstanceContainer(ctx.job).asCallback(function (err) {
           expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('validation failed')
-          expect(err.data.err.message).to.match(/contextVersionId.*is required/)
+          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err.data.validationError.message).to.match(/contextVersionId.*is required/)
           done()
         })
       })
@@ -110,8 +110,8 @@ describe('createInstanceContainer', function () {
         delete ctx.job.ownerUsername
         createInstanceContainer(ctx.job).asCallback(function (err) {
           expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('validation failed')
-          expect(err.data.err.message).to.match(/ownerUsername.*is required/)
+          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err.data.validationError.message).to.match(/ownerUsername.*is required/)
           done()
         })
       })
@@ -120,8 +120,8 @@ describe('createInstanceContainer', function () {
         delete ctx.job.sessionUserGithubId
         createInstanceContainer(ctx.job).asCallback(function (err) {
           expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('validation failed')
-          expect(err.data.err.message).to.match(/sessionUserGithubId.*is required/)
+          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err.data.validationError.message).to.match(/sessionUserGithubId.*is required/)
           done()
         })
       })
