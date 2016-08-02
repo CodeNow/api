@@ -1040,4 +1040,38 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       done()
     })
   }) // end khronosDeleteContainer
+
+  describe('instanceContainerErrored', function () {
+    beforeEach(function (done) {
+      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
+      done()
+    })
+
+    afterEach(function (done) {
+      ctx.rabbitMQ.hermesClient.publish.restore()
+      done()
+    })
+
+    it('should publish the job with the correct payload', function (done) {
+      var data = {
+        containerId: 'efgh',
+        instanceId: '12341234',
+        error: new Error('black')
+      }
+      ctx.rabbitMQ.instanceContainerErrored(data)
+      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
+      sinon.assert.calledWith(
+        ctx.rabbitMQ.hermesClient.publish,
+        'instance.container.errored',
+        data)
+      done()
+    })
+
+    it('should throw an error when data is missing', function (done) {
+      var data = { }
+      expect(ctx.rabbitMQ.instanceContainerErrored.bind(ctx.rabbitMQ, data))
+        .to.throw(Error, /^Validation failed/)
+      done()
+    })
+  }) // end instanceContainerErrored
 })
