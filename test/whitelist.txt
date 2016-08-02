@@ -1,7 +1,6 @@
 ./test/functional/actions-analyze-info/get/200.js
 ./test/functional/actions-analyze/get/200.js
 ./test/functional/actions-analyze/get/400.js
-./test/functional/actions-internal/deprovision-clusters.js
 ./test/functional/actions-moderate/delete/204.js
 ./test/functional/actions-moderate/post/200.js
 ./test/functional/actions-redirect.js
@@ -19,7 +18,6 @@
 ./test/functional/bdd-instance-dependencies.js
 ./test/functional/bdd-isolation.js
 ./test/functional/builds-id-actions-copy.js
-./test/functional/builds.js
 ./test/functional/contexts-id-versions-id-appcodeversions-id-action-apply-transform-rules/index.js
 ./test/functional/contexts-id-versions-id-appcodeversions-id-action-test-transform-rule/index.js
 ./test/functional/contexts-id-versions-id-appcodeversions-id/patch/200.js
@@ -28,7 +26,6 @@
 ./test/functional/contexts-id-versions-id-files-id/delete/index.js
 ./test/functional/contexts-id-versions-id-files.js
 ./test/functional/contexts-id-versions-id-infracodeversion-actions-copy.js
-./test/functional/contexts-id-versions-id.js
 ./test/functional/contexts-id-versions-id/patch/200.js
 ./test/functional/contexts-id-versions.js
 ./test/functional/csrf-validation.js
@@ -45,8 +42,6 @@
 ./test/functional/instances/get/index.js
 ./test/functional/json-body-parser.js
 ./test/functional/messenger.js
-./test/functional/scripts/add-owner-to-context-versions.js
-./test/functional/scripts/update-templates.js
 ./test/functional/settings/get/index.js
 ./test/functional/settings/patch/400.js
 ./test/functional/settings/patch/index.js
@@ -54,7 +49,6 @@
 ./test/functional/templates/get/200.js
 ./test/functional/terminal-stream.js
 ./test/functional/test-errors.js
-./test/functional/user.js
 ./test/functional/users-id-routes-id/index.js
 ./test/functional/users-id-routes/index.js
 ./test/functional/users-id.js
@@ -80,6 +74,7 @@
 ./test/integration/models/mongo/teammate-invitation.js
 ./test/integration/models/mongo/user-whitelist.js
 ./test/integration/models/mongo/user.js
+./test/integration/models/services/build-service.js
 ./test/integration/models/services/instance-service.js
 ./test/integration/workers/on-image-builder-container-create.js
 ./test/integration/workers/on-image-builder-container-die.js
