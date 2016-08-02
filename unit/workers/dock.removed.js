@@ -266,112 +266,6 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     })
   })
 
-  describe('#_redeployContainers', function () {
-    // we are not going to validate instances that should be redeployed at this point
-    var instances = [{
-      _id: '1',
-      container: {
-        inspect: {
-          dockerContainer: '1b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
-          State: {
-            Running: true
-          }
-        }
-      }
-    }, {
-      _id: '2',
-      container: {
-        inspect: {
-          dockerContainer: '2b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
-          State: {
-            Running: false
-          }
-        }
-      }
-    }, {
-      _id: '3',
-      container: {
-        inspect: {
-          dockerContainer: '3b6cf020fad3b86762e66287babee95d54b787d16bec493cae4a2df7e036a036',
-          State: {
-            Running: true
-          }
-        }
-      }
-    }]
-    beforeEach(function (done) {
-      sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
-      done()
-    })
-
-    afterEach(function (done) {
-      rabbitMQ.redeployInstanceContainer.restore()
-      done()
-    })
-
-    it('should callback with no error', function (done) {
-      var deploymentUuid = 'some-unique-uuid'
-      Worker._redeployContainers(instances, deploymentUuid)
-      sinon.assert.calledThrice(rabbitMQ.redeployInstanceContainer)
-      var call1 = rabbitMQ.redeployInstanceContainer.getCall(0).args
-      expect(call1[0]).to.deep.equal({
-        instanceId: instances[0]._id,
-        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID,
-        deploymentUuid: deploymentUuid
-      })
-      var call2 = rabbitMQ.redeployInstanceContainer.getCall(1).args
-      expect(call2[0]).to.deep.equal({
-        instanceId: instances[1]._id,
-        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID,
-        deploymentUuid: deploymentUuid
-      })
-      var call3 = rabbitMQ.redeployInstanceContainer.getCall(2).args
-      expect(call3[0]).to.deep.equal({
-        instanceId: instances[2]._id,
-        sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID,
-        deploymentUuid: deploymentUuid
-      })
-      done()
-    })
-  }) // end _redeployContainers
-
-  describe('#_rebuildInstances', function () {
-    beforeEach(function (done) {
-      sinon.stub(rabbitMQ, 'publishInstanceRebuild')
-      done()
-    })
-
-    afterEach(function (done) {
-      rabbitMQ.publishInstanceRebuild.restore()
-      done()
-    })
-
-    it('should publish job for each instance', function (done) {
-      var instances = [
-        {_id: '1', build: { completed: true, failed: false }},
-        {_id: '2', build: { completed: false, failed: false }}
-      ]
-      var deploymentUuid = 'some-unique-uuid'
-      Worker._rebuildInstances(instances, deploymentUuid)
-      sinon.assert.calledTwice(rabbitMQ.publishInstanceRebuild)
-      expect(rabbitMQ.publishInstanceRebuild.getCall(0).args[0]).to.deep.equal({
-        instanceId: '1',
-        deploymentUuid: deploymentUuid
-      })
-      expect(rabbitMQ.publishInstanceRebuild.getCall(1).args[0]).to.deep.equal({
-        instanceId: '2',
-        deploymentUuid: deploymentUuid
-      })
-      done()
-    })
-    it('should not publish jobs if nothing was passed', function (done) {
-      var instances = []
-      Worker._rebuildInstances(instances)
-      sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
-      done()
-    })
-  })
-
   describe('#_redeploy', function () {
     var testErr = new Error('Mongo erro')
     var testData = {
@@ -379,13 +273,13 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     }
     beforeEach(function (done) {
       sinon.stub(Instance, 'findInstancesBuiltByDockerHostAsync')
-      sinon.stub(Worker, '_redeployContainers').returns()
+      sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       done()
     })
 
     afterEach(function (done) {
       Instance.findInstancesBuiltByDockerHostAsync.restore()
-      Worker._redeployContainers.restore()
+      rabbitMQ.redeployInstanceContainer.restore()
       done()
     })
 
@@ -419,13 +313,25 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
 
       it('should return successfully', function (done) {
+        testData.deploymentUuid = 'some-unique-uuid'
         Worker._redeploy(testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledOnce(Instance.findInstancesBuiltByDockerHostAsync)
             sinon.assert.calledWith(Instance.findInstancesBuiltByDockerHostAsync, testData.host)
-            sinon.assert.calledOnce(Worker._redeployContainers)
-            sinon.assert.calledWith(Worker._redeployContainers, instances)
+            sinon.assert.calledTwice(rabbitMQ.redeployInstanceContainer)
+            var call1 = rabbitMQ.redeployInstanceContainer.getCall(0).args
+            expect(call1[0]).to.deep.equal({
+              instanceId: instances[0]._id,
+              sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID,
+              deploymentUuid: testData.deploymentUuid
+            })
+            var call2 = rabbitMQ.redeployInstanceContainer.getCall(1).args
+            expect(call2[0]).to.deep.equal({
+              instanceId: instances[1]._id,
+              sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID,
+              deploymentUuid: testData.deploymentUuid
+            })
             done()
           })
       })
@@ -439,13 +345,13 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     }
     beforeEach(function (done) {
       sinon.stub(Instance, 'findInstancesBuildingOnDockerHost')
-      sinon.stub(Worker, '_rebuildInstances').returns()
+      sinon.stub(rabbitMQ, 'publishInstanceRebuild')
       done()
     })
 
     afterEach(function (done) {
       Instance.findInstancesBuildingOnDockerHost.restore()
-      Worker._rebuildInstances.restore()
+      rabbitMQ.publishInstanceRebuild.restore()
       done()
     })
 
@@ -477,13 +383,21 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
       })
 
       it('should return successfully', function (done) {
+        testData.deploymentUuid = 'some-unique-uuid'
         Worker._rebuild(testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledOnce(Instance.findInstancesBuildingOnDockerHost)
             sinon.assert.calledWith(Instance.findInstancesBuildingOnDockerHost, testData.host)
-            sinon.assert.calledOnce(Worker._rebuildInstances)
-            sinon.assert.calledWith(Worker._rebuildInstances, instances)
+            sinon.assert.calledTwice(rabbitMQ.publishInstanceRebuild)
+            expect(rabbitMQ.publishInstanceRebuild.getCall(0).args[0]).to.deep.equal({
+              instanceId: '1',
+              deploymentUuid: testData.deploymentUuid
+            })
+            expect(rabbitMQ.publishInstanceRebuild.getCall(1).args[0]).to.deep.equal({
+              instanceId: '2',
+              deploymentUuid: testData.deploymentUuid
+            })
             done()
           })
       })
