@@ -18,7 +18,7 @@ var sinon = require('sinon')
 
 var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
-var ContextVersionService = require('models/services/context-version-service')
+var PermissionService = require('models/services/permission-service')
 var Docker = require('models/apis/docker')
 var errors = require('errors')
 var joi = require('utils/joi')
@@ -69,7 +69,7 @@ describe('ContainerImageBuilderCreate', function () {
       .returns(Promise.resolve(mockContainer))
     sinon.stub(Docker, 'getDockerTag')
       .returns(mockDockerTag)
-    sinon.stub(ContextVersionService, 'checkOwnerAllowed')
+    sinon.stub(PermissionService, 'checkOwnerAllowed')
       .returns(Promise.resolve())
     done()
   })
@@ -83,7 +83,7 @@ describe('ContainerImageBuilderCreate', function () {
     mockContextVersion.populateAsync.restore()
     Docker.prototype.createImageBuilderAsync.restore()
     Docker.getDockerTag.restore()
-    ContextVersionService.checkOwnerAllowed.restore()
+    PermissionService.checkOwnerAllowed.restore()
     done()
   })
 
@@ -252,8 +252,8 @@ describe('ContainerImageBuilderCreate', function () {
 
   describe('checkAllowed', function () {
     beforeEach(function (done) {
-      ContextVersionService.checkOwnerAllowed.restore()
-      sinon.stub(ContextVersionService, 'checkOwnerAllowed', function () {
+      PermissionService.checkOwnerAllowed.restore()
+      sinon.stub(PermissionService, 'checkOwnerAllowed', function () {
         return Promise.reject(new errors.OrganizationNotAllowedError('not allowed'))
       })
       done()
