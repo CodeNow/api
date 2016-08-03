@@ -14,16 +14,14 @@ var Promise = require('bluebird')
 var rabbitMQ = require('models/rabbitmq')
 
 var sinon = require('sinon')
+require('sinon-as-promised')(Promise)
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 var ContextVersion = require('models/mongo/context-version')
 var Worker = require('workers/dock.removed')
 var TaskFatalError = require('ponos').TaskFatalError
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('Worker: dock.removed unit test: ' + moduleName, function () {
+describe('Worker: dock.removed unit test', function () {
   var testTarget = 'goku'
   var testHost = 'http://' + testTarget + ':4242'
   var testData = {
@@ -33,7 +31,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
   describe('worker', function () {
     beforeEach(function (done) {
       sinon.stub(Instance, 'findInstancesBuiltByDockerHostAsync')
-      sinon.stub(ContextVersion, 'markDockRemovedByDockerHost').yieldsAsync()
+      sinon.stub(ContextVersion, 'markDockRemovedByDockerHost').resolves()
       sinon.stub(Worker, '_redeploy')
       sinon.stub(Worker, '_rebuild')
       sinon.stub(Worker, '_updateFrontendInstances')
@@ -105,7 +103,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     describe('ContextVersion.markDockRemovedByDockerHost returns error', function () {
       var testError = new Error('Mongo error')
       beforeEach(function (done) {
-        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(testError)
+        ContextVersion.markDockRemovedByDockerHost.rejects(testError)
         done()
       })
 
@@ -128,7 +126,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     describe('_redeploy returns error', function () {
       var testError = new Error('Redeploy error')
       beforeEach(function (done) {
-        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
+        ContextVersion.markDockRemovedByDockerHost.resolves(null)
         var rejectionPromise = Promise.reject(testError)
         rejectionPromise.suppressUnhandledRejections()
         Worker._redeploy.returns(rejectionPromise)
@@ -157,7 +155,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     describe('_updateFrontendInstances returns error', function () {
       var testError = new Error('Update error')
       beforeEach(function (done) {
-        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
+        ContextVersion.markDockRemovedByDockerHost.resolves(null)
         Worker._redeploy.returns(Promise.resolve())
         Worker._rebuild.returns(Promise.resolve())
         var rejectionPromise = Promise.reject(testError)
@@ -185,7 +183,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     describe('_rebuild returns error', function () {
       var testError = new Error('Rebuild error')
       beforeEach(function (done) {
-        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
+        ContextVersion.markDockRemovedByDockerHost.resolves(null)
         Worker._redeploy.returns(Promise.resolve())
         Worker._updateFrontendInstances.returns(Promise.resolve())
         var rejectionPromise = Promise.reject(testError)
@@ -213,7 +211,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     describe('_updateFrontendInstances returns error on second call', function () {
       var testError = new Error('Update error')
       beforeEach(function (done) {
-        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
+        ContextVersion.markDockRemovedByDockerHost.resolves(null)
         Worker._redeploy.returns(Promise.resolve())
         Worker._rebuild.returns(Promise.resolve())
         var rejectionPromise = Promise.reject(testError)
@@ -241,7 +239,7 @@ describe('Worker: dock.removed unit test: ' + moduleName, function () {
     })
     describe('no errors', function () {
       beforeEach(function (done) {
-        ContextVersion.markDockRemovedByDockerHost.yieldsAsync(null)
+        ContextVersion.markDockRemovedByDockerHost.resolves(null)
         Worker._redeploy.returns(Promise.resolve())
         Worker._updateFrontendInstances.returns(Promise.resolve())
         Worker._rebuild.returns(Promise.resolve())

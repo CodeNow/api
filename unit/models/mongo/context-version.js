@@ -175,44 +175,34 @@ describe('Context Version Unit Test', function () {
   describe('#markDockRemovedByDockerHost', function () {
     var dockerHost = '1234'
     beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'update').yieldsAsync()
+      sinon.stub(ContextVersion, 'updateAsync').resolves()
       done()
     })
     afterEach(function (done) {
-      ContextVersion.update.restore()
+      ContextVersion.updateAsync.restore()
       done()
     })
 
     it('should call update with the right parameters', function (done) {
-      ContextVersion.markDockRemovedByDockerHost(dockerHost, function (err) {
+      ContextVersion.markDockRemovedByDockerHost(dockerHost).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(ContextVersion.update)
-        sinon.assert.calledWith(ContextVersion.update,
+        sinon.assert.calledOnce(ContextVersion.updateAsync)
+        sinon.assert.calledWith(ContextVersion.updateAsync,
           {dockerHost: dockerHost},
           {$set: {dockRemoved: true}},
-          {multi: true},
-          sinon.match.func
-        )
+          {multi: true})
         done()
       })
     })
 
     it('should pass the database error through to the callback', function (done) {
-      var error = 'Mongo Error'
-      ContextVersion.update.yieldsAsync(error)
-      ContextVersion.markDockRemovedByDockerHost(dockerHost, function (err) {
-        expect(err).to.equal(error)
-        sinon.assert.calledOnce(ContextVersion.update)
+      var error = new Error('Mongo Error')
+      ContextVersion.updateAsync.rejects(error)
+      ContextVersion.markDockRemovedByDockerHost(dockerHost).asCallback(function (err) {
+        expect(err.message).to.equal(error.message)
+        sinon.assert.calledOnce(ContextVersion.updateAsync)
         done()
       })
-    })
-
-    it('should be asyncified properly!', function (done) {
-      ContextVersion.markDockRemovedByDockerHostAsync.bind(ContextVersion, dockerHost)()
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          done()
-        })
     })
   })
 })
