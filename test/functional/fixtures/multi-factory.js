@@ -4,7 +4,7 @@
 'use strict'
 
 var async = require('async')
-var ContextVersionService = require('models/services/context-version-service')
+var PermissionService = require('models/services/permission-service')
 var createCount = require('callback-count')
 var defaults = require('101/defaults')
 var dockerMockEvents = require('./docker-mock-events')
@@ -204,9 +204,9 @@ module.exports = {
         body.owner = {
           github: ownerId || user.json().accounts.github.id
         }
-        if (!ContextVersionService.checkOwnerAllowed.isSinonProxy) {
+        if (!PermissionService.checkOwnerAllowed.isSinonProxy) {
           // Duck it, we never need to restore this stub anyways right?
-          sinon.stub(ContextVersionService, 'checkOwnerAllowed').returns(Promise.resolve())
+          sinon.stub(PermissionService, 'checkOwnerAllowed').returns(Promise.resolve())
         }
 
         var build = user.createBuild(body, function (err) {
