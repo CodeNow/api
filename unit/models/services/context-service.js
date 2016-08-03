@@ -1,26 +1,24 @@
 'use strict'
-
 require('loadenv')()
-
+var clone = require('101/clone')
+var expect = require('code').expect
 var Lab = require('lab')
+var Promise = require('bluebird')
+var sinon = require('sinon')
+
+var Context = require('models/mongo/context')
+var ContextService = require('models/services/context-service')
+var ContextVersion = require('models/mongo/context-version')
+var InfraCodeVersionService = require('models/services/infracode-version-service')
+var PermissionService = require('models/services/permission-service')
+
+require('sinon-as-promised')(require('bluebird'))
 var lab = exports.lab = Lab.script()
+
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
-var expect = require('code').expect
 var it = lab.it
-
-var clone = require('101/clone')
-// external
-var sinon = require('sinon')
-require('sinon-as-promised')(require('bluebird'))
-// internal
-var Context = require('models/mongo/context')
-var ContextVersion = require('models/mongo/context-version')
-var Runnable = require('models/apis/runnable')
-// internal (being tested)
-var ContextService = require('models/services/context-service')
-var PermissionService = require('models/services/permission-service')
 
 describe('ContextService Unit Test', function () {
   var ctx = {}
@@ -29,7 +27,6 @@ describe('ContextService Unit Test', function () {
     sinon.stub(Context, 'createAsync').returns()
     sinon.stub(Context.prototype, 'save').yieldsAsync()
     sinon.stub(ContextVersion, 'createDeepCopy').yieldsAsync()
-    sinon.stub(Runnable.prototype, 'copyVersionIcvFiles').yieldsAsync()
     done()
   })
   afterEach(function (done) {
@@ -37,7 +34,6 @@ describe('ContextService Unit Test', function () {
     Context.createAsync.restore()
     Context.prototype.save.restore()
     ContextVersion.createDeepCopy.restore()
-    Runnable.prototype.copyVersionIcvFiles.restore()
     done()
   })
 
@@ -406,6 +402,7 @@ describe('ContextService Unit Test', function () {
 
   describe('handleVersionDeepCopy', function () {
     beforeEach(function (done) {
+      sinon.stub(InfraCodeVersionService, 'copyInfraCodeToContextVersion').returns(Promise.resolve())
       ctx.mockContextVersion = {
         infraCodeVersion: 'pizza',
         owner: { github: 1234 }
@@ -421,6 +418,11 @@ describe('ContextService Unit Test', function () {
       done()
     })
 
+    afterEach(function (done) {
+      InfraCodeVersionService.copyInfraCodeToContextVersion.restore()
+      done()
+    })
+
     describe('a CV owned by hellorunnable', function () {
       beforeEach(function (done) {
         ctx.returnedMockedContextVersion = {
@@ -428,6 +430,7 @@ describe('ContextService Unit Test', function () {
           owner: { github: -1 },
           // createDeepCopy sets the correct createdBy
           createdBy: { github: 1234 },
+          infraCodeVersion: { _id: 'old' },
           save: sinon.stub().yieldsAsync()
         }
         ctx.mockContextVersion.owner.github = process.env.HELLO_RUNNABLE_GITHUB_ID
@@ -478,13 +481,10 @@ describe('ContextService Unit Test', function () {
             sinon.assert.calledOnce(ctx.returnedMockedContextVersion.save)
             expect(ctx.returnedMockedContextVersion.owner.github).to.equal(ctx.mockUser.accounts.github.id)
             sinon.assert.calledOnce(Context.prototype.save)
-            sinon.assert.calledOnce(Runnable.prototype.copyVersionIcvFiles)
-            sinon.assert.calledWith(
-              Runnable.prototype.copyVersionIcvFiles,
-              sinon.match.any,
-              ctx.returnedMockedContextVersion._id,
-              ctx.mockContextVersion.infraCodeVersion,
-              sinon.match.func)
+            sinon.assert.calledOnce(InfraCodeVersionService.copyInfraCodeToContextVersion)
+            sinon.assert.calledWith(InfraCodeVersionService.copyInfraCodeToContextVersion,
+              ctx.returnedMockedContextVersion,
+              ctx.mockContextVersion.infraCodeVersion._id)
             done()
           })
       })
