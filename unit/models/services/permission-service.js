@@ -414,5 +414,4 @@ describe('PermissionService', function () {
         })
     })
   })
-
 })

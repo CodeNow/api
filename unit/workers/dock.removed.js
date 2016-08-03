@@ -15,11 +15,13 @@ var rabbitMQ = require('models/rabbitmq')
 
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
+var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
-var ContextVersion = require('models/mongo/context-version')
+var PermissionService = require('models/services/permission-service')
 var Worker = require('workers/dock.removed')
 var TaskFatalError = require('ponos').TaskFatalError
+var errors = require('errors')
 
 describe('Worker: dock.removed unit test', function () {
   var testTarget = 'goku'
@@ -43,7 +45,6 @@ describe('Worker: dock.removed unit test', function () {
       Worker._rebuild.restore()
       Worker._redeploy.restore()
       Worker._updateFrontendInstances.restore()
-
       Instance.findInstancesBuiltByDockerHostAsync.restore()
       ContextVersion.markDockRemovedByDockerHost.restore()
       rabbitMQ.asgInstanceTerminate.restore()
@@ -272,12 +273,14 @@ describe('Worker: dock.removed unit test', function () {
     beforeEach(function (done) {
       sinon.stub(Instance, 'findInstancesBuiltByDockerHostAsync')
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
+      sinon.stub(PermissionService, 'checkOwnerAllowed').resolves()
       done()
     })
 
     afterEach(function (done) {
       Instance.findInstancesBuiltByDockerHostAsync.restore()
       rabbitMQ.redeployInstanceContainer.restore()
+      PermissionService.checkOwnerAllowed.restore()
       done()
     })
 
@@ -302,12 +305,36 @@ describe('Worker: dock.removed unit test', function () {
 
     describe('#findInstancesBuiltByDockerHostAsync returns 2 instances', function () {
       var instances = [
-        { _id: '1' },
-        { _id: '2' }
+        { _id: '1', owner: { github: '213333' } },
+        { _id: '2', owner: { github: '213333' } }
       ]
       beforeEach(function (done) {
         Instance.findInstancesBuiltByDockerHostAsync.returns(Promise.resolve(instances))
         done()
+      })
+
+      it('should fatally fail if owner is not whitelisted', function (done) {
+        PermissionService.checkOwnerAllowed.rejects(new errors.OrganizationNotFoundError('Organization not found'))
+        testData.deploymentUuid = 'some-unique-uuid'
+        Worker._redeploy(testData)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal('dock.removed: Organization is not whitelisted, no need to redeploy')
+            expect(err).to.be.instanceOf(TaskFatalError)
+            done()
+          })
+      })
+
+      it('should fatally fail if owner is not allowed', function (done) {
+        PermissionService.checkOwnerAllowed.rejects(new errors.OrganizationNotAllowedError('Organization is not allowed'))
+        testData.deploymentUuid = 'some-unique-uuid'
+        Worker._redeploy(testData)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal('dock.removed: Organization is not allowed, no need to redeploy')
+            expect(err).to.be.instanceOf(TaskFatalError)
+            done()
+          })
       })
 
       it('should return successfully', function (done) {
@@ -344,12 +371,14 @@ describe('Worker: dock.removed unit test', function () {
     beforeEach(function (done) {
       sinon.stub(Instance, 'findInstancesBuildingOnDockerHost')
       sinon.stub(rabbitMQ, 'publishInstanceRebuild')
+      sinon.stub(PermissionService, 'checkOwnerAllowed').resolves()
       done()
     })
 
     afterEach(function (done) {
       Instance.findInstancesBuildingOnDockerHost.restore()
       rabbitMQ.publishInstanceRebuild.restore()
+      PermissionService.checkOwnerAllowed.restore()
       done()
     })
 
@@ -372,12 +401,36 @@ describe('Worker: dock.removed unit test', function () {
 
     describe('#findInstancesBuildingOnDockerHost returns 2 instances', function () {
       var instances = [
-        { _id: '1' },
-        { _id: '2' }
+        { _id: '1', owner: { github: '213333' } },
+        { _id: '2', owner: { github: '213333' } }
       ]
       beforeEach(function (done) {
         Instance.findInstancesBuildingOnDockerHost.yieldsAsync(null, instances)
         done()
+      })
+
+      it('should fatally fail if owner is not whitelisted', function (done) {
+        PermissionService.checkOwnerAllowed.rejects(new errors.OrganizationNotFoundError('Organization not found'))
+        testData.deploymentUuid = 'some-unique-uuid'
+        Worker._rebuild(testData)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal('dock.removed: Organization is not whitelisted, no need to rebuild')
+            expect(err).to.be.instanceOf(TaskFatalError)
+            done()
+          })
+      })
+
+      it('should fatally fail if owner is not allowed', function (done) {
+        PermissionService.checkOwnerAllowed.rejects(new errors.OrganizationNotAllowedError('Organization is not allowed'))
+        testData.deploymentUuid = 'some-unique-uuid'
+        Worker._rebuild(testData)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal('dock.removed: Organization is not allowed, no need to rebuild')
+            expect(err).to.be.instanceOf(TaskFatalError)
+            done()
+          })
       })
 
       it('should return successfully', function (done) {
