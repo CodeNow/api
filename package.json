@@ -48,12 +48,13 @@
     "error-cat": "^1.4.2",
     "eson": "^0.5.0",
     "express": "^4.8.3",
+    "express-request": "^0.3.0",
     "express-session": "^1.12.1",
     "extend": "^1.3.0",
     "fn-object": "~0.2.2",
     "github": "git+ssh://git@github.com/podviaznikov/node-github.git#66dc2d069c59585cc166d87472fb22f7573f9ff5",
     "hashids": "^0.3.3",
-    "http-proxy": "^1.14.0",
+    "http-proxy": "^1.5.3",
     "i": "^0.3.2",
     "joi": "^6.9.1",
     "json-hash": "0.0.4",
@@ -109,7 +110,7 @@
     "xtend": "3.0.0"
   },
   "devDependencies": {
-    "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#1.0.0-patch",
+    "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#v1.0.0",
     "docker-mock": "^5.1.0",
     "doctoc": "^0.15.0",
     "faker": "^1.0.0",

@@ -47,7 +47,7 @@ describe('Actions - /actions/redirect', function () {
     request(options, function (err, res) {
       if (err) { return done(err) }
       expect(res.statusCode).to.equal(302)
-      expect(res.body).to.equal('Found. Redirecting to https://github.com/podviaznikov/hellonode')
+      expect(res.body).to.equal('Moved Temporarily. Redirecting to https://github.com/podviaznikov/hellonode')
       done()
     })
   })
