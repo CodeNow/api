@@ -6,14 +6,9 @@
 var clone = require('101/clone')
 var Code = require('code')
 var createCount = require('callback-count')
-var EventEmitter = require('events').EventEmitter
-var hermes = require('runnable-hermes')
 var Lab = require('lab')
-var noop = require('101/noop')
-var Promise = require('bluebird')
 var rabbitMQ = require('models/rabbitmq')
 var sinon = require('sinon')
-var util = require('util')
 
 var lab = exports.lab = Lab.script()
 
@@ -27,95 +22,39 @@ var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('RabbitMQ Model: ' + moduleName, function () {
-  var ctx
   beforeEach(function (done) {
-    ctx = {}
-    ctx.rabbitMQ = rabbitMQ
+    sinon.stub(rabbitMQ._publisher, 'connect')
+    sinon.stub(rabbitMQ._publisher, 'disconnect')
+    sinon.stub(rabbitMQ._publisher, 'publishEvent')
+    sinon.stub(rabbitMQ._publisher, 'publishTask')
     done()
   })
 
-  describe('close', function () {
-    it('should call start', function (done) {
-      ctx.rabbitMQ._server = {
-        stop: sinon.stub().returns(Promise.resolve())
-      }
-      console.log('rabbitMQ', rabbitMQ._server)
-      ctx.rabbitMQ.close(done)
-    })
+  afterEach(function (done) {
+    rabbitMQ._publisher.connect.restore()
+    rabbitMQ._publisher.disconnect.restore()
+    rabbitMQ._publisher.publishEvent.restore()
+    rabbitMQ._publisher.publishTask.restore()
+    done()
   })
 
-  describe('unloadWorkers', function () {
-    it('should just callback if the rabbitmq is not started', function (done) {
-      ctx.rabbitMQ.unloadWorkers(done)
-    })
-  })
-
-  describe('_handleFatalError', function () {
-    it('should call process.exit', function (done) {
-      sinon.stub(process, 'exit', function (code) {
-        expect(code).to.equal(1)
-      })
-      var rabbit = new rabbitMQ.constructor()
-      rabbit._handleFatalError(new Error())
-      expect(process.exit.callCount).to.equal(1)
-      process.exit.restore()
+  describe('connect', function () {
+    it('should call connect', function (done) {
+      rabbitMQ._publisher.connect.returns('foo')
+      var out = rabbitMQ.connect()
+      expect(out).to.equal('foo')
+      sinon.assert.calledOnce(rabbitMQ._publisher.connect)
       done()
     })
   })
 
-  describe('connect', function () {
-    it('should call hermes connect and attach error handler', function (done) {
-      var rabbit = new rabbitMQ.constructor()
-      var HermesClient = function () {}
-      util.inherits(HermesClient, EventEmitter)
-      HermesClient.prototype.connect = function (cb) {
-        cb(null)
-      }
-      var hermesClient = new HermesClient()
-      sinon.spy(hermesClient, 'connect')
-      sinon.spy(hermesClient, 'on')
-      sinon.stub(hermes, 'hermesSingletonFactory', function () {
-        return hermesClient
-      })
-
-      rabbit.connect(function (err) {
-        expect(err).to.be.null()
-        expect(hermesClient.connect.callCount).to.equal(1)
-        expect(hermesClient.on.callCount).to.equal(1)
-        hermes.hermesSingletonFactory.restore()
-        done()
-      })
-    })
-
-    it('should call _handleFatalError if error was emitted', function (done) {
-      var rabbit = new rabbitMQ.constructor()
-      var HermesClient = function () {}
-      util.inherits(HermesClient, EventEmitter)
-      HermesClient.prototype.connect = function (cb) {
-        cb(null)
-      }
-      var hermesClient = new HermesClient()
-      sinon.spy(hermesClient, 'connect')
-      sinon.spy(hermesClient, 'on')
-      sinon.stub(hermes, 'hermesSingletonFactory', function () {
-        return hermesClient
-      })
-      sinon.stub(rabbit, '_handleFatalError')
-      rabbit.connect(function (err) {
-        expect(err).to.be.null()
-      })
-      rabbit.hermesClient.on('error', function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.equal('Some hermes error')
-        expect(hermesClient.connect.callCount).to.equal(1)
-        expect(hermesClient.on.callCount).to.equal(2)
-        expect(rabbit._handleFatalError.callCount).to.equal(1)
-        expect(rabbit._handleFatalError.getCall(0).args[0].message)
-          .to.equal('Some hermes error')
-        hermes.hermesSingletonFactory.restore()
-        done()
-      })
-      rabbit.hermesClient.emit('error', new Error('Some hermes error'))
+  describe('close', function () {
+    it('should call disconnect', function (done) {
+      rabbitMQ._publisher.disconnect.returns('foo')
+      var out = rabbitMQ.close()
+      expect(out).to.equal('foo')
+      sinon.assert.calledOnce(rabbitMQ._publisher.disconnect)
+      done()
     })
   })
 
@@ -130,7 +69,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         }
       }
       var keys = [ 'instance._id', 'instance.owner.github' ]
-      ctx.rabbitMQ._validate(payload, keys, 'job.name')
+      rabbitMQ._validate(payload, keys, 'job.name')
       done()
     })
     it('should fail validation', function (done) {
@@ -142,7 +81,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       }
       var keys = [ 'instance._id', 'instance.owner.github' ]
       try {
-        ctx.rabbitMQ._validate(payload, keys, 'job.name')
+        rabbitMQ._validate(payload, keys, 'job.name')
         done(new Error('Should never happen'))
       } catch (e) {
         expect(e.message).to.equal('Validation failed: "instance.owner.github" is required')
@@ -152,12 +91,10 @@ describe('RabbitMQ Model: ' + moduleName, function () {
   })
 
   describe('CreateImageBuilderContainer', function () {
+    var validJobData
+
     beforeEach(function (done) {
-      // this normally set after connect
-      ctx.rabbitMQ.hermesClient = {
-        publish: function () {}
-      }
-      ctx.validJobData = {
+      validJobData = {
         manualBuild: {
           user: 'asdaSDFASDF'
         },
@@ -169,266 +106,206 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         tid: '9494949',
         ownerUsername: 'tjmehta'
       }
-      // missing manualBuild and noCache
-      ctx.invalidJobData = {
-        sessionUserGithubId: 'asdaSDFASDF',
-        contextId: '4G23G243G4545',
-        contextVersionId: 'G45GH4GERGDSG',
-        dockerHost: '0.0.0.0',
-        tid: '9494949'
-      }
       done()
     })
+
     describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
-          expect(eventName).to.equal('container.image-builder.create')
-          expect(eventData).to.equal(ctx.validJobData)
-        })
-        done()
-      })
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore()
-        done()
-      })
       it('should publish a job with required data', function (done) {
-        ctx.rabbitMQ.createImageBuilderContainer(ctx.validJobData)
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1)
+        rabbitMQ.createImageBuilderContainer(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'container.image-builder.create',
+          validJobData)
         done()
       })
     })
 
-    describe('failure', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {})
-        done()
-      })
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore()
-        done()
-      })
-      it('should not publish a job without required data', function (done) {
-        expect(ctx.rabbitMQ.createImageBuilderContainer.bind(ctx.rabbitMQ, ctx.invalidJobData))
-          .to.throw(Error, /Validation failed/)
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0)
-        done()
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.createImageBuilderContainer(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
       })
     })
   })
+
   describe('startInstanceContainer', function () {
+    var validJobData
+
     beforeEach(function (done) {
-      // this normally set after connect
-      ctx.rabbitMQ.hermesClient = {
-        publish: noop
-      }
-      ctx.validJobData = {
+      validJobData = {
         containerId: '123',
         instanceId: '55555',
         sessionUserGithubId: '9494949'
       }
-      // missing containerId
-      ctx.invalidJobData = {
-        instanceId: '55555',
-        sessionUserGithubId: '9494949'
-      }
       done()
     })
+
     describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
-          expect(eventName).to.equal('start-instance-container')
-          expect(eventData).to.equal(ctx.validJobData)
-        })
-        done()
-      })
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore()
-        done()
-      })
       it('should publish a job with required data', function (done) {
-        ctx.rabbitMQ.startInstanceContainer(ctx.validJobData)
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1)
+        rabbitMQ.startInstanceContainer(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'start-instance-container',
+          validJobData)
         done()
       })
     })
 
-    describe('failure', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {})
-        done()
-      })
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore()
-        done()
-      })
-      it('should not publish a job without required data', function (done) {
-        expect(ctx.rabbitMQ.startInstanceContainer.bind(ctx.rabbitMQ, ctx.invalidJobData))
-          .to.throw(Error, /Validation failed/)
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0)
-        done()
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.startInstanceContainer(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
       })
     })
   })
 
   describe('createInstanceContainer', function () {
+    var opts
     beforeEach(function (done) {
-      // correct opts
-      ctx.opts = {
+      opts = {
         contextVersionId: '123456789012345678901234',
         instanceId: '123456789012345678901234',
         ownerUsername: 'runnable',
         sessionUserGithubId: '10'
       }
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
       done()
     })
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
+
     describe('success', function () {
       it('should create a job', function (done) {
-        ctx.rabbitMQ.createInstanceContainer(ctx.opts)
-        sinon.assert.calledWith(
-          ctx.rabbitMQ.hermesClient.publish,
+        rabbitMQ.createInstanceContainer(opts)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
           'create-instance-container',
-          ctx.opts
-        )
+          opts)
         done()
       })
     })
-    describe('errors', function () {
-      beforeEach(function (done) {
-        ctx.err = new Error('boom')
-        done()
-      })
-      describe('validation errors', function () {
-        it('should throw the validation error', function (done) {
-          var requiredKeys = Object.keys(ctx.opts)
-          var count = createCount(requiredKeys.length, done)
-          requiredKeys.forEach(function (key) {
-            var opts = clone(ctx.opts)
-            delete opts[key]
-            try {
-              ctx.rabbitMQ.createInstanceContainer(ctx.opts)
-            } catch (e) {
-              expect(e).to.exist()
-              expect(e.message).match(new RegExp(key))
-            }
-            count.next()
-          })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(opts)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(opts)
+          delete options[key]
+          try {
+            rabbitMQ.createInstanceContainer(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
         })
       })
     })
   })
 
   describe('redeployInstanceContainer', function () {
+    var validJobData
     beforeEach(function (done) {
-      // this normally set after connect
-      ctx.rabbitMQ.hermesClient = {
-        publish: noop
-      }
-      ctx.validJobData = {
+      validJobData = {
         instanceId: '507f191e810c19729de860ea',
         sessionUserGithubId: 429706
       }
-      // missing sessionUserGithubId
-      ctx.invalidJobData = {
-        instanceId: '507f191e810c19729de860ea'
-      }
       done()
     })
+
     describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
-          expect(eventName).to.equal('instance.container.redeploy')
-          expect(eventData).to.equal(ctx.validJobData)
-        })
-        done()
-      })
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore()
-        done()
-      })
-      it('should publish a job with required data', function (done) {
-        ctx.rabbitMQ.redeployInstanceContainer(ctx.validJobData)
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1)
+      it('should create a job', function (done) {
+        rabbitMQ.redeployInstanceContainer(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'instance.container.redeploy',
+          validJobData)
         done()
       })
     })
-    describe('failure', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {})
-        done()
-      })
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore()
-        done()
-      })
-      it('should not publish a job without required data', function (done) {
-        expect(ctx.rabbitMQ.redeployInstanceContainer.bind(ctx.rabbitMQ, ctx.invalidJobData))
-          .to.throw(Error, /Validation failed/)
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0)
-        done()
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.redeployInstanceContainer(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
       })
     })
   })
+
   describe('deleteInstance', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      sinon.spy(ctx.rabbitMQ, '_validate')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      ctx.rabbitMQ._validate.restore()
-      done()
-    })
-
-    it('should publish to the `instance.delete` queue', function (done) {
-      var payload = {
+      validJobData = {
         instanceId: '507f191e810c19729de860ea'
       }
-      ctx.rabbitMQ.deleteInstance(payload)
-      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
-      var keys = [
-        'instanceId'
-      ]
-      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.delete')
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.delete', payload)
       done()
     })
-    it('should fail to publish to the `instance.delete` queue if validation failed', function (done) {
-      var payload = {}
-      expect(ctx.rabbitMQ.deleteInstance.bind(ctx.rabbitMQ, payload))
-        .to.throw(Error, /Validation failed/)
-      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
-      var keys = [
-        'instanceId'
-      ]
-      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.delete')
-      sinon.assert.notCalled(ctx.rabbitMQ.hermesClient.publish)
-      done()
+
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.deleteInstance(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'instance.delete',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.deleteInstance(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   })
 
   describe('deleteInstanceContainer', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      sinon.spy(ctx.rabbitMQ, '_validate')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      ctx.rabbitMQ._validate.restore()
-      done()
-    })
-
-    it('should publish to the `delete-instance-container` queue', function (done) {
-      var payload = {
+      validJobData = {
         instanceShortHash: 'd1as5f',
         instanceName: 'api',
         instanceMasterPod: true,
@@ -440,595 +317,706 @@ describe('RabbitMQ Model: ' + moduleName, function () {
           dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
         }
       }
-      ctx.rabbitMQ.deleteInstanceContainer(payload)
-      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
-      var keys = [
-        'container',
-        'container.dockerContainer',
-        'instanceName',
-        'instanceShortHash',
-        'instanceMasterPod',
-        'ownerGithubId',
-        'ownerGithubUsername'
-      ]
-      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.container.delete')
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.container.delete', payload)
       done()
     })
-    it('should fail to publish to the `instance.container.delete` queue if validation failed', function (done) {
-      var payload = {}
-      expect(ctx.rabbitMQ.deleteInstanceContainer.bind(ctx.rabbitMQ, payload))
-        .to.throw(Error, /Validation failed/)
-      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
-      var keys = [
-        'container',
-        'container.dockerContainer',
-        'instanceName',
-        'instanceShortHash',
-        'instanceMasterPod',
-        'ownerGithubId',
-        'ownerGithubUsername'
-      ]
-      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.container.delete')
-      sinon.assert.notCalled(ctx.rabbitMQ.hermesClient.publish)
-      done()
+
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.deleteInstanceContainer(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'instance.container.delete',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.deleteInstanceContainer(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   })
 
   describe('publishASGCreate', function () {
-    var testOrgId = 18274533
+    var validJobData
     beforeEach(function (done) {
-      // this normally set after connect
-      ctx.rabbitMQ.hermesClient = {
-        publish: function () {}
-      }
-      ctx.validJobData = {
-        githubId: testOrgId.toString()
+      validJobData = {
+        githubId: 18274533
       }
       done()
     })
+
     describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function (eventName, eventData) {
-          expect(eventName).to.equal('asg.create')
-          expect(eventData).to.equal(ctx.validJobData)
-        })
-        done()
-      })
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore()
-        done()
-      })
-      it('should publish a job with required data', function (done) {
-        ctx.rabbitMQ.publishASGCreate(ctx.validJobData)
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(1)
+      it('should create a job', function (done) {
+        rabbitMQ.publishASGCreate(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'asg.create',
+          validJobData)
         done()
       })
     })
 
-    describe('failure', function () {
-      beforeEach(function (done) {
-        sinon.stub(ctx.rabbitMQ.hermesClient, 'publish', function () {})
-        done()
-      })
-      afterEach(function (done) {
-        ctx.rabbitMQ.hermesClient.publish.restore()
-        done()
-      })
-      it('should not publish a job without required data', function (done) {
-        expect(ctx.rabbitMQ.publishASGCreate.bind(ctx.rabbitMQ, {}))
-          .to.throw(Error, /Validation failed/)
-        expect(ctx.rabbitMQ.hermesClient.publish.callCount).to.equal(0)
-        done()
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.publishASGCreate(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
       })
     })
   })
 
   describe('publishInstanceRebuild', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      sinon.spy(ctx.rabbitMQ, '_validate')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      ctx.rabbitMQ._validate.restore()
-      done()
-    })
-
-    it('should publish to the `instance.rebuild` queue', function (done) {
-      var payload = {
+      validJobData = {
         instanceId: '507f1f77bcf86cd799439011'
       }
-      ctx.rabbitMQ.publishInstanceRebuild(payload)
-      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
-      var keys = [ 'instanceId' ]
-      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.rebuild')
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.rebuild', payload)
       done()
     })
-    it('should fail to publish to the `instance.rebuild` queue if validation failed', function (done) {
-      var payload = {}
-      expect(ctx.rabbitMQ.publishInstanceRebuild.bind(ctx.rabbitMQ, payload))
-        .to.throw(Error, /Validation failed/)
-      sinon.assert.calledOnce(ctx.rabbitMQ._validate)
-      var keys = [ 'instanceId' ]
-      sinon.assert.calledWith(ctx.rabbitMQ._validate, payload, keys, 'instance.rebuild')
-      sinon.assert.notCalled(ctx.rabbitMQ.hermesClient.publish)
-      done()
+
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.publishInstanceRebuild(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'instance.rebuild',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.publishInstanceRebuild(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   })
 
   describe('instanceUpdated', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
-        instance: {id: 1234}
+      validJobData = {
+        instance: '507f1f77bcf86cd799439011'
       }
-      ctx.rabbitMQ.instanceUpdated(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.updated', data)
       done()
     })
-    it('should throw an error when parameters are missing', function (done) {
-      var data = {}
-      expect(ctx.rabbitMQ.instanceUpdated.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.instanceUpdated(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+          'instance.updated',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.instanceUpdated(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   })
 
   describe('instanceCreated', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
+      validJobData = {
         instance: {id: 1234}
       }
-      ctx.rabbitMQ.instanceCreated(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.created', data)
       done()
     })
-    it('should throw an error when parameters are missing', function (done) {
-      var data = {}
-      expect(ctx.rabbitMQ.instanceCreated.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.instanceCreated(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+          'instance.created',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.instanceCreated(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   })
 
   describe('instanceDeleted', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
+      validJobData = {
+        instance: {id: 1234}
+      }
       done()
     })
 
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
-        instance: {id: 1234}
-      }
-      ctx.rabbitMQ.instanceDeleted(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.deleted', data)
-      done()
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.instanceDeleted(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+          'instance.deleted',
+          validJobData)
+        done()
+      })
     })
-    it('should throw an error when parameters are missing', function (done) {
-      var data = {}
-      expect(ctx.rabbitMQ.instanceDeleted.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.instanceDeleted(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   })
 
   describe('instanceDeployed', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
+      validJobData = {
         instanceId: 1234,
         cvId: 56789
       }
-      ctx.rabbitMQ.instanceDeployed(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'instance.deployed', data)
       done()
     })
-    it('should throw an error when parameters are missing', function (done) {
-      var data = {}
-      expect(ctx.rabbitMQ.instanceDeployed.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.instanceDeployed(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+          'instance.deployed',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.instanceDeployed(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   })
 
   describe('firstDockCreated', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
+      validJobData = {
         githubId: 123
       }
-      ctx.rabbitMQ.firstDockCreated(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'first.dock.created', data)
       done()
     })
-    it('should throw an error when parameters are missing', function (done) {
-      var data = {}
-      expect(ctx.rabbitMQ.firstDockCreated.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.firstDockCreated(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+          'first.dock.created',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.firstDockCreated(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   })
 
   describe('deleteContextVersion', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
+      validJobData = {
+        contextVersionId: 1234
+      }
       done()
     })
 
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
-        contextVersionId: 1234
-      }
-      ctx.rabbitMQ.deleteContextVersion(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'context-version.delete', data)
-      done()
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.deleteContextVersion(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'context-version.delete',
+          validJobData)
+        done()
+      })
     })
-    it('should throw an error when parameters are missing', function (done) {
-      var data = {}
-      expect(ctx.rabbitMQ.deleteContextVersion.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.deleteContextVersion(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   })
 
   describe('contextVersionDeleted', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
+      validJobData = {
+        contextVersion: { _id: 1 }
+      }
       done()
     })
 
-    it('should publish the job with the correct payload', function (done) {
-      var cv = { _id: 1 }
-      var data = {
-        contextVersion: cv
-      }
-      ctx.rabbitMQ.contextVersionDeleted(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(ctx.rabbitMQ.hermesClient.publish, 'context-version.deleted', data)
-      done()
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.contextVersionDeleted(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+          'context-version.deleted',
+          validJobData)
+        done()
+      })
     })
-    it('should throw an error when parameters are missing', function (done) {
-      var data = {}
-      expect(ctx.rabbitMQ.deleteContextVersion.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.contextVersionDeleted(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   })
 
   describe('publishContainerImageBuilderStarted', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
+      validJobData = {
         inspectData: { id: 1234 }
       }
-      ctx.rabbitMQ.publishContainerImageBuilderStarted(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(
-        ctx.rabbitMQ.hermesClient.publish,
-        'container.image-builder.started',
-        data)
       done()
     })
 
-    it('should throw an error when parameters are missing', function (done) {
-      var data = {}
-      expect(ctx.rabbitMQ.publishContainerImageBuilderStarted.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.publishContainerImageBuilderStarted(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+          'container.image-builder.started',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.publishContainerImageBuilderStarted(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   }) // end publishContainerImageBuilderStarted
 
   describe('publishDockRemoved', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
+      validJobData = {
         githubId: 1234,
         host: 'http://10.0.0.1:4242'
       }
-      ctx.rabbitMQ.publishDockRemoved(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(
-        ctx.rabbitMQ.hermesClient.publish,
-        'dock.removed',
-        data)
       done()
     })
 
-    it('should throw an error when host is missing', function (done) {
-      var data = { githubId: 1234 }
-      expect(ctx.rabbitMQ.publishDockRemoved.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.publishDockRemoved(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+          'dock.removed',
+          validJobData)
+        done()
+      })
     })
 
-    it('should throw an error when githubId is missing', function (done) {
-      var data = { host: 'http://10.0.0.1:4242' }
-      expect(ctx.rabbitMQ.publishDockRemoved.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.publishDockRemoved(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   }) // end publishDockRemoved
 
   describe('clearContainerMemory', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
+      validJobData = {
         containerId: 'abcd'
       }
-      ctx.rabbitMQ.clearContainerMemory(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(
-        ctx.rabbitMQ.hermesClient.publish,
-        'container.resource.clear',
-        data)
       done()
     })
 
-    it('should throw an error when containerId is missing', function (done) {
-      var data = {}
-      expect(ctx.rabbitMQ.clearContainerMemory.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.clearContainerMemory(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'container.resource.clear',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.clearContainerMemory(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   }) // end clearContainerMemory
 
   describe('killInstanceContainer', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
+      validJobData = {
         containerId: 'abcd',
         instanceId: 'efgh'
       }
-      ctx.rabbitMQ.killInstanceContainer(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(
-        ctx.rabbitMQ.hermesClient.publish,
-        'instance.kill',
-        data)
       done()
     })
 
-    it('should throw an error when containerId is missing', function (done) {
-      var data = { instanceId: 'efgh' }
-      expect(ctx.rabbitMQ.killInstanceContainer.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.killInstanceContainer(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'instance.kill',
+          validJobData)
+        done()
+      })
     })
 
-    it('should throw an error when instanceId is missing', function (done) {
-      var data = { containerId: 'abcd' }
-      expect(ctx.rabbitMQ.killInstanceContainer.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.killInstanceContainer(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   }) // end killInstanceContainer
 
   describe('killIsolation', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
+      validJobData = {
         isolationId: 'efgh',
         triggerRedeploy: true
       }
-      ctx.rabbitMQ.killIsolation(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(
-        ctx.rabbitMQ.hermesClient.publish,
-        'isolation.kill',
-        data)
       done()
     })
 
-    it('should throw an error when isolationId is missing', function (done) {
-      var data = { }
-      expect(ctx.rabbitMQ.killIsolation.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.killIsolation(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'isolation.kill',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.killIsolation(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   }) // end killIsolation
 
   describe('redeployIsolation', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
+      validJobData = {
         isolationId: 'efgh'
       }
-      ctx.rabbitMQ.redeployIsolation(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(
-        ctx.rabbitMQ.hermesClient.publish,
-        'isolation.redeploy',
-        data)
       done()
     })
 
-    it('should throw an error when isolationId is missing', function (done) {
-      var data = { }
-      expect(ctx.rabbitMQ.redeployIsolation.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.redeployIsolation(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'isolation.redeploy',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.redeployIsolation(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   }) // end redeployIsolation
 
   describe('khronosDeleteContainer', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
+      validJobData = {
         containerId: 'efgh',
         dockerHost: '10.10.10.10'
       }
-      ctx.rabbitMQ.khronosDeleteContainer(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(
-        ctx.rabbitMQ.hermesClient.publish,
-        'khronos:containers:delete',
-        data)
       done()
     })
 
-    it('should throw an error when isolationId is missing', function (done) {
-      var data = { }
-      expect(ctx.rabbitMQ.khronosDeleteContainer.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.khronosDeleteContainer(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+          'khronos:containers:delete',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.khronosDeleteContainer(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   }) // end khronosDeleteContainer
 
   describe('instanceContainerErrored', function () {
+    var validJobData
     beforeEach(function (done) {
-      sinon.stub(ctx.rabbitMQ.hermesClient, 'publish')
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx.rabbitMQ.hermesClient.publish.restore()
-      done()
-    })
-
-    it('should publish the job with the correct payload', function (done) {
-      var data = {
+      validJobData = {
         containerId: 'efgh',
         instanceId: '12341234',
         error: new Error('black')
       }
-      ctx.rabbitMQ.instanceContainerErrored(data)
-      sinon.assert.calledOnce(ctx.rabbitMQ.hermesClient.publish)
-      sinon.assert.calledWith(
-        ctx.rabbitMQ.hermesClient.publish,
-        'instance.container.errored',
-        data)
       done()
     })
 
-    it('should throw an error when data is missing', function (done) {
-      var data = { }
-      expect(ctx.rabbitMQ.instanceContainerErrored.bind(ctx.rabbitMQ, data))
-        .to.throw(Error, /^Validation failed/)
-      done()
+    describe('success', function () {
+      it('should create a job', function (done) {
+        rabbitMQ.instanceContainerErrored(validJobData)
+        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
+        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+          'instance.container.errored',
+          validJobData)
+        done()
+      })
+    })
+
+    describe('validation errors', function () {
+      it('should throw the validation error', function (done) {
+        var requiredKeys = Object.keys(validJobData)
+        var count = createCount(requiredKeys.length, done)
+        requiredKeys.forEach(function (key) {
+          var options = clone(validJobData)
+          delete options[key]
+          try {
+            rabbitMQ.instanceContainerErrored(options)
+          } catch (e) {
+            expect(e).to.exist()
+            expect(e.message).match(new RegExp(key))
+          }
+          count.next()
+        })
+      })
     })
   }) // end instanceContainerErrored
 })
