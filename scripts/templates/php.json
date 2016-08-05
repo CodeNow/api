@@ -1,6 +1,6 @@
 {
   "from": "php",
-  "ports": [],
+  "ports": [80,8080],
   "generalCommands": [],
   "defaultMainCommands": [
     "composer install"

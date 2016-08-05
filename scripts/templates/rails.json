@@ -1,6 +1,6 @@
 {
   "from": "ruby",
-  "ports": [],
+  "ports": [3000],
   "templateEnv": [
     "RAILS_VERSION"
   ],

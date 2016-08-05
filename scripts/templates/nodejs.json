@@ -1,6 +1,6 @@
 {
   "from": "nodejs",
-  "ports": [],
+  "ports": [3000],
   "generalCommands": [],
   "defaultMainCommands": [
     "npm install"

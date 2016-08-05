@@ -1,6 +1,6 @@
 {
   "from": "ruby",
-  "ports": [],
+  "ports": [9292],
   "generalCommands": [
     "apt-get update && apt-get install -y mysql-client postgresql-client sqlite3 --no-install-recommends && rm -rf /var/lib/apt/lists/*"
   ],
