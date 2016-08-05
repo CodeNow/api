@@ -16,7 +16,7 @@ var Promise = require('bluebird')
 var TaskFatalError = require('ponos').TaskFatalError
 
 var ContextVersion = require('models/mongo/context-version')
-var ContextVersionService = require('models/services/context-version-service')
+var PermissionService = require('models/services/permission-service')
 var createInstanceContainer = require('workers/create-instance-container')
 var error = require('error')
 var errors = require('errors')
@@ -44,7 +44,7 @@ describe('createInstanceContainer', function () {
       .yieldsAsync(null, ctx.contextVersion)
     sinon.stub(InstanceService, 'createContainer')
       .returns(Promise.resolve())
-    sinon.stub(ContextVersionService, 'checkOwnerAllowed')
+    sinon.stub(PermissionService, 'checkOwnerAllowed')
       .returns(Promise.resolve())
     done()
   })
@@ -52,7 +52,7 @@ describe('createInstanceContainer', function () {
   afterEach(function (done) {
     ContextVersion.findById.restore()
     InstanceService.createContainer.restore()
-    ContextVersionService.checkOwnerAllowed.restore()
+    PermissionService.checkOwnerAllowed.restore()
     done()
   })
 
@@ -90,8 +90,8 @@ describe('createInstanceContainer', function () {
         delete ctx.job.instanceId
         createInstanceContainer(ctx.job).asCallback(function (err) {
           expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('validation failed')
-          expect(err.data.err.message).to.match(/instanceId.*is required/)
+          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err.data.validationError.message).to.match(/instanceId.*is required/)
           done()
         })
       })
@@ -100,8 +100,8 @@ describe('createInstanceContainer', function () {
         delete ctx.job.contextVersionId
         createInstanceContainer(ctx.job).asCallback(function (err) {
           expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('validation failed')
-          expect(err.data.err.message).to.match(/contextVersionId.*is required/)
+          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err.data.validationError.message).to.match(/contextVersionId.*is required/)
           done()
         })
       })
@@ -110,8 +110,8 @@ describe('createInstanceContainer', function () {
         delete ctx.job.ownerUsername
         createInstanceContainer(ctx.job).asCallback(function (err) {
           expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('validation failed')
-          expect(err.data.err.message).to.match(/ownerUsername.*is required/)
+          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err.data.validationError.message).to.match(/ownerUsername.*is required/)
           done()
         })
       })
@@ -120,8 +120,8 @@ describe('createInstanceContainer', function () {
         delete ctx.job.sessionUserGithubId
         createInstanceContainer(ctx.job).asCallback(function (err) {
           expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.contain('validation failed')
-          expect(err.data.err.message).to.match(/sessionUserGithubId.*is required/)
+          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err.data.validationError.message).to.match(/sessionUserGithubId.*is required/)
           done()
         })
       })
@@ -145,8 +145,8 @@ describe('createInstanceContainer', function () {
 
     describe('owner not allowed', function () {
       beforeEach(function (done) {
-        ContextVersionService.checkOwnerAllowed.restore()
-        sinon.stub(ContextVersionService, 'checkOwnerAllowed', function () {
+        PermissionService.checkOwnerAllowed.restore()
+        sinon.stub(PermissionService, 'checkOwnerAllowed', function () {
           return Promise.reject(new errors.OrganizationNotAllowedError('not allowed'))
         })
         done()

@@ -70,7 +70,7 @@ var factory = module.exports = {
           return cb(err)
         }
         if (props.branch) {
-          sinon.stub(instance, 'getMainBranchName').returns('branch1')
+          sinon.stub(instance, 'getMainBranchName').returns(props.branch)
         }
         var hostname = instance.getElasticHostname(username).toLowerCase()
         instance.set({
@@ -282,7 +282,7 @@ var factory = module.exports = {
       props.isolated = VALID_OBJECT_ID
     }
     return {
-      shortHash: shortHash.slice(0, shortHash.indexOf('-')),
+      shortHash: shortHash.slice(0, 6),
       name: name,
       lowerName: name.toLowerCase(),
       owner: {
@@ -295,7 +295,7 @@ var factory = module.exports = {
       },
       isolated: props.isolated,
       isIsolationGroupMaster: props.isIsolationGroupMaster,
-      parent: 'sdf',
+      parent: props.parent || 'sdf',
       build: props.build._id,
       contextVersion: props.cv,
       locked: props.locked,
@@ -304,7 +304,8 @@ var factory = module.exports = {
       env: props.env || [],
       network: {
         hostIp: '127.0.0.1'
-      }
+      },
+      dependencies: props.dependencies || []
     }
   },
   getNextId: function () {

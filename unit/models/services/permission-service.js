@@ -11,10 +11,12 @@ var expect = require('code').expect
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
-var PermisionService = require('models/services/permission-service')
+var PermissionService = require('models/services/permission-service')
 var Github = require('models/apis/github')
+var UserWhitelist = require('models/mongo/user-whitelist')
+var errors = require('errors')
 
-describe('PermisionService', function () {
+describe('PermissionService', function () {
   var sessionUser = {
     accounts: {
       github: {
@@ -34,21 +36,21 @@ describe('PermisionService', function () {
     beforeEach(function (done) {
       sinon.stub(Github.prototype, 'getUserAuthorizedOrgs')
         .yieldsAsync(null, [ { id: '2' } ])
-      sinon.spy(PermisionService, 'isOwnerOf')
-      sinon.spy(PermisionService, 'isModerator')
+      sinon.spy(PermissionService, 'isOwnerOf')
+      sinon.spy(PermissionService, 'isModerator')
       done()
     })
 
     afterEach(function (done) {
       Github.prototype.getUserAuthorizedOrgs.restore()
-      PermisionService.isOwnerOf.restore()
-      PermisionService.isModerator.restore()
+      PermissionService.isOwnerOf.restore()
+      PermissionService.isModerator.restore()
       done()
     })
 
     it('should resolve if an owner', function (done) {
       var model = { owner: { github: '2' } }
-      PermisionService.ensureOwnerOrModerator({
+      PermissionService.ensureOwnerOrModerator({
         accounts: {
           github: {
             id: '2'
@@ -57,15 +59,15 @@ describe('PermisionService', function () {
       }, model)
       .tap(function (checkedModel) {
         expect(model).to.equal(checkedModel)
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledOnce(PermisionService.isModerator)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isModerator)
       })
       .asCallback(done)
     })
 
     it('should resolve if a moderator', function (done) {
       var model = { owner: { github: '2' } }
-      PermisionService.ensureOwnerOrModerator({
+      PermissionService.ensureOwnerOrModerator({
         accounts: {
           github: {
             id: '3'
@@ -75,14 +77,14 @@ describe('PermisionService', function () {
       }, model)
       .tap(function (checkedModel) {
         expect(model).to.equal(checkedModel)
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledOnce(PermisionService.isModerator)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isModerator)
       })
       .asCallback(done)
     })
 
     it('should reject if both checks failed', function (done) {
-      PermisionService.ensureOwnerOrModerator({
+      PermissionService.ensureOwnerOrModerator({
         accounts: {
           github: {
             id: '2'
@@ -94,28 +96,28 @@ describe('PermisionService', function () {
       })
       .catch(function (err) {
         expect(err.message).to.equal('access denied (!isModerator)')
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledOnce(PermisionService.isModerator)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isModerator)
         done()
       })
     })
 
     it('should call isOwnerOf with correct params', function (done) {
       var model = { owner: { github: '1' } }
-      PermisionService.ensureOwnerOrModerator(sessionUser, model)
+      PermissionService.ensureOwnerOrModerator(sessionUser, model)
       .then(function () {
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledWith(PermisionService.isOwnerOf, sessionUser, model)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
+        sinon.assert.calledWith(PermissionService.isOwnerOf, sessionUser, model)
       })
       .asCallback(done)
     })
 
     it('should call isModerator with correct params', function (done) {
       var model = { owner: { github: '1' } }
-      PermisionService.ensureOwnerOrModerator(sessionUser, model)
+      PermissionService.ensureOwnerOrModerator(sessionUser, model)
       .then(function () {
-        sinon.assert.calledOnce(PermisionService.isModerator)
-        sinon.assert.calledWith(PermisionService.isModerator, sessionUser)
+        sinon.assert.calledOnce(PermissionService.isModerator)
+        sinon.assert.calledWith(PermissionService.isModerator, sessionUser)
       })
       .asCallback(done)
     })
@@ -125,23 +127,23 @@ describe('PermisionService', function () {
     beforeEach(function (done) {
       sinon.stub(Github.prototype, 'getUserAuthorizedOrgs')
         .yieldsAsync(null, [ { id: '2' } ])
-      sinon.spy(PermisionService, 'isOwnerOf')
-      sinon.spy(PermisionService, 'isModerator')
-      sinon.spy(PermisionService, 'isHelloRunnableOwnerOf')
+      sinon.spy(PermissionService, 'isOwnerOf')
+      sinon.spy(PermissionService, 'isModerator')
+      sinon.spy(PermissionService, 'isHelloRunnableOwnerOf')
       done()
     })
 
     afterEach(function (done) {
       Github.prototype.getUserAuthorizedOrgs.restore()
-      PermisionService.isOwnerOf.restore()
-      PermisionService.isModerator.restore()
-      PermisionService.isHelloRunnableOwnerOf.restore()
+      PermissionService.isOwnerOf.restore()
+      PermissionService.isModerator.restore()
+      PermissionService.isHelloRunnableOwnerOf.restore()
       done()
     })
 
     it('should resolve if an owner', function (done) {
       var model = { owner: { github: '2' } }
-      PermisionService.ensureModelAccess({
+      PermissionService.ensureModelAccess({
         accounts: {
           github: {
             id: '2'
@@ -150,16 +152,16 @@ describe('PermisionService', function () {
       }, model)
       .tap(function (checkedModel) {
         expect(model).to.equal(checkedModel)
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledOnce(PermisionService.isModerator)
-        sinon.assert.calledOnce(PermisionService.isHelloRunnableOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isModerator)
+        sinon.assert.calledOnce(PermissionService.isHelloRunnableOwnerOf)
       })
       .asCallback(done)
     })
 
     it('should resolve if a moderator', function (done) {
       var model = { owner: { github: '2' } }
-      PermisionService.ensureModelAccess({
+      PermissionService.ensureModelAccess({
         accounts: {
           github: {
             id: '3'
@@ -169,27 +171,27 @@ describe('PermisionService', function () {
       }, model)
       .tap(function (checkedModel) {
         expect(model).to.equal(checkedModel)
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledOnce(PermisionService.isModerator)
-        sinon.assert.calledOnce(PermisionService.isHelloRunnableOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isModerator)
+        sinon.assert.calledOnce(PermissionService.isHelloRunnableOwnerOf)
       })
       .asCallback(done)
     })
 
     it('should resolve if a helloRunnable', function (done) {
       var model = { owner: { github: '2' } }
-      PermisionService.ensureModelAccess(helloRunnable, model)
+      PermissionService.ensureModelAccess(helloRunnable, model)
       .tap(function (checkedModel) {
         expect(model).to.equal(checkedModel)
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledOnce(PermisionService.isModerator)
-        sinon.assert.calledOnce(PermisionService.isHelloRunnableOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isModerator)
+        sinon.assert.calledOnce(PermissionService.isHelloRunnableOwnerOf)
       })
       .asCallback(done)
     })
 
     it('should reject if all checks failed', function (done) {
-      PermisionService.ensureModelAccess({
+      PermissionService.ensureModelAccess({
         accounts: {
           github: {
             id: '2'
@@ -201,39 +203,39 @@ describe('PermisionService', function () {
       })
       .catch(function (err) {
         expect(err.message).to.equal('Access denied (!owner)')
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledOnce(PermisionService.isModerator)
-        sinon.assert.calledOnce(PermisionService.isHelloRunnableOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isModerator)
+        sinon.assert.calledOnce(PermissionService.isHelloRunnableOwnerOf)
         done()
       })
     })
 
     it('should call isOwnerOf with correct params', function (done) {
       var model = { owner: { github: '1' } }
-      PermisionService.ensureModelAccess(sessionUser, model)
+      PermissionService.ensureModelAccess(sessionUser, model)
       .then(function () {
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledWith(PermisionService.isOwnerOf, sessionUser, model)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
+        sinon.assert.calledWith(PermissionService.isOwnerOf, sessionUser, model)
       })
       .asCallback(done)
     })
 
     it('should call isModerator with correct params', function (done) {
       var model = { owner: { github: '1' } }
-      PermisionService.ensureModelAccess(sessionUser, model)
+      PermissionService.ensureModelAccess(sessionUser, model)
       .then(function () {
-        sinon.assert.calledOnce(PermisionService.isModerator)
-        sinon.assert.calledWith(PermisionService.isModerator, sessionUser)
+        sinon.assert.calledOnce(PermissionService.isModerator)
+        sinon.assert.calledWith(PermissionService.isModerator, sessionUser)
       })
       .asCallback(done)
     })
 
     it('should call isHelloRunnableOwnerOf with correct params', function (done) {
       var model = { owner: { github: '1' } }
-      PermisionService.ensureModelAccess(sessionUser, model)
+      PermissionService.ensureModelAccess(sessionUser, model)
       .then(function () {
-        sinon.assert.calledOnce(PermisionService.isHelloRunnableOwnerOf)
-        sinon.assert.calledWith(PermisionService.isHelloRunnableOwnerOf, sessionUser, model)
+        sinon.assert.calledOnce(PermissionService.isHelloRunnableOwnerOf)
+        sinon.assert.calledWith(PermissionService.isHelloRunnableOwnerOf, sessionUser, model)
       })
       .asCallback(done)
     })
@@ -241,7 +243,7 @@ describe('PermisionService', function () {
 
   describe('isModerator', function () {
     it('should reject if user is not moderator', function (done) {
-      PermisionService.isModerator({
+      PermissionService.isModerator({
         accounts: {
           github: {
             id: '2'
@@ -258,7 +260,7 @@ describe('PermisionService', function () {
     })
 
     it('should resolve if user is moderator', function (done) {
-      PermisionService.isModerator({
+      PermissionService.isModerator({
         accounts: {
           github: {
             id: '2'
@@ -272,17 +274,17 @@ describe('PermisionService', function () {
 
   describe('isHelloRunnableOwnerOf', function (done) {
     it('should resolve if HELLO_RUNNABLE_GITHUB_ID is the same as owner', function (done) {
-      PermisionService.isHelloRunnableOwnerOf(sessionUser, { owner: { github: process.env.HELLO_RUNNABLE_GITHUB_ID } })
+      PermissionService.isHelloRunnableOwnerOf(sessionUser, { owner: { github: process.env.HELLO_RUNNABLE_GITHUB_ID } })
       .asCallback(done)
     })
 
     it('should resolve if sessionUser is hellorunnable', function (done) {
-      PermisionService.isHelloRunnableOwnerOf(helloRunnable, { owner: { github: '1' } })
+      PermissionService.isHelloRunnableOwnerOf(helloRunnable, { owner: { github: '1' } })
       .asCallback(done)
     })
 
     it('should reject if sessionUser do not have access to the model', function (done) {
-      PermisionService.isHelloRunnableOwnerOf({
+      PermissionService.isHelloRunnableOwnerOf({
         accounts: {
           github: {
             id: '2'
@@ -312,17 +314,17 @@ describe('PermisionService', function () {
     })
 
     it('should resolve if sessionUser is the same as owner', function (done) {
-      PermisionService.isOwnerOf(sessionUser, { owner: { github: '1' } })
+      PermissionService.isOwnerOf(sessionUser, { owner: { github: '1' } })
       .asCallback(done)
     })
 
     it('should resolve if sessionUser is the same as owner', function (done) {
-      PermisionService.isOwnerOf(sessionUser, { owner: { github: '1' } })
+      PermissionService.isOwnerOf(sessionUser, { owner: { github: '1' } })
       .asCallback(done)
     })
 
     it('should resolve if sessionUser shares an org', function (done) {
-      PermisionService.isOwnerOf({
+      PermissionService.isOwnerOf({
         accounts: {
           github: {
             id: '2'
@@ -336,7 +338,7 @@ describe('PermisionService', function () {
     })
 
     it('should reject if sessionUser do not have access to the model', function (done) {
-      PermisionService.isOwnerOf({
+      PermissionService.isOwnerOf({
         accounts: {
           github: {
             id: '2'
@@ -353,6 +355,63 @@ describe('PermisionService', function () {
         expect(err.message).to.equal('Access denied (!owner)')
         done()
       })
+    })
+  })
+  describe('checkOwnerAllowed', function () {
+    var contextVersion = {
+      owner: {
+        github: 1337
+      }
+    }
+
+    beforeEach(function (done) {
+      sinon.stub(UserWhitelist, 'findOneAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      UserWhitelist.findOneAsync.restore()
+      done()
+    })
+
+    it('should reject without organization name', function (done) {
+      PermissionService.checkOwnerAllowed({})
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/model.*not.*owner github id/i)
+          done()
+        })
+    })
+
+    it('should reject if the organization was not found', function (done) {
+      UserWhitelist.findOneAsync.returns(Promise.resolve(null))
+      PermissionService.checkOwnerAllowed(contextVersion)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.be.instanceOf(errors.OrganizationNotFoundError)
+          expect(err.message).to.match(/organization not found/i)
+          done()
+        })
+    })
+
+    it('should reject if the organizartion is not allowed', function (done) {
+      UserWhitelist.findOneAsync.returns(Promise.resolve({ allowed: false }))
+      PermissionService.checkOwnerAllowed(contextVersion)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.be.instanceOf(errors.OrganizationNotAllowedError)
+          expect(err.message).to.match(/org.*not.*allowed/i)
+          done()
+        })
+    })
+
+    it('should resolve if the organization is allowed', function (done) {
+      UserWhitelist.findOneAsync.returns(Promise.resolve({ allowed: true }))
+      PermissionService.checkOwnerAllowed(contextVersion)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          done()
+        })
     })
   })
 })

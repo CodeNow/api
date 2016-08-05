@@ -18,7 +18,7 @@ var sinon = require('sinon')
 
 var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
-var ContextVersionService = require('models/services/context-version-service')
+var PermissionService = require('models/services/permission-service')
 var Docker = require('models/apis/docker')
 var errors = require('errors')
 var joi = require('utils/joi')
@@ -69,7 +69,7 @@ describe('ContainerImageBuilderCreate', function () {
       .returns(Promise.resolve(mockContainer))
     sinon.stub(Docker, 'getDockerTag')
       .returns(mockDockerTag)
-    sinon.stub(ContextVersionService, 'checkOwnerAllowed')
+    sinon.stub(PermissionService, 'checkOwnerAllowed')
       .returns(Promise.resolve())
     done()
   })
@@ -83,7 +83,7 @@ describe('ContainerImageBuilderCreate', function () {
     mockContextVersion.populateAsync.restore()
     Docker.prototype.createImageBuilderAsync.restore()
     Docker.getDockerTag.restore()
-    ContextVersionService.checkOwnerAllowed.restore()
+    PermissionService.checkOwnerAllowed.restore()
     done()
   })
 
@@ -122,15 +122,7 @@ describe('ContainerImageBuilderCreate', function () {
       it('should set the correct message', function (done) {
         ContainerImageBuilderCreate({}).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err.message).to.match(/failed.*validation/i)
-          done()
-        })
-      })
-
-      it('should set the original error in the data', function (done) {
-        ContainerImageBuilderCreate({}).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.data.err).to.equal(validationError)
+          expect(err.message).to.match(/Invalid Job/i)
           done()
         })
       })
@@ -260,8 +252,8 @@ describe('ContainerImageBuilderCreate', function () {
 
   describe('checkAllowed', function () {
     beforeEach(function (done) {
-      ContextVersionService.checkOwnerAllowed.restore()
-      sinon.stub(ContextVersionService, 'checkOwnerAllowed', function () {
+      PermissionService.checkOwnerAllowed.restore()
+      sinon.stub(PermissionService, 'checkOwnerAllowed', function () {
         return Promise.reject(new errors.OrganizationNotAllowedError('not allowed'))
       })
       done()
@@ -384,11 +376,6 @@ describe('ContainerImageBuilderCreate', function () {
           .to.equal('container.image-builder.create')
         done()
       })
-
-      it('should set the correct query data', function (done) {
-        expect(rejectError.data.contextId).to.equal(validJob.contextId)
-        done()
-      })
     }) // end 'on context not found'
 
     describe('on context version not found', function () {
@@ -419,11 +406,6 @@ describe('ContainerImageBuilderCreate', function () {
       it('should set the correct queue data', function (done) {
         expect(rejectError.data.queue)
           .to.equal('container.image-builder.create')
-        done()
-      })
-
-      it('should set the correct query data', function (done) {
-        expect(rejectError.data.query).to.deep.equal(expectedCVQuery)
         done()
       })
     }) // end 'on context version not found'

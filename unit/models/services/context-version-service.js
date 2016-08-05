@@ -10,7 +10,6 @@ var it = lab.it
 
 var Code = require('code')
 var expect = Code.expect
-var errors = require('errors')
 var Promise = require('bluebird')
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)

@@ -100,7 +100,7 @@ describe('Context Version Delete Worker', function () {
             expect(err).to.be.instanceOf(TaskFatalError)
             expect(err.data.validationError).to.exist()
             expect(err.data.validationError.message)
-              .to.match(/job.+required/)
+              .to.match(/context-version.delete.job.+required/)
             done()
           })
         })

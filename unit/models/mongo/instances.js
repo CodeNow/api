@@ -11,7 +11,6 @@ var expect = Code.expect
 var sinon = require('sinon')
 var keypather = require('keypather')()
 
-var Neo4j = require('runna4j')
 var error = require('error')
 var mongoose = require('mongoose')
 var assign = require('101/assign')
@@ -140,6 +139,67 @@ describe('Instance Model Tests', function () {
         expect(err).to.not.exist()
         expect(instance).to.be.null()
         sinon.assert.calledOnce(Instance.findOne)
+        done()
+      })
+    })
+  })
+
+  describe('setContainerError', function () {
+    var testInstance = 'tester'
+    var instanceId = '12312341234'
+    var containerId = '12412424235'
+    var testErr = 'something bad happened'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdateAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAndUpdateAsync.restore()
+      done()
+    })
+
+    it('should set error on instance', function (done) {
+      Instance.findOneAndUpdateAsync.resolves(testInstance)
+      Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.equal(testInstance)
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+          _id: instanceId,
+          'container.dockerContainer': containerId
+        }, {
+          $set: {
+            'container.error.message': testErr,
+            'container.inspect.State.Dead': false,
+            'container.inspect.State.Error': testErr,
+            'container.inspect.State.OOMKilled': false,
+            'container.inspect.State.Paused': false,
+            'container.inspect.State.Restarting': false,
+            'container.inspect.State.Running': false,
+            'container.inspect.State.Starting': false,
+            'container.inspect.State.Status': 'lost'
+          }
+        })
+        done()
+      })
+    })
+
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      Instance.findOneAndUpdateAsync.rejects(mongoError)
+      Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        done()
+      })
+    })
+
+    it('should return null if instance was not found', function (done) {
+      Instance.findOneAndUpdateAsync.resolves(null, null)
+      Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
+        expect(err.output.statusCode).to.equal(404)
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
         done()
       })
     })
@@ -415,7 +475,7 @@ describe('Instance Model Tests', function () {
     })
 
     it('should not invalidate without a elasticHostname', function (done) {
-      delete instance.elasticHostname
+      delete instance._doc.elasticHostname
       instance.invalidateContainerDNS()
       sinon.assert.notCalled(pubsub.publish)
       done()
@@ -590,7 +650,7 @@ describe('Instance Model Tests', function () {
     var instance
 
     beforeEach(function (done) {
-      instance = mongoFactory.createNewInstance('wooosh')
+      instance = mongoFactory.createNewInstance('wooosh', { hostname: 'wooosh-staging-' + ownerName + '.runnableapp.com' })
       sinon.spy(instance, 'invalidateContainerDNS')
       done()
     })
@@ -624,12 +684,18 @@ describe('Instance Model Tests', function () {
       var masterInstances
       beforeEach(function (done) {
         masterInstances = [
-          mongoFactory.createNewInstance('hello', {masterPod: true}),
-          mongoFactory.createNewInstance('adelle', {masterPod: true})
+          mongoFactory.createNewInstance('hello', {
+            masterPod: true,
+            hostname: 'hello-staging-' + ownerName + '.runnableapp.com'
+          }),
+          mongoFactory.createNewInstance('adelle', {
+            masterPod: true,
+            hostname: 'adelle-staging-' + ownerName + '.runnableapp.com'
+          })
         ]
         sinon.stub(Instance, 'find').yieldsAsync(null, masterInstances)
-        sinon.stub(instance, 'addDependency').yieldsAsync()
-        sinon.stub(instance, 'removeDependency').yieldsAsync()
+        sinon.stub(instance, 'addDependency').resolves()
+        sinon.stub(instance, 'removeDependency').resolves()
         done()
       })
       afterEach(function (done) {
@@ -651,14 +717,10 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledTwice(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[0].shortHash),
-              'hello-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[0].shortHash)
             )
             sinon.assert.calledWith(instance.addDependency.getCall(1),
-              sinon.match.has('shortHash', masterInstances[1].shortHash),
-              'adelle-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[1].shortHash)
             )
             sinon.assert.notCalled(instance.removeDependency)
             done()
@@ -666,9 +728,8 @@ describe('Instance Model Tests', function () {
         })
         it('should not allow it to add itself', function (done) {
           sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
-          instance.hostname = 'hello-staging-' + ownerName + '.runnableapp.com'
           instance.env = [
-            'as=hello-staging-' + ownerName + '.runnableapp.com'
+            'as=' + instance.elasticHostname
           ]
           instance.setDependenciesFromEnvironment(ownerName, function (err) {
             if (err) {
@@ -692,9 +753,7 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledOnce(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[0].shortHash),
-              'hello-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[0].shortHash)
             )
             sinon.assert.notCalled(instance.removeDependency)
             done()
@@ -712,8 +771,7 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledOnce(instance.removeDependency)
             sinon.assert.calledWith(instance.removeDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[0].shortHash),
-              sinon.match.func
+              masterInstances[0]._id
             )
             sinon.assert.notCalled(instance.addDependency)
             done()
@@ -728,12 +786,10 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledTwice(instance.removeDependency)
             sinon.assert.calledWith(instance.removeDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[0].shortHash),
-              sinon.match.func
+              masterInstances[0]._id
             )
             sinon.assert.calledWith(instance.removeDependency.getCall(1),
-              sinon.match.has('shortHash', masterInstances[1].shortHash),
-              sinon.match.func
+              masterInstances[1]._id
             )
             sinon.assert.notCalled(instance.addDependency)
             done()
@@ -751,23 +807,32 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledOnce(instance.removeDependency)
             sinon.assert.calledWith(instance.removeDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[1].shortHash),
-              sinon.match.func
+               masterInstances[1]._id
             )
             sinon.assert.calledOnce(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[0].shortHash),
-              'hello-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[0].shortHash)
             )
             done()
           })
         })
         it('should remove the existing one, and add the new one', function (done) {
-          masterInstances.push(mongoFactory.createNewInstance('cheese', {masterPod: true}))   // 2
-          masterInstances.push(mongoFactory.createNewInstance('chicken', {masterPod: true}))  // 3
-          masterInstances.push(mongoFactory.createNewInstance('beef', {masterPod: true}))     // 4
-          masterInstances.push(mongoFactory.createNewInstance('potatoes', {masterPod: true})) // 5
+          masterInstances.push(mongoFactory.createNewInstance('cheese', {
+            masterPod: true,
+            hostname: 'cheese-staging-' + ownerName + '.runnableapp.com'
+          }))   // 2
+          masterInstances.push(mongoFactory.createNewInstance('chicken', {
+            masterPod: true,
+            hostname: 'chicken-staging-' + ownerName + '.runnableapp.com'
+          }))  // 3
+          masterInstances.push(mongoFactory.createNewInstance('beef', {
+            masterPod: true,
+            hostname: 'beef-staging-' + ownerName + '.runnableapp.com'
+          }))     // 4
+          masterInstances.push(mongoFactory.createNewInstance('potatoes', {
+            masterPod: true,
+            hostname: 'potatoes-staging-' + ownerName + '.runnableapp.com'
+          })) // 5
           sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
           instance.env = [
             'df=hello-staging-' + ownerName + '.runnableapp.com', // keep masterInstance[0]
@@ -781,23 +846,17 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledTwice(instance.removeDependency)
             sinon.assert.calledWith(instance.removeDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[1].shortHash),
-              sinon.match.func
+             masterInstances[1]._id
             )
             sinon.assert.calledWith(instance.removeDependency.getCall(1),
-              sinon.match.has('shortHash', masterInstances[2].shortHash),
-              sinon.match.func
+              masterInstances[2]._id
             )
             sinon.assert.calledTwice(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[3].shortHash),
-              'chicken-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[3].shortHash)
             )
             sinon.assert.calledWith(instance.addDependency.getCall(1),
-              sinon.match.has('shortHash', masterInstances[5].shortHash),
-              'potatoes-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[5].shortHash)
             )
             done()
           })
@@ -828,24 +887,32 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledTwice(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[0].shortHash),
-              'hello-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[0].shortHash)
             )
             sinon.assert.calledWith(instance.addDependency.getCall(1),
-              sinon.match.has('shortHash', masterInstances[1].shortHash),
-              'adelle-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[1].shortHash)
             )
             sinon.assert.notCalled(instance.removeDependency)
             done()
           })
         })
         it('should remove the existing one, and add the new one', function (done) {
-          masterInstances.push(mongoFactory.createNewInstance('cheese', {masterPod: true}))   // 2
-          masterInstances.push(mongoFactory.createNewInstance('chicken', {masterPod: true}))  // 3
-          masterInstances.push(mongoFactory.createNewInstance('beef', {masterPod: true}))     // 4
-          masterInstances.push(mongoFactory.createNewInstance('potatoes', {masterPod: true})) // 5
+          masterInstances.push(mongoFactory.createNewInstance('cheese', {
+            masterPod: true,
+            hostname: 'cheese-staging-' + ownerName + '.runnableapp.com'
+          }))   // 2
+          masterInstances.push(mongoFactory.createNewInstance('chicken', {
+            masterPod: true,
+            hostname: 'chicken-staging-' + ownerName + '.runnableapp.com'
+          }))  // 3
+          masterInstances.push(mongoFactory.createNewInstance('beef', {
+            masterPod: true,
+            hostname: 'beef-staging-' + ownerName + '.runnableapp.com'
+          }))     // 4
+          masterInstances.push(mongoFactory.createNewInstance('potatoes', {
+            masterPod: true,
+            hostname: 'potatoes-staging-' + ownerName + '.runnableapp.com'
+          })) // 5
           sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
           instance.contextVersion.appCodeVersions[0].transformRules.replace = [
             {
@@ -876,23 +943,17 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledTwice(instance.removeDependency)
             sinon.assert.calledWith(instance.removeDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[1].shortHash),
-              sinon.match.func
+              masterInstances[1]._id
             )
             sinon.assert.calledWith(instance.removeDependency.getCall(1),
-              sinon.match.has('shortHash', masterInstances[2].shortHash),
-              sinon.match.func
+              masterInstances[2]._id
             )
             sinon.assert.calledTwice(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[3].shortHash),
-              'chicken-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[3].shortHash)
             )
             sinon.assert.calledWith(instance.addDependency.getCall(1),
-              sinon.match.has('shortHash', masterInstances[5].shortHash),
-              'potatoes-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[5].shortHash)
             )
             done()
           })
@@ -900,10 +961,22 @@ describe('Instance Model Tests', function () {
       })
       describe('Working with both envs and FnR', function () {
         it('should remove the existing one, and add the new one', function (done) {
-          masterInstances.push(mongoFactory.createNewInstance('cheese', {masterPod: true}))   // 2
-          masterInstances.push(mongoFactory.createNewInstance('chicken', {masterPod: true}))  // 3
-          masterInstances.push(mongoFactory.createNewInstance('beef', {masterPod: true}))     // 4
-          masterInstances.push(mongoFactory.createNewInstance('potatoes', {masterPod: true})) // 5
+          masterInstances.push(mongoFactory.createNewInstance('cheese', {
+            masterPod: true,
+            hostname: 'cheese-staging-' + ownerName + '.runnableapp.com'
+          }))   // 2
+          masterInstances.push(mongoFactory.createNewInstance('chicken', {
+            masterPod: true,
+            hostname: 'chicken-staging-' + ownerName + '.runnableapp.com'
+          }))  // 3
+          masterInstances.push(mongoFactory.createNewInstance('beef', {
+            masterPod: true,
+            hostname: 'beef-staging-' + ownerName + '.runnableapp.com'
+          }))     // 4
+          masterInstances.push(mongoFactory.createNewInstance('potatoes', {
+            masterPod: true,
+            hostname: 'potatoes-staging-' + ownerName + '.runnableapp.com'
+          })) // 5
           sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
           instance.contextVersion.appCodeVersions[0].transformRules.replace = [
             {
@@ -931,23 +1004,17 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledTwice(instance.removeDependency)
             sinon.assert.calledWith(instance.removeDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[1].shortHash),
-              sinon.match.func
+              masterInstances[1]._id
             )
             sinon.assert.calledWith(instance.removeDependency.getCall(1),
-              sinon.match.has('shortHash', masterInstances[2].shortHash),
-              sinon.match.func
+              masterInstances[2]._id
             )
             sinon.assert.calledTwice(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('shortHash', masterInstances[5].shortHash),
-              'potatoes-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[5].shortHash)
             )
             sinon.assert.calledWith(instance.addDependency.getCall(1),
-              sinon.match.has('shortHash', masterInstances[3].shortHash),
-              'chicken-staging-' + ownerName + '.runnableapp.com',
-              sinon.match.func
+              sinon.match.has('shortHash', masterInstances[3].shortHash)
             )
             done()
           })
@@ -962,22 +1029,23 @@ describe('Instance Model Tests', function () {
 
     beforeEach(function (done) {
       sinon.spy(instance, 'invalidateContainerDNS')
-      sinon.stub(Neo4j.prototype, 'deleteConnection').yieldsAsync()
+      sinon.stub(Instance, 'findByIdAndUpdateAsync').resolves(instance)
       done()
     })
 
     afterEach(function (done) {
       instance.invalidateContainerDNS.restore()
-      Neo4j.prototype.deleteConnection.restore()
+      Instance.findByIdAndUpdateAsync.restore()
       done()
     })
 
     it('should invalidate dns cache entries', function (done) {
-      instance.removeDependency(dependant, function (err) {
-        if (err) { done(err) }
-        expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
-        done()
-      })
+      instance.removeDependency(dependant._id)
+        .asCallback(function (err) {
+          if (err) { done(err) }
+          expect(instance.invalidateContainerDNS.calledOnce).to.be.true()
+          done()
+        })
     })
   })
 
@@ -1748,7 +1816,8 @@ describe('Instance Model Tests', function () {
     it('should query the database', function (done) {
       Instance.findIsolationMaster(id, function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(
+        sinon.assert.calledOnce(Instance.findOne)
+        sinon.assert.calledWith(
           Instance.findOne,
           {
             isolated: id,
@@ -1786,11 +1855,11 @@ describe('Instance Model Tests', function () {
     it('should query the database', function (done) {
       Instance.findInstancesInIsolationWithSameRepoAndBranch(id, repo, branch, function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
           Instance.find,
           {
             isolated: id,
-            isIsolationGroupMaster: { $ne: true },
             'contextVersion.appCodeVersions': {
               $elemMatch: {
                 lowerRepo: repo.toLowerCase(),
@@ -1818,7 +1887,6 @@ describe('Instance Model Tests', function () {
   describe('findInstancesLinkedToBranch', function () {
     var repo = 'repoName'
     var branch = 'branchName'
-    var contextId = newObjectId()
     beforeEach(function (done) {
       sinon.stub(Instance, 'find').yieldsAsync(null)
       done()
@@ -1829,13 +1897,12 @@ describe('Instance Model Tests', function () {
     })
 
     it('should query the database', function (done) {
-      Instance.findInstancesLinkedToBranch(repo, branch, contextId, function (err) {
+      Instance.findInstancesLinkedToBranch(repo, branch, function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Instance.find)
         sinon.assert.calledWith(
           Instance.find,
           {
-            'contextVersion.context': contextId,
             'contextVersion.appCodeVersions': {
               $elemMatch: {
                 lowerRepo: repo.toLowerCase(),
@@ -1850,33 +1917,12 @@ describe('Instance Model Tests', function () {
     })
 
     it('should not add the context ID if not passed', function (done) {
-      Instance.findInstancesLinkedToBranch(repo, branch, null, function (err) {
+      Instance.findInstancesLinkedToBranch(repo, branch, function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Instance.find)
         sinon.assert.calledWith(
           Instance.find,
           {
-            'contextVersion.appCodeVersions': {
-              $elemMatch: {
-                lowerRepo: repo.toLowerCase(),
-                lowerBranch: branch.toLowerCase(),
-                additionalRepo: { $ne: true }
-              }
-            }
-          }
-        )
-        done()
-      })
-    })
-
-    it('should handle the context ID being a string', function (done) {
-      Instance.findInstancesLinkedToBranch(repo, branch, contextId.toString(), function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(Instance.find)
-        sinon.assert.calledWith(
-          Instance.find,
-          {
-            'contextVersion.context': contextId,
             'contextVersion.appCodeVersions': {
               $elemMatch: {
                 lowerRepo: repo.toLowerCase(),
@@ -1893,11 +1939,81 @@ describe('Instance Model Tests', function () {
     it('should throw any database errors', function (done) {
       var dbErr = new Error('MongoErr')
       Instance.find.yieldsAsync(dbErr)
-      Instance.findInstancesLinkedToBranch(repo, branch, contextId, function (err) {
+      Instance.findInstancesLinkedToBranch(repo, branch, function (err) {
         expect(err).to.exist()
         expect(err).to.equal(dbErr)
         done()
       })
+    })
+  })
+
+  describe('findInstancesForBranchAndBuildHash', function () {
+    var repo = 'repoName'
+    var branch = 'branchName'
+    var contextId = newObjectId()
+    var buildHash = 'build-hash'
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'find').yieldsAsync(null)
+      done()
+    })
+    afterEach(function (done) {
+      Instance.find.restore()
+      done()
+    })
+
+    it('should query the database', function (done) {
+      Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, buildHash)
+      .tap(function () {
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
+          Instance.find,
+          {
+            'contextVersion.context': contextId,
+            'contextVersion.build.hash': buildHash,
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                lowerBranch: branch.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          }
+        )
+      })
+      .asCallback(done)
+    })
+
+    it('should query the database without build hash if null', function (done) {
+      Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, null)
+      .tap(function () {
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
+          Instance.find,
+          {
+            'contextVersion.context': contextId,
+            'contextVersion.build.hash': { $exists: false },
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                lowerBranch: branch.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          }
+        )
+      })
+      .asCallback(done)
+    })
+
+    it('should throw any database errors', function (done) {
+      var dbErr = new Error('MongoErr')
+      Instance.find.yieldsAsync(dbErr)
+      Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, buildHash)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(dbErr.message)
+          done()
+        })
     })
   })
 })

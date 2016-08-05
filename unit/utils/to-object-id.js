@@ -10,10 +10,7 @@ var expect = Code.expect
 var ObjectId = require('mongoose').Types.ObjectId
 var toObjectId = require('objectid')
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('to-object-id: ' + moduleName, function () {
+describe('to-object-id unit test', function () {
   it('should return new ObjectId from string', function (done) {
     var objId = toObjectId('5616f6cbed85912200c264b2')
     expect(objId.toString()).to.equal('5616f6cbed85912200c264b2')

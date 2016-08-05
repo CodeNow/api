@@ -228,16 +228,10 @@ function restoreAllMethods () {
     delete originalMethods[key]
   })
 }
-var ExpressRequest = require('express-request')
-function isLoopback (self) {
-  return self.opts.client.request instanceof ExpressRequest
-}
 function mocksForMethods (Class, mockMap) {
   Object.keys(mockMap).forEach(function (method) {
     proxyMethod(Class, method, function () {
-      if (!isLoopback(this)) {
-        mockMap[method].apply(this, arguments)
-      }
+      mockMap[method].apply(this, arguments)
     })
   })
 }
