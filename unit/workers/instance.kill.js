@@ -144,7 +144,7 @@ describe('Workers: Instance Kill', function () {
     Docker.prototype.killContainerAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
-      expect(err).to.be.instanceOf(TaskFatalError)
+      expect(err).to.be.instanceOf(WorkerStopError)
       expect(err.message).to.equal('instance.kill: Container is not running')
       done()
     })

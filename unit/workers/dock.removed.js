@@ -320,7 +320,7 @@ describe('Worker: dock.removed unit test', function () {
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal('dock.removed: Organization is not whitelisted, no need to redeploy')
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             done()
           })
       })
@@ -332,7 +332,7 @@ describe('Worker: dock.removed unit test', function () {
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal('dock.removed: Organization is not allowed, no need to redeploy')
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             done()
           })
       })
@@ -416,7 +416,7 @@ describe('Worker: dock.removed unit test', function () {
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal('dock.removed: Organization is not whitelisted, no need to rebuild')
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             done()
           })
       })
@@ -428,7 +428,7 @@ describe('Worker: dock.removed unit test', function () {
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal('dock.removed: Organization is not allowed, no need to rebuild')
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             done()
           })
       })

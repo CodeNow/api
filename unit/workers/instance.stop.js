@@ -171,7 +171,7 @@ describe('Workers: Instance Stop', function () {
     rabbitMQ.instanceContainerErrored.resolves()
     Docker.prototype.stopContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskFatalError)
+      expect(err).to.be.an.instanceOf(WorkerStopError)
       expect(err.message).to.contain('Please rebuild without cache')
       sinon.assert.calledOnce(rabbitMQ.instanceContainerErrored)
       sinon.assert.calledWith(rabbitMQ.instanceContainerErrored, {

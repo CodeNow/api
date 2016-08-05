@@ -153,10 +153,10 @@ describe('Workers: Instance Start', function () {
     })
   })
 
-  it('should TaskError if docker startContainer 404', function (done) {
+  it('should WorkerError if docker startContainer 404', function (done) {
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskError)
+      expect(err).to.be.an.instanceOf(WorkerError)
       expect(err.message).to.contain('container does not exist')
       done()
     })
@@ -171,14 +171,14 @@ describe('Workers: Instance Start', function () {
     })
   })
 
-  it('should TaskFatalError if docker startContainer 404 and past 5 min', function (done) {
+  it('should WorkerStopError if docker startContainer 404 and past 5 min', function (done) {
     testInstance.container.inspect = {
       Created: 1
     }
     rabbitMQ.instanceContainerErrored.resolves()
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskFatalError)
+      expect(err).to.be.an.instanceOf(WorkerStopError)
       expect(err.message).to.contain('Please rebuild without cache')
       done()
     })
@@ -192,7 +192,7 @@ describe('Workers: Instance Start', function () {
     rabbitMQ.instanceContainerErrored.resolves()
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskFatalError)
+      expect(err).to.be.an.instanceOf(WorkerStopError)
       expect(err.message).to.contain('Please rebuild without cache')
       sinon.assert.calledOnce(rabbitMQ.instanceContainerErrored)
       sinon.assert.calledWith(rabbitMQ.instanceContainerErrored, {
