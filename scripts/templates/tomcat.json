@@ -1,0 +1,13 @@
+{
+  "from": "tomcat",
+  "defaultTag": "8-jre7",
+  "ports": [8080],
+  "env": {},
+  "generalCommands": [],
+  "defaultMainCommands": [
+    "catalina.sh run"
+  ],
+  "defaultWorkDir": "",
+  "cmd": "",
+  "entryPoint": ""
+}
