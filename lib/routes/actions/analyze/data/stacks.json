@@ -20,7 +20,7 @@
       "6"
     ],
     "defaultVersion": "argon",
-    "ports": "80, 8000, 8080, 3000",
+    "ports": "3000, 80",
     "startCommand": ["npm start", "node app.js"],
     "preEnvMarker": "process.env",
     "postEnvMarker": "",
@@ -72,7 +72,7 @@
       "2"
     ],
     "defaultVersion": "2.3",
-    "ports": "3000, 9292, 80",
+    "ports": "9292, 80",
     "startCommand": ["/bin/bash -l -c 'bundle exec rake server'", "/bin/bash -l -c 'ruby main.rb'"],
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']",
@@ -144,7 +144,7 @@
       "7-fpm"
     ],
     "defaultVersion": "5.6-apache",
-    "ports": "80, 8080, 8000",
+    "ports": "8080, 8000",
     "startCommand": ["apache2 -DFOREGROUND"],
     "preEnvMarker": "",
     "postEnvMarker": "",
