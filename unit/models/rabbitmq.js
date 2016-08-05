@@ -3,17 +3,19 @@
  */
 'use strict'
 
-var EventEmitter = require('events').EventEmitter
-var util = require('util')
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var noop = require('101/noop')
-var sinon = require('sinon')
-var Code = require('code')
 var clone = require('101/clone')
+var Code = require('code')
 var createCount = require('callback-count')
-var rabbitMQ = require('models/rabbitmq')
+var EventEmitter = require('events').EventEmitter
 var hermes = require('runnable-hermes')
+var Lab = require('lab')
+var noop = require('101/noop')
+var Promise = require('bluebird')
+var rabbitMQ = require('models/rabbitmq')
+var sinon = require('sinon')
+var util = require('util')
+
+var lab = exports.lab = Lab.script()
 
 var it = lab.it
 var describe = lab.describe
@@ -33,7 +35,11 @@ describe('RabbitMQ Model: ' + moduleName, function () {
   })
 
   describe('close', function () {
-    it('should just callback if the rabbitmq is not started', function (done) {
+    it('should call start', function (done) {
+      ctx.rabbitMQ._server = {
+        stop: sinon.stub().returns(Promise.resolve())
+      }
+      console.log('rabbitMQ', rabbitMQ._server)
       ctx.rabbitMQ.close(done)
     })
   })
