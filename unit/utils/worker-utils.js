@@ -73,7 +73,7 @@ describe('worker utils unit test', function () {
       } catch (err) {
         expect(err).to.be.instanceOf(WorkerStopError)
         expect(err.message).to.equal('Instance not found')
-        expect(err.data.query).to.equal(query)
+        expect(err.data.extra).to.equal(query)
         done()
       }
     })

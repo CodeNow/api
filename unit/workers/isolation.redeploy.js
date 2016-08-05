@@ -106,7 +106,7 @@ describe('Workers: Isolation Redeploy', function () {
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err).to.be.an.instanceOf(WorkerStopError)
-      expect(err.message).to.equal('Isolation in state killed with redeployOnKilled not found')
+      expect(err.message).to.equal('Isolation not found')
       done()
     })
   })

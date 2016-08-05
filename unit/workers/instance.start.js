@@ -147,8 +147,7 @@ describe('Workers: Instance Start', function () {
     Docker.prototype.startContainerAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
-      expect(err).to.be.instanceOf(WorkerStopError)
-      expect(err.message).to.equal('ContextVersion not found')
+      expect(err).to.deep.equal(error)
       done()
     })
   })
@@ -163,7 +162,7 @@ describe('Workers: Instance Start', function () {
   })
 
   it('should WorkerError if docker startContainer 404', function (done) {
-    Docker.prototype.startUserContainerAsync.rejects(Boom.create(404, 'b'))
+    Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(WorkerError)
       expect(err.message).to.contain('container does not exist')
@@ -188,7 +187,7 @@ describe('Workers: Instance Start', function () {
     testInstance.container.inspect = {
       Created: 1
     }
-    var testError = 'instance.start: Sorry, your container got lost. Please rebuild without cache'
+    var testError = 'Sorry, your container got lost. Please rebuild without cache'
     rabbitMQ.instanceContainerErrored.resolves()
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {

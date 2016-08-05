@@ -158,7 +158,7 @@ describe('Workers: Instance Stop', function () {
     Docker.prototype.stopContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(WorkerStopError)
-      expect(err.message).to.contain('container does not exist')
+      expect(err.message).to.contain('Sorry, your container got lost. Please rebuild without cache')
       done()
     })
   })
@@ -167,7 +167,7 @@ describe('Workers: Instance Stop', function () {
     testInstance.container.inspect = {
       Created: 1
     }
-    var testError = 'instance.stop: Sorry, your container got lost. Please rebuild without cache'
+    var testError = 'Sorry, your container got lost. Please rebuild without cache'
     rabbitMQ.instanceContainerErrored.resolves()
     Docker.prototype.stopContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {

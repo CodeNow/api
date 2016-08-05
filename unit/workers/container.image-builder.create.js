@@ -130,7 +130,7 @@ describe('ContainerImageBuilderCreate', function () {
       it('should set the original error in the data', function (done) {
         ContainerImageBuilderCreate({}).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err.data.err).to.equal(validationError)
+          expect(err.data.validationError).to.equal(validationError)
           done()
         })
       })
@@ -387,7 +387,7 @@ describe('ContainerImageBuilderCreate', function () {
       })
 
       it('should set the correct query data', function (done) {
-        expect(rejectError.data.query).to.deep.equal(expectedCVQuery)
+        expect(rejectError.data.extra.query).to.deep.equal(expectedCVQuery)
         done()
       })
     }) // end 'on context version not found'

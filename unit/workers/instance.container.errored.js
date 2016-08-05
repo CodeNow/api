@@ -52,7 +52,7 @@ describe('Workers: Instance Start', function () {
       Worker(null).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('instance.container.errored: Invalid Job')
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -61,7 +61,7 @@ describe('Workers: Instance Start', function () {
       Worker({}).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('instance.container.errored: Invalid Job')
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -71,7 +71,7 @@ describe('Workers: Instance Start', function () {
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('instance.container.errored: Invalid Job')
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -81,7 +81,7 @@ describe('Workers: Instance Start', function () {
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('instance.container.errored: Invalid Job')
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -91,7 +91,7 @@ describe('Workers: Instance Start', function () {
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('instance.container.errored: Invalid Job')
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -121,7 +121,7 @@ describe('Workers: Instance Start', function () {
       Instance.setContainerError.rejects(Boom.notFound())
       Worker(testData).asCallback(function (err) {
         expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('instance.container.errored: Instance not found')
+        expect(err.message).to.equal('Instance not found')
         done()
       })
     })

@@ -440,7 +440,7 @@ describe('Worker: instance.rebuild unit test', function () {
             sinon.assert.calledWith(Runnable.prototype.githubLogin, testUser.accounts.github.accessToken)
             sinon.assert.calledOnce(User.findByGithubIdAsync)
             sinon.assert.calledWith(User.findByGithubIdAsync, testInstance.createdBy.github)
-            sinon.assert.calledTwice(Runnable.prototype.newBuild)
+            sinon.assert.calledOnce(Runnable.prototype.newBuild)
             sinon.assert.calledWith(Runnable.prototype.newBuild, testInstance.build)
             sinon.assert.calledOnce(buildModel.deepCopy)
             sinon.assert.calledOnce(BuildService.buildBuild)
