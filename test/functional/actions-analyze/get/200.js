@@ -33,18 +33,13 @@ var php = 'php'
 describe('Analyze - /actions/analyze', function () {
   var ctx = {}
 
-  before(api.start.bind(ctx))
-  after(api.stop.bind(ctx))
-  before(require('../../fixtures/mocks/api-client').setup)
-  after(require('../../fixtures/mocks/api-client').clean)
-  afterEach(function (done) {
-    // these tests hit redis a lot, so clear out the cache when they are run.
-    var redis = require('models/redis')
-    redis.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
-      if (err) { return done(err) }
-      async.map(keys, function (key, cb) { redis.del(key, cb) }, done)
+  before(function (done) {
+    api.start.bind(ctx)(function (err) {
+      console.log('XXX', err)
+      done()
     })
   })
+  before(require('../../fixtures/mocks/api-client').setup)
   beforeEach(generateKey)
   beforeEach(function (done) {
     multi.createUser(function (err, user) {
@@ -52,6 +47,17 @@ describe('Analyze - /actions/analyze', function () {
       ctx.user = user
       ctx.request = user.client.request
       done()
+    })
+  })
+
+  after(api.stop.bind(ctx))
+  after(require('../../fixtures/mocks/api-client').clean)
+  afterEach(function (done) {
+    // these tests hit redis a lot, so clear out the cache when they are run.
+    var redis = require('models/redis')
+    redis.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
+      if (err) { return done(err) }
+      async.map(keys, function (key, cb) { redis.del(key, cb) }, done)
     })
   })
   afterEach(require('../../fixtures/clean-ctx')(ctx))

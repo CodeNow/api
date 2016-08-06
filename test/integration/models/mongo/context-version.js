@@ -22,7 +22,6 @@ var mongoose = require('mongoose')
 var ObjectId = mongoose.Types.ObjectId
 var sinon = require('sinon')
 var uuid = require('uuid')
-var Hermes = require('runnable-hermes')
 var rabbitMQ = require('models/rabbitmq')
 
 var Github = require('models/apis/github')
@@ -266,19 +265,13 @@ describe('ContextVersion ModelIntegration Tests', function () {
         sinon.spy(ContextVersion.prototype, 'getAndUpdateHashAsync')
         sinon.spy(rabbitMQ, 'createImageBuilderContainer')
 
-        sinon.stub(Hermes, 'hermesSingletonFactory').returns({
-          on: sinon.spy(),
-          connect: sinon.spy(function (cb) { cb() }),
-          publish: sinon.spy()
-        })
         sinon.stub(messenger, 'messageRoom')
-        rabbitMQ.connect(done)
+        rabbitMQ.connect().asCallback(done)
       })
       afterEach(function (done) {
         ContextVersion.removeByIdAsync.restore()
         ContextVersion._startBuild.restore()
         rabbitMQ.createImageBuilderContainer.restore()
-        Hermes.hermesSingletonFactory.restore()
         messenger.messageRoom.restore()
         ContextVersion.prototype.modifyAppCodeVersionWithLatestCommitAsync.restore()
         ContextVersion.prototype.dedupeAsync.restore()
@@ -286,7 +279,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
         ContextVersion.prototype.populateOwnerAsync.restore()
         ContextVersion.prototype.dedupeBuildAsync.restore()
         ContextVersion.prototype.getAndUpdateHashAsync.restore()
-        done()
+        rabbitMQ.disconnect().asCallback(done)
       })
       describe('failures', function () {
         beforeEach(function (done) {
@@ -507,25 +500,18 @@ describe('ContextVersion ModelIntegration Tests', function () {
         sinon.spy(ContextVersion.prototype, 'dedupeBuildAsync')
         sinon.spy(ContextVersion.prototype, 'populateOwnerAsync')
         sinon.spy(rabbitMQ, 'createImageBuilderContainer')
-
-        sinon.stub(Hermes, 'hermesSingletonFactory').returns({
-          on: sinon.spy(),
-          connect: sinon.spy(function (cb) { cb() }),
-          publish: sinon.spy()
-        })
         sinon.stub(messenger, 'messageRoom')
-        rabbitMQ.connect(done)
+        rabbitMQ.connect().asCallback(done)
       })
       afterEach(function (done) {
         ContextVersion.removeByIdAsync.restore()
         ContextVersion._startBuild.restore()
         rabbitMQ.createImageBuilderContainer.restore()
-        Hermes.hermesSingletonFactory.restore()
         messenger.messageRoom.restore()
         ContextVersion.prototype.setBuildStartedAsync.restore()
         ContextVersion.prototype.populateOwnerAsync.restore()
         ContextVersion.prototype.dedupeBuildAsync.restore()
-        done()
+        rabbitMQ.disconnect().asCallback(done)
       })
       describe('dedupeBuild', function () {
         beforeEach(function (done) {
@@ -546,7 +532,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
           ContextVersion.removeByIdAsync.reset()
           ContextVersion._startBuild.reset()
           rabbitMQ.createImageBuilderContainer.reset()
-          Hermes.hermesSingletonFactory.reset()
           messenger.messageRoom.reset()
           ContextVersion.prototype.setBuildStartedAsync.reset()
           ContextVersion.prototype.populateOwnerAsync.reset()

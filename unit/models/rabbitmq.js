@@ -48,10 +48,10 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
   })
 
-  describe('close', function () {
+  describe('disconnect', function () {
     it('should call disconnect', function (done) {
       rabbitMQ._publisher.disconnect.returns('foo')
-      var out = rabbitMQ.close()
+      var out = rabbitMQ.disconnect()
       expect(out).to.equal('foo')
       sinon.assert.calledOnce(rabbitMQ._publisher.disconnect)
       done()

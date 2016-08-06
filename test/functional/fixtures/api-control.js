@@ -66,10 +66,11 @@ function startApi (done) {
   started = true
   rabbitPublisher.connect(function (err) {
     if (err) { return done(err) }
-    api.start(function (err) {
-      if (err) { return done(err) }
-      cleanMongo.removeEverything(function (err) {
-        if (err) { return done(err) }
+    api.start(function (err2) {
+      if (err2) { return done(err2) }
+      console.log('YYY4')
+      cleanMongo.removeEverything(function (err3) {
+        if (err3) { return done(err3) }
         ensureIndexes(done)
       })
     })
