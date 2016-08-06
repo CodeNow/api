@@ -140,8 +140,8 @@ describe('POST /instances/:id/actions/redeploy', function () {
     ctx.instance.redeploy(function (err) {
       expect(err).to.be.null()
       sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-      expect(rabbitMQ.hermesClient.publish.args[0][0]).to.equal('instance.container.redeploy')
-      var job = rabbitMQ.hermesClient.publish.args[0][1]
+      expect(rabbitMQ._publisher.publishTask.args[0][0]).to.equal('instance.container.redeploy')
+      var job = rabbitMQ._publisher.publishTask.args[0][1]
       expect(job.instanceId.toString()).to.equal(ctx.instance.attrs._id.toString())
       expect(job.sessionUserGithubId).to.equal(ctx.instance.user.attrs.accounts.github.id)
 
