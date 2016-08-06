@@ -33,11 +33,7 @@ var php = 'php'
 describe('Analyze - /actions/analyze', function () {
   var ctx = {}
 
-  before(function (done) {
-    api.start.bind(ctx)(function (err) {
-      done()
-    })
-  })
+  before(api.start.bind(ctx))
   before(require('../../fixtures/mocks/api-client').setup)
   beforeEach(generateKey)
   beforeEach(function (done) {
