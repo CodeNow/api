@@ -35,7 +35,6 @@ describe('Analyze - /actions/analyze', function () {
 
   before(function (done) {
     api.start.bind(ctx)(function (err) {
-      console.log('XXX', err)
       done()
     })
   })
