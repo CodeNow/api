@@ -17,7 +17,7 @@ var TaskFatalError = require('ponos').TaskFatalError
 
 var ContextVersion = require('models/mongo/context-version')
 var PermissionService = require('models/services/permission-service')
-var createInstanceContainer = require('workers/create-instance-container')
+var createInstanceContainer = require('workers/instance.container.create')
 var error = require('error')
 var errors = require('errors')
 var InstanceService = require('models/services/instance-service')
