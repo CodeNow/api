@@ -6,7 +6,9 @@
 var clone = require('101/clone')
 var Code = require('code')
 var createCount = require('callback-count')
+var Hermes = require('runnable-hermes')
 var Lab = require('lab')
+var Promise = require('bluebird')
 var rabbitMQ = require('models/rabbitmq')
 var sinon = require('sinon')
 
@@ -22,11 +24,18 @@ var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('RabbitMQ Model: ' + moduleName, function () {
+  var HermesMock
+
   beforeEach(function (done) {
     sinon.stub(rabbitMQ._publisher, 'connect')
     sinon.stub(rabbitMQ._publisher, 'disconnect')
     sinon.stub(rabbitMQ._publisher, 'publishEvent')
     sinon.stub(rabbitMQ._publisher, 'publishTask')
+    HermesMock = {
+      connect: sinon.stub().returnsThis(),
+      on: sinon.stub().yieldsAsync()
+    }
+    sinon.stub(Hermes, 'hermesSingletonFactory').returns(HermesMock)
     done()
   })
 
@@ -35,16 +44,22 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     rabbitMQ._publisher.disconnect.restore()
     rabbitMQ._publisher.publishEvent.restore()
     rabbitMQ._publisher.publishTask.restore()
+    Hermes.hermesSingletonFactory.restore()
     done()
   })
 
   describe('connect', function () {
     it('should call connect', function (done) {
-      rabbitMQ._publisher.connect.returns('foo')
-      var out = rabbitMQ.connect()
-      expect(out).to.equal('foo')
-      sinon.assert.calledOnce(rabbitMQ._publisher.connect)
-      done()
+      rabbitMQ._publisher.connect.returns(Promise.resolve())
+      var out = rabbitMQ.connect().asCallback(function (err) {
+        if (err) { return done(err) }
+        expect(out).to.be.an.instanceof(Promise)
+        sinon.assert.calledOnce(rabbitMQ._publisher.connect)
+        sinon.assert.calledOnce(HermesMock.connect)
+        sinon.assert.calledOnce(HermesMock.on)
+        sinon.assert.calledWith(HermesMock.on, 'ready', sinon.match.func)
+        done()
+      })
     })
   })
 
