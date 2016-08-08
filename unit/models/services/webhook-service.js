@@ -695,9 +695,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         WebhookService.reportMixpanelUserPush.resolves()
         WebhookService.processGithookEvent(payload)
           .asCallback(function (err) {
-            expect(err).to.deep.equal(
-              new NotImplementedException('processGithookEvent', 'Cannot handle tags\' related events')
-            )
+            expect(err).to.be.an.instanceof(NotImplementedException)
             done()
           })
       })

@@ -14,8 +14,8 @@ var moment = require('moment')
 var noop = require('101/noop')
 var path = require('path')
 var sinon = require('sinon')
-var TaskFatalError = require('ponos').TaskFatalError
-var TaskError = require('ponos').TaskError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
+var WorkerError = require('error-cat/errors/worker-error')
 
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
@@ -58,7 +58,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       delete testJob.host
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err).to.be.an.instanceof(WorkerStopError)
         expect(err.data.err.message).to.match(/host.*required/)
         done()
       })
@@ -68,7 +68,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       delete testJob.inspectData.Id
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err).to.be.an.instanceof(WorkerStopError)
         expect(err.data.err.message).to.match(/Id.*required/)
         done()
       })
@@ -78,7 +78,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       delete testJob.inspectData.Config.Labels['contextVersion.build._id']
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err).to.be.an.instanceof(WorkerStopError)
         expect(err.data.err.message).to.match(/contextVersion.build._id.*required/)
         done()
       })
@@ -135,7 +135,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       ContextVersion.updateAsync.returns(0)
 
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err).to.be.an.instanceof(WorkerStopError)
         expect(err.message).to.contain('no valid ContextVersion found to start')
 
         done()
@@ -146,7 +146,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       testJob.inspectData.Created = moment().subtract(6, 'minutes').format()
       Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err).to.be.an.instanceof(WorkerStopError)
         expect(err.message).to.match(/after 5 minutes/)
         done()
       })
@@ -155,7 +155,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
     it('should error if no container and created was less than 5 minutes ago', function (done) {
       Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
       OnImageBuilderContainerCreate(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskError)
+        expect(err).to.be.an.instanceof(WorkerError)
         expect(err.message).to.match(/not exist/)
         done()
       })

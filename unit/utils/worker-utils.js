@@ -9,7 +9,7 @@ var expect = Code.expect
 
 var joi = require('utils/joi')
 var workerUtils = require('utils/worker-utils')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 describe('worker utils unit test', function () {
   describe('validateJob', function () {
@@ -17,7 +17,7 @@ describe('worker utils unit test', function () {
       var schema = joi.object({
         instanceId: joi.string().required()
       }).required().label('instance.start job')
-      workerUtils.validateJob('instance.start', {
+      workerUtils.validateJob({
         instanceId: 'cool-instance-id-1'
       }, schema)
       .then(function (result) {
@@ -27,22 +27,20 @@ describe('worker utils unit test', function () {
       .catch(done)
     })
 
-    it('should throw TaskFatalError if job is invalid', function (done) {
+    it('should throw WorkerStopError if job is invalid', function (done) {
       var schema = joi.object({
         instanceId: joi.string().required()
       }).required().label('instance.start job')
       var job = {
         instanceId: 1
       }
-      workerUtils.validateJob('instance.start', job, schema)
+      workerUtils.validateJob(job, schema)
       .then(function () {
         done(new Error('Should never happen'))
       })
       .catch(function (err) {
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.start: Invalid Job')
-        expect(err.data.queue).to.equal('instance.start')
-        expect(err.data.job).to.equal(job)
+        expect(err).to.be.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         expect(err.data.validationError.message).to.equal('"instanceId" must be a string')
         done()
       })
@@ -58,11 +56,11 @@ describe('worker utils unit test', function () {
         _id: 1,
         name: 'good-instance'
       }
-      workerUtils.assertFound('instance.start', job, 'Instance')(instance)
+      workerUtils.assertFound(job, 'Instance')(instance)
       done()
     })
 
-    it('should throw TaskFatalError if model is not defined', function (done) {
+    it('should throw WorkerStopError if model is not defined', function (done) {
       var job = {
         instanceId: 1
       }
@@ -70,14 +68,12 @@ describe('worker utils unit test', function () {
         _id: 1
       }
       try {
-        workerUtils.assertFound('instance.start', job, 'Instance', query)(null)
+        workerUtils.assertFound(job, 'Instance', query)(null)
         done(new Error('Should never happen'))
       } catch (err) {
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.start: Instance not found')
-        expect(err.data.queue).to.equal('instance.start')
-        expect(err.data.job).to.equal(job)
-        expect(err.data.query).to.equal(query)
+        expect(err).to.be.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Instance not found')
+        expect(err.data.extra).to.equal(query)
         done()
       }
     })

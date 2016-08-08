@@ -13,7 +13,7 @@ var sinon = require('sinon')
 var Boom = require('dat-middleware').Boom
 var moment = require('moment')
 var Promise = require('bluebird')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var ContextVersion = require('models/mongo/context-version')
 var PermissionService = require('models/services/permission-service')
@@ -89,8 +89,8 @@ describe('createInstanceContainer', function () {
       it('should throw fatal error if missing instanceId', function (done) {
         delete ctx.job.instanceId
         createInstanceContainer(ctx.job).asCallback(function (err) {
-          expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err).to.be.an.instanceOf(WorkerStopError)
+          expect(err.message).to.contain('Invalid Job')
           expect(err.data.validationError.message).to.match(/instanceId.*is required/)
           done()
         })
@@ -99,8 +99,8 @@ describe('createInstanceContainer', function () {
       it('should throw fatal error if missing contextVersionId', function (done) {
         delete ctx.job.contextVersionId
         createInstanceContainer(ctx.job).asCallback(function (err) {
-          expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err).to.be.an.instanceOf(WorkerStopError)
+          expect(err.message).to.contain('Invalid Job')
           expect(err.data.validationError.message).to.match(/contextVersionId.*is required/)
           done()
         })
@@ -109,8 +109,8 @@ describe('createInstanceContainer', function () {
       it('should throw fatal error if missing ownerUsername', function (done) {
         delete ctx.job.ownerUsername
         createInstanceContainer(ctx.job).asCallback(function (err) {
-          expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err).to.be.an.instanceOf(WorkerStopError)
+          expect(err.message).to.contain('Invalid Job')
           expect(err.data.validationError.message).to.match(/ownerUsername.*is required/)
           done()
         })
@@ -119,8 +119,8 @@ describe('createInstanceContainer', function () {
       it('should throw fatal error if missing sessionUserGithubId', function (done) {
         delete ctx.job.sessionUserGithubId
         createInstanceContainer(ctx.job).asCallback(function (err) {
-          expect(err).to.be.an.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('create-instance-container: Invalid Job')
+          expect(err).to.be.an.instanceOf(WorkerStopError)
+          expect(err.message).to.contain('Invalid Job')
           expect(err.data.validationError.message).to.match(/sessionUserGithubId.*is required/)
           done()
         })
@@ -137,7 +137,7 @@ describe('createInstanceContainer', function () {
         createInstanceContainer(ctx.job)
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.an.instanceOf(TaskFatalError)
+            expect(err).to.be.an.instanceOf(WorkerStopError)
             done()
           })
       })
@@ -156,7 +156,7 @@ describe('createInstanceContainer', function () {
         createInstanceContainer(ctx.job)
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.an.instanceOf(TaskFatalError)
+            expect(err).to.be.an.instanceOf(WorkerStopError)
             done()
           })
       })
