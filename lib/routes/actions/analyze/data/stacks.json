@@ -1,5 +1,4 @@
 {
-  
   "nodejs": {
     "name": "Node.js",
     "versions": [
@@ -21,12 +20,14 @@
     ],
     "defaultVersion": "argon",
     "ports": "3000, 80",
-    "startCommand": ["npm start", "node app.js"],
+    "startCommand": [
+      "npm start",
+      "node app.js"
+    ],
     "preEnvMarker": "process.env",
     "postEnvMarker": "",
     "dependencyOnly": false
   },
-
   "python": {
     "name": "Python",
     "versions": [
@@ -45,15 +46,19 @@
     ],
     "defaultVersion": "3.4",
     "ports": "80",
-    "startCommand": ["python main.py"],
+    "startCommand": [
+      "python main.py"
+    ],
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']",
     "dependencyOnly": false
   },
-
   "ruby": {
     "name": "Ruby",
     "versions": [
+      "1.9",
+      "1.9.3",
+      "2.0.0-p657",
       "2.1.10",
       "2.1",
       "2.2.5",
@@ -63,12 +68,14 @@
     ],
     "defaultVersion": "2.3",
     "ports": "4567, 9292",
-    "startCommand": ["/bin/bash -l -c 'bundle exec rake server'", "/bin/bash -l -c 'ruby main.rb'"],
+    "startCommand": [
+      "ruby app.rb",
+      "bundle exec rackup"
+    ],
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']",
     "dependencyOnly": false
   },
-
   "rails": {
     "name": "Rails",
     "versions": [
@@ -85,14 +92,17 @@
       "5.0.0"
     ],
     "defaultVersion": "4.2.7",
-    "dependencies": ["ruby"],
+    "dependencies": [
+      "ruby"
+    ],
     "ports": "3000, 9292",
-    "startCommand": ["rails server -b 0.0.0.0"],
+    "startCommand": [
+      "rails server -b 0.0.0.0"
+    ],
     "preEnvMarker": "<%= ENV[\"",
     "postEnvMarker": "]%>\"",
     "dependencyOnly": false
   },
-
   "go": {
     "name": "Go",
     "versions": [
@@ -103,12 +113,13 @@
     ],
     "defaultVersion": "1.6",
     "ports": "80",
-    "startCommand": ["./main"],
+    "startCommand": [
+      "./main"
+    ],
     "preEnvMarker": "os.Getenv('",
     "postEnvMarker": "')",
     "dependencyOnly": false
   },
-
   "php": {
     "name": "PHP",
     "versions": [
@@ -135,7 +146,9 @@
     ],
     "defaultVersion": "5.6-apache",
     "ports": "8080, 8000, 80",
-    "startCommand": ["apache2 -DFOREGROUND"],
+    "startCommand": [
+      "apache2 -DFOREGROUND"
+    ],
     "preEnvMarker": "",
     "postEnvMarker": "",
     "dependencyOnly": false
