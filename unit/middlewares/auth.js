@@ -32,18 +32,18 @@ describe('middlewares/auth', function () {
     keypather.set(req, 'sessionUser.accounts.github.id', githubId)
     res = {}
     next = sinon.stub()
-    sinon.stub(UserService, 'getAllUserOrganizationsByAccessToken').resolves()
+    sinon.stub(UserService, 'getUsersOrganizations').resolves()
     done()
   })
   afterEach(function (done) {
-    UserService.getAllUserOrganizationsByAccessToken.restore()
+    UserService.getUsersOrganizations.restore()
     done()
   })
 
   describe('requireWhitelist', function () {
     describe('when we get no records', function () {
       beforeEach(function (done) {
-        UserService.getAllUserOrganizationsByAccessToken.resolves({ orgs: [] })
+        UserService.getUsersOrganizations.resolves({ orgs: [] })
         done()
       })
       it('should throw unauthorized error', function (done) {
@@ -62,7 +62,7 @@ describe('middlewares/auth', function () {
     })
     describe('when we get records', function () {
       beforeEach(function (done) {
-        UserService.getAllUserOrganizationsByAccessToken.resolves({ orgs: [{}] })
+        UserService.getUsersOrganizations.resolves({ orgs: [{}] })
         done()
       })
       it('should throw unauthorized error', function (done) {

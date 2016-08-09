@@ -13,7 +13,6 @@ require('sinon-as-promised')(require('bluebird'))
 
 var PermissionService = require('models/services/permission-service')
 var Github = require('models/apis/github')
-var UserWhitelist = require('models/mongo/user-whitelist')
 var errors = require('errors')
 
 describe('PermissionService', function () {
@@ -357,61 +356,61 @@ describe('PermissionService', function () {
       })
     })
   })
-  describe('checkOwnerAllowed', function () {
-    var contextVersion = {
-      owner: {
-        github: 1337
-      }
-    }
-
-    beforeEach(function (done) {
-      sinon.stub(UserWhitelist, 'findOneAsync')
-      done()
-    })
-
-    afterEach(function (done) {
-      UserWhitelist.findOneAsync.restore()
-      done()
-    })
-
-    it('should reject without organization name', function (done) {
-      PermissionService.checkOwnerAllowed({})
-        .asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/model.*not.*owner github id/i)
-          done()
-        })
-    })
-
-    it('should reject if the organization was not found', function (done) {
-      UserWhitelist.findOneAsync.returns(Promise.resolve(null))
-      PermissionService.checkOwnerAllowed(contextVersion)
-        .asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.be.instanceOf(errors.OrganizationNotFoundError)
-          expect(err.message).to.match(/organization not found/i)
-          done()
-        })
-    })
-
-    it('should reject if the organizartion is not allowed', function (done) {
-      UserWhitelist.findOneAsync.returns(Promise.resolve({ allowed: false }))
-      PermissionService.checkOwnerAllowed(contextVersion)
-        .asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.be.instanceOf(errors.OrganizationNotAllowedError)
-          expect(err.message).to.match(/org.*not.*allowed/i)
-          done()
-        })
-    })
-
-    it('should resolve if the organization is allowed', function (done) {
-      UserWhitelist.findOneAsync.returns(Promise.resolve({ allowed: true }))
-      PermissionService.checkOwnerAllowed(contextVersion)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          done()
-        })
-    })
-  })
+  //describe('checkOwnerAllowed', function () {
+  //  var contextVersion = {
+  //    owner: {
+  //      github: 1337
+  //    }
+  //  }
+  //
+  //  beforeEach(function (done) {
+  //    sinon.stub(UserWhitelist, 'findOneAsync')
+  //    done()
+  //  })
+  //
+  //  afterEach(function (done) {
+  //    UserWhitelist.findOneAsync.restore()
+  //    done()
+  //  })
+  //
+  //  it('should reject without organization name', function (done) {
+  //    PermissionService.checkOwnerAllowed({})
+  //      .asCallback(function (err) {
+  //        expect(err).to.exist()
+  //        expect(err.message).to.match(/model.*not.*owner github id/i)
+  //        done()
+  //      })
+  //  })
+  //
+  //  it('should reject if the organization was not found', function (done) {
+  //    UserWhitelist.findOneAsync.returns(Promise.resolve(null))
+  //    PermissionService.checkOwnerAllowed(contextVersion)
+  //      .asCallback(function (err) {
+  //        expect(err).to.exist()
+  //        expect(err).to.be.instanceOf(errors.OrganizationNotFoundError)
+  //        expect(err.message).to.match(/organization not found/i)
+  //        done()
+  //      })
+  //  })
+  //
+  //  it('should reject if the organizartion is not allowed', function (done) {
+  //    UserWhitelist.findOneAsync.returns(Promise.resolve({ allowed: false }))
+  //    PermissionService.checkOwnerAllowed(contextVersion)
+  //      .asCallback(function (err) {
+  //        expect(err).to.exist()
+  //        expect(err).to.be.instanceOf(errors.OrganizationNotAllowedError)
+  //        expect(err.message).to.match(/org.*not.*allowed/i)
+  //        done()
+  //      })
+  //  })
+  //
+  //  it('should resolve if the organization is allowed', function (done) {
+  //    UserWhitelist.findOneAsync.returns(Promise.resolve({ allowed: true }))
+  //    PermissionService.checkOwnerAllowed(contextVersion)
+  //      .asCallback(function (err) {
+  //        expect(err).to.not.exist()
+  //        done()
+  //      })
+  //  })
+  //})
 })
