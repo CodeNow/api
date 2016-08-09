@@ -16,7 +16,6 @@ require('sinon-as-promised')(Promise)
 
 var ContextVersionService = require('models/services/context-version-service')
 var ContextVersion = require('models/mongo/context-version')
-var OrganizationService = require('models/services/organization-service')
 
 describe('ContextVersionService', function () {
   var ctx = {}
