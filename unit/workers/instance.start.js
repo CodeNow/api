@@ -9,8 +9,8 @@ var Code = require('code')
 var Lab = require('lab')
 var omit = require('101/omit')
 var sinon = require('sinon')
-var TaskError = require('ponos').TaskError
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerError = require('error-cat/errors/worker-error')
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance')
@@ -81,16 +81,16 @@ describe('Workers: Instance Start', function () {
     it('should fatally fail if job is null', function (done) {
       Worker(null).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.start: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
     it('should fatally fail if job is {}', function (done) {
       Worker({}).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.start: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -98,8 +98,8 @@ describe('Workers: Instance Start', function () {
       var data = omit(testData, 'instanceId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.start: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -107,8 +107,8 @@ describe('Workers: Instance Start', function () {
       var data = omit(testData, 'containerId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.start: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -116,8 +116,8 @@ describe('Workers: Instance Start', function () {
       var data = omit(testData, 'sessionUserGithubId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.start: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -136,8 +136,8 @@ describe('Workers: Instance Start', function () {
     Instance.findOneStartingAsync.resolves(null)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
-      expect(err).to.be.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('instance.start: Instance not found')
+      expect(err).to.be.instanceOf(WorkerStopError)
+      expect(err.message).to.equal('Instance not found')
       done()
     })
   })
@@ -147,49 +147,37 @@ describe('Workers: Instance Start', function () {
     Docker.prototype.startContainerAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
-      expect(err.message).to.equal(error.message)
+      expect(err).to.deep.equal(error)
       done()
     })
   })
 
-  it('should TaskError if docker startContainer 404', function (done) {
+  it('should WorkerError if docker startContainer 404', function (done) {
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskError)
+      expect(err).to.be.an.instanceOf(WorkerError)
       expect(err.message).to.contain('container does not exist')
       done()
     })
   })
 
-  it('should TaskError if docker startContainer 404 and no created', function (done) {
+  it('should WorkerError if docker startContainer 404', function (done) {
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskError)
+      expect(err).to.be.an.instanceOf(WorkerError)
       expect(err.message).to.contain('container does not exist')
       done()
     })
   })
 
-  it('should TaskError if docker startContainer 404', function (done) {
-    testInstance.container.inspect = {
-      Created: Date.now()
-    }
-    Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
-    Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskError)
-      expect(err.message).to.contain('container does not exist')
-      done()
-    })
-  })
-
-  it('should TaskFatalError if docker startContainer 404 and past 5 min', function (done) {
+  it('should WorkerStopError if docker startContainer 404 and past 5 min', function (done) {
     testInstance.container.inspect = {
       Created: 1
     }
     rabbitMQ.instanceContainerErrored.resolves()
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskFatalError)
+      expect(err).to.be.an.instanceOf(WorkerStopError)
       expect(err.message).to.contain('Please rebuild without cache')
       done()
     })
@@ -199,11 +187,11 @@ describe('Workers: Instance Start', function () {
     testInstance.container.inspect = {
       Created: 1
     }
-    var testError = 'instance.start: Sorry, your container got lost. Please rebuild without cache'
+    var testError = 'Sorry, your container got lost. Please rebuild without cache'
     rabbitMQ.instanceContainerErrored.resolves()
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
     Worker(testData).asCallback(function (err) {
-      expect(err).to.be.an.instanceOf(TaskFatalError)
+      expect(err).to.be.an.instanceOf(WorkerStopError)
       expect(err.message).to.contain('Please rebuild without cache')
       sinon.assert.calledOnce(rabbitMQ.instanceContainerErrored)
       sinon.assert.calledWith(rabbitMQ.instanceContainerErrored, {

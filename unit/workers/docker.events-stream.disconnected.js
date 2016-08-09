@@ -7,7 +7,7 @@ var clone = require('101/clone')
 var expect = require('code').expect
 var Lab = require('lab')
 var sinon = require('sinon')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var dockerEventStreamDisconnected = require('workers/docker.events-stream.disconnected')
 var rabbitMQ = require('models/rabbitmq')
@@ -42,7 +42,7 @@ describe('docker.events-stream.disconnected unit test', function () {
     it('should throw task fatal if missing host', function (done) {
       delete testJob.host
       dockerEventStreamDisconnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
 
         sinon.assert.notCalled(rabbitMQ.publishDockRemoved)
         done()
@@ -52,7 +52,7 @@ describe('docker.events-stream.disconnected unit test', function () {
     it('should throw task fatal if invalid host', function (done) {
       testJob.host = '10.0.0.1:3232'
       dockerEventStreamDisconnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
 
         sinon.assert.notCalled(rabbitMQ.publishDockRemoved)
         done()
@@ -62,7 +62,7 @@ describe('docker.events-stream.disconnected unit test', function () {
     it('should throw task fatal if missing org', function (done) {
       delete testJob.org
       dockerEventStreamDisconnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
 
         sinon.assert.notCalled(rabbitMQ.publishDockRemoved)
         done()
@@ -72,7 +72,7 @@ describe('docker.events-stream.disconnected unit test', function () {
     it('should throw task fatal if org not a string', function (done) {
       testJob.org = 12345
       dockerEventStreamDisconnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
 
         sinon.assert.notCalled(rabbitMQ.publishDockRemoved)
         done()
@@ -82,7 +82,7 @@ describe('docker.events-stream.disconnected unit test', function () {
     it('should throw task fatal if org not a number', function (done) {
       testJob.org = '12a45'
       dockerEventStreamDisconnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(TaskFatalError)
+        expect(err).to.be.instanceof(WorkerStopError)
 
         sinon.assert.notCalled(rabbitMQ.publishDockRemoved)
         done()

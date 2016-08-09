@@ -11,7 +11,7 @@ var clone = require('101/clone')
 var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var objectId = require('objectid')
 
 var Instance = require('models/mongo/instance')
@@ -101,8 +101,8 @@ describe('isolation.match-commit', function () {
         delete testJob.isolationId
 
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job/)
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err.message).to.contain('Invalid Job')
           done()
         })
       })
@@ -111,8 +111,8 @@ describe('isolation.match-commit', function () {
         delete testJob.sessionUserGithubId
 
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.match(/Invalid Job/)
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err.message).to.contain('Invalid Job')
           done()
         })
       })
@@ -144,7 +144,7 @@ describe('isolation.match-commit', function () {
         })
       })
 
-      it('should throw a TaskFatalError if the master instances has no repo or commit', function (done) {
+      it('should throw a WorkerStopError if the master instances has no repo or commit', function (done) {
         masterInstance.contextVersion.appCodeVersions[0].commit = undefined
         Instance.findById.yieldsAsync(null, masterInstance)
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
@@ -154,7 +154,7 @@ describe('isolation.match-commit', function () {
         })
       })
 
-      it('should throw a TaskFatalError if the job instance is no longer in the same isolation', function (done) {
+      it('should throw a WorkerStopError if the job instance is no longer in the same isolation', function (done) {
         masterInstance.isolated = objectId('5743c95f450e812600d066c6')
         Instance.findById.yieldsAsync(null, masterInstance)
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
@@ -164,7 +164,7 @@ describe('isolation.match-commit', function () {
         })
       })
 
-      it('should throw a TaskFatalError if there are no child instances', function (done) {
+      it('should throw a WorkerStopError if there are no child instances', function (done) {
         Instance.findInstancesInIsolationWithSameRepoAndBranch.yieldsAsync(null, [])
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
           expect(err).to.exist()
@@ -186,8 +186,8 @@ describe('isolation.match-commit', function () {
         InstanceService.updateInstanceCommitToNewCommit.rejects(Boom.notFound('Context Version not found'))
         matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err, res) {
           expect(err).to.exist()
-          expect(err).to.be.an.instanceof(TaskFatalError)
-          expect(err.message).to.equal('isolation.match-commit: Failed to match commits. Some entities were removed')
+          expect(err).to.be.an.instanceof(WorkerStopError)
+          expect(err.message).to.equal('Failed to match commits. Some entities were removed')
           done()
         })
       })
