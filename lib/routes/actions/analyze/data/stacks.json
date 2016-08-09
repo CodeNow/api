@@ -54,25 +54,15 @@
   "ruby": {
     "name": "Ruby",
     "versions": [
-      "1.8.6-p420",
-      "1.8.7-p374",
-      "1.9.3-p551",
-      "1.9.3-p547",
-      "1.9.3-p550",
-      "2.0.0",
-      "2.0.0-p576",
-      "2.0.0-p594",
-      "2.0.0-p598",
+      "2.1.10",
       "2.1",
-      "2.1.9", 
-      "2.2",
       "2.2.5",
-      "2.3",
+      "2.2",
       "2.3.1",
-      "2"
+      "2.3"
     ],
     "defaultVersion": "2.3",
-    "ports": "9292, 80",
+    "ports": "4567, 9292",
     "startCommand": ["/bin/bash -l -c 'bundle exec rake server'", "/bin/bash -l -c 'ruby main.rb'"],
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']",
@@ -144,7 +134,7 @@
       "7-fpm"
     ],
     "defaultVersion": "5.6-apache",
-    "ports": "8080, 8000",
+    "ports": "8080, 8000, 80",
     "startCommand": ["apache2 -DFOREGROUND"],
     "preEnvMarker": "",
     "postEnvMarker": "",

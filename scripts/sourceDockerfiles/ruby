@@ -1,12 +1,17 @@
-FROM runnable/base:1.0.0
+FROM ruby:<ruby-version>
 
-# Install desired ruby version
-RUN rbenv install <ruby-version>
-RUN rbenv global <ruby-version>
-RUN /bin/bash -l -c "gem install bundler"
+RUN apt-get update -qq && apt-get install -y \
+  build-essential \
+  libpq-dev \
+  libxml2-dev \
+  libxslt1-dev \
+  libqt4-webkit \
+  libqt4-dev \
+  xvfb \
+  nodejs
 
 <before-main-repo>
-#default run:/bin/bash -l -c "bundle install"
+#default run:bundle install
 <after-main-repo>
 
 # Open up ports on the server
