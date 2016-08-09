@@ -1,4 +1,5 @@
 'use strict'
+require('loadenv')()
 
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
@@ -11,7 +12,9 @@ var expect = require('code').expect
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
+var OrganizationService = require('models/services/organization-service')
 var PermissionService = require('models/services/permission-service')
+var UserService = require('models/services/user-service')
 var Github = require('models/apis/github')
 
 describe('PermissionService', function () {
@@ -299,15 +302,28 @@ describe('PermissionService', function () {
     })
   })
 
-  describe('isOwnerOf', function (done) {
+  describe('isOwnerOf', function () {
+    var org
+    var user
     beforeEach(function (done) {
-      sinon.stub(Github.prototype, 'getUserAuthorizedOrgs')
-        .yieldsAsync(null, [ { id: '1' } ])
+      org = {
+        name: 'asdasd',
+        id: 1
+      }
+      user = {
+        name: '123123',
+        id: 10
+      }
+      sinon.stub(UserService, 'getByGithubId').resolves(user)
+      sinon.stub(OrganizationService, 'getByGithubId').resolves(org)
+      sinon.stub(OrganizationService, 'addUser').resolves(org)
       done()
     })
 
     afterEach(function (done) {
-      Github.prototype.getUserAuthorizedOrgs.restore()
+      UserService.getByGithubId.restore()
+      OrganizationService.getByGithubId.restore()
+      OrganizationService.addUser.restore()
       done()
     })
 
@@ -322,6 +338,7 @@ describe('PermissionService', function () {
     })
 
     it('should resolve if sessionUser shares an org', function (done) {
+      user.organizations = [org]
       PermissionService.isOwnerOf({
         accounts: {
           github: {
@@ -329,13 +346,13 @@ describe('PermissionService', function () {
           }
         }
       }, { owner: { github: '1' } })
-      .tap(function () {
-        sinon.assert.calledOnce(Github.prototype.getUserAuthorizedOrgs)
-      })
-      .asCallback(done)
+        .tap(function () {
+          sinon.assert.calledOnce(UserService.getByGithubId)
+        })
+        .asCallback(done)
     })
 
-    it('should reject if sessionUser do not have access to the model', function (done) {
+    it('should fetch the org from BigPappa, and attempt to add the user', function (done) {
       PermissionService.isOwnerOf({
         accounts: {
           github: {
@@ -343,16 +360,35 @@ describe('PermissionService', function () {
           }
         }
       }, { owner: { github: '3' } })
-      .tap(function () {
-        sinon.assert.calledOnce(Github.prototype.getUserAuthorizedOrgs)
-      })
-      .then(function () {
-        done(new Error('Should fail'))
-      })
-      .catch(function (err) {
-        expect(err.message).to.equal('Access denied (!owner)')
-        done()
-      })
+        .tap(function () {
+          sinon.assert.calledOnce(UserService.getByGithubId)
+          sinon.assert.calledOnce(OrganizationService.getByGithubId)
+          sinon.assert.calledOnce(OrganizationService.addUser)
+          sinon.assert.calledWith(OrganizationService.addUser, org, user)
+        })
+        .asCallback(function () {
+          done()
+        })
+    })
+    it('should reject if sessionUser do not have access to the model', function (done) {
+      OrganizationService.addUser.rejects(new Error('doesnt matter'))
+      PermissionService.isOwnerOf({
+        accounts: {
+          github: {
+            id: '2'
+          }
+        }
+      }, { owner: { github: '3' } })
+        .tap(function () {
+          sinon.assert.calledOnce(UserService.getByGithubId)
+          sinon.assert.calledOnce(OrganizationService.getByGithubId)
+          sinon.assert.calledOnce(OrganizationService.addUser)
+          sinon.assert.calledWith(OrganizationService.addUser, org, user)
+        })
+        .catch(function (err) {
+          expect(err.message).to.equal('Access denied (!owner)')
+          done()
+        })
     })
   })
 })

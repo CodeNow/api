@@ -396,50 +396,50 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
 
   describe('checkRepoOrganizationAgainstWhitelist', function () {
     var githubPushInfo = {
-      repoOwnerOrgId: 789
+      repoOwnerOrgName: 'Runnable'
     }
 
     beforeEach(function (done) {
-      sinon.stub(OrganizationService, 'getByGithubId').resolves({ id: 23423, allowed: true })
+      sinon.stub(OrganizationService, 'getByGithubUsername').resolves({ id: 23423, allowed: true })
       done()
     })
     afterEach(function (done) {
-      OrganizationService.getByGithubId.restore()
+      OrganizationService.getByGithubUsername.restore()
       done()
     })
 
     describe('validating errors', function () {
       it('should next with error if big-poppa call failed', function (done) {
         var superErr = new Error('Something happened!')
-        OrganizationService.getByGithubId.rejects(superErr)
+        OrganizationService.getByGithubUsername.rejects(superErr)
 
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.equal(superErr)
-            sinon.assert.calledOnce(OrganizationService.getByGithubId)
-            sinon.assert.calledWith(OrganizationService.getByGithubId, 789)
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
             done()
           })
       })
       it('should respond with 403 if no whitelist found', function (done) {
-        OrganizationService.getByGithubId.resolves(null)
+        OrganizationService.getByGithubUsername.resolves(null)
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
             expect(err.output.statusCode).to.equal(403)
             expect(err.output.payload.message).to.match(/not registered/)
-            sinon.assert.calledOnce(OrganizationService.getByGithubId)
-            sinon.assert.calledWith(OrganizationService.getByGithubId, 789)
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
             done()
           })
       })
       it('should respond with 403 if not allowed', function (done) {
-        OrganizationService.getByGithubId.resolves({ allowed: false })
+        OrganizationService.getByGithubUsername.resolves({ allowed: false })
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
             expect(err.output.statusCode).to.equal(403)
             expect(err.output.payload.message).to.match(/suspended/)
-            sinon.assert.calledOnce(OrganizationService.getByGithubId)
-            sinon.assert.calledWith(OrganizationService.getByGithubId, 789)
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
             done()
           })
       })
@@ -447,8 +447,8 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
     it('should continue without error if everything worked', function (done) {
       WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
         .then(function () {
-          sinon.assert.calledOnce(OrganizationService.getByGithubId)
-          sinon.assert.calledWith(OrganizationService.getByGithubId, 789)
+          sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+          sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
         })
         .asCallback(done)
     })
@@ -651,7 +651,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
           expect(githubPushInfo.branch).to.equal('feature-1')
           expect(githubPushInfo.repo).to.equal('CodeNow/api')
           expect(githubPushInfo.repoName).to.equal('api')
-          expect(githubPushInfo.repoOwnerOrgId).to.equal(890)
+          expect(githubPushInfo.repoOwnerOrgName).to.equal('CodeNow')
           expect(githubPushInfo.ref).to.equal(body.ref)
           expect(githubPushInfo.commit).to.equal(headCommit.id)
           expect(githubPushInfo.commitLog.length).to.equal(1)

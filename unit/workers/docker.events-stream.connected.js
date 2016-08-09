@@ -33,6 +33,7 @@ describe('docker.events-stream.connected unit test', function () {
 
   beforeEach(function (done) {
     testJob = clone(baseJob)
+    sinon.stub(OrganizationService, 'getByGithubId').resolves({ id: 1 })
     sinon.stub(OrganizationService, 'updateByGithubId').resolves({ id: 1 })
     sinon.stub(rabbitMQ, 'firstDockCreated').returns()
     sinon.stub(messenger, 'emitFirstDockCreated').returns()
@@ -40,6 +41,7 @@ describe('docker.events-stream.connected unit test', function () {
   })
 
   afterEach(function (done) {
+    OrganizationService.getByGithubId.restore()
     OrganizationService.updateByGithubId.restore()
     rabbitMQ.firstDockCreated.restore()
     messenger.emitFirstDockCreated.restore()
@@ -127,6 +129,28 @@ describe('docker.events-stream.connected unit test', function () {
         })
     })
 
+    it('should fail if org already has firstDockCreated failed', function (done) {
+      OrganizationService.getByGithubId.resolves({ firstDockCreated: true })
+      dockerEventStreamConnected(testJob)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.be.instanceof(WorkerStopError)
+          expect(err.message).to.include('firstDockCreated was set before')
+          done()
+        })
+    })
+
+    it('should call OrganizationService.getByGithubId with correct params', function (done) {
+      dockerEventStreamConnected(testJob)
+        .tap(function () {
+          sinon.assert.calledOnce(OrganizationService.getByGithubId)
+          sinon.assert.calledWith(OrganizationService.getByGithubId,
+            parseInt(testOrg, 10)
+          )
+        })
+        .asCallback(done)
+    })
+
     it('should call OrganizationService.updateByGithubId with correct params', function (done) {
       dockerEventStreamConnected(testJob)
       .tap(function () {
@@ -165,6 +189,7 @@ describe('docker.events-stream.connected unit test', function () {
       dockerEventStreamConnected(testJob)
       .tap(function () {
         sinon.assert.callOrder(
+          OrganizationService.getByGithubId,
           OrganizationService.updateByGithubId,
           messenger.emitFirstDockCreated,
           rabbitMQ.firstDockCreated)
