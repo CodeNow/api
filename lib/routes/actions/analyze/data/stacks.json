@@ -19,7 +19,7 @@
       "6"
     ],
     "defaultVersion": "argon",
-    "ports": "3000, 80",
+    "ports": "3000",
     "startCommand": [
       "npm start",
       "node app.js"
