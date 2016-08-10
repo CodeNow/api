@@ -178,7 +178,8 @@ describe('Instance Model Tests', function () {
             'container.inspect.State.Restarting': false,
             'container.inspect.State.Running': false,
             'container.inspect.State.Starting': false,
-            'container.inspect.State.Status': 'lost'
+            'container.inspect.State.Status': 'lost',
+            'container.inspect.State.Stopping': false
           }
         })
         done()
