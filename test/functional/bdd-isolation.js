@@ -20,6 +20,8 @@ var dock = require('./fixtures/dock')
 var multi = require('./fixtures/multi-factory')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var primus = require('./fixtures/primus')
+const MockAPI = require('mehpi')
+const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
 
 describe('BDD - Isolation', function () {
   var ctx = {}
@@ -31,6 +33,9 @@ describe('BDD - Isolation', function () {
   after(primus.disconnect)
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
+
+  before(cb => bigPoppaMock.start(cb))
+  after(cb => bigPoppaMock.stop(cb))
 
   after(require('./fixtures/mocks/api-client').clean)
   afterEach(require('./fixtures/clean-mongo').removeEverything)

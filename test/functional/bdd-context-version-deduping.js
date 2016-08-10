@@ -28,6 +28,8 @@ var primus = require('./fixtures/primus')
 var InstanceService = require('models/services/instance-service')
 var User = require('models/mongo/user')
 var Instance = require('models/mongo/instance')
+const MockAPI = require('mehpi')
+const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
 
 function cloneInstance (data, instance, user, cb) {
   var body = {}
@@ -69,11 +71,25 @@ describe('Building - Context Version Deduping', function () {
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
   after(require('./fixtures/mocks/api-client').clean)
+  before(cb => bigPoppaMock.start(cb))
+  after(cb => bigPoppaMock.stop(cb))
+
   beforeEach(
     mockGetUserById.stubBefore(function () {
       return []
     })
   )
+
+  var whitelistUsers = function (user) {
+    bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
+      status: 200,
+      body: JSON.stringify([{
+        organizations: [],
+        githubId: 2828361,
+        allowed: true
+      }])
+    })
+  }
   afterEach(mockGetUserById.stubAfter)
   describe('In-progress build', function () {
     beforeEach(function (done) {
@@ -81,6 +97,7 @@ describe('Building - Context Version Deduping', function () {
         if (err) { return done(err) }
         ctx.build = build
         ctx.user = user
+        whitelistUsers(user)
         ctx.cv = contextVersion
         done()
       })

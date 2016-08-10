@@ -15,7 +15,6 @@ var api = require('../../fixtures/api-control')
 
 var request = require('request')
 var randStr = require('randomstring').generate
-
 const MockAPI = require('mehpi')
 const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
 
