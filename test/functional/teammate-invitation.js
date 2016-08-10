@@ -18,6 +18,8 @@ var githubUserOrgsMock = require('./fixtures/mocks/github/user-orgs.js')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var nock = require('nock')
 var sinon = require('sinon')
+const MockAPI = require('mehpi')
+const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
 
 var Boom = require('dat-middleware').Boom
 var Promise = require('bluebird')
@@ -28,6 +30,11 @@ var ctx = {
   githubUserId: 1,
   orgGithubId: 999
 }
+
+var superOrg
+before(cb => bigPoppaMock.start(cb))
+after(cb => bigPoppaMock.stop(cb))
+
 var createInvitation = function (done) {
   var opts = {
     organization: {
@@ -52,7 +59,32 @@ beforeEach(
   })
 )
 afterEach(mockGetUserById.stubAfter)
+beforeEach(function (done) {
+  ctx.name = randStr(5).toLowerCase()
+  superOrg = {
+    name: 'super-org',
+    githubId: ctx.orgGithubId
+  }
 
+  bigPoppaMock.stub('GET', `/organization/?lowerName=super-org`).returns({
+    status: 200,
+    body: JSON.stringify([{
+      name: 'super-org',
+      githubId: ctx.orgGithubId,
+      allowed: true
+    }])
+  })
+  bigPoppaMock.stub('GET', `/organization/?lowerName=hello`).returns({
+    status: 200,
+    body: JSON.stringify([{
+      name: 'hello',
+      githubId: 777,
+      allowed: true
+    }])
+  })
+
+  done()
+})
 describe('TeammateInvitation', function () {
   before(api.start.bind(ctx))
   beforeEach(function (done) {
@@ -65,6 +97,15 @@ describe('TeammateInvitation', function () {
         done(err)
       }
       ctx.user = user
+      var userId = user.attrs.accounts.github.id
+      bigPoppaMock.stub('GET', `/user/?githubId=${userId}`).returns({
+        status: 200,
+        body: JSON.stringify([{
+          organizations: [superOrg],
+          githubId: userId,
+          allowed: true
+        }])
+      })
       githubUserOrgsMock(ctx.user, ctx.orgGithubId, 'super-org')
       done()
     })
