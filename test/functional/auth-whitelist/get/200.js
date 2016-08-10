@@ -12,26 +12,30 @@ var Code = require('code')
 var expect = Code.expect
 
 var api = require('../../fixtures/api-control')
-var MongoWhitelist = require('models/mongo/user-whitelist')
 
-var Promise = require('bluebird')
 var request = require('request')
 var randStr = require('randomstring').generate
+
+const MockAPI = require('mehpi')
+const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
 
 var ctx = {}
 describe('GET /auth/whitelist/', function () {
   before(api.start.bind(ctx))
   after(api.stop.bind(ctx))
 
-  var whitelistOrgs = function (orgNames) {
-    return Promise.all(orgNames.map(function (orgName) {
-      return MongoWhitelist.createAsync({
-        name: orgName,
-        lowerName: orgName.toLowerCase(),
+  before(cb => bigPoppaMock.start(cb))
+  after(cb => bigPoppaMock.stop(cb))
+
+  var whitelistOrgs = function (user, orgNames) {
+    bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
+      status: 200,
+      body: JSON.stringify([{
+        organizations: orgNames.map(orgName => { return { name: orgName } }),
         githubId: 2828361,
         allowed: true
-      })
-    }))
+      }])
+    })
   }
 
   beforeEach(function (done) {
@@ -50,8 +54,8 @@ describe('GET /auth/whitelist/', function () {
     beforeEach(function (done) {
       require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
       ctx.name = randStr(5)
-      return whitelistOrgs([ctx.name, 'Runnable'])
-        .asCallback(done)
+      whitelistOrgs(ctx.user, [ctx.name, 'Runnable'])
+      done()
     })
 
     it('should return an array of all the whitelisted orgs', function (done) {
@@ -64,8 +68,10 @@ describe('GET /auth/whitelist/', function () {
       request(opts, function (err, res, body) {
         expect(err).to.be.null()
         expect(res).to.exist()
+        expect(body).to.be.an.array()
+        expect(body.length).to.equal(2)
         expect(res.statusCode).to.equal(200)
-        require('../../fixtures/check-whitelist')([ctx.name, 'Runnable'], done)
+        done()
       })
     })
   })
@@ -73,8 +79,7 @@ describe('GET /auth/whitelist/', function () {
   describe('User with no whitelisted orgs', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
-      return whitelistOrgs([ctx.name])
-        .asCallback(done)
+      done()
     })
 
     it('should return an array of all the whitelisted orgs', function (done) {
@@ -99,8 +104,8 @@ describe('GET /auth/whitelist/', function () {
   describe('Non-Runnable user', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
-      return whitelistOrgs([ctx.name])
-        .asCallback(done)
+      whitelistOrgs(ctx.user, [ctx.name])
+      done()
     })
 
     it('should return an array of all the whitelisted orgs', function (done) {
@@ -116,7 +121,7 @@ describe('GET /auth/whitelist/', function () {
         expect(res).to.exist()
         expect(res.statusCode).to.equal(200)
         expect(body).to.be.an.array()
-        expect(body.length).to.equal(0)
+        expect(body.length).to.equal(1)
         done()
       })
     })

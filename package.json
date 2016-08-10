@@ -15,7 +15,7 @@
   "dependencies": {
     "101": "^1.5.0",
     "@runnable/api-client": "^7.0.2",
-    "@runnable/big-poppa-client": "^0.3.0",
+    "@runnable/big-poppa-client": "^0.3.1",
     "@runnable/hostname": "^3.0.0",
     "@runnable/orion": "^1.0.4",
     "JSONStream": "0.10.x",
@@ -120,6 +120,7 @@
     "jsdoc": "^3.2.2",
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
     "lab": "5.8.0",
+    "mehpi": "^1.0.0",
     "multiline": "^1.0.2",
     "nock": "^5.2.1",
     "nodemon": "^1.2.1",

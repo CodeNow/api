@@ -12,15 +12,20 @@ var Code = require('code')
 var expect = Code.expect
 
 var api = require('../../fixtures/api-control')
-var MongoWhitelist = require('models/mongo/user-whitelist')
 
 var request = require('request')
 var randStr = require('randomstring').generate
+
+const MockAPI = require('mehpi')
+const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
 
 var ctx = {}
 describe('GET /auth/whitelist/:name', function () {
   before(api.start.bind(ctx))
   after(api.stop.bind(ctx))
+
+  before(cb => bigPoppaMock.start(cb))
+  after(cb => bigPoppaMock.stop(cb))
 
   beforeEach(function (done) {
     ctx.j = request.jar()
@@ -31,14 +36,18 @@ describe('GET /auth/whitelist/:name', function () {
       done(err)
     })
   })
+
   beforeEach(function (done) {
-    ctx.name = randStr(5)
-    MongoWhitelist.create({
-      name: ctx.name,
-      lowerName: ctx.name.toLowerCase(),
-      githubId: 2828361,
-      allowed: true
-    }, done)
+    ctx.name = randStr(5).toLowerCase()
+    bigPoppaMock.stub('GET', `/organization/?lowerName=${ctx.name.toLowerCase()}`).returns({
+      status: 200,
+      body: JSON.stringify([{
+        name: ctx.name,
+        githubId: 2828361,
+        allowed: true
+      }])
+    })
+    done()
   })
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
 
@@ -55,7 +64,7 @@ describe('GET /auth/whitelist/:name', function () {
       expect(res).to.exist()
       expect(res.statusCode).to.equal(204)
       expect(body).to.be.undefined()
-      require('../../fixtures/check-whitelist')([ctx.name], done)
+      done()
     })
   })
 })

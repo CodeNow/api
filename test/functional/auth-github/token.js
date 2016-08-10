@@ -3,6 +3,7 @@ require('loadenv')()
 
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
+var keypather = require('keypather')()
 var describe = lab.describe
 var expect = require('code').expect
 var it = lab.it
@@ -19,6 +20,8 @@ var Github = require('models/apis/github')
 var getUserEmails = require('../fixtures/mocks/github/get-user-emails')
 var randStr = require('randomstring').generate
 var uuid = require('uuid')
+const MockAPI = require('mehpi')
+const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
 
 describe('/auth/github with whitelist', function () {
   var ctx = {}
@@ -49,36 +52,19 @@ describe('/auth/github with whitelist', function () {
   afterEach(require('../fixtures/clean-mongo').removeEverything)
   afterEach(require('../fixtures/clean-ctx')(ctx))
 
-  describe('user in the whitelist', function () {
-    var tokenUrl = baseUrl + 'token'
-    before(function (done) {
-      ctx.username = randStr(5)
-      ctx.testToken = uuid()
-      var Whitelist = require('models/mongo/user-whitelist')
-      ctx.w = new Whitelist({
-        name: ctx.username,
-        allowed: true,
-        githubId: 1234
-      })
-      ctx.w.save(done)
-    })
+  before(cb => bigPoppaMock.start(cb))
+  after(cb => bigPoppaMock.stop(cb))
 
-    it('should let the user authenticate', function (done) {
-      require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken)
-      require('../fixtures/mocks/github/user-orgs')(1001, randStr(5))
-      request.post({
-        url: tokenUrl,
-        json: true,
-        body: { accessToken: ctx.testToken },
-        qs: { username: ctx.username },
-        followRedirect: false
-      }, function (err, res) {
-        if (err) { return done(err) }
-        expect(res.statusCode).to.equal(200)
-        done()
-      })
+  function whitelistOrgsForUser (user, orgNames) {
+    bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
+      status: 200,
+      body: JSON.stringify([{
+        organizations: orgNames.map(orgName => { return { name: orgName } }),
+        githubId: 2828361,
+        allowed: true
+      }])
     })
-  })
+  }
 
   describe('user in an org in the whitelist', function () {
     var tokenUrl = baseUrl + 'token'
@@ -86,13 +72,10 @@ describe('/auth/github with whitelist', function () {
       ctx.orgname = randStr(5)
       ctx.username = randStr(5)
       ctx.testToken = uuid()
-      var Whitelist = require('models/mongo/user-whitelist')
-      var w = new Whitelist({
-        name: ctx.orgname,
-        allowed: true,
-        githubId: 1234
-      })
-      w.save(done)
+      var user = {}
+      keypather.set(user, 'attrs.accounts.github.id', 1000)
+      whitelistOrgsForUser(user, [ctx.orgName])
+      done()
     })
 
     it('should let the user authenticate', function (done) {
