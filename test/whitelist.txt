@@ -52,8 +52,8 @@
 ./test/functional/users-id-routes-id/index.js
 ./test/functional/users-id-routes/index.js
 ./test/functional/users-id.js
-./test/integration/fixtures/dockerListenerEvents/on-image-builder-container-create.js
-./test/integration/fixtures/dockerListenerEvents/on-image-builder-container-die.js
+./test/integration/fixtures/dockerListenerEvents/container.image-builder.created.js
+./test/integration/fixtures/dockerListenerEvents/container.image-builder.died.js
 ./test/integration/fixtures/factory.js
 ./test/integration/fixtures/isolation-factory.js
 ./test/integration/fixtures/validation.js
