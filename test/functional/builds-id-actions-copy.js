@@ -22,10 +22,22 @@ var exists = require('101/exists')
 var createCount = require('callback-count')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 
+const MockAPI = require('mehpi')
+const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
 var ContextVersion = require('models/mongo/context-version')
 
 describe('Build Copy - /builds/:id/actions/copy', function () {
   var ctx = {}
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 1
+  }
+  var otherOrg = {
+    name: 'otherOrg',
+    githubId: 2
+  }
+  before(cb => bigPoppaMock.start(cb))
+  after(cb => bigPoppaMock.stop(cb))
   beforeEach(
     mockGetUserById.stubBefore(function () {
       return [{
@@ -37,6 +49,19 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
       }]
     })
   )
+  beforeEach(function (done) {
+    [runnableOrg, otherOrg].forEach(function (org) {
+      bigPoppaMock.stub('GET', `/organization/?lowerName=${org.name}`).returns({
+        status: 200,
+        body: JSON.stringify([{
+          name: org.name,
+          githubId: org.githubId,
+          allowed: true
+        }])
+      })
+    })
+    done()
+  })
   afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
     multi.createContextVersion(function (err, contextVersion, context, build, user) {

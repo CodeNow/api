@@ -19,6 +19,9 @@ var expects = require('../../fixtures/expects')
 var primus = require('../../fixtures/primus')
 var rabbitMQ = require('models/rabbitmq')
 
+const MockAPI = require('mehpi')
+const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
+
 describe('DELETE /instances/:id', function () {
   var ctx = {}
 
@@ -26,6 +29,8 @@ describe('DELETE /instances/:id', function () {
   before(dock.start.bind(ctx))
   beforeEach(primus.connect)
   afterEach(primus.disconnect)
+  before(cb => bigPoppaMock.start(cb))
+  after(cb => bigPoppaMock.stop(cb))
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
@@ -42,6 +47,20 @@ describe('DELETE /instances/:id', function () {
     rabbitMQ.deleteInstance.restore()
     done()
   })
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 11111
+  }
+  var whitelistOrgs = function (user) {
+    bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
+      status: 200,
+      body: JSON.stringify([{
+        organizations: [runnableOrg],
+        githubId: 2828361,
+        allowed: true
+      }])
+    })
+  }
 
   beforeEach(
     mockGetUserById.stubBefore(function () {
@@ -58,6 +77,19 @@ describe('DELETE /instances/:id', function () {
       return array
     })
   )
+  beforeEach(function (done) {
+    [runnableOrg].forEach(function (org) {
+      bigPoppaMock.stub('GET', `/organization/?lowerName=${org.name}`).returns({
+        status: 200,
+        body: JSON.stringify([{
+          name: org.name,
+          githubId: org.githubId,
+          allowed: true
+        }])
+      })
+    })
+    done()
+  })
   afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
     multi.createAndTailInstance(primus, function (err, instance, build, user) {
@@ -67,6 +99,7 @@ describe('DELETE /instances/:id', function () {
       ctx.user = user
       require('../../fixtures/mocks/github/user')(ctx.user)
       require('../../fixtures/mocks/github/user')(ctx.user)
+      whitelistOrgs(ctx.user, ['Runnable'])
       done()
     })
   })
@@ -89,17 +122,6 @@ describe('DELETE /instances/:id', function () {
         it('should not delete the instance (403 forbidden)', function (done) {
           ctx.instance.client = ctx.nonOwner.client // swap auth to nonOwner's
           ctx.instance.destroy(expects.errorStatus(403, done))
-        })
-      })
-      describe('moderator', function () {
-        beforeEach(function (done) {
-          ctx.moderator = multi.createModerator(done)
-        })
-        it('should delete the instance', function (done) {
-          ctx.instance.client = ctx.moderator.client // swap auth to moderator's
-          require('../../fixtures/mocks/github/user-id')(ctx.moderator.attrs.accounts.github.id,
-            ctx.moderator.attrs.accounts.github.login)
-          ctx.instance.destroy(expects.success(204, done))
         })
       })
     })
