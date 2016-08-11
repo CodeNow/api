@@ -146,7 +146,15 @@ module.exports = {
       function createContext (user, cb) {
         var body = { name: randStr(5) }
         if (ownerId) { body.owner = { github: ownerId } }
+        var stub
+        if (!PermissionService.isOwnerOf.isSinonProxy) {
+          // Duck it, we never need to restore this stub anyways right?
+          stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+        }
         var context = user.createContext(body, function (err) {
+          if (stub) {
+            stub.restore()
+          }
           cb(err, context, user)
         })
       }
@@ -160,7 +168,15 @@ module.exports = {
         name: randStr(5),
         isSource: true
       }
+      var stub
+      if (!PermissionService.isOwnerOf.isSinonProxy) {
+        // Duck it, we never need to restore this stub anyways right?
+        stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+      }
       var context = moderator.createContext(body, function (err) {
+        if (stub) {
+          stub.restore()
+        }
         if (err) { return cb(err) }
         cb(err, context, moderator)
       })
@@ -171,6 +187,11 @@ module.exports = {
     this.createSourceContext(function (err, context, moderator) {
       if (err) { return cb(err) }
       require('./mocks/s3/put-object')(context.id(), '/')
+      var stub
+      if (!PermissionService.isOwnerOf.isSinonProxy) {
+        // Duck it, we never need to restore this stub anyways right?
+        stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+      }
       var version = context.createVersion(function (err) {
         if (err) { return cb(err) }
         require('./mocks/s3/get-object')(context.id(), '/')
@@ -180,6 +201,9 @@ module.exports = {
           name: 'Dockerfile',
           body: 'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n'
         }, function (err) {
+          if (stub) {
+            stub.restore()
+          }
           cb(err, version, context, moderator)
         })
       })
@@ -208,8 +232,15 @@ module.exports = {
           // Duck it, we never need to restore this stub anyways right?
           sinon.stub(PermissionService, 'checkOwnerAllowed').returns(Promise.resolve())
         }
-
+        var stub
+        if (!PermissionService.isOwnerOf.isSinonProxy) {
+          // Duck it, we never need to restore this stub anyways right?
+          stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+        }
         var build = user.createBuild(body, function (err) {
+          if (stub) {
+            stub.restore()
+          }
           cb(err, build, context, user, [srcContextVersion, srcContext, moderator])
         })
       })
@@ -244,6 +275,11 @@ module.exports = {
       opts.qs = {
         toBuild: build.id()
       }
+      var stub
+      if (!PermissionService.isOwnerOf.isSinonProxy) {
+        // Duck it, we never need to restore this stub anyways right?
+        stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+      }
       var contextVersion = context.createVersion(opts, function (err) {
         if (err) { return cb(err) }
         require('./mocks/s3/get-object')(srcContext.id(), '/')
@@ -274,6 +310,9 @@ module.exports = {
               build.fetch(function (err) {
                 if (err) { return cb(err) }
                 contextVersion.fetch(function (err) {
+                  if (stub) {
+                    stub.restore()
+                  }
                   cb(err, contextVersion, context, build, user,
                     [srcContextVersion, srcContext, moderator])
                 })
@@ -295,6 +334,11 @@ module.exports = {
     }
     var self = this
     log.trace({}, 'this.createContextVersion', ownerId)
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
     this.createContextVersion(ownerId, function (err, contextVersion, context, build, user, srcArray) {
       if (err) { return cb(err) }
       log.trace({}, 'self.buildTheBuild', user.id(), build.id(), ownerId)
@@ -305,6 +349,9 @@ module.exports = {
         log.trace({}, 'contextVersion.fetch', contextVersion.id())
         contextVersion.fetch(function (err) {
           delete contextVersion.build.log
+          if (stub) {
+            stub.restore()
+          }
           cb(err, build, user,
             [contextVersion, context, build, user],
             srcArray)
@@ -348,6 +395,11 @@ module.exports = {
     }
     log.trace({}, 'createAndTailInstance args', buildOwnerId, buildOwnerName, createBody, typeof cb)
     var ctx = {}
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
     this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
       if (err) { return cb(err) }
       ctx.build = build
@@ -393,6 +445,9 @@ module.exports = {
         log.trace({}, 'createAndTailInstance', 'done')
         ctx.instance.fetch(function (err) {
           if (err) { return cb(err) }
+          if (stub) {
+            stub.restore()
+          }
           cb(null, ctx.instance, ctx.build, ctx.user, ctx.modelsArr, ctx.srcArr)
         })
       }
@@ -415,6 +470,11 @@ module.exports = {
         build: build.id(),
         masterPod: true
       }
+      var stub
+      if (!PermissionService.isOwnerOf.isSinonProxy) {
+        // Duck it, we never need to restore this stub anyways right?
+        stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+      }
       if (buildOwnerId) {
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName)
         require('./mocks/github/user-orgs')(buildOwnerId, buildOwnerName)
@@ -432,6 +492,10 @@ module.exports = {
       require('./mocks/github/user')(user)
       var instance = user.createInstance(body, function (err) {
         if (err) { return cb(err) }
+
+        if (stub) {
+          stub.restore()
+        }
         // hold until instance worker completes
         cb(err, instance, build, user, modelsArr, srcArr)
       /*
@@ -485,6 +549,11 @@ module.exports = {
       require('./mocks/github/user-orgs')(ownerId, 'Runnable')
     }
     log.trace({}, 'build.fetch', build.id())
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
     build.fetch(function (err) {
       if (err) { return cb(err) }
       log.trace({}, 'build.contextVersions.models[0].fetch')
@@ -508,7 +577,12 @@ module.exports = {
               primus.onceVersionComplete(cv._id, function () {
                 log.trace({}, 'version complete', cv._id)
                 require('./mocks/github/user')(user)
-                var count = createCount(2, cb)
+                var count = createCount(2, function (err) {
+                  if (stub) {
+                    stub.restore()
+                  }
+                  cb(err)
+                })
                 build.contextVersions.models[0].fetch(count.next)
                 require('./mocks/github/user')(user)
                 build.fetch(count.next)

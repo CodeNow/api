@@ -24,6 +24,8 @@ var beforeEach = lab.beforeEach
 var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
+const MockAPI = require('mehpi')
+const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
 
 describe('GET /instances', function () {
   var ctx = {}
@@ -32,6 +34,8 @@ describe('GET /instances', function () {
   before(dock.start.bind(ctx))
   beforeEach(primus.connect)
   afterEach(primus.disconnect)
+  before(cb => bigPoppaMock.start(cb))
+  after(cb => bigPoppaMock.stop(cb))
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
@@ -62,7 +66,27 @@ describe('GET /instances', function () {
       return array
     })
   )
+  var whitelistOrgs = function (user) {
+    bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
+      status: 200,
+      body: JSON.stringify([{
+        organizations: [{
+          name: 'Runnable',
+          githubId: 11111
+        }, {
+          name: 'Not Runnable',
+          githubId: 12345
+        }],
+        githubId: user.attrs.accounts.github.id,
+        allowed: true
+      }])
+    })
+  }
   afterEach(mockGetUserById.stubAfter)
+  afterEach(function (done) {
+    bigPoppaMock.restore()
+    done()
+  })
   describe('GET', function () {
     beforeEach(function (done) {
       multi.createAndTailInstance(primus, { name: 'InstanceNumber1' }, function (err, instance, build, user) {
@@ -70,11 +94,13 @@ describe('GET /instances', function () {
         ctx.instance = instance
         ctx.build = build // builtBuild
         ctx.user = user
+        whitelistOrgs(user)
         multi.createAndTailInstance(primus, function (err, instance, build, user) {
           if (err) { return done(err) }
           ctx.instance2 = instance
           ctx.build2 = build
           ctx.user2 = user
+          whitelistOrgs(user)
           done()
         })
       })
@@ -582,6 +608,7 @@ describe('GET /instances', function () {
       ctx.orgName = 'Not Runnable'
       multi.createAndTailInstance(primus, ctx.orgId, ctx.orgName, function (err, instance, build, user) {
         ctx.user = user
+        whitelistOrgs(user)
         ctx.instance = instance
         done(err)
       })
@@ -602,32 +629,6 @@ describe('GET /instances', function () {
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName)
         require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName)
         ctx.user.fetchInstances(query, expects.success(200, expected, done))
-      })
-    })
-
-    describe('moderator', function () {
-      beforeEach(function (done) {
-        multi.createHelloRunnableUser(function (err, user) {
-          ctx.helloRunnable = user
-          done(err)
-        })
-      })
-
-      it('should list instances by githubUsername and name', function (done) {
-        var query = {
-          githubUsername: ctx.orgName,
-          name: ctx.instance.attrs.name
-        }
-        var expected = [
-          {}
-        ]
-        expected[0].name = ctx.instance.attrs.name
-        // expected[0]['owner.username'] = ctx.orgName
-        expected[0]['owner.github'] = ctx.orgId
-        require('../../fixtures/mocks/github/users-username')(ctx.orgId, ctx.orgName)
-        require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName)
-        require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName)
-        ctx.helloRunnable.fetchInstances(query, expects.success(200, expected, done))
       })
     })
   })
