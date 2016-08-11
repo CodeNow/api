@@ -47,6 +47,7 @@ describe('GET /auth/whitelist/:name', function () {
     done()
   })
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
+  afterEach(require('../../fixtures/clean-nock'))
 
   it('should return 404 is a name is NOT in the whitelist', function (done) {
     require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')

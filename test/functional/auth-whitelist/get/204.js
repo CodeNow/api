@@ -42,16 +42,17 @@ describe('GET /auth/whitelist/:name', function () {
     bigPoppaMock.stub('GET', `/organization/?lowerName=${ctx.name.toLowerCase()}`).returns({
       status: 200,
       body: JSON.stringify([{
-        name: ctx.name,
-        githubId: 2828361,
+        name: 'Runnable',
+        githubId: 1,
         allowed: true
       }])
     })
     done()
   })
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
+  afterEach(require('../../fixtures/clean-nock'))
 
-  it('should return 204 is a name is in the whitelist', function (done) {
+  it('should return 204 if a name is in the whitelist', function (done) {
     require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
     var opts = {
       method: 'GET',

@@ -25,12 +25,18 @@ describe('GET /auth/whitelist/', function () {
 
   before(cb => bigPoppaMock.start(cb))
   after(cb => bigPoppaMock.stop(cb))
+  afterEach(require('../../fixtures/clean-nock'))
 
   var whitelistOrgs = function (user, orgNames) {
     bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
       status: 200,
       body: JSON.stringify([{
-        organizations: orgNames.map(orgName => { return { name: orgName } }),
+        organizations: orgNames.map(function (orgName, index) {
+          return {
+            name: orgName,
+            id: index + 1
+          }
+        }),
         githubId: 2828361,
         allowed: true
       }])
