@@ -58,7 +58,6 @@ describe('BDD - Isolation', function () {
         require('./fixtures/mocks/github/user')(ctx.user)
         require('./fixtures/mocks/github/user')(ctx.user)
         require('./fixtures/mocks/github/user')(ctx.user)
-        sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
         ctx.apiInstance = ctx.user.createInstance({
           name: 'api-instance',
           build: ctx.build.id(),
@@ -67,7 +66,6 @@ describe('BDD - Isolation', function () {
           if (err) { return done(err) }
           primus.expectAction('start', {}, function () {
             ctx.apiInstance.fetch(function () {
-              PermissionService.isOwnerOf.restore()
               done()
             })
           })
