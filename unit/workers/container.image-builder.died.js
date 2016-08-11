@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/on-image-builder-container-die
+ * @module unit/workers/container.image-builder.died
  */
 'use strict'
 
@@ -20,7 +20,7 @@ var rabbitMQ = require('models/rabbitmq')
 var keypather = require('keypather')()
 var put = require('101/put')
 
-var OnImageBuilderContainerDie = require('workers/on-image-builder-container-die')
+var OnImageBuilderContainerDie = require('workers/container.image-builder.died')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach

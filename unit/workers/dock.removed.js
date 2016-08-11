@@ -20,7 +20,7 @@ var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 var PermissionService = require('models/services/permission-service')
 var Worker = require('workers/dock.removed')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var errors = require('errors')
 
 describe('Worker: dock.removed unit test', function () {
@@ -54,8 +54,8 @@ describe('Worker: dock.removed unit test', function () {
     describe('invalid Job', function () {
       it('should throw a task fatal error if the job is missing a dockerhost', function (done) {
         Worker({}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('dock.removed: Invalid Job')
+          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err.message).to.contain('Invalid Job')
           expect(err.data.validationError.message).to.contain('host')
           expect(err.data.validationError.message).to.contain('required')
           sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
@@ -64,8 +64,8 @@ describe('Worker: dock.removed unit test', function () {
       })
       it('should throw a task fatal error if the job is missing a dockerhost', function (done) {
         Worker({host: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('dock.removed: Invalid Job')
+          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err.message).to.contain('Invalid Job')
           expect(err.data.validationError.message).to.contain('host')
           expect(err.data.validationError.message).to.contain('a string')
           sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
@@ -74,8 +74,8 @@ describe('Worker: dock.removed unit test', function () {
       })
       it('should throw a task fatal error if foul dockerhost', function (done) {
         Worker({host: 'foul'}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('dock.removed: Invalid Job')
+          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err.message).to.contain('Invalid Job')
           expect(err.data.validationError.message).to.contain('host')
           expect(err.data.validationError.message).to.contain('must be a valid uri')
           sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
@@ -84,16 +84,16 @@ describe('Worker: dock.removed unit test', function () {
       })
       it('should throw a task fatal error if the job is missing entirely', function (done) {
         Worker().asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('dock.removed: Invalid Job')
+          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err.message).to.contain('Invalid Job')
           sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
           done()
         })
       })
       it('should throw a task fatal error if the job is not an object', function (done) {
         Worker(true).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
-          expect(err.message).to.equal('dock.removed: Invalid Job')
+          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err.message).to.contain('Invalid Job')
           expect(err.data.validationError.message).to.contain('must be an object')
           sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
           done()
@@ -319,8 +319,8 @@ describe('Worker: dock.removed unit test', function () {
         Worker._redeploy(testData)
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.equal('dock.removed: Organization is not whitelisted, no need to redeploy')
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err.message).to.equal('Organization is not whitelisted, no need to redeploy')
+            expect(err).to.be.instanceOf(WorkerStopError)
             done()
           })
       })
@@ -331,8 +331,8 @@ describe('Worker: dock.removed unit test', function () {
         Worker._redeploy(testData)
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.equal('dock.removed: Organization is not allowed, no need to redeploy')
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err.message).to.equal('Organization is not allowed, no need to redeploy')
+            expect(err).to.be.instanceOf(WorkerStopError)
             done()
           })
       })
@@ -415,8 +415,8 @@ describe('Worker: dock.removed unit test', function () {
         Worker._rebuild(testData)
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.equal('dock.removed: Organization is not whitelisted, no need to rebuild')
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err.message).to.equal('Organization is not whitelisted, no need to rebuild')
+            expect(err).to.be.instanceOf(WorkerStopError)
             done()
           })
       })
@@ -427,8 +427,8 @@ describe('Worker: dock.removed unit test', function () {
         Worker._rebuild(testData)
           .asCallback(function (err) {
             expect(err).to.exist()
-            expect(err.message).to.equal('dock.removed: Organization is not allowed, no need to rebuild')
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err.message).to.equal('Organization is not allowed, no need to rebuild')
+            expect(err).to.be.instanceOf(WorkerStopError)
             done()
           })
       })

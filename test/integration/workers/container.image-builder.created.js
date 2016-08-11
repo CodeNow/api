@@ -23,7 +23,7 @@ var mockFactory = require('../fixtures/factory')
 var mockOnBuilderCreateMessage = require('../fixtures/dockerListenerEvents/on-image-builder-container-create')
 
 var expect = Code.expect
-var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create.js')
+var OnImageBuilderContainerCreate = require('workers/container.image-builder.created')
 var InstanceService = require('models/services/instance-service.js')
 var Promise = require('bluebird')
 var mongoose = require('mongoose')

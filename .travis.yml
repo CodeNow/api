@@ -27,7 +27,7 @@ before_script:
 - npm run lint
 script:
 - timeout 3m ./scripts/run-command-conditionally.sh npm run unit
-- timeout 10m ./scripts/npm-bdd-split-files.sh
+- timeout 15m ./scripts/npm-bdd-split-files.sh
 notifications:
   email: false
   slack:
