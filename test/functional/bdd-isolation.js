@@ -19,7 +19,9 @@ var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
 var multi = require('./fixtures/multi-factory')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
+var PermissionService = require('models/services/permission-service')
 var primus = require('./fixtures/primus')
+var sinon = require('sinon')
 const MockAPI = require('mehpi')
 const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
 
@@ -56,6 +58,7 @@ describe('BDD - Isolation', function () {
         require('./fixtures/mocks/github/user')(ctx.user)
         require('./fixtures/mocks/github/user')(ctx.user)
         require('./fixtures/mocks/github/user')(ctx.user)
+        sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
         ctx.apiInstance = ctx.user.createInstance({
           name: 'api-instance',
           build: ctx.build.id(),
@@ -63,7 +66,10 @@ describe('BDD - Isolation', function () {
         }, function (err) {
           if (err) { return done(err) }
           primus.expectAction('start', {}, function () {
-            ctx.apiInstance.fetch(done)
+            ctx.apiInstance.fetch(function () {
+              PermissionService.isOwnerOf.restore()
+              done()
+            })
           })
         })
       })
