@@ -84,6 +84,7 @@ describe('GET /auth/whitelist/', function () {
   describe('User with no whitelisted orgs', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
+      whitelistOrgs(ctx.user, [ctx.name, 'Runnable'])
       done()
     })
 
