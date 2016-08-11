@@ -1,30 +1,29 @@
 'use strict'
-
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
-var it = lab.it
-var beforeEach = lab.beforeEach
-var afterEach = lab.afterEach
-var Code = require('code')
-var expect = Code.expect
-var sinon = require('sinon')
-var keypather = require('keypather')()
-
-var error = require('error')
-var mongoose = require('mongoose')
 var assign = require('101/assign')
+var Code = require('code')
+var error = require('error')
+var keypather = require('keypather')()
+var Lab = require('lab')
+var mongoose = require('mongoose')
+var objectId = require('objectid')
+var Promise = require('bluebird')
+var sinon = require('sinon')
 
 var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
-var Version = require('models/mongo/context-version')
-var objectId = require('objectid')
-var pubsub = require('models/redis/pubsub')
-var Promise = require('bluebird')
-
 var mongoFactory = require('../../factories/mongo')
+var pubsub = require('models/redis/pubsub')
+var Version = require('models/mongo/context-version')
+
 require('sinon-as-promised')(Promise)
+var lab = exports.lab = Lab.script()
+
+var afterEach = lab.afterEach
+var beforeEach = lab.beforeEach
+var describe = lab.describe
+var expect = Code.expect
+var it = lab.it
 
 var expectErr = function (expectedErr, done) {
   return function (err) {
@@ -150,22 +149,22 @@ describe('Instance Model Tests', function () {
     var containerId = '12412424235'
     var testErr = 'something bad happened'
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findOneAndUpdateAsync')
+      sinon.stub(Instance, '_updateAndCheck')
       done()
     })
 
     afterEach(function (done) {
-      Instance.findOneAndUpdateAsync.restore()
+      Instance._updateAndCheck.restore()
       done()
     })
 
     it('should set error on instance', function (done) {
-      Instance.findOneAndUpdateAsync.resolves(testInstance)
+      Instance._updateAndCheck.resolves(testInstance)
       Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
         if (err) { return done(err) }
         expect(instance).to.equal(testInstance)
-        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
-        sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+        sinon.assert.calledOnce(Instance._updateAndCheck)
+        sinon.assert.calledWith(Instance._updateAndCheck, {
           _id: instanceId,
           'container.dockerContainer': containerId
         }, {
@@ -178,10 +177,84 @@ describe('Instance Model Tests', function () {
             'container.inspect.State.Restarting': false,
             'container.inspect.State.Running': false,
             'container.inspect.State.Starting': false,
-            'container.inspect.State.Status': 'lost',
+            'container.inspect.State.Status': 'error',
             'container.inspect.State.Stopping': false
           }
         })
+        done()
+      })
+    })
+  })
+
+  describe('setContainerCreateError', function () {
+    var testInstance = 'tester'
+    var instanceId = '57a3c46463a7e9110027e423'
+    var contextVersionId = '57a3c46463a7e9110027e422'
+    var testErr = 'something bad happened'
+    beforeEach(function (done) {
+      sinon.stub(Instance, '_updateAndCheck')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance._updateAndCheck.restore()
+      done()
+    })
+
+    it('should set error on instance', function (done) {
+      Instance._updateAndCheck.resolves(testInstance)
+      Instance.setContainerCreateError(instanceId, contextVersionId, testErr).asCallback(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.equal(testInstance)
+        sinon.assert.calledOnce(Instance._updateAndCheck)
+        sinon.assert.calledWith(Instance._updateAndCheck, {
+          _id: instanceId,
+          'contextVersion._id': objectId(contextVersionId)
+        }, {
+          $set: {
+            'container.error.message': testErr,
+            'container.inspect.State.Dead': false,
+            'container.inspect.State.Error': testErr,
+            'container.inspect.State.OOMKilled': false,
+            'container.inspect.State.Paused': false,
+            'container.inspect.State.Restarting': false,
+            'container.inspect.State.Running': false,
+            'container.inspect.State.Starting': false,
+            'container.inspect.State.Status': 'error',
+            'container.inspect.State.Stopping': false
+          }
+        })
+        done()
+      })
+    })
+  })
+
+  describe('_updateAndCheck', function () {
+    var testQuery = {
+      _id: '123213',
+      'container.dockerContainer': '123123123'
+    }
+
+    var testUpdate = {
+      $set: { 'container.inspect.State.Dead': false }
+    }
+
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdateAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAndUpdateAsync.restore()
+      done()
+    })
+
+    it('should call mongo correctly', function (done) {
+      Instance.findOneAndUpdateAsync.resolves({})
+      Instance._updateAndCheck(testQuery, testUpdate).asCallback(function (err, instance) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        sinon.assert.calledWith(Instance.findOneAndUpdateAsync, testQuery, testUpdate)
         done()
       })
     })
@@ -189,23 +262,22 @@ describe('Instance Model Tests', function () {
     it('should return an error if mongo call failed', function (done) {
       var mongoError = new Error('Mongo error')
       Instance.findOneAndUpdateAsync.rejects(mongoError)
-      Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
+      Instance._updateAndCheck(testQuery, testUpdate).asCallback(function (err, instance) {
         expect(err).to.equal(mongoError)
         sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
         done()
       })
     })
 
-    it('should return null if instance was not found', function (done) {
+    it('should return 404 if instance was not found', function (done) {
       Instance.findOneAndUpdateAsync.resolves(null, null)
-      Instance.setContainerError(instanceId, containerId, testErr).asCallback(function (err, instance) {
+      Instance._updateAndCheck(testQuery, testUpdate).asCallback(function (err, instance) {
         expect(err.output.statusCode).to.equal(404)
         sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
         done()
       })
     })
-  })
-
+  }) // end _updateAndCheck
   describe('markAsStarting', function () {
     var mockInstance = {
       _id: '507f1f77bcf86cd799439011'
