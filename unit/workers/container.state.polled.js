@@ -4,13 +4,13 @@ var Boom = require('dat-middleware').Boom
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
+var Promise = require('bluebird')
 var Code = require('code')
 var sinon = require('sinon')
-require('sinon-as-promised')(require('bluebird'))
+require('sinon-as-promised')(Promise)
 
 var ConstainerStatePolled = require('workers/container.state.polled').task
 var InstanceService = require('models/services/instance-service')
-var Promise = require('bluebird')
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var afterEach = lab.afterEach
