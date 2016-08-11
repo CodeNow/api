@@ -19,16 +19,12 @@ var multi = require('../../fixtures/multi-factory')
 var uuid = require('uuid')
 var primus = require('../../fixtures/primus')
 
-const MockAPI = require('mehpi')
-const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
 describe('XXX POST /contexts/:id/versions/:id/appCodeVersions', function () {
   var ctx = {}
 
   before(api.start.bind(ctx))
   before(dock.start.bind(ctx))
 
-  before(cb => bigPoppaMock.start(cb))
-  after(cb => bigPoppaMock.stop(cb))
   beforeEach(primus.connect)
   afterEach(primus.disconnect)
   after(api.stop.bind(ctx))

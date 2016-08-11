@@ -32,6 +32,9 @@ var sinon = require('sinon')
 var rabbitMQ = require('models/rabbitmq')
 var uuid = require('uuid')
 
+const MockAPI = require('mehpi')
+const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
+
 describe('BDD - Create Build and Deploy Instance', function () {
   var ctx = {}
   before(api.start.bind(ctx))
@@ -45,6 +48,9 @@ describe('BDD - Create Build and Deploy Instance', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
+
+  before(cb => bigPoppaMock.start(cb))
+  after(cb => bigPoppaMock.stop(cb))
 
   before(function (done) {
     // prevent worker to be created
@@ -63,6 +69,35 @@ describe('BDD - Create Build and Deploy Instance', function () {
       }]
     })
   )
+  beforeEach(function (done) {
+    bigPoppaMock.stub('GET', `/organization/?lowerName='runnable`).returns({
+      status: 200,
+      body: JSON.stringify([{
+        name: 'Runnable',
+        lowerName: 'runnable',
+        githubId: 11111,
+        allowed: true
+      }])
+    })
+    done()
+  })
+
+  var whitelistOrgs = function (user) {
+    bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
+      status: 200,
+      body: JSON.stringify([{
+        organizations: [{
+          name: 'Runnable',
+          lowerName: 'runnable',
+          githubId: 11111,
+          allowed: true
+        }],
+        githubId: 2828361,
+        allowed: true
+      }])
+    })
+  }
+
   afterEach(mockGetUserById.stubAfter)
   describe('create a cv to test dudupe logic with', function () {
     beforeEach(function (done) {
@@ -71,6 +106,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         ctx.instance = instance
         ctx.build = build
         ctx.user = user
+        whitelistOrgs(user)
         ctx.contextVersion = modelsArr[0]
         ctx.context = modelsArr[1]
         ctx.oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer
