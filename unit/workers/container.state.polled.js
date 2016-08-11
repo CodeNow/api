@@ -133,9 +133,7 @@ describe('ConstainerStatePolledWorker', function () {
 
     it('should fail if emitInstanceUpdate failed', function (done) {
       var mongoError = new Error('Mongo error')
-      var rejectionPromise = Promise.reject(mongoError)
-      rejectionPromise.suppressUnhandledRejections()
-      InstanceService.emitInstanceUpdate.returns(rejectionPromise)
+      InstanceService.emitInstanceUpdate.rejects(mongoError)
       ConstainerStatePolled(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
