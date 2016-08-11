@@ -1,23 +1,23 @@
 'use strict'
 
-var Boom = require('dat-middleware').Boom
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
+const Boom = require('dat-middleware').Boom
+const Lab = require('lab')
+const lab = exports.lab = Lab.script()
 
-var Promise = require('bluebird')
-var Code = require('code')
-var sinon = require('sinon')
+const Promise = require('bluebird')
+const Code = require('code')
+const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
-var ConstainerStatePolled = require('workers/container.state.polled').task
-var InstanceService = require('models/services/instance-service')
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
+const ConstainerStatePolled = require('workers/container.state.polled').task
+const InstanceService = require('models/services/instance-service')
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
 describe('ConstainerStatePolledWorker', function () {
   var ctx
@@ -105,7 +105,7 @@ describe('ConstainerStatePolledWorker', function () {
   })
   describe('failure', function () {
     it('should fail if modifyExistingContainerInspect failed', function (done) {
-      var mongoError = new Error('Mongo error')
+      const mongoError = new Error('Mongo error')
       InstanceService.modifyExistingContainerInspect.rejects(mongoError)
       ConstainerStatePolled(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
@@ -118,7 +118,7 @@ describe('ConstainerStatePolledWorker', function () {
     })
 
     it('should fail if modifyExistingContainerInspect returned 409', function (done) {
-      var conflictErr = Boom.conflict('Instance not found')
+      const conflictErr = Boom.conflict('Instance not found')
       InstanceService.modifyExistingContainerInspect.rejects(conflictErr)
       ConstainerStatePolled(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
@@ -132,7 +132,7 @@ describe('ConstainerStatePolledWorker', function () {
     })
 
     it('should fail if emitInstanceUpdate failed', function (done) {
-      var mongoError = new Error('Mongo error')
+      const mongoError = new Error('Mongo error')
       InstanceService.emitInstanceUpdate.rejects(mongoError)
       ConstainerStatePolled(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
