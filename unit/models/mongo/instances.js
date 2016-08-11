@@ -1,30 +1,29 @@
 'use strict'
-
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
-var it = lab.it
-var beforeEach = lab.beforeEach
-var afterEach = lab.afterEach
-var Code = require('code')
-var expect = Code.expect
-var sinon = require('sinon')
-var keypather = require('keypather')()
-
-var error = require('error')
-var mongoose = require('mongoose')
 var assign = require('101/assign')
+var Code = require('code')
+var error = require('error')
+var keypather = require('keypather')()
+var Lab = require('lab')
+var mongoose = require('mongoose')
+var objectId = require('objectid')
+var Promise = require('bluebird')
+var sinon = require('sinon')
 
 var Build = require('models/mongo/build')
 var ContextVersion = require('models/mongo/context-version')
 var Instance = require('models/mongo/instance')
-var Version = require('models/mongo/context-version')
-var objectId = require('objectid')
-var pubsub = require('models/redis/pubsub')
-var Promise = require('bluebird')
-
 var mongoFactory = require('../../factories/mongo')
+var pubsub = require('models/redis/pubsub')
+var Version = require('models/mongo/context-version')
+
 require('sinon-as-promised')(Promise)
+var lab = exports.lab = Lab.script()
+
+var afterEach = lab.afterEach
+var beforeEach = lab.beforeEach
+var describe = lab.describe
+var expect = Code.expect
+var it = lab.it
 
 var expectErr = function (expectedErr, done) {
   return function (err) {
@@ -178,7 +177,7 @@ describe('Instance Model Tests', function () {
             'container.inspect.State.Restarting': false,
             'container.inspect.State.Running': false,
             'container.inspect.State.Starting': false,
-            'container.inspect.State.Status': 'lost',
+            'container.inspect.State.Status': 'error',
             'container.inspect.State.Stopping': false
           }
         })
@@ -189,8 +188,8 @@ describe('Instance Model Tests', function () {
 
   describe('setContainerCreateError', function () {
     var testInstance = 'tester'
-    var instanceId = '12312341234'
-    var contextVersionId = '12412424235'
+    var instanceId = '57a3c46463a7e9110027e423'
+    var contextVersionId = '57a3c46463a7e9110027e422'
     var testErr = 'something bad happened'
     beforeEach(function (done) {
       sinon.stub(Instance, '_updateAndCheck')
@@ -210,7 +209,7 @@ describe('Instance Model Tests', function () {
         sinon.assert.calledOnce(Instance._updateAndCheck)
         sinon.assert.calledWith(Instance._updateAndCheck, {
           _id: instanceId,
-          'contextVersion._id': contextVersionId
+          'contextVersion._id': objectId(contextVersionId)
         }, {
           $set: {
             'container.error.message': testErr,
@@ -221,7 +220,7 @@ describe('Instance Model Tests', function () {
             'container.inspect.State.Restarting': false,
             'container.inspect.State.Running': false,
             'container.inspect.State.Starting': false,
-            'container.inspect.State.Status': 'nonexistent',
+            'container.inspect.State.Status': 'error',
             'container.inspect.State.Stopping': false
           }
         })
