@@ -22,22 +22,21 @@ var exists = require('101/exists')
 var createCount = require('callback-count')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 
-const MockAPI = require('mehpi')
-const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
+const whitelistOrgs = require('./fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('./fixtures/mocks/big-poppa').whitelistUserOrgs
 var ContextVersion = require('models/mongo/context-version')
 
 describe('Build Copy - /builds/:id/actions/copy', function () {
   var ctx = {}
   var runnableOrg = {
     name: 'Runnable',
-    githubId: 1
+    githubId: 1,
+    allowed: true
   }
-  var otherOrg = {
-    name: 'otherOrg',
-    githubId: 2
-  }
-  before(cb => bigPoppaMock.start(cb))
-  after(cb => bigPoppaMock.stop(cb))
+  beforeEach(function (done) {
+    whitelistOrgs([runnableOrg])
+    done()
+  })
   beforeEach(
     mockGetUserById.stubBefore(function () {
       return [{
@@ -49,25 +48,13 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
       }]
     })
   )
-  beforeEach(function (done) {
-    [runnableOrg, otherOrg].forEach(function (org) {
-      bigPoppaMock.stub('GET', `/organization/?lowerName=${org.name}`).returns({
-        status: 200,
-        body: JSON.stringify([{
-          name: org.name,
-          githubId: org.githubId,
-          allowed: true
-        }])
-      })
-    })
-    done()
-  })
   afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
     multi.createContextVersion(function (err, contextVersion, context, build, user) {
       ctx.contextVersion = contextVersion
       ctx.context = context
       ctx.user = user
+      whitelistUserOrgs(ctx.user, [runnableOrg])
       ctx.build = build
       done(err)
     })
@@ -90,22 +77,6 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
           expectedNewBuild.id = not(equals(ctx.build.attrs.id))
           expectedNewBuild.created = not(equals(ctx.build.json().created))
           ctx.build.copy(expects.success(201, expectedNewBuild, done))
-        })
-      })
-      describe('as moderator', function () {
-        beforeEach(function (done) {
-          ctx.moderator = multi.createModerator(done)
-        })
-        it('should create a copy of the build', function (done) {
-          var expectedNewBuild = clone(ctx.build.json())
-          expectedNewBuild.contextVersions = [ctx.contextVersion.id()]
-          expectedNewBuild.contexts = [ctx.context.id()]
-          expectedNewBuild._id = not(equals(ctx.build.json()._id))
-          expectedNewBuild.id = not(equals(ctx.build.json().id))
-          expectedNewBuild.created = not(equals(ctx.build.json().created))
-          expectedNewBuild.createdBy = { github: ctx.moderator.json().accounts.github.id }
-          expectedNewBuild.owner = { github: ctx.user.json().accounts.github.id }
-          ctx.moderator.newBuild(ctx.build.id()).copy(expects.success(201, expectedNewBuild, done))
         })
       })
     })
@@ -192,30 +163,6 @@ describe('Build Copy - /builds/:id/actions/copy', function () {
           expectedNewBuild.completed = not(exists)
           expectedNewBuild.duration = not(exists)
           ctx.buildCopy = ctx.build
-            .deepCopy(expects.success(201, expectedNewBuild, expectUnbuiltVersions(ctx, done)))
-        })
-      })
-      describe('as moderator', function () {
-        beforeEach(function (done) {
-          ctx.moderator = multi.createModerator(done)
-        })
-        it('should create a copy of the build', function (done) {
-          var expectedNewBuild = clone(ctx.build.json())
-          expectedNewBuild.contextVersions = function (contextVersions) {
-            expect(contextVersions.length).to.equal(1)
-            expect(contextVersions[0]).to.not.equal(ctx.contextVersion.id())
-            return true
-          }
-          expectedNewBuild.contexts = [ctx.context.id()]
-          expectedNewBuild._id = not(equals(ctx.build.attrs._id))
-          expectedNewBuild.id = not(equals(ctx.build.attrs.id))
-          expectedNewBuild.created = not(equals(ctx.build.attrs.created))
-          expectedNewBuild.started = not(exists)
-          expectedNewBuild.completed = not(exists)
-          expectedNewBuild.duration = not(exists)
-          expectedNewBuild.createdBy = { github: ctx.moderator.json().accounts.github.id }
-          expectedNewBuild.owner = { github: ctx.user.json().accounts.github.id }
-          ctx.buildCopy = ctx.moderator.newBuild(ctx.build.id())
             .deepCopy(expects.success(201, expectedNewBuild, expectUnbuiltVersions(ctx, done)))
         })
       })

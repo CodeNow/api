@@ -20,8 +20,8 @@ var Github = require('models/apis/github')
 var getUserEmails = require('../fixtures/mocks/github/get-user-emails')
 var randStr = require('randomstring').generate
 var uuid = require('uuid')
-const MockAPI = require('mehpi')
-const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
+const whitelistOrgs = require('../fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 describe('/auth/github with whitelist', function () {
   var ctx = {}
@@ -52,40 +52,35 @@ describe('/auth/github with whitelist', function () {
   afterEach(require('../fixtures/clean-mongo').removeEverything)
   afterEach(require('../fixtures/clean-ctx')(ctx))
 
-  before(cb => bigPoppaMock.start(cb))
-  after(cb => bigPoppaMock.stop(cb))
-
-  function whitelistOrgsForUser (user, orgNames) {
-    bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
-      status: 200,
-      body: JSON.stringify([{
-        organizations: orgNames.map(orgName => { return { name: orgName } }),
-        githubId: 2828361,
-        allowed: true
-      }])
-    })
+  var otherOrg = {
+    name: 'otherOrg',
+    githubId: 2222,
+    allowed: true
   }
+  beforeEach(function (done) {
+    whitelistOrgs([otherOrg])
+    done()
+  })
 
   describe('user in an org in the whitelist', function () {
     var tokenUrl = baseUrl + 'token'
     before(function (done) {
-      ctx.orgname = randStr(5)
       ctx.username = randStr(5)
       ctx.testToken = uuid()
       var user = {}
       keypather.set(user, 'attrs.accounts.github.id', 1000)
-      whitelistOrgsForUser(user, [ctx.orgName])
+      whitelistUserOrgs(user, [otherOrg])
       done()
     })
 
     it('should let the user authenticate', function (done) {
       require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken)
-      require('../fixtures/mocks/github/user-orgs')(1001, ctx.orgname)
+      require('../fixtures/mocks/github/user-orgs')(otherOrg.githubId, otherOrg.name)
       request.post({
         url: tokenUrl,
         json: true,
         body: { accessToken: ctx.testToken },
-        qs: { username: ctx.orgname },
+        qs: { username: otherOrg.name },
         followRedirect: false
       }, function (err, res) {
         if (err) { return done(err) }

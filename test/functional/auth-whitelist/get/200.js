@@ -12,35 +12,27 @@ var Code = require('code')
 var expect = Code.expect
 
 var api = require('../../fixtures/api-control')
-
 var request = require('request')
 var randStr = require('randomstring').generate
-const MockAPI = require('mehpi')
-const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
+const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 var ctx = {}
 describe('GET /auth/whitelist/', function () {
   before(api.start.bind(ctx))
   after(api.stop.bind(ctx))
 
-  before(cb => bigPoppaMock.start(cb))
-  after(cb => bigPoppaMock.stop(cb))
   afterEach(require('../../fixtures/clean-nock'))
 
-  var whitelistOrgs = function (user, orgNames) {
-    bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
-      status: 200,
-      body: JSON.stringify([{
-        organizations: orgNames.map(function (orgName, index) {
-          return {
-            name: orgName,
-            id: index + 1
-          }
-        }),
-        githubId: 2828361,
-        allowed: true
-      }])
-    })
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 2828361,
+    allowed: true
+  }
+  var otherOrg = {
+    name: 'asdasasdas',
+    githubId: 123445,
+    allowed: true
   }
 
   beforeEach(function (done) {
@@ -49,6 +41,7 @@ describe('GET /auth/whitelist/', function () {
       requestDefaults: { jar: ctx.j }
     }, function (err, user) {
       ctx.user = user
+      whitelistOrgs([runnableOrg, otherOrg])
       done(err)
     })
   })
@@ -59,7 +52,7 @@ describe('GET /auth/whitelist/', function () {
     beforeEach(function (done) {
       require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
       ctx.name = randStr(5)
-      whitelistOrgs(ctx.user, [ctx.name, 'Runnable'])
+      whitelistUserOrgs(ctx.user, [runnableOrg])
       done()
     })
 
@@ -74,7 +67,7 @@ describe('GET /auth/whitelist/', function () {
         expect(err).to.be.null()
         expect(res).to.exist()
         expect(body).to.be.an.array()
-        expect(body.length).to.equal(2)
+        expect(body.length).to.equal(1)
         expect(res.statusCode).to.equal(200)
         done()
       })
@@ -84,7 +77,7 @@ describe('GET /auth/whitelist/', function () {
   describe('User with no whitelisted orgs', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
-      whitelistOrgs(ctx.user, [ctx.name, 'Runnable'])
+      whitelistUserOrgs(ctx.user, [])
       done()
     })
 
@@ -110,7 +103,7 @@ describe('GET /auth/whitelist/', function () {
   describe('Non-Runnable user', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
-      whitelistOrgs(ctx.user, [ctx.name])
+      whitelistUserOrgs(ctx.user, [otherOrg])
       done()
     })
 

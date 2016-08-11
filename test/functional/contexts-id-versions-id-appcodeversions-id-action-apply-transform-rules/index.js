@@ -18,8 +18,8 @@ var multi = require('../fixtures/multi-factory')
 var primus = require('../fixtures/primus')
 
 var InfraCodeVersion = require('../../../lib/models/mongo/infra-code-version')
-const MockAPI = require('mehpi')
-const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
+const whitelistOrgs = require('../fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTransformRules', function () {
   var ctx = {}
@@ -30,22 +30,18 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
   afterEach(primus.disconnect)
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
-  before(cb => bigPoppaMock.start(cb))
-  after(cb => bigPoppaMock.stop(cb))
   afterEach(require('../fixtures/clean-mongo').removeEverything)
   afterEach(require('../fixtures/clean-ctx')(ctx))
   afterEach(require('../fixtures/clean-nock'))
-
-  var whitelistOrgs = function (user, orgNames) {
-    bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
-      status: 200,
-      body: JSON.stringify([{
-        organizations: orgNames.map(orgName => { return { name: orgName } }),
-        githubId: 2828361,
-        allowed: true
-      }])
-    })
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 2828361,
+    allowed: true
   }
+  beforeEach(function (done) {
+    whitelistOrgs([runnableOrg])
+    done()
+  })
 
   beforeEach(function (done) {
     ctx.optimusResponse = {
@@ -84,7 +80,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
       ctx.contextVersion = contextVersion
       ctx.context = context
       ctx.user = user
-      whitelistOrgs(ctx.user, ['Runnable'])
+      whitelistUserOrgs(ctx.user, [runnableOrg])
       ctx.repoName = 'Dat-middleware'
       ctx.fullRepoName = ctx.user.json().accounts.github.login + '/' + ctx.repoName
       require('../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName)

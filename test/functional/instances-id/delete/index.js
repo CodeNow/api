@@ -19,8 +19,8 @@ var expects = require('../../fixtures/expects')
 var primus = require('../../fixtures/primus')
 var rabbitMQ = require('models/rabbitmq')
 
-const MockAPI = require('mehpi')
-const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
+const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 describe('DELETE /instances/:id', function () {
   var ctx = {}
@@ -29,14 +29,20 @@ describe('DELETE /instances/:id', function () {
   before(dock.start.bind(ctx))
   beforeEach(primus.connect)
   afterEach(primus.disconnect)
-  before(cb => bigPoppaMock.start(cb))
-  after(cb => bigPoppaMock.stop(cb))
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
-
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 11111,
+    allowed: true
+  }
+  beforeEach(function (done) {
+    whitelistOrgs([runnableOrg])
+    done()
+  })
   before(function (done) {
     // prevent worker to be created
     sinon.stub(rabbitMQ, 'deleteInstance', function () {})
@@ -47,20 +53,6 @@ describe('DELETE /instances/:id', function () {
     rabbitMQ.deleteInstance.restore()
     done()
   })
-  var runnableOrg = {
-    name: 'Runnable',
-    githubId: 11111
-  }
-  var whitelistOrgs = function (user) {
-    bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
-      status: 200,
-      body: JSON.stringify([{
-        organizations: [runnableOrg],
-        githubId: 2828361,
-        allowed: true
-      }])
-    })
-  }
 
   beforeEach(
     mockGetUserById.stubBefore(function () {
@@ -77,19 +69,6 @@ describe('DELETE /instances/:id', function () {
       return array
     })
   )
-  beforeEach(function (done) {
-    [runnableOrg].forEach(function (org) {
-      bigPoppaMock.stub('GET', `/organization/?lowerName=${org.name}`).returns({
-        status: 200,
-        body: JSON.stringify([{
-          name: org.name,
-          githubId: org.githubId,
-          allowed: true
-        }])
-      })
-    })
-    done()
-  })
   afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
     multi.createAndTailInstance(primus, function (err, instance, build, user) {
@@ -99,7 +78,7 @@ describe('DELETE /instances/:id', function () {
       ctx.user = user
       require('../../fixtures/mocks/github/user')(ctx.user)
       require('../../fixtures/mocks/github/user')(ctx.user)
-      whitelistOrgs(ctx.user, ['Runnable'])
+      whitelistUserOrgs(ctx.user, [runnableOrg])
       done()
     })
   })

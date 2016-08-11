@@ -5,7 +5,6 @@ var Lab = require('lab')
 var async = require('async')
 var createCount = require('callback-count')
 var noop = require('101/noop')
-var pluck = require('101/pluck')
 
 var Instance = require('models/mongo/instance')
 var api = require('../../fixtures/api-control')
@@ -24,8 +23,8 @@ var beforeEach = lab.beforeEach
 var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
-const MockAPI = require('mehpi')
-const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
+const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 describe('GET /instances', function () {
   var ctx = {}
@@ -34,22 +33,33 @@ describe('GET /instances', function () {
   before(dock.start.bind(ctx))
   beforeEach(primus.connect)
   afterEach(primus.disconnect)
-  before(cb => bigPoppaMock.start(cb))
-  after(cb => bigPoppaMock.stop(cb))
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
-
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 11111,
+    allowed: true
+  }
+  var otherOrg = {
+    name: 'Not Runnable',
+    githubId: 12345,
+    allowed: true
+  }
+  beforeEach(function (done) {
+    whitelistOrgs([runnableOrg, otherOrg])
+    done()
+  })
   beforeEach(
     mockGetUserById.stubBefore(function () {
       var array = [{
-        id: 11111,
-        username: 'Runnable'
+        id: runnableOrg.githubId,
+        username: runnableOrg.name
       }, {
-        id: 12345,
-        username: 'Not Runnable'
+        id: otherOrg.githubId,
+        username: otherOrg.name
       }]
       if (ctx.user) {
         array.push({
@@ -66,27 +76,7 @@ describe('GET /instances', function () {
       return array
     })
   )
-  var whitelistOrgs = function (user) {
-    bigPoppaMock.stub('GET', `/user/?githubId=${user.attrs.accounts.github.id}`).returns({
-      status: 200,
-      body: JSON.stringify([{
-        organizations: [{
-          name: 'Runnable',
-          githubId: 11111
-        }, {
-          name: 'Not Runnable',
-          githubId: 12345
-        }],
-        githubId: user.attrs.accounts.github.id,
-        allowed: true
-      }])
-    })
-  }
   afterEach(mockGetUserById.stubAfter)
-  afterEach(function (done) {
-    bigPoppaMock.restore()
-    done()
-  })
   describe('GET', function () {
     beforeEach(function (done) {
       multi.createAndTailInstance(primus, { name: 'InstanceNumber1' }, function (err, instance, build, user) {
@@ -94,13 +84,13 @@ describe('GET /instances', function () {
         ctx.instance = instance
         ctx.build = build // builtBuild
         ctx.user = user
-        whitelistOrgs(user)
+        whitelistUserOrgs(user, [runnableOrg])
         multi.createAndTailInstance(primus, function (err, instance, build, user) {
           if (err) { return done(err) }
           ctx.instance2 = instance
           ctx.build2 = build
           ctx.user2 = user
-          whitelistOrgs(user)
+          whitelistUserOrgs(user, [runnableOrg])
           done()
         })
       })
@@ -486,55 +476,6 @@ describe('GET /instances', function () {
           ctx.user.json().accounts.github.username)
         ctx.user.fetchInstances(query, expects.success(200, expected, done))
       })
-
-      describe('moderator', function () {
-        beforeEach(function (done) {
-          multi.createHelloRunnableUser(function (err, user) {
-            ctx.helloRunnable = user
-            done(err)
-          })
-        })
-
-        it('should get instances by username', function (done) {
-          async.series([
-            function (cb) {
-              require('../../fixtures/mocks/github/user')(ctx.user)
-              require('../../fixtures/mocks/github/user')(ctx.user2)
-              var query = {
-                githubUsername: ctx.user.json().accounts.github.username
-              }
-              require('../../fixtures/mocks/github/users-username')(
-                ctx.user.json().accounts.github.id,
-                ctx.user.json().accounts.github.username)
-              ctx.helloRunnable.fetchInstances(query, function (err, instances) {
-                if (err) { return cb(err) }
-                expect(instances).to.have.length(2)
-                expect(instances.map(pluck('_id'))).to.only.contain([
-                  ctx.instance.json()._id,
-                  ctx.instance3.json()._id
-                ])
-                cb()
-              })
-            },
-            function (cb) {
-              var query2 = {
-                githubUsername: ctx.user2.json().accounts.github.username
-              }
-              var expected2 = [
-                {
-                  _id: ctx.instance2.json()._id,
-                  shortHash: ctx.instance2.json().shortHash,
-                  'containers[0].inspect.State.Running': true
-                }
-              ]
-              require('../../fixtures/mocks/github/users-username')(
-                ctx.user2.json().accounts.github.id,
-                ctx.user2.json().accounts.github.username)
-              ctx.helloRunnable.fetchInstances(query2, expects.success(200, expected2, cb))
-            }
-          ], done)
-        })
-      })
     })
 
     describe('exceptions', function () {
@@ -604,11 +545,11 @@ describe('GET /instances', function () {
 
   describe('Org Get', function () {
     beforeEach(function (done) {
-      ctx.orgId = 12345
-      ctx.orgName = 'Not Runnable'
+      ctx.orgId = otherOrg.githubId
+      ctx.orgName = otherOrg.name
       multi.createAndTailInstance(primus, ctx.orgId, ctx.orgName, function (err, instance, build, user) {
         ctx.user = user
-        whitelistOrgs(user)
+        whitelistUserOrgs(user, [otherOrg])
         ctx.instance = instance
         done(err)
       })

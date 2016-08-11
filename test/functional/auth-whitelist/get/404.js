@@ -14,18 +14,29 @@ var expect = Code.expect
 var api = require('../../fixtures/api-control')
 
 var request = require('request')
-var randStr = require('randomstring').generate
+var nock = require('nock')
 
-const MockAPI = require('mehpi')
-const bigPoppaMock = new MockAPI(process.env.BIG_POPPA_PORT)
-
+const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
 var ctx = {}
 describe('GET /auth/whitelist/:name', function () {
   before(api.start.bind(ctx))
   after(api.stop.bind(ctx))
 
-  before(cb => bigPoppaMock.start(cb))
-  after(cb => bigPoppaMock.stop(cb))
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 2828361,
+    allowed: true
+  }
+  var otherOrg = {
+    name: 'asdasasdas',
+    githubId: 123445,
+    allowed: true
+  }
+  beforeEach(function (done) {
+    whitelistOrgs([runnableOrg, otherOrg])
+    done()
+  })
 
   beforeEach(function (done) {
     ctx.j = request.jar()
@@ -33,17 +44,18 @@ describe('GET /auth/whitelist/:name', function () {
       requestDefaults: { jar: ctx.j }
     }, function (err, user) {
       ctx.user = user
+      whitelistUserOrgs(ctx.user, [runnableOrg])
       done(err)
     })
   })
   beforeEach(function (done) {
-    ctx.name = randStr(5)
-    bigPoppaMock.stub('GET', `/organization/?lowerName=${ctx.name.toLowerCase()}`).returns({
-      status: 404,
-      body: {
-        err: 'asdasd'
-      }
-    })
+    nock('http://' + process.env.BIG_POPPA_HOST)
+      .get('/organization/?lowerName=' + otherOrg.name.toLowerCase())
+      .reply(
+        404, {
+          err: 'asdasdasd'
+        }
+      )
     done()
   })
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
