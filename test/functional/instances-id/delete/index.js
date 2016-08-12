@@ -96,7 +96,14 @@ describe('DELETE /instances/:id', function () {
         beforeEach(function (done) {
           // TODO: remove when I merge in the github permissions stuff
           require('../../fixtures/mocks/github/user-orgs')(100, 'otherOrg')
-          ctx.nonOwner = multi.createUser(done)
+          ctx.nonOwner = multi.createUser(function (err, user) {
+            whitelistUserOrgs(user, [{
+              githubId: 100,
+              name: 'otherOrg',
+              allowed: true
+            }])
+            done()
+          })
         })
         it('should not delete the instance (403 forbidden)', function (done) {
           ctx.instance.client = ctx.nonOwner.client // swap auth to nonOwner's

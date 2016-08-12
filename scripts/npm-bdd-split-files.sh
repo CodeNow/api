@@ -47,10 +47,24 @@ then
   then
     echo "local testing"
   else
-    len=$(expr $numTests / $CIRCLE_NODE_TOTAL)
-    s=$(expr $len \* $CIRCLE_NODE_INDEX + 1)
-    n=$(expr $CIRCLE_NODE_INDEX + 1)
-    e=$(expr $len \* $n)
+    if [[ $CIRCLE_NODE_INDEX -eq 0 ]]
+    then
+      len=50
+      s=0
+      n=1
+      e=50
+    elif [[ $CIRCLE_NODE_INDEX -eq 1 ]]
+    then
+      len=250
+      s=50
+      n=51
+      e=300
+    else
+      len=$(expr $(expr $numTests-300) / $CIRCLE_NODE_TOTAL)
+      s=300
+      n=301
+      e=$(expr $numTests )
+    fi
     if [[ $CIRCLE_NODE_TOTAL -eq $n ]]
     then
       e=$numTests
