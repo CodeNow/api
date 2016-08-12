@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/on-image-builder-container-create
+ * @module unit/workers/container.image-builder.created
  */
 'use strict'
 
@@ -21,7 +21,7 @@ var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var InstanceService = require('models/services/instance-service')
 var messenger = require('socket/messenger')
-var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create')
+var OnImageBuilderContainerCreate = require('workers/container.image-builder.created')
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
