@@ -90,7 +90,7 @@ describe('User Service', function () {
       it('should resolve when the user has no orgs', function (done) {
         UserService.isUserPartOfOrg(user, orgGithubId)
           .spread(function (orgExists, user) {
-            expect(orgExists).to.be.false
+            expect(orgExists).to.be.false()
             sinon.assert.calledOnce(UserService.getByGithubId)
             expect(user).to.equal(bigPoppaUser)
           })
@@ -101,7 +101,7 @@ describe('User Service', function () {
         bigPoppaUser.organizations.push(bigPoppaOrg)
         UserService.isUserPartOfOrg(user, orgGithubId)
           .spread(function (orgExists, user) {
-            expect(orgExists).to.be.true
+            expect(orgExists).to.be.true()
             sinon.assert.calledOnce(UserService.getByGithubId)
             expect(user).to.equal(bigPoppaUser)
           })
