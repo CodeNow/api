@@ -22,6 +22,7 @@ describe('GET /auth/whitelist/', function () {
   before(api.start.bind(ctx))
   after(api.stop.bind(ctx))
 
+  beforeEach(require('../../fixtures/clean-nock'))
   afterEach(require('../../fixtures/clean-nock'))
 
   var runnableOrg = {
@@ -81,7 +82,7 @@ describe('GET /auth/whitelist/', function () {
       done()
     })
 
-    it('should return an array of all the whitelisted orgs', function (done) {
+    it('should return an array with no orgs', function (done) {
       require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
       var opts = {
         method: 'GET',
