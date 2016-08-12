@@ -108,7 +108,7 @@ describe('GET /auth/whitelist/', function () {
     })
 
     it('should return an array of all the whitelisted orgs', function (done) {
-      require('../../fixtures/mocks/github/user-orgs')(123, 'Wow')
+      require('../../fixtures/mocks/github/user-orgs')(otherOrg.githubId, otherOrg.name)
       var opts = {
         method: 'GET',
         url: process.env.FULL_API_DOMAIN + '/auth/whitelist/',
