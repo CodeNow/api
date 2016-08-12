@@ -439,7 +439,7 @@ describe('Instance Model Tests', function () {
       }
     ]
     beforeEach(function (done) {
-      sinon.stub(Instance, 'find').yieldsAsync(null, instances)
+      sinon.stub(Instance, 'findAsync').resolves(instances)
       done()
     })
     afterEach(function (done) {
@@ -447,7 +447,7 @@ describe('Instance Model Tests', function () {
       done()
     })
     it('should get all instances from testHost', function (done) {
-      Instance.findInstancesBuiltByDockerHost(testHost, function (err, foundInstances) {
+      Instance.findInstancesBuiltByDockerHost(testHost).asCallback(function (err, foundInstances) {
         expect(err).to.be.null()
         expect(foundInstances).to.equal(instances)
         sinon.assert.calledOnce(Instance.find)
@@ -460,8 +460,8 @@ describe('Instance Model Tests', function () {
     })
     it('should return an error if mongo fails', function (done) {
       var error = new Error('Mongo Error')
-      Instance.find.yieldsAsync(error)
-      Instance.findInstancesBuiltByDockerHost(testHost, function (err, foundInstances) {
+      Instance.findAsync.rejects(error)
+      Instance.findInstancesBuiltByDockerHost(testHost).asCallback(function (err, foundInstances) {
         sinon.assert.calledOnce(Instance.find)
         expect(err).to.equal(error)
         expect(foundInstances).to.not.exist()
