@@ -2,31 +2,32 @@
 
 require('loadenv')()
 
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
-var it = lab.it
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var Code = require('code')
-var expect = Code.expect
-var Promise = require('bluebird')
-var rabbitMQ = require('models/rabbitmq')
+const Lab = require('lab')
+const lab = exports.lab = Lab.script()
+const describe = lab.describe
+const it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const Code = require('code')
+const expect = Code.expect
+const Promise = require('bluebird')
+const rabbitMQ = require('models/rabbitmq')
 
-var sinon = require('sinon')
+const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
-var ContextVersion = require('models/mongo/context-version')
-var Instance = require('models/mongo/instance')
-var InstanceService = require('models/services/instance-service')
-var PermissionService = require('models/services/permission-service')
-var Worker = require('workers/dock.removed')
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
-var errors = require('errors')
+const ContextVersion = require('models/mongo/context-version')
+const Instance = require('models/mongo/instance')
+const InstanceService = require('models/services/instance-service')
+const PermissionService = require('models/services/permission-service')
+const Worker = require('workers/dock.removed')
+const WorkerTask = Worker.task
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
+const errors = require('errors')
 
 describe('Worker: dock.removed unit test', function () {
-  var testTarget = 'goku'
-  var testHost = 'http://' + testTarget + ':4242'
-  var testData = {
+  const testTarget = 'goku'
+  const testHost = 'http://' + testTarget + ':4242'
+  const testData = {
     host: testHost
   }
 
@@ -51,65 +52,15 @@ describe('Worker: dock.removed unit test', function () {
       done()
     })
 
-    describe('invalid Job', function () {
-      it('should throw a task fatal error if the job is missing a dockerhost', function (done) {
-        Worker({}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.message).to.contain('Invalid Job')
-          expect(err.data.validationError.message).to.contain('host')
-          expect(err.data.validationError.message).to.contain('required')
-          sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the job is missing a dockerhost', function (done) {
-        Worker({host: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.message).to.contain('Invalid Job')
-          expect(err.data.validationError.message).to.contain('host')
-          expect(err.data.validationError.message).to.contain('a string')
-          sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
-          done()
-        })
-      })
-      it('should throw a task fatal error if foul dockerhost', function (done) {
-        Worker({host: 'foul'}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.message).to.contain('Invalid Job')
-          expect(err.data.validationError.message).to.contain('host')
-          expect(err.data.validationError.message).to.contain('must be a valid uri')
-          sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the job is missing entirely', function (done) {
-        Worker().asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.message).to.contain('Invalid Job')
-          sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the job is not an object', function (done) {
-        Worker(true).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.message).to.contain('Invalid Job')
-          expect(err.data.validationError.message).to.contain('must be an object')
-          sinon.assert.notCalled(rabbitMQ.asgInstanceTerminate)
-          done()
-        })
-      })
-    })
-
     describe('ContextVersion.markDockRemovedByDockerHost returns error', function () {
-      var testError = new Error('Mongo error')
+      const testError = new Error('Mongo error')
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.rejects(testError)
         done()
       })
 
       it('should error', function (done) {
-        Worker(testData).asCallback(function (err) {
+        WorkerTask(testData).asCallback(function (err) {
           expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
@@ -125,10 +76,10 @@ describe('Worker: dock.removed unit test', function () {
     })
 
     describe('_redeploy returns error', function () {
-      var testError = new Error('Redeploy error')
+      const testError = new Error('Redeploy error')
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.resolves(null)
-        var rejectionPromise = Promise.reject(testError)
+        const rejectionPromise = Promise.reject(testError)
         rejectionPromise.suppressUnhandledRejections()
         Worker._redeploy.returns(rejectionPromise)
 
@@ -138,7 +89,7 @@ describe('Worker: dock.removed unit test', function () {
       })
 
       it('should error', function (done) {
-        Worker(testData).asCallback(function (err) {
+        WorkerTask(testData).asCallback(function (err) {
           expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
@@ -154,19 +105,19 @@ describe('Worker: dock.removed unit test', function () {
       })
     })
     describe('_updateFrontendInstances returns error', function () {
-      var testError = new Error('Update error')
+      const testError = new Error('Update error')
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.resolves(null)
         Worker._redeploy.returns(Promise.resolve())
         Worker._rebuild.returns(Promise.resolve())
-        var rejectionPromise = Promise.reject(testError)
+        const rejectionPromise = Promise.reject(testError)
         rejectionPromise.suppressUnhandledRejections()
         Worker._updateFrontendInstances.returns(rejectionPromise)
         done()
       })
 
       it('should error', function (done) {
-        Worker(testData).asCallback(function (err) {
+        WorkerTask(testData).asCallback(function (err) {
           expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
@@ -182,19 +133,19 @@ describe('Worker: dock.removed unit test', function () {
       })
     })
     describe('_rebuild returns error', function () {
-      var testError = new Error('Rebuild error')
+      const testError = new Error('Rebuild error')
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.resolves(null)
         Worker._redeploy.returns(Promise.resolve())
         Worker._updateFrontendInstances.returns(Promise.resolve())
-        var rejectionPromise = Promise.reject(testError)
+        const rejectionPromise = Promise.reject(testError)
         rejectionPromise.suppressUnhandledRejections()
         Worker._rebuild.returns(rejectionPromise)
         done()
       })
 
       it('should error', function (done) {
-        Worker(testData).asCallback(function (err) {
+        WorkerTask(testData).asCallback(function (err) {
           expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
@@ -210,12 +161,12 @@ describe('Worker: dock.removed unit test', function () {
       })
     })
     describe('_updateFrontendInstances returns error on second call', function () {
-      var testError = new Error('Update error')
+      const testError = new Error('Update error')
       beforeEach(function (done) {
         ContextVersion.markDockRemovedByDockerHost.resolves(null)
         Worker._redeploy.returns(Promise.resolve())
         Worker._rebuild.returns(Promise.resolve())
-        var rejectionPromise = Promise.reject(testError)
+        const rejectionPromise = Promise.reject(testError)
         rejectionPromise.suppressUnhandledRejections()
         Worker._updateFrontendInstances.onCall(0).returns(Promise.resolve())
         Worker._updateFrontendInstances.onCall(1).returns(rejectionPromise)
@@ -223,7 +174,7 @@ describe('Worker: dock.removed unit test', function () {
       })
 
       it('should error', function (done) {
-        Worker(testData).asCallback(function (err) {
+        WorkerTask(testData).asCallback(function (err) {
           expect(err.message).to.equal(testError.message)
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
@@ -248,7 +199,7 @@ describe('Worker: dock.removed unit test', function () {
       })
 
       it('should pass', function (done) {
-        Worker(testData).asCallback(function (err) {
+        WorkerTask(testData).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
@@ -266,8 +217,8 @@ describe('Worker: dock.removed unit test', function () {
   })
 
   describe('#_redeploy', function () {
-    var testErr = new Error('Mongo erro')
-    var testData = {
+    const testErr = new Error('Mongo erro')
+    const testData = {
       host: 'http://10.12.12.14:4242'
     }
     beforeEach(function (done) {
@@ -286,7 +237,7 @@ describe('Worker: dock.removed unit test', function () {
 
     describe('#findInstancesBuiltByDockerHostAsync fails', function () {
       beforeEach(function (done) {
-        var promise = Promise.reject(testErr)
+        const promise = Promise.reject(testErr)
         promise.suppressUnhandledRejections()
         Instance.findInstancesBuiltByDockerHostAsync.returns(promise)
         done()
@@ -304,7 +255,7 @@ describe('Worker: dock.removed unit test', function () {
     })
 
     describe('#findInstancesBuiltByDockerHostAsync returns 2 instances', function () {
-      var instances = [
+      const instances = [
         { _id: '1', owner: { github: '213333' } },
         { _id: '2', owner: { github: '213333' } }
       ]
@@ -345,13 +296,13 @@ describe('Worker: dock.removed unit test', function () {
             sinon.assert.calledOnce(Instance.findInstancesBuiltByDockerHostAsync)
             sinon.assert.calledWith(Instance.findInstancesBuiltByDockerHostAsync, testData.host)
             sinon.assert.calledTwice(rabbitMQ.redeployInstanceContainer)
-            var call1 = rabbitMQ.redeployInstanceContainer.getCall(0).args
+            const call1 = rabbitMQ.redeployInstanceContainer.getCall(0).args
             expect(call1[0]).to.deep.equal({
               instanceId: instances[0]._id,
               sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID,
               deploymentUuid: testData.deploymentUuid
             })
-            var call2 = rabbitMQ.redeployInstanceContainer.getCall(1).args
+            const call2 = rabbitMQ.redeployInstanceContainer.getCall(1).args
             expect(call2[0]).to.deep.equal({
               instanceId: instances[1]._id,
               sessionUserGithubId: process.env.HELLO_RUNNABLE_GITHUB_ID,
@@ -364,8 +315,8 @@ describe('Worker: dock.removed unit test', function () {
   })
 
   describe('#_rebuild', function () {
-    var testErr = new Error('Mongo erro')
-    var testData = {
+    const testErr = new Error('Mongo erro')
+    const testData = {
       host: 'http://10.12.12.14:4242'
     }
     beforeEach(function (done) {
@@ -400,7 +351,7 @@ describe('Worker: dock.removed unit test', function () {
     })
 
     describe('#findInstancesBuildingOnDockerHost returns 2 instances', function () {
-      var instances = [
+      const instances = [
         { _id: '1', owner: { github: '213333' } },
         { _id: '2', owner: { github: '213333' } }
       ]
@@ -456,8 +407,8 @@ describe('Worker: dock.removed unit test', function () {
   })
 
   describe('#_updateFrontendInstances', function () {
-    var testErr = 'Problem!'
-    var testData = [{
+    const testErr = 'Problem!'
+    const testData = [{
       id: '1'
     }, {
       id: '2'
@@ -474,7 +425,7 @@ describe('Worker: dock.removed unit test', function () {
 
     describe('emitUpdate fails for one instance', function () {
       beforeEach(function (done) {
-        var rejectionPromise = Promise.reject(testErr)
+        const rejectionPromise = Promise.reject(testErr)
         rejectionPromise.suppressUnhandledRejections()
         InstanceService.emitInstanceUpdate.onCall(0).returns(rejectionPromise)
         InstanceService.emitInstanceUpdate.onCall(1).returns(Promise.resolve())
@@ -502,12 +453,12 @@ describe('Worker: dock.removed unit test', function () {
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledTwice(InstanceService.emitInstanceUpdate)
-            var call1 = InstanceService.emitInstanceUpdate.getCall(0).args
+            const call1 = InstanceService.emitInstanceUpdate.getCall(0).args
             expect(call1[0]).to.deep.equal(testData[0])
             expect(call1[1]).to.be.null()
             expect(call1[2]).to.equal('update')
             expect(call1[3]).to.be.true()
-            var call2 = InstanceService.emitInstanceUpdate.getCall(1).args
+            const call2 = InstanceService.emitInstanceUpdate.getCall(1).args
             expect(call2[0]).to.deep.equal(testData[1])
             expect(call2[1]).to.be.null()
             expect(call2[2]).to.equal('update')
