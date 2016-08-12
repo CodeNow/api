@@ -2,8 +2,9 @@
 var nock = require('nock')
 
 module.exports.whitelistUserOrgs = function (user, orgs) {
+  const bigPoppaNock = nock('http://' + process.env.BIG_POPPA_HOST)
   var userId = user.attrs.accounts.github.id
-  nock('http://' + process.env.BIG_POPPA_HOST)
+  bigPoppaNock
     .get('/user/?githubId=' + userId)
     .times(1000)
     .reply(
@@ -15,9 +16,9 @@ module.exports.whitelistUserOrgs = function (user, orgs) {
     )
 }
 module.exports.whitelistOrgs = function (orgs) {
-  var whitelistNock = nock('http://' + process.env.BIG_POPPA_HOST)
+  const bigPoppaNock = nock('http://' + process.env.BIG_POPPA_HOST)
   orgs.forEach(function (org) {
-    whitelistNock
+    bigPoppaNock
       .get('/organization/?lowerName=' + org.name.toLowerCase())
       .times(1000)
       .reply(
@@ -28,7 +29,7 @@ module.exports.whitelistOrgs = function (orgs) {
           allowed: true
         }]
       )
-    whitelistNock
+    bigPoppaNock
       .get('/organization/?githubId=' + org.githubId)
       .times(1000)
       .reply(
@@ -39,7 +40,7 @@ module.exports.whitelistOrgs = function (orgs) {
           allowed: true
         }]
       )
-    whitelistNock
+    bigPoppaNock
       .post('/organization/:orgId/add')
       .times(1000)
       .filteringPath(/organization\/[0-9A-z]*\/add/, '')

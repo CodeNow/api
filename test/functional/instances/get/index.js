@@ -84,13 +84,13 @@ describe('GET /instances', function () {
         ctx.instance = instance
         ctx.build = build // builtBuild
         ctx.user = user
-        whitelistUserOrgs(user, [runnableOrg])
+        whitelistUserOrgs(ctx.user, [runnableOrg])
         multi.createAndTailInstance(primus, function (err, instance, build, user) {
           if (err) { return done(err) }
           ctx.instance2 = instance
           ctx.build2 = build
           ctx.user2 = user
-          whitelistUserOrgs(user, [runnableOrg])
+          whitelistUserOrgs(ctx.user2, [runnableOrg])
           done()
         })
       })
@@ -486,6 +486,7 @@ describe('GET /instances', function () {
           }
         }
         var expected = []
+        whitelistUserOrgs(ctx.user, [])
         ctx.user.fetchInstances(query, expects.success(200, expected, done))
       })
     })
@@ -496,6 +497,7 @@ describe('GET /instances', function () {
           hostname: 'http://google.com'
         }
         require('../../fixtures/mocks/github/user-orgs')()
+        whitelistUserOrgs(ctx.user, [])
         ctx.user.fetchInstances(query, expects.error(400, /invalid.*hostname/i, function (err, expectedErr) {
           if (err) { return done(err) }
           expect(expectedErr.data.errorCode).to.equal('INVALID_HOSTNAME') // used by api-client
@@ -508,6 +510,8 @@ describe('GET /instances', function () {
             github: ctx.user2.attrs.accounts.github.id
           }
         }
+        whitelistUserOrgs(ctx.user, [])
+        whitelistUserOrgs(ctx.user2, [])
         require('../../fixtures/mocks/github/user-orgs')()
         ctx.user.fetchInstances(query, expects.error(403, /denied/, function (err) {
           if (err) { return done(err) }
