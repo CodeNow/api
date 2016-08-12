@@ -102,7 +102,7 @@ describe('DELETE /instances/:id', function () {
               name: 'otherOrg',
               allowed: true
             }])
-            done()
+            done(err)
           })
         })
         it('should not delete the instance (403 forbidden)', function (done) {
