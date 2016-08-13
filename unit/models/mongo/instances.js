@@ -450,8 +450,8 @@ describe('Instance Model Tests', function () {
       Instance.findInstancesBuiltByDockerHost(testHost).asCallback(function (err, foundInstances) {
         expect(err).to.be.null()
         expect(foundInstances).to.equal(instances)
-        sinon.assert.calledOnce(Instance.find)
-        sinon.assert.calledWith(Instance.find, {
+        sinon.assert.calledOnce(Instance.findAsync)
+        sinon.assert.calledWith(Instance.findAsync, {
           'container.dockerHost': testHost,
           'contextVersion.build.completed': { $exists: true }
         })
@@ -462,7 +462,7 @@ describe('Instance Model Tests', function () {
       var error = new Error('Mongo Error')
       Instance.findAsync.rejects(error)
       Instance.findInstancesBuiltByDockerHost(testHost).asCallback(function (err, foundInstances) {
-        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledOnce(Instance.findAsync)
         expect(err).to.equal(error)
         expect(foundInstances).to.not.exist()
         done()
