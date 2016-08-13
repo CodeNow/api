@@ -443,7 +443,7 @@ describe('Instance Model Tests', function () {
       done()
     })
     afterEach(function (done) {
-      Instance.find.restore()
+      Instance.findAsync.restore()
       done()
     })
     it('should get all instances from testHost', function (done) {
