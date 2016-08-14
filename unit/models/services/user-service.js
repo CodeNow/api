@@ -45,9 +45,8 @@ describe('User Service', function () {
       })
     })
     describe('fail', function () {
-      var error = new Error('This is an error')
       beforeEach(function (done) {
-        sinon.stub(BigPoppaClient.prototype, 'getUsers').rejects(error)
+        sinon.stub(BigPoppaClient.prototype, 'getUsers').resolves([])
         done()
       })
 
@@ -55,10 +54,10 @@ describe('User Service', function () {
         BigPoppaClient.prototype.getUsers.restore()
         done()
       })
-      it('should reject if getUsers fails', function (done) {
+      it('should reject if getUsers returns null', function (done) {
         UserService.getUser({ github: model })
           .asCallback(function (err) {
-            expect(err).to.equal(error)
+            expect(err.message).to.equal('User not found')
             done()
           })
       })
@@ -70,62 +69,29 @@ describe('User Service', function () {
     var user = {}
     var userGithubId = '1111'
     keypather.set(user, 'accounts.github.id', userGithubId)
-    var bigPoppaUser = {
-      organizations: []
-    }
+    var bigPoppaUser
     var bigPoppaOrg = {
       githubId: orgGithubId
     }
     describe('success', function () {
       beforeEach(function (done) {
-        sinon.stub(UserService, 'getByGithubId').resolves(bigPoppaUser)
-        done()
-      })
-
-      afterEach(function (done) {
-        UserService.getByGithubId.restore()
+        bigPoppaUser = {
+          organizations: []
+        }
         done()
       })
 
       it('should resolve when the user has no orgs', function (done) {
-        UserService.isUserPartOfOrg(user, orgGithubId)
-          .spread(function (orgExists, user) {
-            expect(orgExists).to.be.false()
-            sinon.assert.calledOnce(UserService.getByGithubId)
-            expect(user).to.equal(bigPoppaUser)
-          })
-          .asCallback(done)
+        var orgExists = UserService.isUserPartOfOrg(bigPoppaUser, orgGithubId)
+        expect(orgExists).to.be.false()
+        done()
       })
 
       it('should resolve when the user has the org', function (done) {
         bigPoppaUser.organizations.push(bigPoppaOrg)
-        UserService.isUserPartOfOrg(user, orgGithubId)
-          .spread(function (orgExists, user) {
-            expect(orgExists).to.be.true()
-            sinon.assert.calledOnce(UserService.getByGithubId)
-            expect(user).to.equal(bigPoppaUser)
-          })
-          .asCallback(done)
-      })
-    })
-    describe('fail', function () {
-      var error = new Error('This is an error')
-      beforeEach(function (done) {
-        sinon.stub(UserService, 'getByGithubId').rejects(error)
+        var orgExists = UserService.isUserPartOfOrg(bigPoppaUser, orgGithubId)
+        expect(orgExists).to.be.true()
         done()
-      })
-
-      afterEach(function (done) {
-        UserService.getByGithubId.restore()
-        done()
-      })
-      it('should reject if getUser fails', function (done) {
-        bigPoppaUser.organizations.push(bigPoppaOrg)
-        UserService.isUserPartOfOrg(user, orgGithubId)
-          .asCallback(function (err) {
-            expect(err).to.equal(error)
-            done()
-          })
       })
     })
   })
