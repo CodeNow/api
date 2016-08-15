@@ -8,12 +8,14 @@ var it = lab.it
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 
+const errors = require('errors')
 var expect = require('code').expect
 var keypather = require('keypather')()
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
 var UserService = require('models/services/user-service')
+const rabbitMQ = require('models/rabbitmq')
 
 var BigPoppaClient = require('@runnable/big-poppa-client')
 var Github = require('models/apis/github')
@@ -60,6 +62,48 @@ describe('User Service', function () {
             expect(err.message).to.equal('User not found')
             done()
           })
+      })
+    })
+  })
+
+  describe('createUserIfNew', function () {
+    var githubId = 23123
+    var accessToken = 'asdasdasdasdasdasd'
+    describe('success', function () {
+      beforeEach(function (done) {
+        sinon.stub(UserService, 'getByGithubId').resolves()
+        sinon.stub(rabbitMQ, 'publishUserAuthorized').returns()
+        done()
+      })
+
+      afterEach(function (done) {
+        UserService.getByGithubId.restore()
+        rabbitMQ.publishUserAuthorized.restore()
+        done()
+      })
+
+      it('should resolve an owner if exists', function (done) {
+        UserService.createUserIfNew(githubId, accessToken)
+          .tap(function () {
+            sinon.assert.calledOnce(UserService.getByGithubId)
+            sinon.assert.calledWith(UserService.getByGithubId, githubId)
+            sinon.assert.notCalled(rabbitMQ.publishUserAuthorized)
+          })
+          .asCallback(done)
+      })
+      it('should resolve an owner if exists', function (done) {
+        UserService.getByGithubId.rejects(new errors.UserNotFoundError())
+        UserService.createUserIfNew(githubId, accessToken)
+          .tap(function () {
+            sinon.assert.calledOnce(UserService.getByGithubId)
+            sinon.assert.calledWith(UserService.getByGithubId, githubId)
+            sinon.assert.calledOnce(rabbitMQ.publishUserAuthorized)
+            sinon.assert.calledWith(rabbitMQ.publishUserAuthorized, {
+              accessToken: accessToken,
+              githubId: githubId
+            })
+          })
+          .asCallback(done)
       })
     })
   })
