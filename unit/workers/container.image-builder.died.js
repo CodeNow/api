@@ -8,11 +8,7 @@ var Lab = require('lab')
 var put = require('101/put')
 var sinon = require('sinon')
 
-var Build = require('models/mongo/build')
-var BuildService = require('models/services/build-service')
-var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
-var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 var Isolation = require('models/mongo/isolation')
 var OnImageBuilderContainerDie = require('workers/container.image-builder.died')
@@ -26,14 +22,6 @@ var beforeEach = lab.beforeEach
 var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
-
-var expectErr = function (expectedErr, done) {
-  return function (err) {
-    expect(err).to.exist()
-    expect(err.message).to.equal(expectedErr.message)
-    done()
-  }
-}
 
 describe('OnImageBuilderContainerDie', function () {
   var ctx
