@@ -9,6 +9,7 @@ var Promise = require('bluebird')
 var sinon = require('sinon')
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
+var BuildService = require('models/services/build-service')
 var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
@@ -17,6 +18,7 @@ var PermissionService = require('models/services/permission-service')
 var User = require('models/mongo/user')
 var Worker = require('workers/container.image-builder.create')
 
+require('sinon-as-promised')(Promise)
 var lab = exports.lab = Lab.script()
 
 var afterEach = lab.afterEach
@@ -26,10 +28,41 @@ var expect = Code.expect
 var it = lab.it
 
 describe('ContainerImageBuilderCreate unit test', function () {
+  describe('finalRetryFn', function () {
+    beforeEach(function (done) {
+      sinon.stub(BuildService, 'handleBuildComplete')
+      done()
+    })
+
+    afterEach(function (done) {
+      BuildService.handleBuildComplete.restore()
+      done()
+    })
+
+    it('should call build complete', function (done) {
+      var testId = '123123123'
+      BuildService.handleBuildComplete.resolves()
+      Worker.finalRetryFn({
+        contextVersionBuildId: testId
+      }).asCallback(function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(BuildService.handleBuildComplete)
+        sinon.assert.calledWith(BuildService.handleBuildComplete, testId, {
+          failed: true,
+          error: {
+            message: 'failed to create build container'
+          }
+        })
+        done()
+      })
+    })
+  }) // end finalRetryFn
+
   describe('task', function () {
     var validJob = {
       contextId: 'context-id',
       contextVersionId: 'context-version-id',
+      contextVersionBuildId: 'context-version-build-id',
       sessionUserGithubId: 'session-user-github-id',
       ownerUsername: 'owner-username',
       manualBuild: true,
@@ -51,24 +84,15 @@ describe('ContainerImageBuilderCreate unit test', function () {
     var mockDockerTag = 'docker-tag'
 
     beforeEach(function (done) {
-      sinon.stub(User, 'findByGithubIdAsync')
-        .returns(Promise.resolve(mockUser))
-      sinon.stub(Context, 'findOneAsync')
-        .returns(Promise.resolve(mockContext))
-      sinon.stub(ContextVersion, 'findOneAsync')
-        .returns(Promise.resolve(mockContextVersion))
-      sinon.stub(ContextVersion, 'recoverAsync')
-        .returns(Promise.resolve())
-      sinon.stub(ContextVersion, 'updateContainerByBuildIdAsync')
-        .returns(Promise.resolve())
-      sinon.stub(mockContextVersion, 'populateAsync')
-        .returns(Promise.resolve())
-      sinon.stub(Docker.prototype, 'createImageBuilderAsync')
-        .returns(Promise.resolve(mockContainer))
-      sinon.stub(Docker, 'getDockerTag')
-        .returns(mockDockerTag)
-      sinon.stub(PermissionService, 'checkOwnerAllowed')
-        .returns(Promise.resolve())
+      sinon.stub(User, 'findByGithubIdAsync').resolves(mockUser)
+      sinon.stub(Context, 'findOneAsync').resolves(mockContext)
+      sinon.stub(ContextVersion, 'findOneAsync').resolves(mockContextVersion)
+      sinon.stub(ContextVersion, 'recoverAsync').resolves()
+      sinon.stub(mockContextVersion, 'populateAsync').resolves()
+      sinon.stub(Docker.prototype, 'createImageBuilderAsync').resolves(mockContainer)
+      sinon.stub(Docker, 'getDockerTag').returns(mockDockerTag)
+      sinon.stub(PermissionService, 'checkOwnerAllowed').resolves()
+      sinon.stub(BuildService, 'handleBuildComplete')
       done()
     })
 
@@ -77,29 +101,49 @@ describe('ContainerImageBuilderCreate unit test', function () {
       Context.findOneAsync.restore()
       ContextVersion.findOneAsync.restore()
       ContextVersion.recoverAsync.restore()
-      ContextVersion.updateContainerByBuildIdAsync.restore()
       mockContextVersion.populateAsync.restore()
       Docker.prototype.createImageBuilderAsync.restore()
       Docker.getDockerTag.restore()
       PermissionService.checkOwnerAllowed.restore()
+      BuildService.handleBuildComplete.restore()
       done()
     })
 
     describe('checkAllowed', function () {
-      beforeEach(function (done) {
-        PermissionService.checkOwnerAllowed.restore()
-        sinon.stub(PermissionService, 'checkOwnerAllowed', function () {
-          return Promise.reject(new errors.OrganizationNotAllowedError('not allowed'))
+      it('should fatally reject if owner is not allowed', function (done) {
+        PermissionService.checkOwnerAllowed.rejects(new errors.OrganizationNotAllowedError('not allowed'))
+        BuildService.handleBuildComplete.resolves()
+        Worker.task(validJob).asCallback(function (err) {
+          expect(err).to.be.an.instanceOf(WorkerStopError)
+          done()
         })
-        done()
       })
 
-      it('should fatally reject if owner is not allowed', function (done) {
-        Worker.task(validJob)
-          .asCallback(function (err) {
-            expect(err).to.be.an.instanceOf(WorkerStopError)
-            done()
+      it('should fatally reject if org is not found', function (done) {
+        PermissionService.checkOwnerAllowed.rejects(new errors.OrganizationNotFoundError('not allowed'))
+        BuildService.handleBuildComplete.resolves()
+        Worker.task(validJob).asCallback(function (err) {
+          expect(err).to.be.an.instanceOf(WorkerStopError)
+          done()
+        })
+      })
+    }) // end 'checkAllowed'
+
+    describe('WorkerStopError', function () {
+      it('should handleBuildComplete', function (done) {
+        PermissionService.checkOwnerAllowed.rejects(new errors.OrganizationNotAllowedError('not allowed'))
+        BuildService.handleBuildComplete.resolves()
+        Worker.task(validJob).asCallback(function (err) {
+          expect(err).to.be.an.instanceOf(WorkerStopError)
+          sinon.assert.calledOnce(BuildService.handleBuildComplete)
+          sinon.assert.calledWith(BuildService.handleBuildComplete, validJob.contextVersionBuildId, {
+            failed: true,
+            error: {
+              message: err.message
+            }
           })
+          done()
+        })
       })
     }) // end 'checkAllowed'
 
@@ -148,10 +192,8 @@ describe('ContainerImageBuilderCreate unit test', function () {
         var rejectError
 
         beforeEach(function (done) {
-          User.findByGithubIdAsync.restore()
-          sinon.stub(User, 'findByGithubIdAsync', function () {
-            return Promise.resolve(null)
-          })
+          BuildService.handleBuildComplete.resolves()
+          User.findByGithubIdAsync.resolves(null)
           Worker.task(validJob).asCallback(function (err) {
             rejectError = err
             done()
@@ -174,10 +216,8 @@ describe('ContainerImageBuilderCreate unit test', function () {
         var rejectError
 
         beforeEach(function (done) {
-          Context.findOneAsync.restore()
-          sinon.stub(Context, 'findOneAsync', function () {
-            return Promise.resolve(null)
-          })
+          BuildService.handleBuildComplete.resolves()
+          Context.findOneAsync.resolves(null)
           Worker.task(validJob).asCallback(function (err) {
             rejectError = err
             done()
@@ -200,10 +240,8 @@ describe('ContainerImageBuilderCreate unit test', function () {
         var rejectError
 
         beforeEach(function (done) {
-          ContextVersion.findOneAsync.restore()
-          sinon.stub(ContextVersion, 'findOneAsync', function () {
-            return Promise.resolve(null)
-          })
+          BuildService.handleBuildComplete.resolves()
+          ContextVersion.findOneAsync.resolves(null)
           Worker.task(validJob).asCallback(function (err) {
             rejectError = err
             done()
@@ -285,37 +323,6 @@ describe('ContainerImageBuilderCreate unit test', function () {
           done()
         })
       }) // end 'createImageBuilderContainer'
-
-      describe('updateContextVersionWithContainer', function () {
-        var updateOpts
-
-        beforeEach(function (done) {
-          updateOpts = ContextVersion.updateContainerByBuildIdAsync
-            .firstCall.args[0]
-          done()
-        })
-
-        it('should update the container by build id', function (done) {
-          sinon.assert.calledOnce(ContextVersion.updateContainerByBuildIdAsync)
-          done()
-        })
-
-        it('should use the correct build id', function (done) {
-          expect(updateOpts.buildId).to.equal(mockContextVersion.build._id)
-          done()
-        })
-
-        it('should use the correct build container id', function (done) {
-          expect(updateOpts.buildContainerId).to.equal(mockContainer.id)
-          done()
-        })
-
-        it('should use the correct docker tag', function (done) {
-          sinon.assert.calledOnce(Docker.getDockerTag)
-          expect(updateOpts.tag).to.equal(Docker.getDockerTag.returnValues[0])
-          done()
-        })
-      }) // end 'updateContextVersionWithContainer'
 
       describe('markContextVersionAsRecovered', function () {
         it('should mark the context version as recovered', function (done) {
