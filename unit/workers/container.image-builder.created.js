@@ -35,6 +35,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
   describe('task', function () {
     var testCvBuildId = 'dat_cv_id'
     var testContainerId = 'someContainerId'
+    var testDockerTag = 'thatTagDoh'
     var testJobData = {
       host: 'http://10.0.0.1:4242',
       inspectData: {
@@ -42,7 +43,8 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
         Created: moment().format(),
         Config: {
           Labels: {
-            'contextVersion.build._id': testCvBuildId
+            'contextVersion.build._id': testCvBuildId,
+            'dockerTag': testDockerTag
           }
         }
       }
@@ -79,7 +81,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
         ContextVersion.updateAsync.returns(1)
         ContextVersion.findAsync.returns([])
 
-        Worker(testJob).asCallback(function (err) {
+        Worker.task(testJob).asCallback(function (err) {
           if (err) { return done(err) }
           sinon.assert.calledOnce(ContextVersion.updateAsync)
           sinon.assert.calledWith(ContextVersion.updateAsync, {
@@ -94,7 +96,9 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
           }, {
             $set: {
               state: ContextVersion.states.buildStarting,
-              dockerHost: testJob.host
+              dockerHost: testJob.host,
+              'build.dockerContainer': testContainerId,
+              'build.dockerTag': testDockerTag
             }
           }, { multi: true })
 
@@ -105,7 +109,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       it('should error if no cv updated', function (done) {
         ContextVersion.updateAsync.returns(0)
 
-        Worker(testJob).asCallback(function (err) {
+        Worker.task(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.contain('no valid ContextVersion found to start')
 
@@ -116,7 +120,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
       it('should fatal error if no container and created was more than 5 minutes ago', function (done) {
         testJob.inspectData.Created = moment().subtract(6, 'minutes').format()
         Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
-        Worker(testJob).asCallback(function (err) {
+        Worker.task(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/after 5 minutes/)
           done()
@@ -125,7 +129,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
 
       it('should error if no container and created was less than 5 minutes ago', function (done) {
         Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
-        Worker(testJob).asCallback(function (err) {
+        Worker.task(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(WorkerError)
           expect(err.message).to.match(/not exist/)
           done()
@@ -136,7 +140,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
         ContextVersion.updateAsync.returns(1)
         ContextVersion.findAsync.returns([])
 
-        Worker(testJob).asCallback(function (err) {
+        Worker.task(testJob).asCallback(function (err) {
           if (err) { return done(err) }
 
           sinon.assert.calledOnce(Docker.prototype.startContainerAsync)
@@ -152,7 +156,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
         ContextVersion.findAsync.returns([cv1, cv2])
         messenger.emitContextVersionUpdate.returns()
 
-        Worker(testJob).asCallback(function (err) {
+        Worker.task(testJob).asCallback(function (err) {
           if (err) { return done(err) }
 
           sinon.assert.calledOnce(Docker.prototype.startContainerAsync)
