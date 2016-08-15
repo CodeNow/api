@@ -1,82 +1,72 @@
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
+'use strict'
+var createCount = require('callback-count')
 var expect = require('code').expect
-var it = lab.it
-var before = lab.before
-var after = lab.after
-var beforeEach = lab.beforeEach
-var afterEach = lab.afterEach
+var Lab = require('lab')
+var objectId = require('objectid')
+var sinon = require('sinon')
 
 var Build = require('models/mongo/build.js')
-var createCount = require('callback-count')
+var BuildService = require('models/services/build-service')
 var ContextVersion = require('models/mongo/context-version.js')
-var Docker = require('models/apis/docker')
-var Dockerode = require('dockerode')
 var dock = require('../../functional/fixtures/dock')
+var Docker = require('models/apis/docker')
 var Instance = require('models/mongo/instance.js')
-var keypather = require('keypather')()
 var messenger = require('socket/messenger')
-var mongooseControl = require('models/mongo/mongoose-control.js')
 var mockFactory = require('../fixtures/factory')
 var mockOnBuilderDieMessage = require('../fixtures/dockerListenerEvents/on-image-builder-container-die')
-var objectId = require('objectid')
+var mongooseControl = require('models/mongo/mongoose-control.js')
 var OnImageBuilderContainerDie = require('workers/container.image-builder.died')
 var rabbitMQ = require('models/rabbitmq')
-var sinon = require('sinon')
-var stream = require('stream')
 var User = require('models/mongo/user.js')
 
+var lab = exports.lab = Lab.script()
+
+var after = lab.after
+var afterEach = lab.afterEach
+var before = lab.before
+var beforeEach = lab.beforeEach
+var describe = lab.describe
+var it = lab.it
+
 describe('OnImageBuilderContainerDie Integration Tests', function () {
-  before(mongooseControl.start)
   var ctx = {}
+  before(mongooseControl.start)
+
+  before(dock.start.bind(ctx))
+
   beforeEach(function (done) {
     ctx = {}
     done()
   })
-  before(dock.start.bind(ctx))
-  after(dock.stop.bind(ctx))
-  beforeEach(deleteMongoDocs)
-  afterEach(deleteMongoDocs)
-  function deleteMongoDocs (done) {
+
+  beforeEach(function deleteMongoDocs (done) {
     var count = createCount(4, done)
     ContextVersion.remove({}, count.next)
     Instance.remove({}, count.next)
     Build.remove({}, count.next)
     User.remove({}, count.next)
-  }
-  function createStreamFunction (failed, errored) {
-    var originalGetContainer = Dockerode.prototype.getContainer
-    return function (done) {
-      sinon.stub(Dockerode.prototype, 'getContainer', function () {
-        var container = originalGetContainer.apply(this, arguments)
-        var containerId = keypather.get(ctx, 'usedDockerContainer.id')
-        var Readable = stream.Readable
-        var buffStream = new Readable()
-        if (containerId) {
-          var header = new Buffer(8)
-          header.fill(1)
-          var body
-          if (!failed) {
-            body = new Buffer('{"type":"log","content":"Successfully built ' + containerId + '"}')
-          } else {
-            body = new Buffer('{"type":"log","content":"failfailfai fail fail fail"}')
-          }
-          var buff
-          if (errored) {
-            buff = Buffer.concat([body]) // will trigger error
-          } else {
-            buff = Buffer.concat([header, body])
-          }
-          buffStream.push(buff)
-        }
-        buffStream.push(null)
-        container.logs = sinon.stub().yieldsAsync(null, buffStream)
-        return container
-      })
-      done()
-    }
-  }
+  })
+
+  before(function (done) {
+    sinon.stub(rabbitMQ, 'clearContainerMemory')
+    done()
+  })
+
+  after(function (done) {
+    rabbitMQ.clearContainerMemory.restore()
+    done()
+  })
+
+  afterEach(function deleteMongoDocs (done) {
+    var count = createCount(4, done)
+    ContextVersion.remove({}, count.next)
+    Instance.remove({}, count.next)
+    Build.remove({}, count.next)
+    User.remove({}, count.next)
+  })
+
+  after(dock.stop.bind(ctx))
+
   after(mongooseControl.stop)
 
   describe('Running the Worker', function () {
@@ -166,7 +156,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         sinon.spy(Instance.prototype, 'emitInstanceUpdate')
         sinon.spy(messenger, '_emitInstanceUpdateAction')
         sinon.spy(messenger, 'emitContextVersionUpdate')
-        sinon.spy(OnImageBuilderContainerDie, '_handleBuildComplete')
+        sinon.spy(BuildService, 'handleBuildComplete')
         sinon.spy(Build, 'updateFailedByContextVersionIds')
         sinon.spy(Build, 'updateCompletedByContextVersionIds')
         sinon.spy(ContextVersion, 'updateBuildErrorByContainer')
@@ -184,7 +174,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         messenger.emitContextVersionUpdate.restore()
         Instance.emitInstanceUpdates.restore()
         Instance.prototype.emitInstanceUpdate.restore()
-        OnImageBuilderContainerDie._handleBuildComplete.restore()
+        BuildService.handleBuildComplete.restore()
         Build.updateFailedByContextVersionIds.restore()
         Build.updateCompletedByContextVersionIds.restore()
         ContextVersion.updateBuildErrorByContainer.restore()
@@ -192,18 +182,12 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         done()
       })
       describe('With a successful build', function () {
-        beforeEach(createStreamFunction())
-        afterEach(function (done) {
-          Dockerode.prototype.getContainer.restore()
-          done()
-        })
-
         it('should attempt to deploy', function (done) {
           var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user)
           OnImageBuilderContainerDie(job)
             .asCallback(function (err) {
               if (err) { done(err) }
-              sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
+              sinon.assert.calledOnce(BuildService.handleBuildComplete)
               sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
               sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
 
@@ -281,18 +265,12 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         })
       })
       describe('With an unsuccessful build', function () {
-        beforeEach(createStreamFunction(true))
-        afterEach(function (done) {
-          Dockerode.prototype.getContainer.restore()
-          done()
-        })
-
         it('should update the UI with a socket event', function (done) {
           var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user, 1)
           OnImageBuilderContainerDie(job)
             .asCallback(function (err) {
               if (err) { return done(err) }
-              sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
+              sinon.assert.calledOnce(BuildService.handleBuildComplete)
 
               sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
               // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
@@ -396,18 +374,13 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
               done(err)
             })
           })
-          beforeEach(createStreamFunction())
-          afterEach(function (done) {
-            Dockerode.prototype.getContainer.restore()
-            done()
-          })
 
           it('should update the instance with the second cv, and update both cvs', function (done) {
             var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user)
             OnImageBuilderContainerDie(job)
               .asCallback(function (err) {
                 if (err) { return done(err) }
-                sinon.assert.calledOnce(OnImageBuilderContainerDie._handleBuildComplete)
+                sinon.assert.calledOnce(BuildService.handleBuildComplete)
                 sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
                 sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
 
