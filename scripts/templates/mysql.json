@@ -1,11 +1,11 @@
 {
-  "from": "mysql",
+  "from": "runnable/mysql",
   "defaultTag": "5.6",
   "ports": [3306],
   "env": {
-    "MYSQL_USER": "root",
-    "MYSQL_PASSWORD": "root",
-    "MYSQL_ROOT_PASSWORD": "root",
+    "MYSQL_USER": "mysql",
+    "MYSQL_PASSWORD": "mysql",
+    "MYSQL_ROOT_PASSWORD": "test",
     "MYSQL_DATABASE": "app"
   },
   "generalCommands": [],
