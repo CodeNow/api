@@ -15,11 +15,12 @@ var rabbitMQ = require('models/rabbitmq')
 require('sinon-as-promised')(require('bluebird'))
 
 var OrganizationService = require('models/services/organization-service')
+const PermissionService = require('models/services/permission-service')
 
 var BigPoppaClient = require('@runnable/big-poppa-client')
 var Github = require('models/apis/github')
 
-describe.only('Organization Service', function () {
+describe('Organization Service', function () {
   var orgGithubId
   var orgGithubName
   var bigPoppaOrg
@@ -63,6 +64,7 @@ describe.only('Organization Service', function () {
   describe('create', function () {
     describe('fail', function () {
       beforeEach(function (done) {
+        sinon.stub(OrganizationService, 'getByGithubUsername').resolves()
         sinon.stub(Github.prototype, 'getUserByUsernameAsync').resolves(githubOrg)
         sinon.stub(BigPoppaClient.prototype, 'getUsers').resolves(bigPoppaUser)
         sinon.stub(rabbitMQ, 'publishOrganizationAuthorized').resolves()
@@ -70,6 +72,7 @@ describe.only('Organization Service', function () {
       })
 
       afterEach(function (done) {
+        OrganizationService.getByGithubUsername.restore()
         BigPoppaClient.prototype.getUsers.restore()
         rabbitMQ.publishOrganizationAuthorized.restore()
         Github.prototype.getUserByUsernameAsync.restore()
@@ -91,7 +94,7 @@ describe.only('Organization Service', function () {
       })
     })
 
-    describe('success', function () {
+    describe('success first user', function () {
       beforeEach(function (done) {
         sinon.stub(Github.prototype, 'getUserByUsernameAsync').resolves(githubOrg)
         sinon.stub(BigPoppaClient.prototype, 'getUsers').resolves(bigPoppaUser)
@@ -121,6 +124,35 @@ describe.only('Organization Service', function () {
                 created: sinon.match.string
               }
             })
+          })
+          .asCallback(done)
+      })
+    })
+    describe('success second user', function () {
+      beforeEach(function (done) {
+        sinon.stub(OrganizationService, 'getByGithubUsername').resolves(bigPoppaOrg)
+        sinon.stub(PermissionService, 'isOwnerOf').resolves()
+        sinon.stub(Github.prototype, 'getUserByUsernameAsync').resolves(githubOrg)
+        done()
+      })
+
+      afterEach(function (done) {
+        OrganizationService.getByGithubUsername.restore()
+        PermissionService.isOwnerOf.restore()
+        Github.prototype.getUserByUsernameAsync.restore()
+        done()
+      })
+
+      it('should resolve after creating a new organization.authorized job', function (done) {
+        OrganizationService.create(orgGithubName, sessionUser)
+          .tap(function () {
+            sinon.assert.notCalled(Github.prototype.getUserByUsernameAsync)
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, orgGithubName)
+            sinon.assert.calledOnce(PermissionService.isOwnerOf)
+            sinon.assert.calledWith(PermissionService.isOwnerOf,
+              sessionUser, { owner: { github: orgGithubId } }
+            )
           })
           .asCallback(done)
       })
