@@ -28,7 +28,6 @@
     "bunyan": "^1.8.1",
     "busboy": "^0.2.8",
     "callback-count": "~0.1.0",
-    "code": "^1.4.0",
     "compression": "^1.0.11",
     "concat-stream": "^1.4.7",
     "connect-datadog": "0.0.5",
