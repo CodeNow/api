@@ -62,7 +62,8 @@ describe('Context Version Unit Test', function () {
             $set: {
               'build.dockerImage': opts.dockerImage,
               'build.failed': opts.failed,
-              'build.completed': sinon.match.number
+              'build.completed': sinon.match.number,
+              'state': ContextVersion.states.buildErrored
             }
           })
 
@@ -95,7 +96,8 @@ describe('Context Version Unit Test', function () {
             $set: {
               'build.failed': opts.failed,
               'build.error.message': opts.error.message,
-              'build.completed': sinon.match.number
+              'build.completed': sinon.match.number,
+              'state': ContextVersion.states.buildErrored
             }
           }, { multi: true })
         done()
