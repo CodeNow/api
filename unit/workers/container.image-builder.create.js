@@ -50,7 +50,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
         sinon.assert.calledWith(BuildService.handleBuildComplete, testId, {
           failed: true,
           error: {
-            message: 'failed to create build container'
+            message: 'Failed to create build container, max retries reached'
           }
         })
         done()
