@@ -15,7 +15,7 @@ var rabbitMQ = require('models/rabbitmq')
 require('sinon-as-promised')(require('bluebird'))
 
 var OrganizationService = require('models/services/organization-service')
-const PermissionService = require('models/services/permission-service')
+const UserService = require('models/services/user-service')
 
 var BigPoppaClient = require('@runnable/big-poppa-client')
 var Github = require('models/apis/github')
@@ -131,14 +131,16 @@ describe('Organization Service', function () {
     describe('success second user', function () {
       beforeEach(function (done) {
         sinon.stub(OrganizationService, 'getByGithubUsername').resolves(bigPoppaOrg)
-        sinon.stub(PermissionService, 'isOwnerOf').resolves()
+        sinon.stub(UserService, 'getByGithubId').resolves(bigPoppaUser)
+        sinon.stub(OrganizationService, 'addUser').resolves()
         sinon.stub(Github.prototype, 'getUserByUsernameAsync').resolves(githubOrg)
         done()
       })
 
       afterEach(function (done) {
         OrganizationService.getByGithubUsername.restore()
-        PermissionService.isOwnerOf.restore()
+        UserService.getByGithubId.restore()
+        OrganizationService.addUser.restore()
         Github.prototype.getUserByUsernameAsync.restore()
         done()
       })
@@ -149,10 +151,10 @@ describe('Organization Service', function () {
             sinon.assert.notCalled(Github.prototype.getUserByUsernameAsync)
             sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
             sinon.assert.calledWith(OrganizationService.getByGithubUsername, orgGithubName)
-            sinon.assert.calledOnce(PermissionService.isOwnerOf)
-            sinon.assert.calledWith(PermissionService.isOwnerOf,
-              sessionUser, { owner: { github: orgGithubId } }
-            )
+            sinon.assert.calledOnce(UserService.getByGithubId)
+            sinon.assert.calledWith(UserService.getByGithubId, userGithubId)
+            sinon.assert.calledOnce(OrganizationService.addUser)
+            sinon.assert.calledWith(OrganizationService.addUser, bigPoppaOrg, bigPoppaUser)
           })
           .asCallback(done)
       })
