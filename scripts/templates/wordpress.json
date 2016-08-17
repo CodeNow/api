@@ -1,0 +1,13 @@
+{
+  "from": "runnable/wordpress",
+  "defaultTag": "4.6",
+  "ports": [80],
+  "env": {},
+  "generalCommands": [],
+  "defaultMainCommands": [
+    "apache2-foreground"
+  ],
+  "defaultWorkDir": "",
+  "cmd": "",
+  "entryPoint": ""
+}

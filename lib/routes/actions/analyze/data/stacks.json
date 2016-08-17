@@ -52,8 +52,7 @@
       "node app.js"
     ],
     "preEnvMarker": "process.env",
-    "postEnvMarker": "",
-    "dependencyOnly": false
+    "postEnvMarker": ""
   },
   "python": {
     "name": "Python",
@@ -82,8 +81,7 @@
       "python main.py"
     ],
     "preEnvMarker": "os.environ['",
-    "postEnvMarker": "']",
-    "dependencyOnly": false
+    "postEnvMarker": "']"
   },
   "ruby": {
     "name": "Ruby",
@@ -128,8 +126,7 @@
       "bundle exec rackup"
     ],
     "preEnvMarker": "os.environ['",
-    "postEnvMarker": "']",
-    "dependencyOnly": false
+    "postEnvMarker": "']"
   },
   "rails": {
     "name": "Rails",
@@ -167,8 +164,7 @@
       "rails server -b 0.0.0.0"
     ],
     "preEnvMarker": "<%= ENV[\"",
-    "postEnvMarker": "]%>\"",
-    "dependencyOnly": false
+    "postEnvMarker": "]%>\""
   },
   "go": {
     "name": "Go",
@@ -203,8 +199,7 @@
       "./main"
     ],
     "preEnvMarker": "os.Getenv('",
-    "postEnvMarker": "')",
-    "dependencyOnly": false
+    "postEnvMarker": "')"
   },
   "php": {
     "name": "PHP",
@@ -249,10 +244,9 @@
       "apache2-foreground"
     ],
     "preEnvMarker": "",
-    "postEnvMarker": "",
-    "dependencyOnly": false
+    "postEnvMarker": ""
   },
-    "java": {
+  "java": {
     "name": "Java",
     "versions": [
       "openjdk-6",
@@ -268,41 +262,31 @@
     "ports": "",
     "startCommand": ["java","Main"],
     "preEnvMarker": "",
-    "postEnvMarker": "",
-    "dependencyOnly": true
+    "postEnvMarker": ""
   },
-  "maven": {
-    "name": "Java/Maven",
+  "wordpress": {
+    "name": "Wordpress",
     "versions": [
-      "3.3.9",
-      "3.3.3",
-      "3.2.5"
+      "4.6",
+      "4.5.3",
+      "4.5",
+      "4.4.4",
+      "4.4",
+      "4.3.5",
+      "4.3",
+      "4.2.9",
+      "4.2",
+      "4.1.12",
+      "4.1",
+      "4.0.12",
+      "4.0",
+      "3.9.13",
+      "3.9"
     ],
-    "defaultVersion": "3.3.9",
-    "dependencies": ["java"],
-    "ports": "8080",
-    "startCommand": ["mvn"],
+    "defaultVersion": "4.6",
+    "ports": "80",
+    "startCommand": ["apache2-foreground"],
     "preEnvMarker": "",
-    "postEnvMarker": "",
-    "dependencyOnly": false
-  },
-  "tomcat": {
-    "name": "Tomcat",
-    "versions": [
-      "6-jre7",
-      "6-jre8",
-      "7-jre7",
-      "7-jre8",
-      "8-jre7",
-      "8-jre8",
-      "8.5-jre8",
-      "9-jre8"
-    ],
-    "defaultVersion": "8-jre7",
-    "ports": "8080",
-    "startCommand": ["catalina.sh", "run"],
-    "preEnvMarker": "",
-    "postEnvMarker": "",
-    "dependencyOnly": false
+    "postEnvMarker": ""
   }
 }
