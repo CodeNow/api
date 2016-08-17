@@ -1,5 +1,13 @@
 FROM python:<python-version>
 
+RUN apt-get update && apt-get install -y \
+        gcc \
+        gettext \
+        mysql-client libmysqlclient-dev \
+        postgresql-client libpq-dev \
+        sqlite3 \
+    --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
 ENV PYTHON_VERSION <python-version>
 
 <before-main-repo>

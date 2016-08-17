@@ -251,5 +251,58 @@
     "preEnvMarker": "",
     "postEnvMarker": "",
     "dependencyOnly": false
+  },
+    "java": {
+    "name": "Java",
+    "versions": [
+      "openjdk-6",
+      "openjdk-6-jre",
+      "openjdk-7",
+      "openjdk-7-jre",
+      "openjdk-8",
+      "openjdk-8-jre",
+      "openjdk-9",
+      "openjdk-9-jre"
+    ],
+    "defaultVersion": "openjdk-7",
+    "ports": "",
+    "startCommand": ["java","Main"],
+    "preEnvMarker": "",
+    "postEnvMarker": "",
+    "dependencyOnly": true
+  },
+  "maven": {
+    "name": "Java/Maven",
+    "versions": [
+      "3.3.9",
+      "3.3.3",
+      "3.2.5"
+    ],
+    "defaultVersion": "3.3.9",
+    "dependencies": ["java"],
+    "ports": "8080",
+    "startCommand": ["mvn"],
+    "preEnvMarker": "",
+    "postEnvMarker": "",
+    "dependencyOnly": false
+  },
+  "tomcat": {
+    "name": "Tomcat",
+    "versions": [
+      "6-jre7",
+      "6-jre8",
+      "7-jre7",
+      "7-jre8",
+      "8-jre7",
+      "8-jre8",
+      "8.5-jre8",
+      "9-jre8"
+    ],
+    "defaultVersion": "8-jre7",
+    "ports": "8080",
+    "startCommand": ["catalina.sh", "run"],
+    "preEnvMarker": "",
+    "postEnvMarker": "",
+    "dependencyOnly": false
   }
 }
