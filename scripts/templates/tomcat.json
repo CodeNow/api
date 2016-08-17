@@ -1,9 +1,11 @@
 {
-  "from": "nodejs",
-  "ports": [3000],
+  "from": "tomcat",
+  "defaultTag": "8-jre7",
+  "ports": [8080],
+  "env": {},
   "generalCommands": [],
   "defaultMainCommands": [
-    "npm install"
+    "catalina.sh run"
   ],
   "defaultWorkDir": "",
   "cmd": "",

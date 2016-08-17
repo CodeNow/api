@@ -439,19 +439,19 @@ describe('Instance Model Tests', function () {
       }
     ]
     beforeEach(function (done) {
-      sinon.stub(Instance, 'find').yieldsAsync(null, instances)
+      sinon.stub(Instance, 'findAsync').resolves(instances)
       done()
     })
     afterEach(function (done) {
-      Instance.find.restore()
+      Instance.findAsync.restore()
       done()
     })
     it('should get all instances from testHost', function (done) {
-      Instance.findInstancesBuiltByDockerHost(testHost, function (err, foundInstances) {
+      Instance.findInstancesBuiltByDockerHost(testHost).asCallback(function (err, foundInstances) {
         expect(err).to.be.null()
         expect(foundInstances).to.equal(instances)
-        sinon.assert.calledOnce(Instance.find)
-        sinon.assert.calledWith(Instance.find, {
+        sinon.assert.calledOnce(Instance.findAsync)
+        sinon.assert.calledWith(Instance.findAsync, {
           'container.dockerHost': testHost,
           'contextVersion.build.completed': { $exists: true }
         })
@@ -460,9 +460,9 @@ describe('Instance Model Tests', function () {
     })
     it('should return an error if mongo fails', function (done) {
       var error = new Error('Mongo Error')
-      Instance.find.yieldsAsync(error)
-      Instance.findInstancesBuiltByDockerHost(testHost, function (err, foundInstances) {
-        sinon.assert.calledOnce(Instance.find)
+      Instance.findAsync.rejects(error)
+      Instance.findInstancesBuiltByDockerHost(testHost).asCallback(function (err, foundInstances) {
+        sinon.assert.calledOnce(Instance.findAsync)
         expect(err).to.equal(error)
         expect(foundInstances).to.not.exist()
         done()
