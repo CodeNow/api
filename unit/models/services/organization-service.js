@@ -159,6 +159,37 @@ describe('Organization Service', function () {
           .asCallback(done)
       })
     })
+    describe('success user already part of org', function () {
+      beforeEach(function (done) {
+        bigPoppaUser.organizations.push(bigPoppaOrg)
+        sinon.stub(OrganizationService, 'getByGithubUsername').resolves(bigPoppaOrg)
+        sinon.stub(UserService, 'getByGithubId').resolves(bigPoppaUser)
+        sinon.stub(OrganizationService, 'addUser').resolves()
+        sinon.stub(Github.prototype, 'getUserByUsernameAsync').resolves(githubOrg)
+        done()
+      })
+
+      afterEach(function (done) {
+        OrganizationService.getByGithubUsername.restore()
+        UserService.getByGithubId.restore()
+        OrganizationService.addUser.restore()
+        Github.prototype.getUserByUsernameAsync.restore()
+        done()
+      })
+
+      it('should resolve after creating a new organization.authorized job', function (done) {
+        OrganizationService.create(orgGithubName, sessionUser)
+          .tap(function () {
+            sinon.assert.notCalled(Github.prototype.getUserByUsernameAsync)
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, orgGithubName)
+            sinon.assert.calledOnce(UserService.getByGithubId)
+            sinon.assert.calledWith(UserService.getByGithubId, userGithubId)
+            sinon.assert.notCalled(OrganizationService.addUser)
+          })
+          .asCallback(done)
+      })
+    })
   })
   describe('getByGithubId', function () {
     beforeEach(function (done) {
