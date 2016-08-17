@@ -203,7 +203,7 @@ describe('Organization Service', function () {
     })
     describe('fail', function () {
       it('should throw OrganizationNotFoundError when no org is returned', function (done) {
-        BigPoppaClient.prototype.getOrganizations.resolves()
+        BigPoppaClient.prototype.getOrganizations.resolves([])
         OrganizationService.getByGithubId(orgGithubId)
           .asCallback(function (err) {
             expect(err.message).to.match(/Organization not found/)
