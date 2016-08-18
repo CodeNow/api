@@ -42,8 +42,10 @@ function ensureIndexes (cb) {
 // we need to setup this before starting api.
 // this create exchanges that is used by api
 var publishedEvents = [
+  'container.life-cycle.started',
   'container.network.attached',
   'dock.removed',
+  'docker.events-stream.connected',
   'docker.events-stream.disconnected'
 ]
 
@@ -64,10 +66,10 @@ function startApi (done) {
   started = true
   rabbitPublisher.connect(function (err) {
     if (err) { return done(err) }
-    api.start(function (err) {
-      if (err) { return done(err) }
-      cleanMongo.removeEverything(function (err) {
-        if (err) { return done(err) }
+    api.start(function (err2) {
+      if (err2) { return done(err2) }
+      cleanMongo.removeEverything(function (err3) {
+        if (err3) { return done(err3) }
         ensureIndexes(done)
       })
     })

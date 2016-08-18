@@ -22,7 +22,6 @@ var mongoose = require('mongoose')
 var ObjectId = mongoose.Types.ObjectId
 var sinon = require('sinon')
 var uuid = require('uuid')
-var Hermes = require('runnable-hermes')
 var rabbitMQ = require('models/rabbitmq')
 
 var Github = require('models/apis/github')
@@ -266,19 +265,13 @@ describe('ContextVersion ModelIntegration Tests', function () {
         sinon.spy(ContextVersion.prototype, 'getAndUpdateHashAsync')
         sinon.spy(rabbitMQ, 'createImageBuilderContainer')
 
-        sinon.stub(Hermes, 'hermesSingletonFactory').returns({
-          on: sinon.spy(),
-          connect: sinon.spy(function (cb) { cb() }),
-          publish: sinon.spy()
-        })
         sinon.stub(messenger, 'messageRoom')
-        rabbitMQ.connect(done)
+        rabbitMQ.connect().asCallback(done)
       })
       afterEach(function (done) {
         ContextVersion.removeByIdAsync.restore()
         ContextVersion._startBuild.restore()
         rabbitMQ.createImageBuilderContainer.restore()
-        Hermes.hermesSingletonFactory.restore()
         messenger.messageRoom.restore()
         ContextVersion.prototype.modifyAppCodeVersionWithLatestCommitAsync.restore()
         ContextVersion.prototype.dedupeAsync.restore()
@@ -286,7 +279,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
         ContextVersion.prototype.populateOwnerAsync.restore()
         ContextVersion.prototype.dedupeBuildAsync.restore()
         ContextVersion.prototype.getAndUpdateHashAsync.restore()
-        done()
+        rabbitMQ.disconnect().asCallback(done)
       })
       describe('failures', function () {
         beforeEach(function (done) {
@@ -507,25 +500,18 @@ describe('ContextVersion ModelIntegration Tests', function () {
         sinon.spy(ContextVersion.prototype, 'dedupeBuildAsync')
         sinon.spy(ContextVersion.prototype, 'populateOwnerAsync')
         sinon.spy(rabbitMQ, 'createImageBuilderContainer')
-
-        sinon.stub(Hermes, 'hermesSingletonFactory').returns({
-          on: sinon.spy(),
-          connect: sinon.spy(function (cb) { cb() }),
-          publish: sinon.spy()
-        })
         sinon.stub(messenger, 'messageRoom')
-        rabbitMQ.connect(done)
+        rabbitMQ.connect().asCallback(done)
       })
       afterEach(function (done) {
         ContextVersion.removeByIdAsync.restore()
         ContextVersion._startBuild.restore()
         rabbitMQ.createImageBuilderContainer.restore()
-        Hermes.hermesSingletonFactory.restore()
         messenger.messageRoom.restore()
         ContextVersion.prototype.setBuildStartedAsync.restore()
         ContextVersion.prototype.populateOwnerAsync.restore()
         ContextVersion.prototype.dedupeBuildAsync.restore()
-        done()
+        rabbitMQ.disconnect().asCallback(done)
       })
       describe('dedupeBuild', function () {
         beforeEach(function (done) {
@@ -546,7 +532,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
           ContextVersion.removeByIdAsync.reset()
           ContextVersion._startBuild.reset()
           rabbitMQ.createImageBuilderContainer.reset()
-          Hermes.hermesSingletonFactory.reset()
           messenger.messageRoom.reset()
           ContextVersion.prototype.setBuildStartedAsync.reset()
           ContextVersion.prototype.populateOwnerAsync.reset()
@@ -724,76 +709,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
             ctx.mockContextVersions[0]
           )
           done()
-        })
-      })
-    })
-
-    describe('updateBuildCompletedByContainer', function () {
-      beforeEach(function (done) {
-        sinon.stub(Context, 'findById').yieldsAsync(null, ctx.mockContext)
-        sinon.stub(ContextVersion, 'updateBy').yieldsAsync()
-        sinon.stub(ContextVersion, 'findBy').yieldsAsync(null, [ctx.mockContextVersion])
-        done()
-      })
-      afterEach(function (done) {
-        Context.findById.restore()
-        ContextVersion.updateBy.restore()
-        ContextVersion.findBy.restore()
-        messenger.emitContextVersionUpdate.restore()
-        done()
-      })
-      it('should save a successful build', function (done) {
-        var opts = {
-          dockerImage: 'asdasdfgvaw4fgaw323kjh23kjh4gq3kj',
-          log: 'adsfasdfasdfadsfadsf',
-          failed: false
-        }
-        var myCv = {id: 12341}
-
-        sinon.stub(messenger, 'emitContextVersionUpdate', function () {
-          done()
-        })
-        ContextVersion.updateBuildCompletedByContainer(myCv, opts, function () {
-          expect(ContextVersion.updateBy.calledOnce).to.be.true()
-          expect(ContextVersion.findBy.calledOnce).to.be.true()
-
-          var args = ContextVersion.updateBy.getCall(0).args
-          expect(args[0]).to.equal('build.dockerContainer')
-          expect(args[1]).to.equal(myCv)
-          expect(args[2].$set).to.contains({
-            'build.dockerImage': opts.dockerImage,
-            'build.failed': opts.failed
-          })
-          expect(args[2].$set['build.completed']).to.exist()
-        })
-      })
-      it('should save a failed build', function (done) {
-        var opts = {
-          log: 'adsfasdfasdfadsfadsf',
-          failed: true,
-          error: {
-            message: 'jksdhfalskdjfhadsf'
-          },
-          'dockerHost': 'http://10.0.0.1:4242'
-        }
-        var myCv = {id: 12341}
-        sinon.stub(messenger, 'emitContextVersionUpdate', function () {
-          done()
-        })
-        ContextVersion.updateBuildCompletedByContainer(myCv, opts, function () {
-          sinon.assert.calledOnce(ContextVersion.findBy)
-          sinon.assert.calledOnce(ContextVersion.updateBy)
-          sinon.assert.calledWith(ContextVersion.updateBy,
-            'build.dockerContainer',
-            myCv, {
-              $set: {
-                'build.log': opts.log,
-                'build.failed': opts.failed,
-                'build.error.message': opts.error.message,
-                'build.completed': sinon.match.number,
-                'dockerHost': opts.dockerHost
-              }
-            }, { multi: true })
         })
       })
     })

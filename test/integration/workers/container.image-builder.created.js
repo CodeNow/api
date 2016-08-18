@@ -23,7 +23,7 @@ var mockFactory = require('../fixtures/factory')
 var mockOnBuilderCreateMessage = require('../fixtures/dockerListenerEvents/on-image-builder-container-create')
 
 var expect = Code.expect
-var OnImageBuilderContainerCreate = require('workers/on-image-builder-container-create.js')
+var Worker = require('workers/container.image-builder.created')
 var InstanceService = require('models/services/instance-service.js')
 var Promise = require('bluebird')
 var mongoose = require('mongoose')
@@ -135,7 +135,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
       describe('With one instance', function () {
         it('should emit the single CV and instance events', function (done) {
           var job = mockOnBuilderCreateMessage(ctx.cv)
-          OnImageBuilderContainerCreate(job)
+          Worker.task(job)
             .then(function () {
               sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
               sinon.assert.calledWith(
@@ -154,7 +154,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         })
         it('should update the contextVersion and the instance with the new Docker info', function (done) {
           var job = mockOnBuilderCreateMessage(ctx.cv)
-          OnImageBuilderContainerCreate(job)
+          Worker.task(job)
             .then(function () {
               sinon.assert.calledOnce(ContextVersion.updateAsync)
               sinon.assert.calledWith(Docker.prototype.startContainerAsync, job.id)
@@ -184,7 +184,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         })
         it('should emit the single CV and 2 instance events', function (done) {
           var job = mockOnBuilderCreateMessage(ctx.cv)
-          OnImageBuilderContainerCreate(job)
+          Worker.task(job)
             .then(function () {
               sinon.assert.calledOnce(messenger.emitContextVersionUpdate)
               sinon.assert.calledWith(
@@ -208,7 +208,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
         })
         it('should update the cv and the 2 instances with new Docker info', function (done) {
           var job = mockOnBuilderCreateMessage(ctx.cv)
-          OnImageBuilderContainerCreate(job)
+          Worker.task(job)
             .then(function () {
               sinon.assert.calledOnce(ContextVersion.updateAsync)
               sinon.assert.calledWith(Docker.prototype.startContainerAsync, job.id)

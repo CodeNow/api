@@ -16,7 +16,7 @@ var ContextVersion = require('models/mongo/context-version')
 var InstanceContainerCreated = require('workers/instance.container.created')
 var InstanceService = require('models/services/instance-service')
 var rabbitMQ = require('models/rabbitmq')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var User = require('models/mongo/user')
 
 var afterEach = lab.afterEach
@@ -116,8 +116,8 @@ describe('InstanceContainerCreated Unit tests', function () {
     it('should fail if validation failed: null', function (done) {
       InstanceContainerCreated(null).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.container.created: Invalid Job')
+        expect(err).to.be.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         sinon.assert.notCalled(ContextVersion.recoverAsync)
         sinon.assert.notCalled(InstanceService.updateContainerInspect)
         sinon.assert.notCalled(InstanceService.startInstance)
@@ -128,8 +128,8 @@ describe('InstanceContainerCreated Unit tests', function () {
     it('should fail if validation failed: {}', function (done) {
       InstanceContainerCreated({}).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.container.created: Invalid Job')
+        expect(err).to.be.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         sinon.assert.notCalled(ContextVersion.recoverAsync)
         sinon.assert.notCalled(InstanceService.updateContainerInspect)
         sinon.assert.notCalled(InstanceService.startInstance)
@@ -142,8 +142,8 @@ describe('InstanceContainerCreated Unit tests', function () {
       data.inspectData.Config.Labels = null
       InstanceContainerCreated(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.container.created: Invalid Job')
+        expect(err).to.be.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         sinon.assert.notCalled(ContextVersion.recoverAsync)
         sinon.assert.notCalled(InstanceService.updateContainerInspect)
         sinon.assert.notCalled(InstanceService.startInstance)

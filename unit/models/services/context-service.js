@@ -1,43 +1,39 @@
 'use strict'
-
 require('loadenv')()
-
+var clone = require('101/clone')
+var expect = require('code').expect
 var Lab = require('lab')
+var Promise = require('bluebird')
+var sinon = require('sinon')
+
+var Context = require('models/mongo/context')
+var ContextService = require('models/services/context-service')
+var ContextVersion = require('models/mongo/context-version')
+var InfraCodeVersionService = require('models/services/infracode-version-service')
+var PermissionService = require('models/services/permission-service')
+
+require('sinon-as-promised')(require('bluebird'))
 var lab = exports.lab = Lab.script()
+
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
-var expect = require('code').expect
 var it = lab.it
-
-var clone = require('101/clone')
-// external
-var sinon = require('sinon')
-require('sinon-as-promised')(require('bluebird'))
-// internal
-var Context = require('models/mongo/context')
-var ContextVersion = require('models/mongo/context-version')
-var Runnable = require('models/apis/runnable')
-// internal (being tested)
-var ContextService = require('models/services/context-service')
-var PermisionService = require('models/services/permission-service')
 
 describe('ContextService Unit Test', function () {
   var ctx = {}
   beforeEach(function (done) {
-    sinon.stub(PermisionService, 'isOwnerOf').returns({})
+    sinon.stub(PermissionService, 'isOwnerOf').returns({})
     sinon.stub(Context, 'createAsync').returns()
     sinon.stub(Context.prototype, 'save').yieldsAsync()
     sinon.stub(ContextVersion, 'createDeepCopy').yieldsAsync()
-    sinon.stub(Runnable.prototype, 'copyVersionIcvFiles').yieldsAsync()
     done()
   })
   afterEach(function (done) {
-    PermisionService.isOwnerOf.restore()
+    PermissionService.isOwnerOf.restore()
     Context.createAsync.restore()
     Context.prototype.save.restore()
     ContextVersion.createDeepCopy.restore()
-    Runnable.prototype.copyVersionIcvFiles.restore()
     done()
   })
 
@@ -100,26 +96,26 @@ describe('ContextService Unit Test', function () {
     })
   })
 
-  describe('#findContextAndAssert', function () {
+  describe('#findContextAndAssertAccess', function () {
     beforeEach(function (done) {
       ctx.context = new Context({
         _id: '507f1f77bcf86cd799439011'
       })
       sinon.stub(ContextService, 'findContext').resolves(ctx.context)
-      sinon.stub(PermisionService, 'ensureOwnerOrModerator').resolves()
+      sinon.stub(PermissionService, 'ensureOwnerOrModerator').resolves()
       done()
     })
 
     afterEach(function (done) {
       ctx = {}
       ContextService.findContext.restore()
-      PermisionService.ensureOwnerOrModerator.restore()
+      PermissionService.ensureOwnerOrModerator.restore()
       done()
     })
 
     it('should fail build lookup failed', function (done) {
       ContextService.findContext.rejects(new Error('Mongo error'))
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -130,8 +126,8 @@ describe('ContextService Unit Test', function () {
     })
 
     it('should fail if perm check failed', function (done) {
-      PermisionService.ensureOwnerOrModerator.rejects(new Error('Not an owner'))
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      PermissionService.ensureOwnerOrModerator.rejects(new Error('Not an owner'))
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -142,7 +138,7 @@ describe('ContextService Unit Test', function () {
     })
 
     it('should return context', function (done) {
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function (context) {
         expect(context._id.toString()).to.equal('507f1f77bcf86cd799439011')
       })
@@ -150,7 +146,7 @@ describe('ContextService Unit Test', function () {
     })
 
     it('should call ContextService.findContext with correct params', function (done) {
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', {})
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function (build) {
         sinon.assert.calledOnce(ContextService.findContext)
         sinon.assert.calledWith(ContextService.findContext, '507f1f77bcf86cd799439011')
@@ -158,23 +154,23 @@ describe('ContextService Unit Test', function () {
       .asCallback(done)
     })
 
-    it('should call PermisionService.ensureOwnerOrModerator with correct params', function (done) {
+    it('should call PermissionService.ensureOwnerOrModerator with correct params', function (done) {
       var sessionUser = { _id: 'user-id' }
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', sessionUser)
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
-        sinon.assert.calledOnce(PermisionService.ensureOwnerOrModerator)
-        sinon.assert.calledWith(PermisionService.ensureOwnerOrModerator, sessionUser, ctx.context)
+        sinon.assert.calledOnce(PermissionService.ensureOwnerOrModerator)
+        sinon.assert.calledWith(PermissionService.ensureOwnerOrModerator, sessionUser, ctx.context)
       })
       .asCallback(done)
     })
 
     it('should call all functions in correct order', function (done) {
       var sessionUser = { _id: 'user-id' }
-      ContextService.findContextAndAssert('507f1f77bcf86cd799439011', sessionUser)
+      ContextService.findContextAndAssertAccess('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
         sinon.assert.callOrder(
           ContextService.findContext,
-          PermisionService.ensureOwnerOrModerator)
+          PermissionService.ensureOwnerOrModerator)
       })
       .asCallback(done)
     })
@@ -260,7 +256,7 @@ describe('ContextService Unit Test', function () {
     })
 
     it('should fail if permission check failed', function (done) {
-      PermisionService.isOwnerOf.rejects(new Error('Not an owner'))
+      PermissionService.isOwnerOf.rejects(new Error('Not an owner'))
       var payload = {
         name: 'code'
       }
@@ -298,8 +294,8 @@ describe('ContextService Unit Test', function () {
       }
       ContextService.createNew(ctx.sessionUser, clone(payload))
       .tap(function () {
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
-        sinon.assert.calledWith(PermisionService.isOwnerOf, ctx.sessionUser, payload)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
+        sinon.assert.calledWith(PermissionService.isOwnerOf, ctx.sessionUser, payload)
       })
       .asCallback(done)
     })
@@ -310,11 +306,11 @@ describe('ContextService Unit Test', function () {
       }
       ContextService.createNew(ctx.sessionUser, clone(payload))
       .tap(function () {
-        sinon.assert.calledOnce(PermisionService.isOwnerOf)
+        sinon.assert.calledOnce(PermissionService.isOwnerOf)
         payload.owner = {
           github: ctx.sessionUser.accounts.github.id
         }
-        sinon.assert.calledWith(PermisionService.isOwnerOf, ctx.sessionUser, payload)
+        sinon.assert.calledWith(PermissionService.isOwnerOf, ctx.sessionUser, payload)
       })
       .asCallback(done)
     })
@@ -346,7 +342,7 @@ describe('ContextService Unit Test', function () {
       .tap(function () {
         var finalPayload = clone(payload)
         delete finalPayload['some']
-        sinon.assert.calledWith(PermisionService.isOwnerOf, ctx.sessionUser, finalPayload)
+        sinon.assert.calledWith(PermissionService.isOwnerOf, ctx.sessionUser, finalPayload)
         sinon.assert.calledWith(Context.createAsync, finalPayload)
       })
       .asCallback(done)
@@ -397,7 +393,7 @@ describe('ContextService Unit Test', function () {
       ContextService.createNew(ctx.sessionUser, clone(payload))
       .tap(function () {
         sinon.assert.callOrder(
-          PermisionService.isOwnerOf,
+          PermissionService.isOwnerOf,
           Context.createAsync)
       })
       .asCallback(done)
@@ -406,6 +402,7 @@ describe('ContextService Unit Test', function () {
 
   describe('handleVersionDeepCopy', function () {
     beforeEach(function (done) {
+      sinon.stub(InfraCodeVersionService, 'copyInfraCodeToContextVersion').returns(Promise.resolve())
       ctx.mockContextVersion = {
         infraCodeVersion: 'pizza',
         owner: { github: 1234 }
@@ -421,6 +418,11 @@ describe('ContextService Unit Test', function () {
       done()
     })
 
+    afterEach(function (done) {
+      InfraCodeVersionService.copyInfraCodeToContextVersion.restore()
+      done()
+    })
+
     describe('a CV owned by hellorunnable', function () {
       beforeEach(function (done) {
         ctx.returnedMockedContextVersion = {
@@ -428,6 +430,7 @@ describe('ContextService Unit Test', function () {
           owner: { github: -1 },
           // createDeepCopy sets the correct createdBy
           createdBy: { github: 1234 },
+          infraCodeVersion: { _id: 'old' },
           save: sinon.stub().yieldsAsync()
         }
         ctx.mockContextVersion.owner.github = process.env.HELLO_RUNNABLE_GITHUB_ID
@@ -478,13 +481,10 @@ describe('ContextService Unit Test', function () {
             sinon.assert.calledOnce(ctx.returnedMockedContextVersion.save)
             expect(ctx.returnedMockedContextVersion.owner.github).to.equal(ctx.mockUser.accounts.github.id)
             sinon.assert.calledOnce(Context.prototype.save)
-            sinon.assert.calledOnce(Runnable.prototype.copyVersionIcvFiles)
-            sinon.assert.calledWith(
-              Runnable.prototype.copyVersionIcvFiles,
-              sinon.match.any,
-              ctx.returnedMockedContextVersion._id,
-              ctx.mockContextVersion.infraCodeVersion,
-              sinon.match.func)
+            sinon.assert.calledOnce(InfraCodeVersionService.copyInfraCodeToContextVersion)
+            sinon.assert.calledWith(InfraCodeVersionService.copyInfraCodeToContextVersion,
+              ctx.returnedMockedContextVersion,
+              ctx.mockContextVersion.infraCodeVersion._id)
             done()
           })
       })

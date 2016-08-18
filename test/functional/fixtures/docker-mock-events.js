@@ -1,13 +1,10 @@
 'use strict'
 
 var ContextVersion = require('models/mongo/context-version')
-var Instance = require('models/mongo/instance')
-var dockerMock = require('docker-mock')
 var Docker = require('models/apis/docker')
 var log = require('middlewares/logger')(__filename).log
 
 module.exports.emitBuildComplete = emitBuildComplete
-module.exports.emitContainerDie = emitContainerDie
 
 function emitBuildComplete (cv, failure, error) {
   log.trace({cv: cv, stack: new Error().stack}, 'emitBuildComplete')
@@ -35,24 +32,4 @@ function emitBuildComplete (cv, failure, error) {
   docker.docker.getContainer(containerId).kill({ signal: signal }, function (err) {
     if (err) { throw err }
   })
-}
-function emitContainerDie (instance) {
-  log.trace({instance: instance, stack: new Error().stack}, 'emitContainerDie')
-  if (instance.toJSON) {
-    instance = instance.toJSON()
-  }
-  var containerId = instance.container && instance.container.dockerContainer
-  if (!containerId) {
-    Instance.findById(instance._id, function (err, instance) {
-      if (err) { throw err }
-      emitContainerDie(instance)
-    })
-    return
-  }
-  dockerMock.events.stream.emit('data',
-    JSON.stringify({
-      status: 'die',
-      from: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
-      id: containerId
-    }))
 }

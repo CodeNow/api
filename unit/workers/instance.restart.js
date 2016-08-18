@@ -16,7 +16,7 @@ var Worker = require('workers/instance.restart')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
@@ -84,16 +84,16 @@ describe('Workers: Instance Restart', function () {
     it('should fatally fail if job is null', function (done) {
       Worker(null).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.restart: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
     it('should fatally fail if job is {}', function (done) {
       Worker({}).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.restart: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -101,8 +101,8 @@ describe('Workers: Instance Restart', function () {
       var data = omit(testData, 'instanceId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.restart: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -110,8 +110,8 @@ describe('Workers: Instance Restart', function () {
       var data = omit(testData, 'containerId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.restart: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -119,8 +119,8 @@ describe('Workers: Instance Restart', function () {
       var data = omit(testData, 'sessionUserGithubId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('instance.restart: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -138,8 +138,8 @@ describe('Workers: Instance Restart', function () {
     Instance.findOneStartingAsync.resolves(null)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
-      expect(err).to.be.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('instance.restart: Instance not found')
+      expect(err).to.be.instanceOf(WorkerStopError)
+      expect(err.message).to.equal('Instance not found')
       done()
     })
   })

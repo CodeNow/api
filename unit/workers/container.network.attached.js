@@ -17,7 +17,7 @@ var InstanceService = require('models/services/instance-service')
 var Isolation = require('models/mongo/isolation')
 var Hosts = require('models/redis/hosts')
 
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
@@ -89,8 +89,8 @@ describe('Workers: Container Network Attach', function () {
     it('should fatally fail if job is null', function (done) {
       Worker(null).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('container.network.attached: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -98,8 +98,8 @@ describe('Workers: Container Network Attach', function () {
     it('should fatally fail if job is {}', function (done) {
       Worker({}).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('container.network.attached: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -108,8 +108,8 @@ describe('Workers: Container Network Attach', function () {
       var data = omit(testData, 'id')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('container.network.attached: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -118,8 +118,8 @@ describe('Workers: Container Network Attach', function () {
       var data = omit(testData, 'containerIp')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('container.network.attached: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -128,8 +128,8 @@ describe('Workers: Container Network Attach', function () {
       var data = omit(testData, 'inspectData.Config.Labels.ownerUsername')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('container.network.attached: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -138,8 +138,8 @@ describe('Workers: Container Network Attach', function () {
       var data = omit(testData, 'inspectData.Config.Labels.instanceId')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('container.network.attached: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -148,8 +148,8 @@ describe('Workers: Container Network Attach', function () {
       var data = omit(testData, 'inspectData.Config.NetworkSettings.Ports')
       Worker(data).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(TaskFatalError)
-        expect(err.message).to.equal('container.network.attached: Invalid Job')
+        expect(err).to.be.an.instanceOf(WorkerStopError)
+        expect(err.message).to.equal('Invalid Job')
         done()
       })
     })
@@ -169,8 +169,8 @@ describe('Workers: Container Network Attach', function () {
     Instance.findOneByContainerIdAsync.resolves(null)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
-      expect(err).to.be.an.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('container.network.attached: Instance not found')
+      expect(err).to.be.an.instanceOf(WorkerStopError)
+      expect(err.message).to.equal('Instance not found')
       done()
     })
   })
@@ -203,8 +203,8 @@ describe('Workers: Container Network Attach', function () {
     InstanceService.modifyExistingContainerInspect.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
-      expect(err).to.be.an.instanceOf(TaskFatalError)
-      expect(err.message).to.equal('container.network.attached: Instance not found')
+      expect(err).to.be.an.instanceOf(WorkerStopError)
+      expect(err.message).to.equal('Instance not found')
       done()
     })
   })

@@ -9,7 +9,7 @@ var lab = exports.lab = Lab.script()
 var clone = require('101/clone')
 var Code = require('code')
 var sinon = require('sinon')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var InstanceContainerDelete = require('workers/instance.container.delete')
 var Docker = require('models/apis/docker')
@@ -58,7 +58,7 @@ describe('instance.container.delete unit test', function () {
         delete testJob.container
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/Invalid Job Data/)
           done()
         })
@@ -68,7 +68,7 @@ describe('instance.container.delete unit test', function () {
         delete testJob.container.dockerContainer
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/Invalid Job Data/)
           done()
         })
@@ -78,7 +78,7 @@ describe('instance.container.delete unit test', function () {
         testJob.instanceMasterBranch = 1234
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/Invalid Job Data/)
           done()
         })
@@ -88,7 +88,7 @@ describe('instance.container.delete unit test', function () {
         delete testJob.instanceMasterPod
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/Invalid Job Data/)
           done()
         })
@@ -98,7 +98,7 @@ describe('instance.container.delete unit test', function () {
         delete testJob.instanceName
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/Invalid Job Data/)
           done()
         })
@@ -108,7 +108,7 @@ describe('instance.container.delete unit test', function () {
         delete testJob.instanceShortHash
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/Invalid Job Data/)
           done()
         })
@@ -118,7 +118,7 @@ describe('instance.container.delete unit test', function () {
         delete testJob.ownerGithubId
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/Invalid Job Data/)
           done()
         })
@@ -128,7 +128,7 @@ describe('instance.container.delete unit test', function () {
         delete testJob.ownerGithubUsername
 
         InstanceContainerDelete(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/Invalid Job Data/)
           done()
         })
@@ -171,7 +171,7 @@ describe('instance.container.delete unit test', function () {
         testErr.output = { statusCode: 404 }
         Docker.prototype.removeContainer.yieldsAsync(testErr)
         InstanceContainerDelete(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/container not found/)
           done()
         })

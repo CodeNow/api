@@ -10,7 +10,7 @@ var clone = require('101/clone')
 var Code = require('code')
 var noop = require('101/noop')
 var sinon = require('sinon')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var ContainerImageBuilderCreated = require('workers/container.image-builder.started')
 var ContextVersion = require('models/mongo/context-version')
@@ -45,7 +45,7 @@ describe('container.image-builder.started unit test', function () {
       delete testJob.inspectData.Config.Labels['contextVersion.build._id']
 
       ContainerImageBuilderCreated(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err).to.be.an.instanceof(WorkerStopError)
         expect(err.data.err.message).to.match(/contextVersion.build._id.*required/)
         done()
       })
@@ -92,7 +92,7 @@ describe('container.image-builder.started unit test', function () {
       ContextVersion.findAsync.returns([])
 
       ContainerImageBuilderCreated(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(TaskFatalError)
+        expect(err).to.be.an.instanceof(WorkerStopError)
         expect(err.message).to.contain('ContextVersion was not updated')
 
         done()

@@ -13,7 +13,7 @@ var expect = require('code').expect
 var it = lab.it
 
 var Promise = require('bluebird')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
@@ -81,7 +81,6 @@ describe('Context Version Delete Worker', function () {
     beforeEach(function (done) {
       sinon.stub(Instance, 'findByContextVersionIdsAsync').resolves([])
       sinon.stub(ContextVersion, 'findByIdAsync').resolves(testContextVersion)
-      sinon.stub(ContextVersion, 'removeByIdAsync').resolves(testContextVersion)
       sinon.stub(rabbitMQ, 'contextVersionDeleted')
       done()
     })
@@ -89,7 +88,6 @@ describe('Context Version Delete Worker', function () {
     afterEach(function (done) {
       Instance.findByContextVersionIdsAsync.restore()
       ContextVersion.findByIdAsync.restore()
-      ContextVersion.removeByIdAsync.restore()
       rabbitMQ.contextVersionDeleted.restore()
       done()
     })
@@ -99,10 +97,10 @@ describe('Context Version Delete Worker', function () {
         it('should require the context version id', function (done) {
           Worker().asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.data.validationError).to.exist()
             expect(err.data.validationError.message)
-              .to.match(/job.+required/)
+              .to.match(/context-version.delete.job.+required/)
             done()
           })
         })
@@ -110,7 +108,7 @@ describe('Context Version Delete Worker', function () {
         it('should require the context version id to be a string', function (done) {
           Worker({ contextVersionId: [1, 2, 3] }).asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.data.validationError).to.exist()
             expect(err.data.validationError.message)
               .to.match(/must.+be.+string/)
@@ -124,7 +122,7 @@ describe('Context Version Delete Worker', function () {
           ContextVersion.findByIdAsync.resolves(null)
           Worker(testJob).asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.message)
               .to.match(/contextversion.+not.+found/i)
             done()
@@ -137,7 +135,7 @@ describe('Context Version Delete Worker', function () {
           Instance.findByContextVersionIdsAsync.resolves([{ _id: '123' }])
           Worker(testJob).asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.message)
               .to.match(/used.+by.+instances/i)
             done()
@@ -158,15 +156,6 @@ describe('Context Version Delete Worker', function () {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(ContextVersion.findByIdAsync)
         sinon.assert.calledWithExactly(ContextVersion.findByIdAsync, testContextVersion._id.toString())
-        done()
-      })
-    })
-
-    it('should remove the mongo model', function (done) {
-      Worker(testJob).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(ContextVersion.removeByIdAsync)
-        sinon.assert.calledWith(ContextVersion.removeByIdAsync, testContextVersion._id.toString())
         done()
       })
     })

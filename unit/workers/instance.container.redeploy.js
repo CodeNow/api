@@ -20,7 +20,7 @@ var ContextVersion = require('models/mongo/context-version')
 var User = require('models/mongo/user')
 var Build = require('models/mongo/build')
 
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
@@ -98,7 +98,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
     describe('invalid Job', function () {
       it('should throw a task fatal error if the job is missing a instanceId', function (done) {
         Worker({}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
             .to.match(/instanceId.*required/i)
@@ -107,7 +107,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       })
       it('should throw a task fatal error if the sessionUserGithubId is not a string', function (done) {
         Worker({instanceId: '1', sessionUserGithubId: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
             .to.match(/sessionUserGithubId.*number/i)
@@ -116,7 +116,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       })
       it('should throw a task fatal error if the job is missing a sessionUserGithubId', function (done) {
         Worker({instanceId: '1'}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
             .to.match(/sessionUserGithubId.*required/i)
@@ -125,7 +125,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       })
       it('should throw a task fatal error if the instanceId is not a string', function (done) {
         Worker({instanceId: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
             .to.match(/instanceId.*string/i)
@@ -134,16 +134,16 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       })
       it('should throw a task fatal error if the job is missing entirely', function (done) {
         Worker().asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
-            .to.match(/job.+required/)
+            .to.match(/instance.container.redeploy.job.+required/)
           done()
         })
       })
       it('should throw a task fatal error if the job is not an object', function (done) {
         Worker(true).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
             .to.contain('must be an object')
@@ -152,7 +152,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       })
       it('should throw a task fatal error if the deploymentUuid is not a string', function (done) {
         Worker({instanceId: '1', sessionUserGithubId: 1, deploymentUuid: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(TaskFatalError)
+          expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.data.validationError).to.exist()
           expect(err.data.validationError.message)
             .to.match(/deploymentUuid.*string/i)
@@ -187,7 +187,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       it('should callback with fatal error', function (done) {
         Worker(testData)
           .asCallback(function (err) {
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.message).to.contain('Instance not found')
             sinon.assert.calledOnce(Instance.findById)
             done()
@@ -224,7 +224,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       it('should callback with fatal error', function (done) {
         Worker(testData)
           .asCallback(function (err) {
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.message).to.contain('User not found')
             sinon.assert.calledOnce(Instance.findById)
             sinon.assert.calledOnce(User.findByGithubId)
@@ -265,7 +265,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       it('should callback with fatal error', function (done) {
         Worker(testData)
           .asCallback(function (err) {
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.message).to.contain('Build not found')
             sinon.assert.calledOnce(Instance.findById)
             sinon.assert.calledOnce(User.findByGithubId)
@@ -286,7 +286,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       it('should callback with fatal error', function (done) {
         Worker(testData)
           .asCallback(function (err) {
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.message).to.contain('Cannot redeploy an instance with an unsuccessful build')
             sinon.assert.calledOnce(Instance.findById)
             sinon.assert.calledOnce(User.findByGithubId)
@@ -333,7 +333,7 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       it('should callback with fatal error', function (done) {
         Worker(testData)
           .asCallback(function (err) {
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.message).to.contain('ContextVersion not found')
             sinon.assert.calledOnce(Instance.findById)
             sinon.assert.calledOnce(User.findByGithubId)
@@ -398,14 +398,14 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
           })
       })
 
-      it('should throw TaskFatalError', function (done) {
+      it('should throw WorkerStopError', function (done) {
         var testErr = new Error(JSON.stringify({
           message: 'Not Found'
         }))
         User.prototype.findGithubUsernameByGithubId.yields(testErr)
         Worker(testData)
           .asCallback(function (err) {
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.message).to.contain('instance owner not found on github (404)')
             sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
             done()

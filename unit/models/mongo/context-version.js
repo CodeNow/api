@@ -1,20 +1,110 @@
 'use strict'
-
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
-var it = lab.it
-var beforeEach = lab.beforeEach
-var afterEach = lab.afterEach
 var Code = require('code')
-var expect = Code.expect
+var Lab = require('lab')
+var Promise = require('bluebird')
 var sinon = require('sinon')
 
 var ContextVersion = require('models/mongo/context-version')
-var Promise = require('bluebird')
+var messenger = require('socket/messenger')
+
 require('sinon-as-promised')(Promise)
+var lab = exports.lab = Lab.script()
+
+var afterEach = lab.afterEach
+var beforeEach = lab.beforeEach
+var describe = lab.describe
+var expect = Code.expect
+var it = lab.it
 
 describe('Context Version Unit Test', function () {
+  describe('updateBuildCompletedByBuildId', function () {
+    var mockContextVersion
+    beforeEach(function (done) {
+      mockContextVersion = {
+        _id: '55d3ef733e1b620e00eb6292',
+        name: 'name1',
+        owner: {
+          github: '2335750'
+        },
+        createdBy: {
+          github: '146592'
+        },
+        build: {
+          _id: '23412312h3nk1lj2h3l1k2',
+          completed: true
+        }
+      }
+      sinon.stub(ContextVersion, 'updateBy').yieldsAsync()
+      sinon.stub(ContextVersion, 'findBy').yieldsAsync(null, [mockContextVersion])
+      sinon.stub(messenger, 'emitContextVersionUpdate').returns()
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.updateBy.restore()
+      ContextVersion.findBy.restore()
+      messenger.emitContextVersionUpdate.restore()
+      done()
+    })
+
+    it('should save a successful build', function (done) {
+      var opts = {
+        dockerImage: 'asdasdfgvaw4fgaw323kjh23kjh4gq3kj',
+        failed: false
+      }
+      var buildId = 12341
+
+      ContextVersion.updateBuildCompletedByBuildId(buildId, opts, function () {
+        sinon.assert.calledOnce(ContextVersion.updateBy)
+        sinon.assert.calledWith(ContextVersion.updateBy,
+          'build._id',
+          buildId, {
+            $set: {
+              'build.dockerImage': opts.dockerImage,
+              'build.failed': opts.failed,
+              'build.completed': sinon.match.number,
+              'state': ContextVersion.states.buildErrored
+            }
+          })
+
+        sinon.assert.calledOnce(ContextVersion.findBy)
+        sinon.assert.calledWith(ContextVersion.findBy,
+          'build._id',
+          buildId, {
+            'build.log': false
+          })
+        done()
+      })
+    })
+
+    it('should save a failed build', function (done) {
+      var opts = {
+        failed: true,
+        error: {
+          message: 'jksdhfalskdjfhadsf'
+        },
+        'dockerHost': 'http://10.0.0.1:4242'
+      }
+      var buildId = 12341
+
+      ContextVersion.updateBuildCompletedByBuildId(buildId, opts, function () {
+        sinon.assert.calledOnce(ContextVersion.findBy)
+        sinon.assert.calledOnce(ContextVersion.updateBy)
+        sinon.assert.calledWith(ContextVersion.updateBy,
+          'build._id',
+          buildId, {
+            $set: {
+              'build.failed': opts.failed,
+              'build.error.message': opts.error.message,
+              'build.completed': sinon.match.number,
+              'state': ContextVersion.states.buildErrored
+            }
+          }, { multi: true })
+        done()
+      })
+    })
+  })
+
   describe('recover', function () {
     var updatedCv
     var contextVersion
@@ -175,44 +265,34 @@ describe('Context Version Unit Test', function () {
   describe('#markDockRemovedByDockerHost', function () {
     var dockerHost = '1234'
     beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'update').yieldsAsync()
+      sinon.stub(ContextVersion, 'updateAsync').resolves()
       done()
     })
     afterEach(function (done) {
-      ContextVersion.update.restore()
+      ContextVersion.updateAsync.restore()
       done()
     })
 
     it('should call update with the right parameters', function (done) {
-      ContextVersion.markDockRemovedByDockerHost(dockerHost, function (err) {
+      ContextVersion.markDockRemovedByDockerHost(dockerHost).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(ContextVersion.update)
-        sinon.assert.calledWith(ContextVersion.update,
+        sinon.assert.calledOnce(ContextVersion.updateAsync)
+        sinon.assert.calledWith(ContextVersion.updateAsync,
           {dockerHost: dockerHost},
           {$set: {dockRemoved: true}},
-          {multi: true},
-          sinon.match.func
-        )
+          {multi: true})
         done()
       })
     })
 
     it('should pass the database error through to the callback', function (done) {
-      var error = 'Mongo Error'
-      ContextVersion.update.yieldsAsync(error)
-      ContextVersion.markDockRemovedByDockerHost(dockerHost, function (err) {
-        expect(err).to.equal(error)
-        sinon.assert.calledOnce(ContextVersion.update)
+      var error = new Error('Mongo Error')
+      ContextVersion.updateAsync.rejects(error)
+      ContextVersion.markDockRemovedByDockerHost(dockerHost).asCallback(function (err) {
+        expect(err.message).to.equal(error.message)
+        sinon.assert.calledOnce(ContextVersion.updateAsync)
         done()
       })
-    })
-
-    it('should be asyncified properly!', function (done) {
-      ContextVersion.markDockRemovedByDockerHostAsync.bind(ContextVersion, dockerHost)()
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          done()
-        })
     })
   })
 })
