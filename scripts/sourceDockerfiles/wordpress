@@ -1,0 +1,13 @@
+FROM runnable/wordpress:<wordpress-version>
+
+RUN /init.sh
+
+<before-main-repo>
+#default dst:/var/www/html/
+<after-main-repo>
+
+# Open up ports on the server
+EXPOSE <user-specified-ports>
+
+# Command to start the app
+CMD <start-command>

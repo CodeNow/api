@@ -2,7 +2,11 @@
   "from": "runnable/wordpress",
   "defaultTag": "4.6",
   "ports": [80],
-  "env": {},
+  "env": {
+    "WORDPRESS_DB_USER": "mysql",
+    "WORDPRESS_DB_PASSWORD": "mysql",
+    "WORDPRESS_DB_NAME": "mysql"
+    },
   "generalCommands": [],
   "defaultMainCommands": [
     "apache2-foreground"

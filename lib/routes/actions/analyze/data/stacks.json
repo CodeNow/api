@@ -268,24 +268,17 @@
     "name": "Wordpress",
     "versions": [
       "4.6",
-      "4.5.3",
       "4.5",
-      "4.4.4",
       "4.4",
-      "4.3.5",
       "4.3",
-      "4.2.9",
       "4.2",
-      "4.1.12",
       "4.1",
-      "4.0.12",
       "4.0",
-      "3.9.13",
       "3.9"
     ],
     "defaultVersion": "4.6",
     "ports": "80",
-    "startCommand": ["apache2-foreground"],
+    "startCommand": ["gosu mysql mysqld && apache2-foreground"],
     "preEnvMarker": "",
     "postEnvMarker": ""
   }
