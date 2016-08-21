@@ -50,7 +50,7 @@ describe('GET /auth/whitelist/', function () {
     beforeEach(function (done) {
       require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
       ctx.name = randStr(5)
-      return whitelistOrgs([ctx.name, 'Runnable'])
+      whitelistOrgs([ctx.name, 'Runnable'])
         .asCallback(done)
     })
 
@@ -73,7 +73,7 @@ describe('GET /auth/whitelist/', function () {
   describe('User with no whitelisted orgs', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
-      return whitelistOrgs([ctx.name])
+      whitelistOrgs([ctx.name])
         .asCallback(done)
     })
 
@@ -99,7 +99,7 @@ describe('GET /auth/whitelist/', function () {
   describe('Non-Runnable user', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
-      return whitelistOrgs([ctx.name])
+      whitelistOrgs([ctx.name])
         .asCallback(done)
     })
 
