@@ -1,6 +1,6 @@
 {
   "from": "python",
-  "ports": [],
+  "ports": [8000],
   "generalCommands": [],
   "defaultMainCommands": [
     "pip install -r 'requirements.txt'"
