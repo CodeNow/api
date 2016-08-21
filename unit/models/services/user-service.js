@@ -140,7 +140,7 @@ describe('User Service', function () {
     })
   })
 
-  describe('getUsersOrganizations', function () {
+  describe('getUsersOrganizationsWithGithubModel', function () {
     var orgGithubId = '232323'
     var orgGithubName = 'bigPoppa'
     var user = {}
@@ -171,7 +171,7 @@ describe('User Service', function () {
 
       it('should resolve when the user has no orgs', function (done) {
         Github.prototype.getUserAuthorizedOrgsAsync.resolves([])
-        UserService.getUsersOrganizations(user)
+        UserService.getUsersOrganizationsWithGithubModel(user)
           .then(function (orgs) {
             expect(orgs).to.be.have.length(0)
             sinon.assert.calledOnce(UserService.getUser)
@@ -182,7 +182,7 @@ describe('User Service', function () {
       it('should resolve when the user has the org', function (done) {
         Github.prototype.getUserAuthorizedOrgsAsync.resolves([ githubOrg ])
         bigPoppaUser.organizations.push(bigPoppaOrg)
-        UserService.getUsersOrganizations(user)
+        UserService.getUsersOrganizationsWithGithubModel(user)
           .then(function (orgs) {
             expect(orgs).to.be.have.length(1)
             expect(orgs[0]).to.equal(bigPoppaOrg)
@@ -198,7 +198,7 @@ describe('User Service', function () {
         }
         bigPoppaUser.organizations.push(bigPoppaOrg)
         Github.prototype.getUserAuthorizedOrgsAsync.resolves([ githubOrg, fakeOrg ])
-        UserService.getUsersOrganizations(user)
+        UserService.getUsersOrganizationsWithGithubModel(user)
           .then(function (orgs) {
             expect(orgs).to.be.have.length(1)
             expect(orgs[0]).to.equal(bigPoppaOrg)
@@ -223,7 +223,7 @@ describe('User Service', function () {
       })
       it('should reject if github fails', function (done) {
         bigPoppaUser.organizations.push(bigPoppaOrg)
-        UserService.getUsersOrganizations(user)
+        UserService.getUsersOrganizationsWithGithubModel(user)
           .asCallback(function (err) {
             expect(err).to.equal(error)
             done()
