@@ -17,6 +17,7 @@ var primus = require('../../fixtures/primus')
 var mockGetUserById = require('../../fixtures/mocks/github/getByUserId')
 
 var rabbitMQ = require('models/rabbitmq')
+const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 describe('204 DELETE /instances/:id', function () {
   var ctx = {}
@@ -44,9 +45,10 @@ describe('204 DELETE /instances/:id', function () {
     var testInstance
     beforeEach(function (done) {
       sinon.stub(rabbitMQ, 'deleteInstance')
-      multi.createAndTailInstance(primus, function (err, instance) {
+      multi.createAndTailInstance(primus, function (err, instance, build, user) {
         if (err) { return done(err) }
         testInstance = instance
+        whitelistUserOrgs(user, [])
         done()
       })
     })
