@@ -114,7 +114,6 @@ describe('BillingService', () => {
   describe('#getPlanForOrganization', () => {
     let getBigPoppaUserIdAndAssertUserIsPartOfOrgStub
     let getPlanForOrganizationStub
-    let getUserByIdStub
     beforeEach(done => {
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
         sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves()
