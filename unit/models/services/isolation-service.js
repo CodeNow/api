@@ -103,7 +103,7 @@ describe('Isolation Services Model', function () {
         ;['repo', 'org'].forEach(function (k) {
           it('should require childInfo.' + k, function (done) {
             var info = omit(mockChildInfo, k)
-            return IsolationService.forkRepoChild(info, '', '', {})
+            IsolationService.forkRepoChild(info, '', '', {})
               .asCallback(function (err) {
                 expect(err).to.exist()
                 expect(err.message).to.match(new RegExp('must.+contain.+' + k, 'i'))
@@ -115,7 +115,7 @@ describe('Isolation Services Model', function () {
 
         it('should require childInfo branch', function (done) {
           var info = omit(mockChildInfo, 'branch')
-          return IsolationService.forkRepoChild(info, '', '', {})
+          IsolationService.forkRepoChild(info, '', '', {})
             .asCallback(function (err) {
               expect(err).to.exist()
               expect(err.message).to.match(new RegExp('branch.+required', 'i'))
