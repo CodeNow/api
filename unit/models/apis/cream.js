@@ -116,8 +116,10 @@ describe('Cream API', function () {
       return CreamAPI.makeRequest(path, organizationId)
         .then(() => {
           sinon.assert.calledOnce(requestStub)
-          sinon.assert.calledOnce(requestStub, {
+          sinon.assert.calledWith(requestStub, {
             method: 'GET',
+            uri: undefined,
+            callback: sinon.match.func,
             url: `${process.env.CREAM_HOST}/organization/${organizationId}/${path}`
           })
         })
@@ -128,9 +130,11 @@ describe('Cream API', function () {
       return CreamAPI.makeRequest(path, organizationId, body)
         .then(() => {
           sinon.assert.calledOnce(requestStub)
-          sinon.assert.calledOnce(requestStub, {
+          sinon.assert.calledWith(requestStub, {
             method: 'POST',
             url: `${process.env.CREAM_HOST}/organization/${organizationId}/${path}`,
+            uri: undefined,
+            callback: sinon.match.func,
             body: body,
             json: true
           })
