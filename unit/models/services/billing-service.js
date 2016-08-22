@@ -237,16 +237,6 @@ describe('BillingService', () => {
           sinon.assert.calledWithExactly(getPaymentMethodForOrganizationStub, orgId)
         })
     })
-
-    it('should throw a 403 if the session user is not the owner', done => {
-      paymentMethod.owner.id = 7
-      BillingService.getPaymentMethodForOrganization(orgId, userGithubId)
-        .asCallback(err => {
-          expect(err).to.exist()
-          expect(err.output.statusCode).to.equal(403)
-          done()
-        })
-    })
   })
 
   describe('#postPaymentMethodForOrganization', () => {
