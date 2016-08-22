@@ -13,6 +13,7 @@ require('sinon-as-promised')(Promise)
 const BigPoppaClient = require('@runnable/big-poppa-client')
 const BillingService = require('models/services/billing-service')
 const CreamAPI = require('models/apis/cream')
+const Github = require('models/apis/github')
 
 const lab = exports.lab = Lab.script()
 const describe = lab.describe
@@ -113,6 +114,7 @@ describe('BillingService', () => {
   describe('#getPlanForOrganization', () => {
     let getBigPoppaUserIdAndAssertUserIsPartOfOrgStub
     let getPlanForOrganizationStub
+    let getUserByIdStub
     beforeEach(done => {
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
         sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves()
@@ -154,15 +156,28 @@ describe('BillingService', () => {
   describe('#getInvoicesForOrganization', () => {
     let getBigPoppaUserIdAndAssertUserIsPartOfOrgStub
     let getInvoicesForOrganizationStub
+    let getUserByIdStub
+    let invoice
+    let githubId = 1981198
+    let githubUser
+    let token = '92374283234sb23'
     beforeEach(done => {
+      invoice = {
+        paidBy: {
+          githubId: githubId
+        }
+      }
+      githubUser = { id: 89 }
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
         sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves()
-      getInvoicesForOrganizationStub = sinon.stub(CreamAPI, 'getInvoicesForOrganization').resolves()
+      getInvoicesForOrganizationStub = sinon.stub(CreamAPI, 'getInvoicesForOrganization').resolves([invoice])
+      getUserByIdStub = sinon.stub(Github.prototype, 'getUserByIdAsync').resolves(githubUser)
       done()
     })
     afterEach(done => {
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub.restore()
       getInvoicesForOrganizationStub.restore()
+      getUserByIdStub.restore()
       done()
     })
 
@@ -176,7 +191,7 @@ describe('BillingService', () => {
     })
 
     it('should call `getBigPoppaUserIdAndAssertUserIsPartOfOrg`', () => {
-      return BillingService.getInvoicesForOrganization(orgId, userGithubId)
+      return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
         .then(() => {
           sinon.assert.calledOnce(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub)
           sinon.assert.calledWithExactly(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub, userGithubId, orgId)
@@ -184,10 +199,35 @@ describe('BillingService', () => {
     })
 
     it('should call `getInvoicesForOrganization`', () => {
-      return BillingService.getInvoicesForOrganization(orgId, userGithubId)
+      return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
         .then(() => {
           sinon.assert.calledOnce(getInvoicesForOrganizationStub)
           sinon.assert.calledWithExactly(getInvoicesForOrganizationStub, orgId)
+        })
+    })
+
+    it('should call `Github.getUserById` and add the github user', () => {
+      return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
+        .then(res => {
+          sinon.assert.calledOnce(getUserByIdStub)
+          sinon.assert.calledWithExactly(getUserByIdStub, githubId)
+          expect(res[0]).to.be.an.object()
+          expect(res[0].paidBy).to.be.an.object()
+          expect(res[0].paidBy.githubUser).to.be.an.object()
+          expect(res[0].paidBy.githubUser).to.equal(githubUser)
+        })
+    })
+
+    it('should return the error even when `getUserById` throws an error', () => {
+      getUserByIdStub.rejects(new Error())
+
+      return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
+        .then(res => {
+          sinon.assert.calledOnce(getUserByIdStub)
+          sinon.assert.calledWithExactly(getUserByIdStub, githubId)
+          expect(res[0]).to.be.an.object()
+          expect(res[0].paidBy).to.be.an.object()
+          expect(res[0].paidBy.githubUser).to.equal(undefined)
         })
     })
   })
