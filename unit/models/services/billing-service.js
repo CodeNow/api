@@ -169,7 +169,7 @@ describe('BillingService', () => {
       githubUser = { id: 89 }
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
         sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves()
-      getInvoicesForOrganizationStub = sinon.stub(CreamAPI, 'getInvoicesForOrganization').resolves([invoice])
+      getInvoicesForOrganizationStub = sinon.stub(CreamAPI, 'getInvoicesForOrganization').resolves({ invoices: [invoice] })
       getUserByIdStub = sinon.stub(Github.prototype, 'getUserByIdAsync').resolves(githubUser)
       done()
     })
