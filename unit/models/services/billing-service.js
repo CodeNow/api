@@ -114,15 +114,28 @@ describe('BillingService', () => {
   describe('#getPlanForOrganization', () => {
     let getBigPoppaUserIdAndAssertUserIsPartOfOrgStub
     let getPlanForOrganizationStub
+    let getUserByIdStub
+    let plan
+    let githubId = 1981198
+    let githubUser
+    let token = '23408923jh23'
     beforeEach(done => {
+      plan = {
+        owner: {
+          githubId: githubId
+        }
+      }
+      githubUser = {}
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
         sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves()
-      getPlanForOrganizationStub = sinon.stub(CreamAPI, 'getPlanForOrganization').resolves()
+      getPlanForOrganizationStub = sinon.stub(CreamAPI, 'getPlanForOrganization').resolves(plan)
+      getUserByIdStub = sinon.stub(Github.prototype, 'getUserByIdAsync').resolves(githubUser)
       done()
     })
     afterEach(done => {
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub.restore()
       getPlanForOrganizationStub.restore()
+      getUserByIdStub.restore()
       done()
     })
 
@@ -136,7 +149,7 @@ describe('BillingService', () => {
     })
 
     it('should call `getBigPoppaUserIdAndAssertUserIsPartOfOrg`', () => {
-      return BillingService.getPlanForOrganization(orgId, userGithubId)
+      return BillingService.getPlanForOrganization(orgId, userGithubId, token)
         .then(() => {
           sinon.assert.calledOnce(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub)
           sinon.assert.calledWithExactly(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub, userGithubId, orgId)
@@ -144,10 +157,46 @@ describe('BillingService', () => {
     })
 
     it('should call `getPlanForOrganization`', () => {
-      return BillingService.getPlanForOrganization(orgId, userGithubId)
+      return BillingService.getPlanForOrganization(orgId, userGithubId, token)
         .then(() => {
           sinon.assert.calledOnce(getPlanForOrganizationStub)
           sinon.assert.calledWithExactly(getPlanForOrganizationStub, orgId)
+        })
+    })
+
+    it('should call `Github.getUserById` and add the github user', () => {
+      return BillingService.getPlanForOrganization(orgId, userGithubId, token)
+        .then(res => {
+          sinon.assert.calledOnce(getUserByIdStub)
+          sinon.assert.calledWithExactly(getUserByIdStub, githubId)
+          expect(res).to.be.an.object()
+          expect(res.owner).to.be.an.object()
+          expect(res.owner.githubUser).to.be.an.object()
+          expect(res.owner.githubUser).to.equal(githubUser)
+        })
+    })
+
+    it('should not call `Github.getUserById` if there is not github id', () => {
+      plan.owner.githubId = null
+      return BillingService.getPlanForOrganization(orgId, userGithubId, token)
+        .then(res => {
+          sinon.assert.notCalled(getUserByIdStub)
+          expect(res).to.be.an.object()
+          expect(res.owner).to.be.an.object()
+          expect(res.owner.githubUser).to.equal(undefined)
+        })
+    })
+
+    it('should return the error even when `getUserById` throws an error', () => {
+      getUserByIdStub.rejects(new Error())
+
+      return BillingService.getPlanForOrganization(orgId, userGithubId, token)
+        .then(res => {
+          sinon.assert.calledOnce(getUserByIdStub)
+          sinon.assert.calledWithExactly(getUserByIdStub, githubId)
+          expect(res).to.be.an.object()
+          expect(res.owner).to.be.an.object()
+          expect(res.owner.githubUser).to.equal(undefined)
         })
     })
   })
@@ -214,6 +263,17 @@ describe('BillingService', () => {
           expect(res[0].paidBy).to.be.an.object()
           expect(res[0].paidBy.githubUser).to.be.an.object()
           expect(res[0].paidBy.githubUser).to.equal(githubUser)
+        })
+    })
+
+    it('should not call `Github.getUserById` if there is not github id', () => {
+      invoice.paidBy.githubId = null
+      return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
+        .then(res => {
+          sinon.assert.notCalled(getUserByIdStub)
+          expect(res[0]).to.be.an.object()
+          expect(res[0].paidBy).to.be.an.object()
+          expect(res[0].paidBy.githubUser).to.equal(undefined)
         })
     })
 
