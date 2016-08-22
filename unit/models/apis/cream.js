@@ -1,5 +1,5 @@
 /**
- * @module unit/models/apis/docker
+ * @module unit/models/apis/cream
  */
 'use strict'
 require('loadenv')()
