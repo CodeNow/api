@@ -114,7 +114,8 @@ describe('BillingService', () => {
     let getBigPoppaUserIdAndAssertUserIsPartOfOrgStub
     let getPlanForOrganizationStub
     beforeEach(done => {
-      getBigPoppaUserIdAndAssertUserIsPartOfOrgStub = sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves()
+      getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
+        sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves()
       getPlanForOrganizationStub = sinon.stub(CreamAPI, 'getPlanForOrganization').resolves()
       done()
     })
@@ -154,7 +155,8 @@ describe('BillingService', () => {
     let getBigPoppaUserIdAndAssertUserIsPartOfOrgStub
     let getInvoicesForOrganizationStub
     beforeEach(done => {
-      getBigPoppaUserIdAndAssertUserIsPartOfOrgStub = sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves()
+      getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
+        sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves()
       getInvoicesForOrganizationStub = sinon.stub(CreamAPI, 'getInvoicesForOrganization').resolves()
       done()
     })
@@ -199,8 +201,10 @@ describe('BillingService', () => {
       }
     }
     beforeEach(done => {
-      getBigPoppaUserIdAndAssertUserIsPartOfOrgStub = sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves(userMock)
-      getPaymentMethodForOrganizationStub = sinon.stub(CreamAPI, 'getPaymentMethodForOrganization').resolves(paymentMethod)
+      getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
+        sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves(userMock)
+      getPaymentMethodForOrganizationStub =
+        sinon.stub(CreamAPI, 'getPaymentMethodForOrganization').resolves(paymentMethod)
       done()
     })
     afterEach(done => {
@@ -233,16 +237,6 @@ describe('BillingService', () => {
           sinon.assert.calledWithExactly(getPaymentMethodForOrganizationStub, orgId)
         })
     })
-
-    it('should throw a 403 if the session user is not the owner', done => {
-      paymentMethod.owner.id = 7
-      BillingService.getPaymentMethodForOrganization(orgId, userGithubId)
-        .asCallback(err => {
-          expect(err).to.exist()
-          expect(err.output.statusCode).to.equal(403)
-          done()
-        })
-    })
   })
 
   describe('#postPaymentMethodForOrganization', () => {
@@ -250,8 +244,10 @@ describe('BillingService', () => {
     let postPaymentMethodForOrganizationStub
     const stripeToken = 'tok_2342382i37823'
     beforeEach(done => {
-      getBigPoppaUserIdAndAssertUserIsPartOfOrgStub = sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves(userMock)
-      postPaymentMethodForOrganizationStub = sinon.stub(CreamAPI, 'postPaymentMethodForOrganization').resolves()
+      getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
+        sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves(userMock)
+      postPaymentMethodForOrganizationStub =
+        sinon.stub(CreamAPI, 'postPaymentMethodForOrganization').resolves()
       done()
     })
     afterEach(done => {
