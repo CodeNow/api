@@ -81,7 +81,7 @@ describe('Isolation Services Model', function () {
     describe('Validation', function () {
       it('should allow a `matchBranch` property in childInfo', function (done) {
         mockChildInfo.matchBranch = true
-        return IsolationService.forkRepoChild(mockChildInfo, '', '', mockSessionUser)
+        IsolationService.forkRepoChild(mockChildInfo, '', '', mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.not.exist()
             done()
