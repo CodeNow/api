@@ -143,7 +143,7 @@ describe('Cream API', function () {
       }
       CreamAPI.makeRequest(path, organizationId)
         .asCallback(err => {
-          expect(err).to.exist
+          expect(err).to.exist()
           expect(err.message).to.match(/cream.*error/i)
           done()
         })
@@ -155,7 +155,7 @@ describe('Cream API', function () {
       }
       CreamAPI.makeRequest(path, organizationId)
         .asCallback(err => {
-          expect(err).to.exist
+          expect(err).to.exist()
           expect(err.output.statusCode).to.equal(400)
           expect(err.message).to.match(/cream.*bad.*request/i)
           done()
