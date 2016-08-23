@@ -620,9 +620,10 @@ describe('Instance Model Tests', function () {
       it('should query for masterpods', function (done) {
         instance.fetchMatchingInstancesForDepChecking(ownerName)
           .then(function (instances) {
-            expect(instances[0]).to.deep.equal(assign(instance, {
+            var expected = assign(instance, {
               hostname: instance.getElasticHostname(ownerName)
-            }))
+            }).toJSON()
+            expect(instances[0].toJSON()).to.deep.equal(expected)
             sinon.assert.calledWith(
               Instance.find,
               {
@@ -637,9 +638,10 @@ describe('Instance Model Tests', function () {
       it('should query for isolated containers', function (done) {
         instance.fetchMatchingInstancesForDepChecking(ownerName, true)
           .then(function (instances) {
-            expect(instances[0]).to.deep.equal(assign(instance, {
+            var expected = assign(instance, {
               hostname: instance.getElasticHostname(ownerName)
-            }))
+            }).toJSON()
+            expect(instances[0].toJSON()).to.deep.equal(expected)
             sinon.assert.calledWith(Instance.find,
               {
                 'owner.github': instance.owner.github,

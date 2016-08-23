@@ -116,6 +116,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         sessionUserGithubId: 'asdaSDFASDF',
         contextId: '4G23G243G4545',
         contextVersionId: 'G45GH4GERGDSG',
+        contextVersionBuildId: 'G45GH4GERGFSG',
         dockerHost: '0.0.0.0',
         noCache: false,
         tid: '9494949',
