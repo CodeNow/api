@@ -19,7 +19,7 @@ module.exports.whitelistOrgs = function (orgs) {
   const bigPoppaNock = nock('http://' + process.env.BIG_POPPA_HOST)
   orgs.forEach(function (org) {
     bigPoppaNock
-      .get('/organization/?lowerName=' + org.name.toLowerCase())
+      .get('/organization/?name=' + org.name)
       .times(1000)
       .reply(
         200,
