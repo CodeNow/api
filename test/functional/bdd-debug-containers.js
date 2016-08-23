@@ -23,6 +23,8 @@ var path = require('path')
 var rimraf = require('rimraf')
 var fs = require('fs')
 var uuid = require('uuid')
+const whitelistOrgs = require('./fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('./fixtures/mocks/big-poppa').whitelistUserOrgs
 
 function containerRoot (inspect) {
   // this is dumb that we have to save it in krain's node_module folder
@@ -32,6 +34,11 @@ function containerRoot (inspect) {
     inspect.Id)
 }
 
+var runnableOrg = {
+  name: 'Runnable',
+  githubId: 2828361,
+  allowed: true
+}
 describe('BDD - Debug Containers', function () {
   var ctx = {}
 
@@ -54,11 +61,13 @@ describe('BDD - Debug Containers', function () {
   )
   afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
+    whitelistOrgs([runnableOrg])
     multi.createAndTailInstance(
       primus,
       { name: 'web-instance' },
       function (err, instance, build, user) {
         if (err) { return done(err) }
+        whitelistUserOrgs(user, [runnableOrg])
         ctx.webInstance = instance
         ctx.user = user
         ctx.build = build

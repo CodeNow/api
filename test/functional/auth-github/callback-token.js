@@ -21,6 +21,7 @@ var multi = require('../fixtures/multi-factory')
 var querystring = require('querystring')
 var redis = require('models/redis')
 var url = require('url')
+const whitelistOrgs = require('../fixtures/mocks/big-poppa').whitelistOrgs
 const whitelistUserOrgs = require('../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 describe('/auth/github routes', function () {
@@ -57,6 +58,7 @@ describe('/auth/github routes', function () {
 
     beforeEach(require('../fixtures/mocks/github/login'))
     beforeEach(function (done) {
+      whitelistOrgs([runnableOrg])
       ctx.user = multi.createUser(done)
     })
     beforeEach(function (done) {
