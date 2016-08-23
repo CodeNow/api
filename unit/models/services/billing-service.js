@@ -152,7 +152,6 @@ describe('BillingService', () => {
           sinon.assert.calledWithExactly(getPlanForOrganizationStub, orgId)
         })
     })
-
   })
 
   describe('#getInvoicesForOrganization', () => {
