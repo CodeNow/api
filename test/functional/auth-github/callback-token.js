@@ -21,6 +21,7 @@ var multi = require('../fixtures/multi-factory')
 var querystring = require('querystring')
 var redis = require('models/redis')
 var url = require('url')
+const whitelistUserOrgs = require('../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 describe('/auth/github routes', function () {
   var ctx = {}
@@ -46,12 +47,21 @@ describe('/auth/github routes', function () {
     done()
   })
 
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 2828361,
+    allowed: true
+  }
   describe('/auth/github/callback', function () {
     var target = baseUrl + 'callback'
 
     beforeEach(require('../fixtures/mocks/github/login'))
     beforeEach(function (done) {
       ctx.user = multi.createUser(done)
+    })
+    beforeEach(function (done) {
+      whitelistUserOrgs(ctx.user, [runnableOrg])
+      done()
     })
     afterEach(require('../fixtures/clean-nock'))
 
