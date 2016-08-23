@@ -267,7 +267,7 @@ describe('Instance Model Integration Tests', function () {
      */
     describe('2 masterPod api(m) worker(m)', function () {
       beforeEach(function (done) {
-        return Promise.props({
+        Promise.props({
           api: createCv({
             repo: repo,
             branch: masterBranch,
@@ -319,7 +319,7 @@ describe('Instance Model Integration Tests', function () {
     })
     describe('2 masterPod api(m) worker(m), api.child(fb)', function () {
       beforeEach(function (done) {
-        return Promise.props({
+        Promise.props({
           api: createCv({
             repo: repo,
             branch: masterBranch,
@@ -378,7 +378,7 @@ describe('Instance Model Integration Tests', function () {
     })
     describe('2 masterPod api(m) worker(fb1), worker.child(m), api.isolated(fb)', function () {
       beforeEach(function (done) {
-        return Promise.props({
+        Promise.props({
           api: createCv({
             repo: repo,
             branch: masterBranch,
@@ -464,7 +464,7 @@ describe('Instance Model Integration Tests', function () {
     })
     describe('2 masterPod api(m) worker(m), 1 isolated api(fb)', function () {
       beforeEach(function (done) {
-        return Promise.props({
+        Promise.props({
           api: createCv({
             repo: repo,
             branch: masterBranch,
