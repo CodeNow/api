@@ -33,6 +33,7 @@ const userMock = {
     { id: orgId, githubId: orgGithubId }
   ]
 }
+const token = '23408923jh23'
 
 describe('BillingService', () => {
   describe('#getBigPoppaUserIdAndAssertUserIsPartOfOrg', () => {
@@ -114,28 +115,16 @@ describe('BillingService', () => {
   describe('#getPlanForOrganization', () => {
     let getBigPoppaUserIdAndAssertUserIsPartOfOrgStub
     let getPlanForOrganizationStub
-    let getUserByIdStub
     let plan
-    let githubId = 1981198
-    let githubUser
-    let token = '23408923jh23'
     beforeEach(done => {
-      plan = {
-        owner: {
-          githubId: githubId
-        }
-      }
-      githubUser = {}
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
         sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves()
       getPlanForOrganizationStub = sinon.stub(CreamAPI, 'getPlanForOrganization').resolves(plan)
-      getUserByIdStub = sinon.stub(Github.prototype, 'getUserByIdAsync').resolves(githubUser)
       done()
     })
     afterEach(done => {
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub.restore()
       getPlanForOrganizationStub.restore()
-      getUserByIdStub.restore()
       done()
     })
 
@@ -164,41 +153,6 @@ describe('BillingService', () => {
         })
     })
 
-    it('should call `Github.getUserById` and add the github user', () => {
-      return BillingService.getPlanForOrganization(orgId, userGithubId, token)
-        .then(res => {
-          sinon.assert.calledOnce(getUserByIdStub)
-          sinon.assert.calledWithExactly(getUserByIdStub, githubId)
-          expect(res).to.be.an.object()
-          expect(res.owner).to.be.an.object()
-          expect(res.owner.githubUser).to.be.an.object()
-          expect(res.owner.githubUser).to.equal(githubUser)
-        })
-    })
-
-    it('should not call `Github.getUserById` if there is not github id', () => {
-      plan.owner.githubId = null
-      return BillingService.getPlanForOrganization(orgId, userGithubId, token)
-        .then(res => {
-          sinon.assert.notCalled(getUserByIdStub)
-          expect(res).to.be.an.object()
-          expect(res.owner).to.be.an.object()
-          expect(res.owner.githubUser).to.equal(undefined)
-        })
-    })
-
-    it('should return the error even when `getUserById` throws an error', () => {
-      getUserByIdStub.rejects(new Error())
-
-      return BillingService.getPlanForOrganization(orgId, userGithubId, token)
-        .then(res => {
-          sinon.assert.calledOnce(getUserByIdStub)
-          sinon.assert.calledWithExactly(getUserByIdStub, githubId)
-          expect(res).to.be.an.object()
-          expect(res.owner).to.be.an.object()
-          expect(res.owner.githubUser).to.equal(undefined)
-        })
-    })
   })
 
   describe('#getInvoicesForOrganization', () => {
@@ -294,21 +248,29 @@ describe('BillingService', () => {
   describe('#getPaymentMethodForOrganization', () => {
     let getBigPoppaUserIdAndAssertUserIsPartOfOrgStub
     let getPaymentMethodForOrganizationStub
-    let paymentMethod = {
-      owner: {
-        id: userMock.id
-      }
-    }
+    let githubId = 1981198
+    let githubUser
+    let getUserByIdStub
+    let paymentMethod
     beforeEach(done => {
+      paymentMethod = {
+        owner: {
+          id: userMock.id,
+          githubId: githubId
+        }
+      }
+      githubUser = { id: githubId }
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
         sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves(userMock)
       getPaymentMethodForOrganizationStub =
         sinon.stub(CreamAPI, 'getPaymentMethodForOrganization').resolves(paymentMethod)
+      getUserByIdStub = sinon.stub(Github.prototype, 'getUserByIdAsync').resolves(githubUser)
       done()
     })
     afterEach(done => {
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub.restore()
       getPaymentMethodForOrganizationStub.restore()
+      getUserByIdStub.restore()
       done()
     })
 
@@ -322,7 +284,7 @@ describe('BillingService', () => {
     })
 
     it('should call `getBigPoppaUserIdAndAssertUserIsPartOfOrg`', () => {
-      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId)
+      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
         .then(() => {
           sinon.assert.calledOnce(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub)
           sinon.assert.calledWithExactly(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub, userGithubId, orgId)
@@ -330,10 +292,46 @@ describe('BillingService', () => {
     })
 
     it('should call `getPaymentMethodForOrganization`', () => {
-      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId)
+      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
         .then(() => {
           sinon.assert.calledOnce(getPaymentMethodForOrganizationStub)
           sinon.assert.calledWithExactly(getPaymentMethodForOrganizationStub, orgId)
+        })
+    })
+
+    it('should call `Github.getUserById` and add the github user', () => {
+      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
+        .then(res => {
+          sinon.assert.calledOnce(getUserByIdStub)
+          sinon.assert.calledWithExactly(getUserByIdStub, githubId)
+          expect(res).to.be.an.object()
+          expect(res.owner).to.be.an.object()
+          expect(res.owner.githubUser).to.be.an.object()
+          expect(res.owner.githubUser).to.equal(githubUser)
+        })
+    })
+
+    it('should not call `Github.getUserById` if there is not github id', () => {
+      paymentMethod.owner.githubId = null
+      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
+        .then(res => {
+          sinon.assert.notCalled(getUserByIdStub)
+          expect(res).to.be.an.object()
+          expect(res.owner).to.be.an.object()
+          expect(res.owner.githubUser).to.equal(undefined)
+        })
+    })
+
+    it('should return the error even when `getUserById` throws an error', () => {
+      getUserByIdStub.rejects(new Error())
+
+      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
+        .then(res => {
+          sinon.assert.calledOnce(getUserByIdStub)
+          sinon.assert.calledWithExactly(getUserByIdStub, githubId)
+          expect(res).to.be.an.object()
+          expect(res.owner).to.be.an.object()
+          expect(res.owner.githubUser).to.equal(undefined)
         })
     })
   })
