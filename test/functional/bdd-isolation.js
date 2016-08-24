@@ -15,6 +15,7 @@ var sinon = require('sinon')
 var async = require('async')
 var createCount = require('callback-count')
 var pluck = require('101/pluck')
+const Promise = require('bluebird')
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
@@ -112,6 +113,8 @@ describe('BDD - Isolation', function () {
       master: ctx.webInstance.attrs._id.toString(),
       children: []
     }
+    var appCodeVersion = ctx.apiInstance.attrs.contextVersion.appCodeVersions[0]
+    require('./fixtures/mocks/github/repos-username-repo')(ctx.user, appCodeVersion.repo.split('/').pop())
     ctx.user.createIsolation(opts, function (err, isolation) {
       if (err) { return done(err) }
       expect(isolation).to.exist()
@@ -149,6 +152,7 @@ describe('BDD - Isolation', function () {
           branch: appCodeVersion.branch
         }]
       }
+      require('./fixtures/mocks/github/repos-username-repo')(ctx.user, appCodeVersion.repo.split('/').pop())
       ctx.user.createIsolation(opts, function (err, isolation) {
         expect(err).to.exist()
         expect(err.message).to.match(/determine.*instance.*fork/i)
@@ -171,6 +175,7 @@ describe('BDD - Isolation', function () {
           }
         ]
       }
+      require('./fixtures/mocks/github/repos-username-repo')(ctx.user, appCodeVersion.repo.split('/').pop())
       ctx.user.createIsolation(opts, function (err, isolation) {
         if (err) { return count.next(err) }
         expect(isolation).to.exist()
