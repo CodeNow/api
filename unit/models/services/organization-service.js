@@ -254,7 +254,7 @@ describe('Organization Service', function () {
           .tap(function (org) {
             sinon.assert.calledOnce(BigPoppaClient.prototype.getOrganizations)
             sinon.assert.calledWith(BigPoppaClient.prototype.getOrganizations, {
-              name: orgGithubName
+              lowerName: orgGithubName.toLowerCase()
             })
             expect(org).to.equal(bigPoppaOrg)
           })

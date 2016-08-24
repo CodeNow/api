@@ -14,6 +14,8 @@ var expect = Code.expect
 var api = require('../../fixtures/api-control')
 
 var request = require('request')
+var sinon = require('sinon')
+var Github = require('models/apis/github')
 
 const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
 const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
@@ -22,18 +24,27 @@ var ctx = {}
 describe('GET /auth/whitelist/:name', function () {
   before(api.start.bind(ctx))
   after(api.stop.bind(ctx))
+
   var runnableOrg = {
     name: 'Runnable',
+    lowerName: 'runnable',
     githubId: 2828361,
     allowed: true
   }
   var otherOrg = {
     name: 'asdasasdas',
+    lowerName: 'asdasasdas',
     githubId: 123445,
     allowed: true
   }
+  beforeEach(require('../../fixtures/clean-nock'))
   beforeEach(function (done) {
     whitelistOrgs([runnableOrg, otherOrg])
+    sinon.stub(Github.prototype, 'isOrgMember').yieldsAsync()
+    done()
+  })
+  afterEach(function (done) {
+    Github.prototype.isOrgMember.restore()
     done()
   })
   beforeEach(function (done) {
@@ -50,7 +61,8 @@ describe('GET /auth/whitelist/:name', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
   afterEach(require('../../fixtures/clean-nock'))
 
-  it('should return 204 if a name is in the whitelist', function (done) {
+  it('should return 204 if a name is in the whitelist', { timeout: 20000 }, function (done) {
+    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
     require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
     var opts = {
       method: 'GET',

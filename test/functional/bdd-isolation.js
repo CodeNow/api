@@ -10,6 +10,7 @@ var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
+var sinon = require('sinon')
 
 var async = require('async')
 var createCount = require('callback-count')
@@ -17,6 +18,8 @@ var pluck = require('101/pluck')
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
+var getUserEmails = require('./fixtures/mocks/github/get-user-emails')
+var Github = require('models/apis/github')
 var multi = require('./fixtures/multi-factory')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var primus = require('./fixtures/primus')
@@ -33,7 +36,21 @@ describe('BDD - Isolation', function () {
   after(primus.disconnect)
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
-
+  before(function (done) {
+    // Stub out Github API call for `beforeEach` and `it` statements
+    sinon.stub(Github.prototype, 'getUserEmails', function (email, cb) {
+      return cb(null, getUserEmails())
+    })
+    done()
+  })
+  after(function (done) {
+    Github.prototype.getUserEmails.restore()
+    done()
+  })
+  beforeEach(function (done) {
+    Github.prototype.getUserEmails.reset()
+    done()
+  })
   var runnableOrg = {
     name: 'Runnable',
     githubId: 11111,
@@ -198,7 +215,7 @@ describe('BDD - Isolation', function () {
       })
     })
 
-    describe('once it is created', function (done) {
+    describe('once it is created', function () {
       beforeEach(function (done) {
         var count = createCount(2, done)
         primus.expectAction('redeploy', count.next)

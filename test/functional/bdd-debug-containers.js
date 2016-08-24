@@ -1,5 +1,6 @@
 'use strict'
 
+var Promise = require('bluebird')
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
@@ -23,6 +24,9 @@ var path = require('path')
 var rimraf = require('rimraf')
 var fs = require('fs')
 var uuid = require('uuid')
+var getUserEmails = require('./fixtures/mocks/github/get-user-emails')
+var Github = require('models/apis/github')
+var PermissionService = require('models/services/permission-service')
 const whitelistOrgs = require('./fixtures/mocks/big-poppa').whitelistOrgs
 const whitelistUserOrgs = require('./fixtures/mocks/big-poppa').whitelistUserOrgs
 
@@ -42,6 +46,7 @@ var runnableOrg = {
 describe('BDD - Debug Containers', function () {
   var ctx = {}
 
+  beforeEach(require('./fixtures/clean-nock'))
   before(api.start.bind(ctx))
   before(dock.start.bind(ctx))
   before(require('./fixtures/mocks/api-client').setup)
@@ -49,7 +54,21 @@ describe('BDD - Debug Containers', function () {
   after(primus.disconnect)
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
-
+  before(function (done) {
+    // Stub out Github API call for `beforeEach` and `it` statements
+    sinon.stub(Github.prototype, 'getUserEmails', function (email, cb) {
+      return cb(null, getUserEmails())
+    })
+    done()
+  })
+  after(function (done) {
+    Github.prototype.getUserEmails.restore()
+    done()
+  })
+  beforeEach(function (done) {
+    Github.prototype.getUserEmails.reset()
+    done()
+  })
   after(require('./fixtures/mocks/api-client').clean)
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
@@ -62,6 +81,11 @@ describe('BDD - Debug Containers', function () {
   afterEach(mockGetUserById.stubAfter)
   beforeEach(function (done) {
     whitelistOrgs([runnableOrg])
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
     multi.createAndTailInstance(
       primus,
       { name: 'web-instance' },
@@ -82,13 +106,18 @@ describe('BDD - Debug Containers', function () {
         }, function (err) {
           if (err) { return done(err) }
           primus.expectAction('start', {}, function () {
-            ctx.instance.fetch(done)
+            ctx.instance.fetch(function () {
+              if (stub) {
+                stub.restore()
+              }
+              done()
+            })
           })
         })
       })
   })
 
-  describe('creation', function () {
+  describe('creation', { timeout: 20000 }, function () {
     beforeEach(function (done) {
       sinon.spy(Docker.prototype, 'createContainer')
       done()
@@ -133,7 +162,7 @@ describe('BDD - Debug Containers', function () {
     })
   })
 
-  describe('container files', function () {
+  describe('container files', { timeout: 20000 }, function () {
     beforeEach(function (done) {
       // this layer ID is fake b/c we are just going to validate it's usage
       var layer = uuid()

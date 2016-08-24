@@ -14,7 +14,8 @@ var expect = Code.expect
 var api = require('../../fixtures/api-control')
 
 var request = require('request')
-var nock = require('nock')
+var sinon = require('sinon')
+var Github = require('models/apis/github')
 
 const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
 const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
@@ -25,16 +26,27 @@ describe('GET /auth/whitelist/:name', function () {
 
   var runnableOrg = {
     name: 'Runnable',
+    lowerName: 'runnable',
     githubId: 2828361,
     allowed: true
   }
   var otherOrg = {
     name: 'asdasasdas',
+    lowerName: 'asdasasdas',
     githubId: 123445,
     allowed: true
   }
+  beforeEach(require('../../fixtures/clean-nock'))
   beforeEach(function (done) {
     whitelistOrgs([runnableOrg, otherOrg])
+    done()
+  })
+  beforeEach(function (done) {
+    sinon.stub(Github.prototype, 'isOrgMember').yieldsAsync()
+    done()
+  })
+  afterEach(function (done) {
+    Github.prototype.isOrgMember.restore()
     done()
   })
 
@@ -48,24 +60,15 @@ describe('GET /auth/whitelist/:name', function () {
       done(err)
     })
   })
-  beforeEach(function (done) {
-    nock('http://' + process.env.BIG_POPPA_HOST)
-      .get('/organization/?lowerName=' + otherOrg.name.toLowerCase())
-      .reply(
-        404, {
-          err: 'asdasdasd'
-        }
-      )
-    done()
-  })
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
   afterEach(require('../../fixtures/clean-nock'))
 
-  it('should return 404 is a name is NOT in the whitelist', function (done) {
+  it('should return 404 is a name is NOT in the whitelist', { timeout: 20000 }, function (done) {
+    require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
     require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
     var opts = {
       method: 'GET',
-      url: process.env.FULL_API_DOMAIN + '/auth/whitelist/' + ctx.name,
+      url: process.env.FULL_API_DOMAIN + '/auth/whitelist/q',
       json: true,
       jar: ctx.j
     }
