@@ -119,7 +119,7 @@
     "function-proxy": "^0.5.2",
     "jsdoc": "^3.2.2",
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
-    "lab": "5.8.0",
+    "lab": "^11.0.0",
     "multiline": "^1.0.2",
     "nock": "^5.2.1",
     "nodemon": "^1.2.1",
@@ -163,7 +163,7 @@
     "todo": "grep -nR TODO lib test",
     "test": "npm run clear; npm run lint && npm run bdd && npm run unit",
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
-    "unit": "npm run clear; NODE_PATH=./lib lab --threshold 88 --assert code --leaks --verbose unit/",
+    "unit": "npm run clear; NODE_PATH=./lib lab --assert code --leaks --verbose unit/",
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "unit-watch": "nodemon -w package.json -w unit -w lib -w node_modules/runnable/lib/models --exec 'npm run' unit",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs index.js"
