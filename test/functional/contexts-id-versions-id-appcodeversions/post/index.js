@@ -24,6 +24,7 @@ describe('XXX POST /contexts/:id/versions/:id/appCodeVersions', function () {
 
   before(api.start.bind(ctx))
   before(dock.start.bind(ctx))
+
   beforeEach(primus.connect)
   afterEach(primus.disconnect)
   after(api.stop.bind(ctx))
@@ -32,12 +33,6 @@ describe('XXX POST /contexts/:id/versions/:id/appCodeVersions', function () {
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
 
-  function createModUser (done) {
-    ctx.moderator = multi.createModerator(function (err) {
-      require('../../fixtures/mocks/github/user-orgs')(ctx.moderator) // non owner org
-      done(err)
-    })
-  }
   function createNonOwner (done) {
     ctx.nonOwner = multi.createUser(function (err) {
       require('../../fixtures/mocks/github/user-orgs')(ctx.nonOwner) // non owner org
@@ -91,27 +86,6 @@ describe('XXX POST /contexts/:id/versions/:id/appCodeVersions', function () {
             repo: ctx.fullRepoName
           }
           createContextVersion(ctx.nonOwner).addGithubRepo(body, expects.errorStatus(403, done))
-        })
-      })
-      describe('as moderator', function () {
-        beforeEach(createModUser)
-        it('should allow', function (done) {
-          var body = {
-            repo: ctx.fullRepoName,
-            branch: 'master',
-            commit: uuid()
-          }
-          var expected = {
-            repo: ctx.fullRepoName,
-            branch: 'master',
-            commit: body.commit
-          }
-          var username = ctx.user.attrs.accounts.github.login
-          require('../../fixtures/mocks/github/repos-hooks-get')(username, ctx.repoName)
-          require('../../fixtures/mocks/github/repos-hooks-post')(username, ctx.repoName)
-          require('../../fixtures/mocks/github/repos-keys-get')(username, ctx.repoName, true)
-          createContextVersion(ctx.moderator).addGithubRepo(body,
-            expects.success(201, expected, done))
         })
       })
     })

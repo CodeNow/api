@@ -47,10 +47,24 @@ then
   then
     echo "local testing"
   else
-    len=$(expr $numTests / $CIRCLE_NODE_TOTAL)
-    s=$(expr $len \* $CIRCLE_NODE_INDEX + 1)
-    n=$(expr $CIRCLE_NODE_INDEX + 1)
-    e=$(expr $len \* $n)
+    if [[ $CIRCLE_NODE_INDEX -eq 0 ]]
+    then
+      len=55
+      s=0
+      n=1
+      e=55
+    elif [[ $CIRCLE_NODE_INDEX -eq 1 ]]
+    then
+      len=60
+      s=55
+      n=56
+      e=115
+    else
+      len=$(expr $(expr $numTests-300) / $CIRCLE_NODE_TOTAL)
+      s=115
+      n=116
+      e=$(expr $numTests )
+    fi
     if [[ $CIRCLE_NODE_TOTAL -eq $n ]]
     then
       e=$numTests
@@ -60,5 +74,5 @@ then
   fi
 fi
 
-npm run _bdd -- --threshold 73 ${extra_args[@]} $indexes ${all_files[@]}
+npm run _bdd -- ${extra_args[@]} $indexes ${all_files[@]}
 exit $?

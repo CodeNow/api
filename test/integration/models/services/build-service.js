@@ -11,11 +11,12 @@ var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
+require('sinon-as-promised')(require('bluebird'))
 
 var BuildService = require('models/services/build-service')
-var Github = require('models/apis/github')
 var mongoFactory = require('../../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
+var BigPoppaClient = require('@runnable/big-poppa-client')
 
 describe('Build Services Integration Tests', function () {
   before(mongooseControl.start)
@@ -40,11 +41,16 @@ describe('Build Services Integration Tests', function () {
       done()
     })
     beforeEach(function (done) {
-      sinon.stub(Github.prototype, 'getUserAuthorizedOrgs').yieldsAsync(null, [ { id: ownerId } ])
+      sinon.stub(BigPoppaClient.prototype, 'getUsers').resolves([{
+        id: ownerId,
+        organizations: [{
+          githubId: 11111
+        }]
+      }])
       done()
     })
     afterEach(function (done) {
-      Github.prototype.getUserAuthorizedOrgs.restore()
+      BigPoppaClient.prototype.getUsers.restore()
       done()
     })
     describe('create new build', function () {

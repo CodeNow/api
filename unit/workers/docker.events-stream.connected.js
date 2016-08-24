@@ -14,7 +14,7 @@ var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var dockerEventStreamConnected = require('workers/docker.events-stream.connected')
 var messenger = require('socket/messenger')
 var rabbitMQ = require('models/rabbitmq')
-var UserWhitelist = require('models/mongo/user-whitelist')
+var OrganizationService = require('models/services/organization-service')
 
 var lab = exports.lab = Lab.script()
 var afterEach = lab.afterEach
@@ -33,14 +33,16 @@ describe('docker.events-stream.connected unit test', function () {
 
   beforeEach(function (done) {
     testJob = clone(baseJob)
-    sinon.stub(UserWhitelist, 'updateAsync').resolves(1)
+    sinon.stub(OrganizationService, 'getByGithubId').resolves({ id: 1 })
+    sinon.stub(OrganizationService, 'updateById').resolves({ id: 1 })
     sinon.stub(rabbitMQ, 'firstDockCreated').returns()
     sinon.stub(messenger, 'emitFirstDockCreated').returns()
     done()
   })
 
   afterEach(function (done) {
-    UserWhitelist.updateAsync.restore()
+    OrganizationService.getByGithubId.restore()
+    OrganizationService.updateById.restore()
     rabbitMQ.firstDockCreated.restore()
     messenger.emitFirstDockCreated.restore()
     done()
@@ -51,7 +53,7 @@ describe('docker.events-stream.connected unit test', function () {
       delete testJob.host
       dockerEventStreamConnected(testJob).asCallback(function (err) {
         expect(err).to.be.instanceof(WorkerStopError)
-        sinon.assert.notCalled(UserWhitelist.updateAsync)
+        sinon.assert.notCalled(OrganizationService.updateById)
         done()
       })
     })
@@ -60,7 +62,7 @@ describe('docker.events-stream.connected unit test', function () {
       testJob.host = '10.0.0.1:3232'
       dockerEventStreamConnected(testJob).asCallback(function (err) {
         expect(err).to.be.instanceof(WorkerStopError)
-        sinon.assert.notCalled(UserWhitelist.updateAsync)
+        sinon.assert.notCalled(OrganizationService.updateById)
         done()
       })
     })
@@ -69,7 +71,7 @@ describe('docker.events-stream.connected unit test', function () {
       delete testJob.org
       dockerEventStreamConnected(testJob).asCallback(function (err) {
         expect(err).to.be.instanceof(WorkerStopError)
-        sinon.assert.notCalled(UserWhitelist.updateAsync)
+        sinon.assert.notCalled(OrganizationService.updateById)
         done()
       })
     })
@@ -78,7 +80,7 @@ describe('docker.events-stream.connected unit test', function () {
       testJob.org = 12345
       dockerEventStreamConnected(testJob).asCallback(function (err) {
         expect(err).to.be.instanceof(WorkerStopError)
-        sinon.assert.notCalled(UserWhitelist.updateAsync)
+        sinon.assert.notCalled(OrganizationService.updateById)
         done()
       })
     })
@@ -87,75 +89,76 @@ describe('docker.events-stream.connected unit test', function () {
       testJob.org = '12a45'
       dockerEventStreamConnected(testJob).asCallback(function (err) {
         expect(err).to.be.instanceof(WorkerStopError)
-        sinon.assert.notCalled(UserWhitelist.updateAsync)
+        sinon.assert.notCalled(OrganizationService.updateById)
         done()
       })
     })
   }) // end validate
 
   describe('valid job', function () {
-    it('should fail if mongo update failed', function (done) {
-      UserWhitelist.updateAsync.rejects(new Error('Mongo error'))
+    it('should fail if `updateByGithubId` failed', function (done) {
+      OrganizationService.updateById.rejects(new Error('Orgtanization could not be updated'))
       dockerEventStreamConnected(testJob)
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err.message).to.equal('Mongo error')
-        done()
-      })
-    })
-
-    it('should fail if no records were updates', function (done) {
-      UserWhitelist.updateAsync.resolves(0)
-      dockerEventStreamConnected(testJob)
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-        expect(err.message).to.include('firstDockCreated was set before')
-        done()
-      })
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.equal(err)
+          done()
+        })
     })
 
     it('should fatally fail if messenger call failed', function (done) {
       messenger.emitFirstDockCreated.throws(new Error('Primus error'))
       dockerEventStreamConnected(testJob)
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-        expect(err.message).to.include('Failed to create job or send websocket event')
-        expect(err.data.err.message).to.equal('Primus error')
-        done()
-      })
+        .asCallback(function (err) {
+          expect(err).to.be.instanceof(WorkerStopError)
+          expect(err.message).to.include('Failed to create job or send websocket event')
+          expect(err.data.err.message).to.equal('Primus error')
+          done()
+        })
     })
 
     it('should fatally fail if rabbimq call failed', function (done) {
       rabbitMQ.firstDockCreated.throws(new Error('Rabbit error'))
       dockerEventStreamConnected(testJob)
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-        expect(err.message).to.include('Failed to create job or send websocket event')
-        expect(err.data.err.message).to.equal('Rabbit error')
-        done()
-      })
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.be.instanceof(WorkerStopError)
+          expect(err.message).to.include('Failed to create job or send websocket event')
+          expect(err.data.err.message).to.equal('Rabbit error')
+          done()
+        })
     })
 
-    it('should call UserWhitelist.updateAsync with correct params', function (done) {
+    it('should fail if org already has firstDockCreated failed', function (done) {
+      OrganizationService.getByGithubId.resolves({ firstDockCreated: true })
+      dockerEventStreamConnected(testJob)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.be.instanceof(WorkerStopError)
+          expect(err.message).to.include('firstDockCreated was set before')
+          done()
+        })
+    })
+
+    it('should call OrganizationService.getByGithubId with correct params', function (done) {
+      dockerEventStreamConnected(testJob)
+        .tap(function () {
+          sinon.assert.calledOnce(OrganizationService.updateById)
+          sinon.assert.calledWith(OrganizationService.updateById,
+            1
+          )
+        })
+        .asCallback(done)
+    })
+
+    it('should call OrganizationService.updateByGithubId with correct params', function (done) {
       dockerEventStreamConnected(testJob)
       .tap(function () {
-        sinon.assert.calledOnce(UserWhitelist.updateAsync)
-        sinon.assert.calledWith(UserWhitelist.updateAsync,
-          { firstDockCreated: false,
-            githubId: parseInt(testOrg, 10)
-          },
-          { $set: { firstDockCreated: true } })
+        sinon.assert.calledOnce(OrganizationService.updateById)
+        sinon.assert.calledWith(OrganizationService.updateById,
+          1,
+          { firstDockCreated: true }
+        )
       })
       .asCallback(done)
     })
@@ -186,7 +189,8 @@ describe('docker.events-stream.connected unit test', function () {
       dockerEventStreamConnected(testJob)
       .tap(function () {
         sinon.assert.callOrder(
-          UserWhitelist.updateAsync,
+          OrganizationService.getByGithubId,
+          OrganizationService.updateById,
           messenger.emitFirstDockCreated,
           rabbitMQ.firstDockCreated)
       })
