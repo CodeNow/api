@@ -10,12 +10,10 @@ var lab = exports.lab = Lab.script()
 var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
-var Boom = require('dat-middleware').Boom
 
 var ContextVersion = require('models/mongo/context-version')
 var InstanceContainerCreated = require('workers/instance.container.created')
 var InstanceService = require('models/services/instance-service')
-var rabbitMQ = require('models/rabbitmq')
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var User = require('models/mongo/user')
 
@@ -69,13 +67,11 @@ describe('InstanceContainerCreated Unit tests', function () {
     sinon.stub(ContextVersion, 'recoverAsync').resolves(ctx.cv)
     sinon.stub(InstanceService, 'updateContainerInspect').yieldsAsync(null, ctx.mockInstance)
     sinon.stub(InstanceService, 'startInstance').resolves(ctx.mockInstance)
-    sinon.stub(rabbitMQ, 'khronosDeleteContainer')
     done()
   })
 
   afterEach(function (done) {
     User.findByGithubIdAsync.restore()
-    rabbitMQ.khronosDeleteContainer.restore()
     ContextVersion.recoverAsync.restore()
     InstanceService.updateContainerInspect.restore()
     InstanceService.startInstance.restore()
@@ -206,20 +202,6 @@ describe('InstanceContainerCreated Unit tests', function () {
         sinon.assert.calledOnce(InstanceService.updateContainerInspect)
         sinon.assert.calledOnce(User.findByGithubIdAsync)
         sinon.assert.notCalled(InstanceService.startInstance)
-        done()
-      })
-    })
-
-    it('should delete the container if it got a 409', function (done) {
-      var updateConflict = Boom.conflict("Container was not updated, instance's container has changed")
-      InstanceService.updateContainerInspect.yieldsAsync(updateConflict)
-      InstanceContainerCreated(ctx.data).asCallback(function (err) {
-        expect(err).to.exist()
-        sinon.assert.calledOnce(rabbitMQ.khronosDeleteContainer)
-        sinon.assert.calledWith(rabbitMQ.khronosDeleteContainer, {
-          dockerHost: ctx.data.host,
-          containerId: ctx.data.id
-        })
         done()
       })
     })
