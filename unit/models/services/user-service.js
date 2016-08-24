@@ -8,7 +8,6 @@ var it = lab.it
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 
-const errors = require('errors')
 var expect = require('code').expect
 var keypather = require('keypather')()
 var sinon = require('sinon')
