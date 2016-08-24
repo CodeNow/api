@@ -21,7 +21,7 @@ const afterEach = lab.afterEach
 const expect = Code.expect
 const it = lab.it
 
-let _makeRequestStub
+var _makeRequestStub
 
 function stub_makeRequest (done) {
   _makeRequestStub = sinon.stub(CreamAPI, '_makeRequest').resolves()
@@ -95,8 +95,8 @@ describe('Cream API', function () {
   })
 
   describe('#_makeRequest', function () {
-    let requestStub
-    let response
+    var requestStub
+    var response
     const path = 'invoices'
     beforeEach(function (done) {
       response = {
@@ -126,7 +126,7 @@ describe('Cream API', function () {
     })
 
     it('should call the `resquest` module with the POST `method`, `body` and `url` if body is passed', function () {
-      let body = {}
+      var body = {}
       return CreamAPI._makeRequest(path, organizationId, body)
         .then(function () {
           sinon.assert.calledOnce(requestStub)
@@ -167,7 +167,7 @@ describe('Cream API', function () {
     })
 
     it('should return the object if an object is returned', function () {
-      let responseBody = { hello: 'world' }
+      var responseBody = { hello: 'world' }
       response = {
         statusCode: 200,
         body: responseBody
@@ -179,8 +179,8 @@ describe('Cream API', function () {
     })
 
     it('should return a parsed object if a JSON object is received', function () {
-      let obj = { hello: 'world' }
-      let responseBody = JSON.stringify(obj)
+      var obj = { hello: 'world' }
+      var responseBody = JSON.stringify(obj)
       response = {
         statusCode: 200,
         body: responseBody
@@ -192,7 +192,7 @@ describe('Cream API', function () {
     })
 
     it('should return an object with a message if it a JSON object cannot be parsed', function () {
-      let responseBody = 'hello-world'
+      var responseBody = 'hello-world'
       response = {
         statusCode: 200,
         body: responseBody
