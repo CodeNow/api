@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "${CIRCLE_NODE_INDEX}" = "0" ]
+if [ "${CIRCLE_NODE_INDEX}" = "2" ]
 then
   exec $@
   exit $?

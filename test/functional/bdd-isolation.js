@@ -10,6 +10,7 @@ var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
 var expect = Code.expect
+var sinon = require('sinon')
 
 var async = require('async')
 var createCount = require('callback-count')
@@ -17,9 +18,13 @@ var pluck = require('101/pluck')
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
+var getUserEmails = require('./fixtures/mocks/github/get-user-emails')
+var Github = require('models/apis/github')
 var multi = require('./fixtures/multi-factory')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var primus = require('./fixtures/primus')
+const whitelistOrgs = require('./fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('./fixtures/mocks/big-poppa').whitelistUserOrgs
 
 describe('BDD - Isolation', function () {
   var ctx = {}
@@ -31,6 +36,30 @@ describe('BDD - Isolation', function () {
   after(primus.disconnect)
   after(api.stop.bind(ctx))
   after(dock.stop.bind(ctx))
+  before(function (done) {
+    // Stub out Github API call for `beforeEach` and `it` statements
+    sinon.stub(Github.prototype, 'getUserEmails', function (email, cb) {
+      return cb(null, getUserEmails())
+    })
+    done()
+  })
+  after(function (done) {
+    Github.prototype.getUserEmails.restore()
+    done()
+  })
+  beforeEach(function (done) {
+    Github.prototype.getUserEmails.reset()
+    done()
+  })
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 11111,
+    allowed: true
+  }
+  beforeEach(function (done) {
+    whitelistOrgs([runnableOrg])
+    done()
+  })
 
   after(require('./fixtures/mocks/api-client').clean)
   afterEach(require('./fixtures/clean-mongo').removeEverything)
@@ -47,6 +76,7 @@ describe('BDD - Isolation', function () {
         ctx.webInstance = instance
         ctx.user = user
         ctx.build = build
+        whitelistUserOrgs(ctx.user, [runnableOrg])
         // boy this is a bummer... let's cheat a little bit
         require('./fixtures/mocks/github/user')(ctx.user)
         require('./fixtures/mocks/github/user')(ctx.user)
@@ -58,7 +88,9 @@ describe('BDD - Isolation', function () {
         }, function (err) {
           if (err) { return done(err) }
           primus.expectAction('start', {}, function () {
-            ctx.apiInstance.fetch(done)
+            ctx.apiInstance.fetch(function () {
+              done()
+            })
           })
         })
       })
@@ -183,7 +215,7 @@ describe('BDD - Isolation', function () {
       })
     })
 
-    describe('once it is created', function (done) {
+    describe('once it is created', function () {
       beforeEach(function (done) {
         var count = createCount(2, done)
         primus.expectAction('redeploy', count.next)
