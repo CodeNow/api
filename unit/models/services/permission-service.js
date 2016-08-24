@@ -1,4 +1,5 @@
 'use strict'
+require('loadenv')()
 
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
@@ -11,10 +12,10 @@ var expect = require('code').expect
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
+var OrganizationService = require('models/services/organization-service')
 var PermissionService = require('models/services/permission-service')
+var UserService = require('models/services/user-service')
 var Github = require('models/apis/github')
-var UserWhitelist = require('models/mongo/user-whitelist')
-var errors = require('errors')
 
 describe('PermissionService', function () {
   var sessionUser = {
@@ -301,15 +302,28 @@ describe('PermissionService', function () {
     })
   })
 
-  describe('isOwnerOf', function (done) {
+  describe('isOwnerOf', function () {
+    var org
+    var user
     beforeEach(function (done) {
-      sinon.stub(Github.prototype, 'getUserAuthorizedOrgs')
-        .yieldsAsync(null, [ { id: '1' } ])
+      org = {
+        name: 'asdasd',
+        id: 1
+      }
+      user = {
+        name: '123123',
+        id: 10
+      }
+      sinon.stub(UserService, 'getByGithubId').resolves(user)
+      sinon.stub(OrganizationService, 'getByGithubId').resolves(org)
+      sinon.stub(OrganizationService, 'addUser').resolves(org)
       done()
     })
 
     afterEach(function (done) {
-      Github.prototype.getUserAuthorizedOrgs.restore()
+      UserService.getByGithubId.restore()
+      OrganizationService.getByGithubId.restore()
+      OrganizationService.addUser.restore()
       done()
     })
 
@@ -324,6 +338,7 @@ describe('PermissionService', function () {
     })
 
     it('should resolve if sessionUser shares an org', function (done) {
+      user.organizations = [org]
       PermissionService.isOwnerOf({
         accounts: {
           github: {
@@ -331,13 +346,13 @@ describe('PermissionService', function () {
           }
         }
       }, { owner: { github: '1' } })
-      .tap(function () {
-        sinon.assert.calledOnce(Github.prototype.getUserAuthorizedOrgs)
-      })
-      .asCallback(done)
+        .tap(function () {
+          sinon.assert.calledOnce(UserService.getByGithubId)
+        })
+        .asCallback(done)
     })
 
-    it('should reject if sessionUser do not have access to the model', function (done) {
+    it('should fetch the org from BigPappa, and attempt to add the user', function (done) {
       PermissionService.isOwnerOf({
         accounts: {
           github: {
@@ -345,71 +360,33 @@ describe('PermissionService', function () {
           }
         }
       }, { owner: { github: '3' } })
-      .tap(function () {
-        sinon.assert.calledOnce(Github.prototype.getUserAuthorizedOrgs)
-      })
-      .then(function () {
-        done(new Error('Should fail'))
-      })
-      .catch(function (err) {
-        expect(err.message).to.equal('Access denied (!owner)')
-        done()
-      })
-    })
-  })
-  describe('checkOwnerAllowed', function () {
-    var contextVersion = {
-      owner: {
-        github: 1337
-      }
-    }
-
-    beforeEach(function (done) {
-      sinon.stub(UserWhitelist, 'findOneAsync')
-      done()
-    })
-
-    afterEach(function (done) {
-      UserWhitelist.findOneAsync.restore()
-      done()
-    })
-
-    it('should reject without organization name', function (done) {
-      PermissionService.checkOwnerAllowed({})
-        .asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/model.*not.*owner github id/i)
+        .tap(function () {
+          sinon.assert.calledOnce(UserService.getByGithubId)
+          sinon.assert.calledOnce(OrganizationService.getByGithubId)
+          sinon.assert.calledOnce(OrganizationService.addUser)
+          sinon.assert.calledWith(OrganizationService.addUser, org, user)
+        })
+        .asCallback(function () {
           done()
         })
     })
-
-    it('should reject if the organization was not found', function (done) {
-      UserWhitelist.findOneAsync.returns(Promise.resolve(null))
-      PermissionService.checkOwnerAllowed(contextVersion)
-        .asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.be.instanceOf(errors.OrganizationNotFoundError)
-          expect(err.message).to.match(/organization not found/i)
-          done()
+    it('should reject if sessionUser do not have access to the model', function (done) {
+      OrganizationService.addUser.rejects(new Error('doesnt matter'))
+      PermissionService.isOwnerOf({
+        accounts: {
+          github: {
+            id: '2'
+          }
+        }
+      }, { owner: { github: '3' } })
+        .tap(function () {
+          sinon.assert.calledOnce(UserService.getByGithubId)
+          sinon.assert.calledOnce(OrganizationService.getByGithubId)
+          sinon.assert.calledOnce(OrganizationService.addUser)
+          sinon.assert.calledWith(OrganizationService.addUser, org, user)
         })
-    })
-
-    it('should reject if the organizartion is not allowed', function (done) {
-      UserWhitelist.findOneAsync.returns(Promise.resolve({ allowed: false }))
-      PermissionService.checkOwnerAllowed(contextVersion)
-        .asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.be.instanceOf(errors.OrganizationNotAllowedError)
-          expect(err.message).to.match(/org.*not.*allowed/i)
-          done()
-        })
-    })
-
-    it('should resolve if the organization is allowed', function (done) {
-      UserWhitelist.findOneAsync.returns(Promise.resolve({ allowed: true }))
-      PermissionService.checkOwnerAllowed(contextVersion)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
+        .catch(function (err) {
+          expect(err.message).to.equal('Access denied (!owner)')
           done()
         })
     })

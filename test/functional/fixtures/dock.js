@@ -2,6 +2,7 @@
 var async = require('async')
 var createCount = require('callback-count')
 var docker = require('./docker')
+var keypather = require('keypather')()
 var redis = require('models/redis')
 
 process.env.AUTO_RECONNECT = false // needed for test
@@ -53,7 +54,9 @@ var sauronMock = {
       function (stepCb) {
         rabbitSubscriber.subscribe('container.life-cycle.started', function (data, jobCb) {
           data.containerIp = '10.12.10.121'
-          rabbitPublisher.publish('container.network.attached', data)
+          if (keypather.get(data, 'inspectData.Config.Labels.type') !== 'image-builder-container') {
+            rabbitPublisher.publish('container.network.attached', data)
+          }
           jobCb()
         })
         stepCb()

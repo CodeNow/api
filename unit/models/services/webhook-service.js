@@ -21,7 +21,7 @@ var InstanceForkService = require('models/services/instance-fork-service')
 var IsolationService = require('models/services/isolation-service')
 var MixPanelModel = require('models/apis/mixpanel')
 var WebhookService = require('models/services/webhook-service')
-var UserWhitelist = require('models/mongo/user-whitelist')
+var OrganizationService = require('models/services/organization-service')
 var User = require('models/mongo/user')
 var rabbitMQ = require('models/rabbitmq')
 
@@ -396,50 +396,50 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
 
   describe('checkRepoOrganizationAgainstWhitelist', function () {
     var githubPushInfo = {
-      repoOwnerOrgName: 'CodeNow'
+      repoOwnerOrgName: 'Runnable'
     }
 
     beforeEach(function (done) {
-      sinon.stub(UserWhitelist, 'findOneAsync').resolves({ _id: 'some-id', allowed: true })
+      sinon.stub(OrganizationService, 'getByGithubUsername').resolves({ id: 23423, allowed: true })
       done()
     })
     afterEach(function (done) {
-      UserWhitelist.findOneAsync.restore()
+      OrganizationService.getByGithubUsername.restore()
       done()
     })
 
     describe('validating errors', function () {
-      it('should next with error if db call failed', function (done) {
-        var mongoErr = new Error('Mongo error')
-        UserWhitelist.findOneAsync.rejects(mongoErr)
+      it('should next with error if big-poppa call failed', function (done) {
+        var superErr = new Error('Something happened!')
+        OrganizationService.getByGithubUsername.rejects(superErr)
 
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
-            expect(err).to.equal(mongoErr)
-            sinon.assert.calledOnce(UserWhitelist.findOneAsync)
-            sinon.assert.calledWith(UserWhitelist.findOneAsync, { lowerName: 'codenow' })
+            expect(err).to.equal(superErr)
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
             done()
           })
       })
       it('should respond with 403 if no whitelist found', function (done) {
-        UserWhitelist.findOneAsync.resolves()
+        OrganizationService.getByGithubUsername.resolves(null)
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
             expect(err.output.statusCode).to.equal(403)
             expect(err.output.payload.message).to.match(/not registered/)
-            sinon.assert.calledOnce(UserWhitelist.findOneAsync)
-            sinon.assert.calledWith(UserWhitelist.findOneAsync, { lowerName: 'codenow' })
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
             done()
           })
       })
       it('should respond with 403 if not allowed', function (done) {
-        UserWhitelist.findOneAsync.resolves({ allowed: false })
+        OrganizationService.getByGithubUsername.resolves({ allowed: false })
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
             expect(err.output.statusCode).to.equal(403)
             expect(err.output.payload.message).to.match(/suspended/)
-            sinon.assert.calledOnce(UserWhitelist.findOneAsync)
-            sinon.assert.calledWith(UserWhitelist.findOneAsync, { lowerName: 'codenow' })
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
             done()
           })
       })
@@ -447,8 +447,8 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
     it('should continue without error if everything worked', function (done) {
       WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
         .then(function () {
-          sinon.assert.calledOnce(UserWhitelist.findOneAsync)
-          sinon.assert.calledWith(UserWhitelist.findOneAsync, { lowerName: 'codenow' })
+          sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+          sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
         })
         .asCallback(done)
     })
@@ -617,6 +617,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
           name: 'api',
           full_name: 'CodeNow/api',
           owner: {
+            id: 890,
             name: 'CodeNow',
             email: 'live@codenow.com'
           },
