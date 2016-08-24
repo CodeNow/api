@@ -24,6 +24,8 @@ var repoContentsMock = require('../../fixtures/mocks/github/repos-contents')
 var pythonSetupPyFile = require('../../fixtures/mocks/github/repos-contents/python-setup.py-repo-module-file')
 var pythonSetupPyFileMatching =
 require('../../fixtures/mocks/github/repos-contents/python-setup.py-matching-repo-module-file')
+const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 var javascriptNodeJS = 'nodejs'
 var python = 'python'
@@ -33,13 +35,23 @@ var php = 'php'
 describe('Analyze - /actions/analyze', function () {
   var ctx = {}
 
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 11111,
+    allowed: true
+  }
   before(api.start.bind(ctx))
   before(require('../../fixtures/mocks/api-client').setup)
   beforeEach(generateKey)
   beforeEach(function (done) {
+    whitelistOrgs([runnableOrg])
+    done()
+  })
+  beforeEach(function (done) {
     multi.createUser(function (err, user) {
       if (err) { return done(err) }
       ctx.user = user
+      whitelistUserOrgs(ctx.user, [runnableOrg])
       ctx.request = user.client.request
       done()
     })
