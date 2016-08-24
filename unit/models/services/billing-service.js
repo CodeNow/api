@@ -49,7 +49,7 @@ describe('BillingService', function () {
 
     it('should get the user from Big Poppa', function () {
       return BillingService.getBigPoppaUserIdAndAssertUserIsPartOfOrg(userGithubId, orgId)
-        .then(response => {
+        .then(function (response) {
           sinon.assert.calledOnce(getBigPoppaUserByGithubIdStub)
           sinon.assert.calledWithExactly(getBigPoppaUserByGithubIdStub, userGithubId)
         })
@@ -57,14 +57,14 @@ describe('BillingService', function () {
 
     it('should return then user if found', function () {
       return BillingService.getBigPoppaUserIdAndAssertUserIsPartOfOrg(userGithubId, orgId)
-        .then(response => {
+        .then(function (response) {
           expect(response).to.equal(userMock)
         })
     })
 
     it('should throw a 403 error if the user is not part of the organization', function (done) {
       BillingService.getBigPoppaUserIdAndAssertUserIsPartOfOrg(userGithubId, 8)
-        .asCallback(err => {
+        .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.output.statusCode).to.equal(403)
           expect(err.message).to.match(/not.*part.*organization/i)
@@ -86,7 +86,7 @@ describe('BillingService', function () {
 
     it('should get the user from Big Poppa', function () {
       return BillingService.getBigPoppaUserByGithubId(userGithubId)
-        .then(response => {
+        .then(function (response) {
           sinon.assert.calledOnce(getUsersStub)
           sinon.assert.calledWithExactly(getUsersStub, { githubId: userGithubId })
         })
@@ -94,7 +94,7 @@ describe('BillingService', function () {
 
     it('should return then user if found', function () {
       return BillingService.getBigPoppaUserByGithubId(userGithubId)
-        .then(response => {
+        .then(function (response) {
           expect(response).to.equal(userMock)
         })
     })
@@ -103,7 +103,7 @@ describe('BillingService', function () {
       getUsersStub.resolves([])
 
       BillingService.getBigPoppaUserByGithubId(8)
-        .asCallback(err => {
+        .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.output.statusCode).to.equal(404)
           expect(err.message).to.match(/no.*users.*github/i)
@@ -130,7 +130,7 @@ describe('BillingService', function () {
 
     it('should not validate if the passed parameters are not valid', function (done) {
       BillingService.getPlanForOrganization('hello', 1)
-        .asCallback(err => {
+        .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.output.statusCode).to.equal(400)
           done()
@@ -184,7 +184,7 @@ describe('BillingService', function () {
 
     it('should not validate if the passed parameters are not valid', function (done) {
       BillingService.getInvoicesForOrganization('hello', 1)
-        .asCallback(err => {
+        .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.output.statusCode).to.equal(400)
           done()
@@ -209,7 +209,7 @@ describe('BillingService', function () {
 
     it('should call `Github.getUserById` and add the github user', function () {
       return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
-        .then(res => {
+        .then(function (res) {
           sinon.assert.calledOnce(getUserByIdStub)
           sinon.assert.calledWithExactly(getUserByIdStub, githubId)
           expect(res[0]).to.be.an.object()
@@ -222,7 +222,7 @@ describe('BillingService', function () {
     it('should not call `Github.getUserById` if there is not github id', function () {
       invoice.paidBy.githubId = null
       return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
-        .then(res => {
+        .then(function (res) {
           sinon.assert.notCalled(getUserByIdStub)
           expect(res[0]).to.be.an.object()
           expect(res[0].paidBy).to.be.an.object()
@@ -234,7 +234,7 @@ describe('BillingService', function () {
       getUserByIdStub.rejects(new Error())
 
       return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
-        .then(res => {
+        .then(function (res) {
           sinon.assert.calledOnce(getUserByIdStub)
           sinon.assert.calledWithExactly(getUserByIdStub, githubId)
           expect(res[0]).to.be.an.object()
@@ -275,7 +275,7 @@ describe('BillingService', function () {
 
     it('should not validate if the passed parameters are not valid', function (done) {
       BillingService.getPaymentMethodForOrganization('hello', 1)
-        .asCallback(err => {
+        .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.output.statusCode).to.equal(400)
           done()
@@ -300,7 +300,7 @@ describe('BillingService', function () {
 
     it('should call `Github.getUserById` and add the github user', function () {
       return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
-        .then(res => {
+        .then(function (res) {
           sinon.assert.calledOnce(getUserByIdStub)
           sinon.assert.calledWithExactly(getUserByIdStub, githubId)
           expect(res).to.be.an.object()
@@ -313,7 +313,7 @@ describe('BillingService', function () {
     it('should not call `Github.getUserById` if there is not github id', function () {
       paymentMethod.owner.githubId = null
       return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
-        .then(res => {
+        .then(function (res) {
           sinon.assert.notCalled(getUserByIdStub)
           expect(res).to.be.an.object()
           expect(res.owner).to.be.an.object()
@@ -325,7 +325,7 @@ describe('BillingService', function () {
       getUserByIdStub.rejects(new Error())
 
       return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
-        .then(res => {
+        .then(function (res) {
           sinon.assert.calledOnce(getUserByIdStub)
           sinon.assert.calledWithExactly(getUserByIdStub, githubId)
           expect(res).to.be.an.object()
@@ -354,7 +354,7 @@ describe('BillingService', function () {
 
     it('should not validate if the passed parameters are not valid', function (done) {
       BillingService.postPaymentMethodForOrganization(orgId, userGithubId)
-        .asCallback(err => {
+        .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.output.statusCode).to.equal(400)
           done()

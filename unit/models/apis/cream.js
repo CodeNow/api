@@ -103,7 +103,7 @@ describe('Cream API', function () {
         statusCode: 200,
         body: JSON.stringify({ hello: 'world' })
       }
-      requestStub = sinon.stub(request, 'Request', params => {
+      requestStub = sinon.stub(request, 'Request', function (params) {
         return params.callback(null, response)
       })
       done()
@@ -146,7 +146,7 @@ describe('Cream API', function () {
         statusCode: 500
       }
       CreamAPI._makeRequest(path, organizationId)
-        .asCallback(err => {
+        .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/cream.*error/i)
           done()
@@ -158,7 +158,7 @@ describe('Cream API', function () {
         statusCode: 400
       }
       CreamAPI._makeRequest(path, organizationId)
-        .asCallback(err => {
+        .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.output.statusCode).to.equal(400)
           expect(err.message).to.match(/cream.*bad.*request/i)
@@ -173,7 +173,7 @@ describe('Cream API', function () {
         body: responseBody
       }
       return CreamAPI._makeRequest(path, organizationId)
-        .then(res => {
+        .then(function (res) {
           expect(res).to.equal(responseBody)
         })
     })
@@ -186,7 +186,7 @@ describe('Cream API', function () {
         body: responseBody
       }
       return CreamAPI._makeRequest(path, organizationId)
-        .then(res => {
+        .then(function (res) {
           expect(res).to.deep.equal(obj)
         })
     })
@@ -198,7 +198,7 @@ describe('Cream API', function () {
         body: responseBody
       }
       return CreamAPI._makeRequest(path, organizationId)
-        .then(res => {
+        .then(function (res) {
           expect(res).to.be.an.object()
           expect(res.message).to.equal(responseBody)
           expect(res.statusCode).to.equal(response.statusCode)
