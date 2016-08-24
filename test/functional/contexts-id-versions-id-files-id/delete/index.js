@@ -42,12 +42,6 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           username: ctx.user.attrs.accounts.github.username
         })
       }
-      if (ctx.moderator) {
-        array.push({
-          id: ctx.moderator.attrs.accounts.github.id,
-          username: ctx.moderator.attrs.accounts.github.username
-        })
-      }
       if (ctx.nonOwner) {
         array.push({
           id: ctx.nonOwner.attrs.accounts.github.id,
@@ -58,12 +52,6 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
     })
   )
   afterEach(mockGetUserById.stubAfter)
-  function createModUser (done) {
-    ctx.moderator = multi.createModerator(function (err) {
-      require('../../fixtures/mocks/github/user-orgs')(ctx.moderator) // non owner org
-      done(err)
-    })
-  }
   function createNonOwner (done) {
     ctx.nonOwner = multi.createUser(function (err) {
       require('../../fixtures/mocks/github/user-orgs')(ctx.nonOwner) // non owner org
@@ -108,13 +96,6 @@ describe('AppCodeVersions - /contexts/:id/versions/:id/appCodeVersions', functio
           it('should fail (403)', function (done) {
             createContextVersion(ctx.nonOwner).destroyAppCodeVersion(ctx.appCodeVersion.id(),
               expects.errorStatus(403, done))
-          })
-        })
-        describe('moderator', function () {
-          beforeEach(createModUser)
-          it('should allow', function (done) {
-            createContextVersion(ctx.moderator).destroyAppCodeVersion(ctx.appCodeVersion.id(),
-              expects.success(204, done))
           })
         })
       })

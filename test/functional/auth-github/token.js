@@ -3,6 +3,7 @@ require('loadenv')()
 
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
+var keypather = require('keypather')()
 var describe = lab.describe
 var expect = require('code').expect
 var it = lab.it
@@ -19,6 +20,8 @@ var Github = require('models/apis/github')
 var getUserEmails = require('../fixtures/mocks/github/get-user-emails')
 var randStr = require('randomstring').generate
 var uuid = require('uuid')
+const whitelistOrgs = require('../fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 describe('/auth/github with whitelist', function () {
   var ctx = {}
@@ -49,60 +52,35 @@ describe('/auth/github with whitelist', function () {
   afterEach(require('../fixtures/clean-mongo').removeEverything)
   afterEach(require('../fixtures/clean-ctx')(ctx))
 
-  describe('user in the whitelist', function () {
-    var tokenUrl = baseUrl + 'token'
-    before(function (done) {
-      ctx.username = randStr(5)
-      ctx.testToken = uuid()
-      var Whitelist = require('models/mongo/user-whitelist')
-      ctx.w = new Whitelist({
-        name: ctx.username,
-        allowed: true,
-        githubId: 1234
-      })
-      ctx.w.save(done)
-    })
-
-    it('should let the user authenticate', function (done) {
-      require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken)
-      require('../fixtures/mocks/github/user-orgs')(1001, randStr(5))
-      request.post({
-        url: tokenUrl,
-        json: true,
-        body: { accessToken: ctx.testToken },
-        qs: { username: ctx.username },
-        followRedirect: false
-      }, function (err, res) {
-        if (err) { return done(err) }
-        expect(res.statusCode).to.equal(200)
-        done()
-      })
-    })
+  var otherOrg = {
+    name: 'otherOrg',
+    githubId: 2222,
+    allowed: true
+  }
+  beforeEach(function (done) {
+    whitelistOrgs([otherOrg])
+    done()
   })
 
   describe('user in an org in the whitelist', function () {
     var tokenUrl = baseUrl + 'token'
     before(function (done) {
-      ctx.orgname = randStr(5)
       ctx.username = randStr(5)
       ctx.testToken = uuid()
-      var Whitelist = require('models/mongo/user-whitelist')
-      var w = new Whitelist({
-        name: ctx.orgname,
-        allowed: true,
-        githubId: 1234
-      })
-      w.save(done)
+      var user = {}
+      keypather.set(user, 'attrs.accounts.github.id', 1000)
+      whitelistUserOrgs(user, [otherOrg])
+      done()
     })
 
     it('should let the user authenticate', function (done) {
       require('../fixtures/mocks/github/user')(1000, ctx.username, ctx.testToken)
-      require('../fixtures/mocks/github/user-orgs')(1001, ctx.orgname)
+      require('../fixtures/mocks/github/user-orgs')(otherOrg.githubId, otherOrg.name)
       request.post({
         url: tokenUrl,
         json: true,
         body: { accessToken: ctx.testToken },
-        qs: { username: ctx.orgname },
+        qs: { username: otherOrg.name },
         followRedirect: false
       }, function (err, res) {
         if (err) { return done(err) }

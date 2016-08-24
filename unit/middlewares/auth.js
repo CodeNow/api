@@ -18,54 +18,32 @@ var it = lab.it
 var expect = Code.expect
 
 var authMiddleware = require('middlewares/auth')
-var UserWhitelist = require('models/mongo/user-whitelist')
+var UserService = require('models/services/user-service')
 
 describe('middlewares/auth', function () {
   var req
   var res
   var next
-  var accessToken = '1234'
+  var githubId = 1234
   beforeEach(function (done) {
     req = {
       logout: sinon.stub()
     }
-    keypather.set(req, 'sessionUser.accounts.github.accessToken', accessToken)
+    keypather.set(req, 'sessionUser.accounts.github.id', githubId)
     res = {}
     next = sinon.stub()
-    sinon.stub(UserWhitelist, 'getWhitelistedUsersForGithubUserAsync').resolves()
+    sinon.stub(UserService, 'getUsersOrganizations').resolves()
     done()
   })
   afterEach(function (done) {
-    UserWhitelist.getWhitelistedUsersForGithubUserAsync.restore()
+    UserService.getUsersOrganizations.restore()
     done()
   })
 
   describe('requireWhitelist', function () {
-    describe('when we get access token failure', function () {
-      var accessTokenError = new Error('An access token must be provided')
-      beforeEach(function (done) {
-        UserWhitelist.getWhitelistedUsersForGithubUserAsync.rejects(accessTokenError)
-        done()
-      })
-      it('should log the user out and throw unauthorized error', function (done) {
-        authMiddleware.requireWhitelist(req, res, next)
-          .catch(function (err) {
-            expect(err.isBoom).to.be.true()
-            expect(err.output.statusCode).to.equal(401)
-            expect(err.message).to.contain('access token')
-          })
-          .then(function () {
-            sinon.assert.calledOnce(UserWhitelist.getWhitelistedUsersForGithubUserAsync)
-            sinon.assert.calledWith(UserWhitelist.getWhitelistedUsersForGithubUserAsync, accessToken)
-            sinon.assert.calledOnce(req.logout)
-            sinon.assert.calledOnce(next)
-          })
-          .asCallback(done)
-      })
-    })
     describe('when we get no records', function () {
       beforeEach(function (done) {
-        UserWhitelist.getWhitelistedUsersForGithubUserAsync.resolves([])
+        UserService.getUsersOrganizations.resolves({ orgs: [] })
         done()
       })
       it('should throw unauthorized error', function (done) {
@@ -84,7 +62,7 @@ describe('middlewares/auth', function () {
     })
     describe('when we get records', function () {
       beforeEach(function (done) {
-        UserWhitelist.getWhitelistedUsersForGithubUserAsync.resolves([{}])
+        UserService.getUsersOrganizations.resolves({ orgs: [{}] })
         done()
       })
       it('should throw unauthorized error', function (done) {

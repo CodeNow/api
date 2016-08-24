@@ -60,7 +60,6 @@
     "json-hash": "0.0.4",
     "json-stable-stringify": "^1.0.0",
     "keypather": "^1.10.1",
-    "lab": "^11.0.0",
     "middleware-flow": "^0.7.0",
     "middlewarize": "0.0.1",
     "mixpanel": "^0.1.0",
@@ -94,6 +93,7 @@
     "redis-types": "^0.2.3",
     "regexp-quote": "0.0.0",
     "request": "2.42.0",
+    "request-promise": "^4.0.2",
     "retry": "^0.9.0",
     "rollbar": "0.5.4",
     "runnable-hermes": "git://github.com/Runnable/hermes.git#v6.4.0",
@@ -110,6 +110,7 @@
     "xtend": "3.0.0"
   },
   "devDependencies": {
+    "code": "^1.4.0",
     "docker-listener": "git+ssh://git@github.com:codenow/docker-listener#1.0.0-patch",
     "docker-mock": "^5.1.0",
     "doctoc": "^0.15.0",
@@ -162,7 +163,7 @@
     "todo": "grep -nR TODO lib test",
     "test": "npm run clear; npm run lint && npm run bdd && npm run unit",
     "test-watch": "echo use 'bdd-watch' or 'unit-watch'",
-    "unit": "npm run clear; NODE_PATH=./lib lab --threshold 88 --assert code --leaks --verbose unit/",
+    "unit": "npm run clear; NODE_PATH=./lib lab --assert code --leaks --verbose unit/",
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "unit-watch": "nodemon -w package.json -w unit -w lib -w node_modules/runnable/lib/models --exec 'npm run' unit",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs index.js"

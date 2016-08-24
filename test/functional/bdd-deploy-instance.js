@@ -32,6 +32,9 @@ var sinon = require('sinon')
 var rabbitMQ = require('models/rabbitmq')
 var uuid = require('uuid')
 
+const whitelistOrgs = require('./fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('./fixtures/mocks/big-poppa').whitelistUserOrgs
+
 describe('BDD - Create Build and Deploy Instance', function () {
   var ctx = {}
   before(api.start.bind(ctx))
@@ -45,6 +48,12 @@ describe('BDD - Create Build and Deploy Instance', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
+
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 11111,
+    allowed: true
+  }
 
   before(function (done) {
     // prevent worker to be created
@@ -63,6 +72,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
       }]
     })
   )
+  beforeEach(function (done) {
+    whitelistOrgs([runnableOrg])
+    done()
+  })
+
   afterEach(mockGetUserById.stubAfter)
   describe('create a cv to test dudupe logic with', function () {
     beforeEach(function (done) {
@@ -71,6 +85,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         ctx.instance = instance
         ctx.build = build
         ctx.user = user
+        whitelistUserOrgs(ctx.user, [runnableOrg])
         ctx.contextVersion = modelsArr[0]
         ctx.context = modelsArr[1]
         ctx.oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer
