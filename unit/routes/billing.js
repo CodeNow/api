@@ -16,19 +16,19 @@ const describe = lab.describe
 const beforeEach = lab.beforeEach
 const it = lab.it
 
-describe('/billing', function () {
-  describe('#responseHandler', function () {
-    var nextStub
-    var resStub
-    beforeEach(function (done) {
+describe('/billing', () => {
+  describe('#responseHandler', () => {
+    let nextStub
+    let resStub
+    beforeEach(done => {
       nextStub = sinon.stub()
       resStub = {
         json: sinon.stub()
       }
       done()
     })
-    it('should call `next` if theres an error', function (done) {
-      var err = new Error('hello')
+    it('should call `next` if theres an error', done => {
+      let err = new Error('hello')
       responseHandler(resStub, nextStub, err, {})
       sinon.assert.notCalled(resStub.json)
       sinon.assert.calledOnce(nextStub)
@@ -36,8 +36,8 @@ describe('/billing', function () {
       done()
     })
 
-    it('should call `res.json` if theres no error', function (done) {
-      var obj = {}
+    it('should call `res.json` if theres no error', done => {
+      let obj = {}
       responseHandler(resStub, nextStub, null, obj)
       sinon.assert.calledOnce(resStub.json)
       sinon.assert.calledWithExactly(resStub.json, obj)
