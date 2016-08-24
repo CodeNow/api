@@ -49,15 +49,15 @@ then
   else
     if [[ $CIRCLE_NODE_INDEX -eq 0 ]]
     then
-      len=15
+      len=2
       s=0
       n=1
-      e=15
+      e=2
     elif [[ $CIRCLE_NODE_INDEX -eq 1 ]]
     then
-      len=45
-      s=15
-      n=16
+      len=58
+      s=2
+      n=3
       e=60
     else
       len=$(expr $(expr $numTests-300) / $CIRCLE_NODE_TOTAL)
