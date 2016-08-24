@@ -20,14 +20,14 @@ describe('/billing', () => {
   describe('#responseHandler', () => {
     let nextStub
     let resStub
-    beforeEach(done => {
+    beforeEach(function (done)  {
       nextStub = sinon.stub()
       resStub = {
         json: sinon.stub()
       }
       done()
     })
-    it('should call `next` if theres an error', done => {
+    it('should call `next` if theres an error', function (done)  {
       let err = new Error('hello')
       responseHandler(resStub, nextStub, err, {})
       sinon.assert.notCalled(resStub.json)
@@ -36,7 +36,7 @@ describe('/billing', () => {
       done()
     })
 
-    it('should call `res.json` if theres no error', done => {
+    it('should call `res.json` if theres no error', function (done)  {
       let obj = {}
       responseHandler(resStub, nextStub, null, obj)
       sinon.assert.calledOnce(resStub.json)
