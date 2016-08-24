@@ -15,7 +15,6 @@ var sinon = require('sinon')
 var async = require('async')
 var createCount = require('callback-count')
 var pluck = require('101/pluck')
-const Promise = require('bluebird')
 
 var api = require('./fixtures/api-control')
 var dock = require('./fixtures/dock')
