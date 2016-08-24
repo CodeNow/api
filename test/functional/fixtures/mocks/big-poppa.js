@@ -25,6 +25,7 @@ module.exports.whitelistOrgs = function (orgs) {
         200,
         [{
           name: org.name,
+          lowerName: org.name.toLowerCase(),
           githubId: org.githubId,
           allowed: true
         }]
@@ -36,6 +37,7 @@ module.exports.whitelistOrgs = function (orgs) {
         200,
         [{
           name: org.name,
+          lowerName: org.name.toLowerCase(),
           githubId: org.githubId,
           allowed: true
         }]
