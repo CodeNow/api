@@ -79,10 +79,7 @@ function startApi (done) {
 function stopApi (done) {
   if (!started) { return done() }
   started = false
-  rabbitPublisher.close(function (err) {
-    if (err) {
-      return done()
-    }
+  rabbitPublisher.close(function () {
     api.stop(done)
   })
 }
