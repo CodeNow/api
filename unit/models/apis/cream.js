@@ -23,11 +23,11 @@ const it = lab.it
 
 let _makeRequestStub
 
-const stub_makeRequest = (done) => {
+const stub_makeRequest = done => {
   _makeRequestStub = sinon.stub(CreamAPI, '_makeRequest').resolves()
   done()
 }
-const restore_makeRequestStub = (done) => {
+const restore_makeRequestStub = done => {
   _makeRequestStub.restore()
   done()
 }
@@ -41,12 +41,13 @@ describe('Cream API', function () {
     beforeEach(stub_makeRequest)
     afterEach(restore_makeRequestStub)
 
-    it('should call the `_makeRequest` function', () => {
-      return CreamAPI.getPlanForOrganization(organizationId)
+    it('should call the `_makeRequest` function', done => {
+      CreamAPI.getPlanForOrganization(organizationId)
         .then(() => {
           sinon.assert.calledOnce(_makeRequestStub)
           sinon.assert.calledWithExactly(_makeRequestStub, 'plan', organizationId)
         })
+        .asCallback(done)
     })
   })
 
@@ -54,12 +55,13 @@ describe('Cream API', function () {
     beforeEach(stub_makeRequest)
     afterEach(restore_makeRequestStub)
 
-    it('should call the `_makeRequest` function', () => {
-      return CreamAPI.getInvoicesForOrganization(organizationId)
+    it('should call the `_makeRequest` function', done => {
+      CreamAPI.getInvoicesForOrganization(organizationId)
         .then(() => {
           sinon.assert.calledOnce(_makeRequestStub)
           sinon.assert.calledWithExactly(_makeRequestStub, 'invoices', organizationId)
         })
+        .asCallback(done)
     })
   })
 
@@ -67,12 +69,13 @@ describe('Cream API', function () {
     beforeEach(stub_makeRequest)
     afterEach(restore_makeRequestStub)
 
-    it('should call the `_makeRequest` function', () => {
-      return CreamAPI.getPaymentMethodForOrganization(organizationId)
+    it('should call the `_makeRequest` function', done => {
+      CreamAPI.getPaymentMethodForOrganization(organizationId)
         .then(() => {
           sinon.assert.calledOnce(_makeRequestStub)
           sinon.assert.calledWithExactly(_makeRequestStub, 'payment-method', organizationId)
         })
+        .asCallback(done)
     })
   })
 
@@ -80,8 +83,8 @@ describe('Cream API', function () {
     beforeEach(stub_makeRequest)
     afterEach(restore_makeRequestStub)
 
-    it('should call the `_makeRequest` function', () => {
-      return CreamAPI.postPaymentMethodForOrganization(organizationId, stripeToken, ownerBigPoppaId)
+    it('should call the `_makeRequest` function', done => {
+      CreamAPI.postPaymentMethodForOrganization(organizationId, stripeToken, ownerBigPoppaId)
         .then(() => {
           sinon.assert.calledOnce(_makeRequestStub)
           sinon.assert.calledWithExactly(_makeRequestStub, 'payment-method', organizationId, {
@@ -91,6 +94,7 @@ describe('Cream API', function () {
             }
           })
         })
+        .asCallback(done)
     })
   })
 
@@ -112,8 +116,8 @@ describe('Cream API', function () {
       requestStub.restore()
       done()
     })
-    it('should call the `resquest` module with the GET `method` and `url`', () => {
-      return CreamAPI._makeRequest(path, organizationId)
+    it('should call the `resquest` module with the GET `method` and `url`', done => {
+      CreamAPI._makeRequest(path, organizationId)
         .then(() => {
           sinon.assert.calledOnce(requestStub)
           sinon.assert.calledWith(requestStub, {
@@ -123,11 +127,12 @@ describe('Cream API', function () {
             url: `${process.env.CREAM_HOST}/organization/${organizationId}/${path}`
           })
         })
+        .asCallback(done)
     })
 
-    it('should call the `resquest` module with the POST `method`, `body` and `url` if body is passed', () => {
+    it('should call the `resquest` module with the POST `method`, `body` and `url` if body is passed', done => {
       let body = {}
-      return CreamAPI._makeRequest(path, organizationId, body)
+      CreamAPI._makeRequest(path, organizationId, body)
         .then(() => {
           sinon.assert.calledOnce(requestStub)
           sinon.assert.calledWith(requestStub, {
@@ -139,6 +144,7 @@ describe('Cream API', function () {
             json: true
           })
         })
+        .asCallback(done)
     })
 
     it('should throw an regular error if a 500 status code error is received', done => {
@@ -166,43 +172,46 @@ describe('Cream API', function () {
         })
     })
 
-    it('should return the object if an object is returned', () => {
+    it('should return the object if an object is returned', done => {
       let responseBody = { hello: 'world' }
       response = {
         statusCode: 200,
         body: responseBody
       }
-      return CreamAPI._makeRequest(path, organizationId)
+      CreamAPI._makeRequest(path, organizationId)
         .then(res => {
           expect(res).to.equal(responseBody)
         })
+        .asCallback(done)
     })
 
-    it('should return a parsed object if a JSON object is received', () => {
+    it('should return a parsed object if a JSON object is received', done => {
       let obj = { hello: 'world' }
       let responseBody = JSON.stringify(obj)
       response = {
         statusCode: 200,
         body: responseBody
       }
-      return CreamAPI._makeRequest(path, organizationId)
+      CreamAPI._makeRequest(path, organizationId)
         .then(res => {
           expect(res).to.deep.equal(obj)
         })
+        .asCallback(done)
     })
 
-    it('should return an object with a message if it a JSON object cannot be parsed', () => {
+    it('should return an object with a message if it a JSON object cannot be parsed', done => {
       let responseBody = 'hello-world'
       response = {
         statusCode: 200,
         body: responseBody
       }
-      return CreamAPI._makeRequest(path, organizationId)
+      CreamAPI._makeRequest(path, organizationId)
         .then(res => {
           expect(res).to.be.an.object()
           expect(res.message).to.equal(responseBody)
           expect(res.statusCode).to.equal(response.statusCode)
         })
+        .asCallback(done)
     })
   })
 })
