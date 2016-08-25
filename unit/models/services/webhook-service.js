@@ -9,6 +9,7 @@ var afterEach = lab.afterEach
 
 var Boom = require('dat-middleware').Boom
 var Code = require('code')
+const errors = require('errors')
 var expect = Code.expect
 var NotImplementedException = require('errors/not-implemented-exception.js')
 var ObjectId = require('mongoose').Types.ObjectId
@@ -422,7 +423,8 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
           })
       })
       it('should respond with 403 if no whitelist found', function (done) {
-        OrganizationService.getByGithubUsername.resolves(null)
+        var error = new errors.OrganizationNotFoundError()
+        OrganizationService.getByGithubUsername.rejects(error)
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
             expect(err.output.statusCode).to.equal(403)
