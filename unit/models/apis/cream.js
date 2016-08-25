@@ -163,14 +163,17 @@ describe('Cream API', function () {
       var errorMessage = 'superString'
       response = {
         statusCode: 400,
-        body: errorMessage
+        body: {
+          message: errorMessage
+        }
       }
       CreamAPI._makeRequest(path, organizationId)
         .asCallback(err => {
           expect(err).to.exist()
           expect(err.output.statusCode).to.equal(400)
-          expect(err.data.err).to.equal(errorMessage)
+          expect(err.data.err.message).to.equal(errorMessage)
           expect(err.message).to.match(/cream.*bad.*request/i)
+          expect(err.message).to.match(/super/i)
           done()
         })
     })
