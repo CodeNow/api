@@ -11,7 +11,7 @@ var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var dockerEventStreamConnected = require('workers/docker.events-stream.connected')
+var Worker = require('workers/docker.events-stream.connected')
 var messenger = require('socket/messenger')
 var rabbitMQ = require('models/rabbitmq')
 var OrganizationService = require('models/services/organization-service')
@@ -48,57 +48,10 @@ describe('docker.events-stream.connected unit test', function () {
     done()
   })
 
-  describe('validate', function () {
-    it('should throw task fatal if missing host', function (done) {
-      delete testJob.host
-      dockerEventStreamConnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-        sinon.assert.notCalled(OrganizationService.updateById)
-        done()
-      })
-    })
-
-    it('should throw task fatal if invalid host', function (done) {
-      testJob.host = '10.0.0.1:3232'
-      dockerEventStreamConnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-        sinon.assert.notCalled(OrganizationService.updateById)
-        done()
-      })
-    })
-
-    it('should throw task fatal if missing org', function (done) {
-      delete testJob.org
-      dockerEventStreamConnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-        sinon.assert.notCalled(OrganizationService.updateById)
-        done()
-      })
-    })
-
-    it('should throw task fatal if org not a string', function (done) {
-      testJob.org = 12345
-      dockerEventStreamConnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-        sinon.assert.notCalled(OrganizationService.updateById)
-        done()
-      })
-    })
-
-    it('should throw task fatal if org not a number', function (done) {
-      testJob.org = '12a45'
-      dockerEventStreamConnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-        sinon.assert.notCalled(OrganizationService.updateById)
-        done()
-      })
-    })
-  }) // end validate
-
   describe('valid job', function () {
     it('should fail if `updateByGithubId` failed', function (done) {
       OrganizationService.updateById.rejects(new Error('Orgtanization could not be updated'))
-      dockerEventStreamConnected(testJob)
+      Worker.task(testJob)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(err)
@@ -108,7 +61,7 @@ describe('docker.events-stream.connected unit test', function () {
 
     it('should fatally fail if messenger call failed', function (done) {
       messenger.emitFirstDockCreated.throws(new Error('Primus error'))
-      dockerEventStreamConnected(testJob)
+      Worker.task(testJob)
         .asCallback(function (err) {
           expect(err).to.be.instanceof(WorkerStopError)
           expect(err.message).to.include('Failed to create job or send websocket event')
@@ -117,9 +70,19 @@ describe('docker.events-stream.connected unit test', function () {
         })
     })
 
+    it('should fatally fail org not found', function (done) {
+      OrganizationService.getByGithubId.throws(new Error('Organization not found'))
+      Worker.task(testJob)
+        .asCallback(function (err) {
+          expect(err).to.be.instanceof(WorkerStopError)
+          expect(err.message).to.include('Organization not found')
+          done()
+        })
+    })
+
     it('should fatally fail if rabbimq call failed', function (done) {
       rabbitMQ.firstDockCreated.throws(new Error('Rabbit error'))
-      dockerEventStreamConnected(testJob)
+      Worker.task(testJob)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.be.instanceof(WorkerStopError)
@@ -131,7 +94,7 @@ describe('docker.events-stream.connected unit test', function () {
 
     it('should fail if org already has firstDockCreated failed', function (done) {
       OrganizationService.getByGithubId.resolves({ firstDockCreated: true })
-      dockerEventStreamConnected(testJob)
+      Worker.task(testJob)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.be.instanceof(WorkerStopError)
@@ -141,7 +104,7 @@ describe('docker.events-stream.connected unit test', function () {
     })
 
     it('should call OrganizationService.getByGithubId with correct params', function (done) {
-      dockerEventStreamConnected(testJob)
+      Worker.task(testJob)
         .tap(function () {
           sinon.assert.calledOnce(OrganizationService.updateById)
           sinon.assert.calledWith(OrganizationService.updateById,
@@ -152,7 +115,7 @@ describe('docker.events-stream.connected unit test', function () {
     })
 
     it('should call OrganizationService.updateByGithubId with correct params', function (done) {
-      dockerEventStreamConnected(testJob)
+      Worker.task(testJob)
       .tap(function () {
         sinon.assert.calledOnce(OrganizationService.updateById)
         sinon.assert.calledWith(OrganizationService.updateById,
@@ -164,7 +127,7 @@ describe('docker.events-stream.connected unit test', function () {
     })
 
     it('should call messenger.emitFirstDockCreated with correct params', function (done) {
-      dockerEventStreamConnected(testJob)
+      Worker.task(testJob)
       .tap(function () {
         sinon.assert.calledOnce(messenger.emitFirstDockCreated)
         sinon.assert.calledWith(messenger.emitFirstDockCreated, parseInt(testOrg, 10))
@@ -173,7 +136,7 @@ describe('docker.events-stream.connected unit test', function () {
     })
 
     it('should call rabbitMQ.firstDockCreated with correct params', function (done) {
-      dockerEventStreamConnected(testJob)
+      Worker.task(testJob)
       .tap(function () {
         sinon.assert.calledOnce(rabbitMQ.firstDockCreated)
         sinon.assert.calledWith(rabbitMQ.firstDockCreated,
@@ -186,7 +149,7 @@ describe('docker.events-stream.connected unit test', function () {
     })
 
     it('should call all functions in order', function (done) {
-      dockerEventStreamConnected(testJob)
+      Worker.task(testJob)
       .tap(function () {
         sinon.assert.callOrder(
           OrganizationService.getByGithubId,
