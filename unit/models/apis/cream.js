@@ -160,13 +160,16 @@ describe('Cream API', function () {
     })
 
     it('should throw an bad request error if a 400 status code error is received', done => {
+      var errorMessage = 'superString'
       response = {
-        statusCode: 400
+        statusCode: 400,
+        body: errorMessage
       }
       CreamAPI._makeRequest(path, organizationId)
         .asCallback(err => {
           expect(err).to.exist()
           expect(err.output.statusCode).to.equal(400)
+          expect(err.data.err).to.equal(errorMessage)
           expect(err.message).to.match(/cream.*bad.*request/i)
           done()
         })
