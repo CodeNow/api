@@ -7,7 +7,6 @@ require('sinon-as-promised')(require('bluebird'))
 var Boom = require('dat-middleware').Boom
 var Code = require('code')
 var Lab = require('lab')
-var omit = require('101/omit')
 var sinon = require('sinon')
 var WorkerError = require('error-cat/errors/worker-error')
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
@@ -75,52 +74,6 @@ describe('Workers: Instance Start', function () {
     Docker.prototype.startContainerAsync.restore()
     InstanceService.emitInstanceUpdate.restore()
     done()
-  })
-
-  describe('validation', function () {
-    it('should fatally fail if job is null', function (done) {
-      Worker.task(null).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-    it('should fatally fail if job is {}', function (done) {
-      Worker.task({}).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-    it('should fatally fail if job has no instanceId', function (done) {
-      var data = omit(testData, 'instanceId')
-      Worker.task(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-    it('should fatally fail if job has no containerId', function (done) {
-      var data = omit(testData, 'containerId')
-      Worker.task(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-    it('should fatally fail if job has no sessionUserGithubId', function (done) {
-      var data = omit(testData, 'sessionUserGithubId')
-      Worker.task(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
   })
 
   it('should fail if findOneStarting failed', function (done) {
