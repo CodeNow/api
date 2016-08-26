@@ -235,7 +235,10 @@ describe('Instance Model Tests', function () {
         sinon.assert.calledOnce(Instance._updateAndCheck)
         sinon.assert.calledWith(Instance._updateAndCheck, {
           _id: instanceId,
-          'contextVersion._id': objectId(contextVersionId)
+          'contextVersion._id': objectId(contextVersionId),
+          'container': {
+            $exists: false
+          }
         }, {
           $set: {
             'container.error.message': testErr,
