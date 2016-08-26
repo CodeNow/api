@@ -108,16 +108,13 @@ describe('Instance Model Tests', function () {
       done()
     })
     it('should find starting instance', function (done) {
-      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
+      Instance.findOneStarting(mockInstance._id, 'container-id').asCallback(function (err, instance) {
         expect(err).to.be.null()
         expect(instance).to.equal(mockInstance)
         sinon.assert.calledOnce(Instance.findOne)
         var query = {
           _id: mockInstance._id,
-          'container.dockerContainer': 'container-id',
-          'container.inspect.State.Starting': {
-            $exists: true
-          }
+          'container.dockerContainer': 'container-id'
         }
         sinon.assert.calledWith(Instance.findOne, query)
         done()
@@ -126,7 +123,7 @@ describe('Instance Model Tests', function () {
     it('should return an error if mongo call failed', function (done) {
       var mongoError = new Error('Mongo error')
       Instance.findOne.yieldsAsync(mongoError)
-      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
+      Instance.findOneStarting(mockInstance._id, 'container-id').asCallback(function (err, instance) {
         expect(err).to.equal(mongoError)
         sinon.assert.calledOnce(Instance.findOne)
         done()
@@ -134,7 +131,7 @@ describe('Instance Model Tests', function () {
     })
     it('should return null if instance was not found', function (done) {
       Instance.findOne.yieldsAsync(null, null)
-      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
+      Instance.findOneStarting(mockInstance._id, 'container-id').asCallback(function (err, instance) {
         expect(err).to.not.exist()
         expect(instance).to.be.null()
         sinon.assert.calledOnce(Instance.findOne)

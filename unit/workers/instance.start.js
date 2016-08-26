@@ -62,7 +62,7 @@ describe('Workers: Instance Start', function () {
       },
       build: '507f191e810c19729de860e2'
     })
-    sinon.stub(Instance, 'findOneStartingAsync').resolves(testInstance)
+    sinon.stub(Instance, 'findOneStarting').resolves(testInstance)
     sinon.stub(rabbitMQ, 'instanceContainerErrored')
     sinon.stub(Docker.prototype, 'startContainerAsync').resolves()
     sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
@@ -70,7 +70,7 @@ describe('Workers: Instance Start', function () {
   })
 
   afterEach(function (done) {
-    Instance.findOneStartingAsync.restore()
+    Instance.findOneStarting.restore()
     rabbitMQ.instanceContainerErrored.restore()
     Docker.prototype.startContainerAsync.restore()
     InstanceService.emitInstanceUpdate.restore()
@@ -79,7 +79,7 @@ describe('Workers: Instance Start', function () {
 
   describe('validation', function () {
     it('should fatally fail if job is null', function (done) {
-      Worker(null).asCallback(function (err) {
+      Worker.task(null).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(WorkerStopError)
         expect(err.message).to.equal('Invalid Job')
@@ -87,7 +87,7 @@ describe('Workers: Instance Start', function () {
       })
     })
     it('should fatally fail if job is {}', function (done) {
-      Worker({}).asCallback(function (err) {
+      Worker.task({}).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(WorkerStopError)
         expect(err.message).to.equal('Invalid Job')
@@ -96,7 +96,7 @@ describe('Workers: Instance Start', function () {
     })
     it('should fatally fail if job has no instanceId', function (done) {
       var data = omit(testData, 'instanceId')
-      Worker(data).asCallback(function (err) {
+      Worker.task(data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(WorkerStopError)
         expect(err.message).to.equal('Invalid Job')
@@ -105,7 +105,7 @@ describe('Workers: Instance Start', function () {
     })
     it('should fatally fail if job has no containerId', function (done) {
       var data = omit(testData, 'containerId')
-      Worker(data).asCallback(function (err) {
+      Worker.task(data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(WorkerStopError)
         expect(err.message).to.equal('Invalid Job')
@@ -114,7 +114,7 @@ describe('Workers: Instance Start', function () {
     })
     it('should fatally fail if job has no sessionUserGithubId', function (done) {
       var data = omit(testData, 'sessionUserGithubId')
-      Worker(data).asCallback(function (err) {
+      Worker.task(data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.an.instanceOf(WorkerStopError)
         expect(err.message).to.equal('Invalid Job')
@@ -123,18 +123,18 @@ describe('Workers: Instance Start', function () {
     })
   })
 
-  it('should fail if findOneStartingAsync failed', function (done) {
+  it('should fail if findOneStarting failed', function (done) {
     var error = new Error('Mongo error')
-    Instance.findOneStartingAsync.rejects(error)
-    Worker(testData).asCallback(function (err) {
+    Instance.findOneStarting.rejects(error)
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
     })
   })
-  it('should fail fatally if findOneStartingAsync returned no instance', function (done) {
-    Instance.findOneStartingAsync.resolves(null)
-    Worker(testData).asCallback(function (err) {
+  it('should fail fatally if findOneStarting returned no instance', function (done) {
+    Instance.findOneStarting.resolves(null)
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err).to.be.instanceOf(WorkerStopError)
       expect(err.message).to.equal('Instance not found')
@@ -145,7 +145,7 @@ describe('Workers: Instance Start', function () {
   it('should fail if docker startContainer failed', function (done) {
     var error = new Error('Docker error')
     Docker.prototype.startContainerAsync.rejects(error)
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err).to.deep.equal(error)
       done()
@@ -154,7 +154,7 @@ describe('Workers: Instance Start', function () {
 
   it('should WorkerError if docker startContainer 404', function (done) {
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(WorkerError)
       expect(err.message).to.contain('container does not exist')
       done()
@@ -163,7 +163,7 @@ describe('Workers: Instance Start', function () {
 
   it('should WorkerError if docker startContainer 404', function (done) {
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(WorkerError)
       expect(err.message).to.contain('container does not exist')
       done()
@@ -176,7 +176,7 @@ describe('Workers: Instance Start', function () {
     }
     rabbitMQ.instanceContainerErrored.resolves()
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(WorkerStopError)
       expect(err.message).to.contain('Please rebuild without cache')
       done()
@@ -190,7 +190,7 @@ describe('Workers: Instance Start', function () {
     var testError = 'Sorry, your container got lost. Please rebuild without cache'
     rabbitMQ.instanceContainerErrored.resolves()
     Docker.prototype.startContainerAsync.rejects(Boom.create(404, 'b'))
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.be.an.instanceOf(WorkerStopError)
       expect(err.message).to.contain('Please rebuild without cache')
       sinon.assert.calledOnce(rabbitMQ.instanceContainerErrored)
@@ -206,23 +206,23 @@ describe('Workers: Instance Start', function () {
   it('should fail if sending events failed', function (done) {
     var error = new Error('Primus error')
     InstanceService.emitInstanceUpdate.rejects(error)
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
     })
   })
-  it('should call findOneStartingAsync', function (done) {
-    Worker(testData).asCallback(function (err) {
+  it('should call findOneStarting', function (done) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
-      sinon.assert.calledOnce(Instance.findOneStartingAsync)
-      sinon.assert.calledWith(Instance.findOneStartingAsync, testInstanceId, dockerContainer)
+      sinon.assert.calledOnce(Instance.findOneStarting)
+      sinon.assert.calledWith(Instance.findOneStarting, testInstanceId, dockerContainer)
       done()
     })
   })
 
   it('should call startContainer', function (done) {
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(Docker.prototype.startContainerAsync)
       sinon.assert.calledWith(Docker.prototype.startContainerAsync, dockerContainer)
@@ -231,7 +231,7 @@ describe('Workers: Instance Start', function () {
   })
 
   it('should call emitInstanceUpdate', function (done) {
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
       sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'starting', true)
@@ -240,10 +240,10 @@ describe('Workers: Instance Start', function () {
   })
 
   it('should call out to various models and helper methods in the correct order', function (done) {
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.callOrder(
-        Instance.findOneStartingAsync,
+        Instance.findOneStarting,
         InstanceService.emitInstanceUpdate,
         Docker.prototype.startContainerAsync)
       done()
