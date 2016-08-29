@@ -120,12 +120,12 @@ describe('Instance Model Tests', function () {
     it('should throw not found if not exist', function (done) {
       Instance.findOneAsync.resolves()
       Instance.findOneStarting(mockInstance._id, 'container-id').asCallback(function (err, instance) {
-        expect(err).to.be.an.instanceOf(Instance.NotFound)
+        expect(err).to.be.an.instanceOf(Instance.NotFoundError)
         done()
       })
     })
 
-    it('should throw IncorrectState if not in the right state', function (done) {
+    it('should throw IncorrectStateError if not in the right state', function (done) {
       var invalidState = {
         _id: '507f1f77bcf86cd799439011',
         container: {
@@ -138,7 +138,7 @@ describe('Instance Model Tests', function () {
       }
       Instance.findOneAsync.resolves(invalidState)
       Instance.findOneStarting(mockInstance._id, 'container-id').asCallback(function (err, instance) {
-        expect(err).to.be.an.instanceOf(Instance.IncorrectState)
+        expect(err).to.be.an.instanceOf(Instance.IncorrectStateError)
         done()
       })
     })

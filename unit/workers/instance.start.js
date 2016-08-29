@@ -87,7 +87,7 @@ describe('Workers: Instance Start', function () {
   })
 
   it('should worker stop if findOneStarting returned no instance', function (done) {
-    Instance.findOneStarting.rejects(new Instance.NotFound({hi: 123}))
+    Instance.findOneStarting.rejects(new Instance.NotFoundError({hi: 123}))
     Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err).to.be.instanceOf(WorkerStopError)
@@ -96,8 +96,8 @@ describe('Workers: Instance Start', function () {
     })
   })
 
-  it('should stop and not call instanceContainerErrored IncorrectState', function (done) {
-    Instance.findOneStarting.rejects(new Instance.IncorrectState('interpolating'))
+  it('should stop and not call instanceContainerErrored IncorrectStateError', function (done) {
+    Instance.findOneStarting.rejects(new Instance.IncorrectStateError('interpolating'))
     Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       sinon.assert.notCalled(rabbitMQ.instanceContainerErrored)
