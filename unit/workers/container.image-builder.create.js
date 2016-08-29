@@ -10,7 +10,6 @@ var sinon = require('sinon')
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var BuildService = require('models/services/build-service')
-var Context = require('models/mongo/context')
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var errors = require('errors')
@@ -70,7 +69,6 @@ describe('ContainerImageBuilderCreate unit test', function () {
       tid: 'job-tid'
     }
     var mockUser = { _id: 'user-id' }
-    var mockContext = { _id: 'context-id' }
     var mockContextVersion = {
       _id: 'context-version-id',
       build: {
@@ -85,7 +83,6 @@ describe('ContainerImageBuilderCreate unit test', function () {
 
     beforeEach(function (done) {
       sinon.stub(User, 'findByGithubIdAsync').resolves(mockUser)
-      sinon.stub(Context, 'findOneAsync').resolves(mockContext)
       sinon.stub(ContextVersion, 'findOneAsync').resolves(mockContextVersion)
       sinon.stub(ContextVersion, 'recoverAsync').resolves()
       sinon.stub(mockContextVersion, 'populateAsync').resolves()
@@ -98,7 +95,6 @@ describe('ContainerImageBuilderCreate unit test', function () {
 
     afterEach(function (done) {
       User.findByGithubIdAsync.restore()
-      Context.findOneAsync.restore()
       ContextVersion.findOneAsync.restore()
       ContextVersion.recoverAsync.restore()
       mockContextVersion.populateAsync.restore()
@@ -175,12 +171,6 @@ describe('ContainerImageBuilderCreate unit test', function () {
           done()
         })
 
-        it('should fetch the context by id', function (done) {
-          sinon.assert.calledOnce(Context.findOneAsync)
-          sinon.assert.calledWith(Context.findOneAsync, validJob.contextId)
-          done()
-        })
-
         it('should use the correct query', function (done) {
           sinon.assert.calledOnce(ContextVersion.findOneAsync)
           sinon.assert.calledWith(ContextVersion.findOneAsync, expectedCVQuery)
@@ -211,30 +201,6 @@ describe('ContainerImageBuilderCreate unit test', function () {
           done()
         })
       }) // end 'on user not found'
-
-      describe('on context not found', function () {
-        var rejectError
-
-        beforeEach(function (done) {
-          BuildService.handleBuildComplete.resolves()
-          Context.findOneAsync.resolves(null)
-          Worker.task(validJob).asCallback(function (err) {
-            rejectError = err
-            done()
-          })
-        })
-
-        it('should fatally reject', function (done) {
-          expect(rejectError).to.exist()
-          expect(rejectError).to.be.an.instanceof(WorkerStopError)
-          done()
-        })
-
-        it('should set the correct error message', function (done) {
-          expect(rejectError.message).to.match(/Context not found/)
-          done()
-        })
-      }) // end 'on context not found'
 
       describe('on context version not found', function () {
         var rejectError
