@@ -100,7 +100,7 @@ rules:
   yoda: 0
 
   # Strict
-  strict: 0
+  strict: 1
 
   # Variables
   init-declarations: 0
