@@ -1,30 +1,29 @@
 require('loadenv')()
 
-var Boom = require('dat-middleware').Boom
-var Code = require('code')
-var Lab = require('lab')
-var moment = require('moment')
-var Promise = require('bluebird')
-var sinon = require('sinon')
+const Code = require('code')
+const Lab = require('lab')
+const moment = require('moment')
+const Promise = require('bluebird')
+const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var ContextVersion = require('models/mongo/context-version')
-var error = require('error')
-var errors = require('errors')
-var Instance = require('models/mongo/instance')
-var InstanceService = require('models/services/instance-service')
-var PermissionService = require('models/services/permission-service')
-var rabbitmq = require('models/rabbitmq')
-var Worker = require('workers/instance.container.create')
+const ContextVersion = require('models/mongo/context-version')
+const error = require('error')
+const errors = require('errors')
+const Instance = require('models/mongo/instance')
+const InstanceService = require('models/services/instance-service')
+const PermissionService = require('models/services/permission-service')
+const rabbitmq = require('models/rabbitmq')
+const Worker = require('workers/instance.container.create')
 
-var lab = exports.lab = Lab.script()
+const lab = exports.lab = Lab.script()
 
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
 describe('createInstanceContainer', function () {
   describe('finalRetryFn', function () {
