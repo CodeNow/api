@@ -97,47 +97,73 @@ describe('Instance Model Tests', function () {
 
   describe('findOneStarting', function () {
     var mockInstance = {
-      _id: '507f1f77bcf86cd799439011'
-    }
-    beforeEach(function (done) {
-      sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
-      done()
-    })
-    afterEach(function (done) {
-      Instance.findOne.restore()
-      done()
-    })
-    it('should find starting instance', function (done) {
-      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
-        expect(err).to.be.null()
-        expect(instance).to.equal(mockInstance)
-        sinon.assert.calledOnce(Instance.findOne)
-        var query = {
-          _id: mockInstance._id,
-          'container.dockerContainer': 'container-id',
-          'container.inspect.State.Starting': {
-            $exists: true
+      _id: '507f1f77bcf86cd799439011',
+      container: {
+        inspect: {
+          State: {
+            Status: 'starting'
           }
         }
-        sinon.assert.calledWith(Instance.findOne, query)
+      }
+    }
+
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAsync.restore()
+      done()
+    })
+
+    it('should throw not found if not exist', function (done) {
+      Instance.findOneAsync.resolves()
+      Instance.findOneStarting(mockInstance._id, 'container-id').asCallback(function (err, instance) {
+        expect(err).to.be.an.instanceOf(Instance.NotFoundError)
         done()
       })
     })
+
+    it('should throw IncorrectStateError if not in the right state', function (done) {
+      var invalidState = {
+        _id: '507f1f77bcf86cd799439011',
+        container: {
+          inspect: {
+            State: {
+              Status: 'jumping'
+            }
+          }
+        }
+      }
+      Instance.findOneAsync.resolves(invalidState)
+      Instance.findOneStarting(mockInstance._id, 'container-id').asCallback(function (err, instance) {
+        expect(err).to.be.an.instanceOf(Instance.IncorrectStateError)
+        done()
+      })
+    })
+
+    it('should find starting instance', function (done) {
+      Instance.findOneAsync.resolves(mockInstance)
+      Instance.findOneStarting(mockInstance._id, 'container-id').asCallback(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.findOneAsync)
+        var query = {
+          _id: mockInstance._id,
+          'container.dockerContainer': 'container-id'
+        }
+        sinon.assert.calledWith(Instance.findOneAsync, query)
+        done()
+      })
+    })
+
     it('should return an error if mongo call failed', function (done) {
       var mongoError = new Error('Mongo error')
-      Instance.findOne.yieldsAsync(mongoError)
-      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
+      Instance.findOneAsync.rejects(mongoError)
+      Instance.findOneStarting(mockInstance._id, 'container-id').asCallback(function (err, instance) {
         expect(err).to.equal(mongoError)
-        sinon.assert.calledOnce(Instance.findOne)
-        done()
-      })
-    })
-    it('should return null if instance was not found', function (done) {
-      Instance.findOne.yieldsAsync(null, null)
-      Instance.findOneStarting(mockInstance._id, 'container-id', function (err, instance) {
-        expect(err).to.not.exist()
-        expect(instance).to.be.null()
-        sinon.assert.calledOnce(Instance.findOne)
+        sinon.assert.calledOnce(Instance.findOneAsync)
         done()
       })
     })
@@ -281,18 +307,22 @@ describe('Instance Model Tests', function () {
       })
     })
   }) // end _updateAndCheck
+
   describe('markAsStarting', function () {
     var mockInstance = {
       _id: '507f1f77bcf86cd799439011'
     }
+
     beforeEach(function (done) {
       sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
       done()
     })
+
     afterEach(function (done) {
       Instance.findOneAndUpdate.restore()
       done()
     })
+
     it('should mark instance as starting', function (done) {
       Instance.markAsStarting(mockInstance._id, 'container-id', function (err, instance) {
         expect(err).to.be.null()
@@ -307,13 +337,15 @@ describe('Instance Model Tests', function () {
         }
         var $set = {
           $set: {
-            'container.inspect.State.Starting': true
+            'container.inspect.State.Starting': true,
+            'container.inspect.State.Status': 'starting'
           }
         }
         sinon.assert.calledWith(Instance.findOneAndUpdate, query, $set)
         done()
       })
     })
+
     it('should return an error if mongo call failed', function (done) {
       var mongoError = new Error('Mongo error')
       Instance.findOneAndUpdate.yieldsAsync(mongoError)
@@ -323,6 +355,7 @@ describe('Instance Model Tests', function () {
         done()
       })
     })
+
     it('should return an error if instance was not found', function (done) {
       Instance.findOneAndUpdate.yieldsAsync(null, null)
       Instance.markAsStarting(mockInstance._id, 'container-id', function (err, instance) {
