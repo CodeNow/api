@@ -180,7 +180,7 @@ describe('createInstanceContainer', function () {
 
       describe('4XX', function () {
         beforeEach(function (done) {
-          ctx.err = new Instance.NotFoundError('Instance not found')
+          ctx.err = new Instance.NotFoundError({})
           InstanceService.createContainer.rejects(ctx.err)
           done()
         })
