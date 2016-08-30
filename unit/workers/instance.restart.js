@@ -67,14 +67,14 @@ describe('Workers: Instance Restart', function () {
     }
   })
   beforeEach(function (done) {
-    sinon.stub(Instance, 'findOneStartingAsync').resolves(testInstance)
+    sinon.stub(Instance, 'findOneStarting').resolves(testInstance)
     sinon.stub(Docker.prototype, 'restartContainerAsync').resolves()
     sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
     done()
   })
 
   afterEach(function (done) {
-    Instance.findOneStartingAsync.restore()
+    Instance.findOneStarting.restore()
     Docker.prototype.restartContainerAsync.restore()
     InstanceService.emitInstanceUpdate.restore()
     done()
@@ -125,17 +125,17 @@ describe('Workers: Instance Restart', function () {
       })
     })
   })
-  it('should fail if findOneStartingAsync failed', function (done) {
+  it('should fail if findOneStarting failed', function (done) {
     var error = new Error('Mongo error')
-    Instance.findOneStartingAsync.rejects(error)
+    Instance.findOneStarting.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
     })
   })
-  it('should fail fatally if findOneStartingAsync returned no instance', function (done) {
-    Instance.findOneStartingAsync.resolves(null)
+  it('should fail fatally if findOneStarting returned no instance', function (done) {
+    Instance.findOneStarting.resolves(null)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err).to.be.instanceOf(WorkerStopError)
@@ -161,11 +161,11 @@ describe('Workers: Instance Restart', function () {
       done()
     })
   })
-  it('should call findOneStartingAsync', function (done) {
+  it('should call findOneStarting', function (done) {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
-      sinon.assert.calledOnce(Instance.findOneStartingAsync)
-      sinon.assert.calledWith(Instance.findOneStartingAsync, testInstanceId, dockerContainer)
+      sinon.assert.calledOnce(Instance.findOneStarting)
+      sinon.assert.calledWith(Instance.findOneStarting, testInstanceId, dockerContainer)
       done()
     })
   })
@@ -189,7 +189,7 @@ describe('Workers: Instance Restart', function () {
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.callOrder(
-        Instance.findOneStartingAsync,
+        Instance.findOneStarting,
         Docker.prototype.restartContainerAsync,
         InstanceService.emitInstanceUpdate)
       done()
