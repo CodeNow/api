@@ -22,6 +22,7 @@ describe('Context Version Unit Test', function () {
     beforeEach(function (done) {
       mockContextVersion = {
         _id: '55d3ef733e1b620e00eb6292',
+        state: 'starting',
         name: 'name1',
         owner: {
           github: '2335750'
@@ -100,6 +101,67 @@ describe('Context Version Unit Test', function () {
               'state': ContextVersion.states.buildErrored
             }
           }, { multi: true })
+        done()
+      })
+    })
+  })
+
+  describe('findOneCreating', function () {
+    var mockContextVersionId = '507f1f77bcf86cd799439011'
+
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'findOneAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.findOneAsync.restore()
+      done()
+    })
+
+    it('should throw not found if not exist', function (done) {
+      ContextVersion.findOneAsync.resolves()
+      ContextVersion.findOneCreating(mockContextVersionId).asCallback(function (err, instance) {
+        expect(err).to.be.an.instanceOf(ContextVersion.NotFoundError)
+        done()
+      })
+    })
+
+    it('should throw IncorrectStateError if not in the right state', function (done) {
+      var invalidStateCV = {
+        _id: '507f1f77bcf86cd799439011',
+        state: 'sitting'
+      }
+      ContextVersion.findOneAsync.resolves(invalidStateCV)
+      ContextVersion.findOneCreating(mockContextVersionId).asCallback(function (err, instance) {
+        expect(err).to.be.an.instanceOf(ContextVersion.IncorrectStateError)
+        done()
+      })
+    })
+
+    it('should find creating instance', function (done) {
+      const mockContextVersion = {
+        _id: mockContextVersionId
+      }
+      ContextVersion.findOneAsync.resolves(mockContextVersion)
+      ContextVersion.findOneCreating(mockContextVersionId).asCallback(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.equal(mockContextVersion)
+        sinon.assert.calledOnce(ContextVersion.findOneAsync)
+        var query = {
+          _id: mockContextVersionId
+        }
+        sinon.assert.calledWith(ContextVersion.findOneAsync, query)
+        done()
+      })
+    })
+
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      ContextVersion.findOneAsync.rejects(mongoError)
+      ContextVersion.findOneCreating(mockContextVersionId).asCallback(function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(ContextVersion.findOneAsync)
         done()
       })
     })

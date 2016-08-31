@@ -83,7 +83,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
 
     beforeEach(function (done) {
       sinon.stub(User, 'findByGithubIdAsync').resolves(mockUser)
-      sinon.stub(ContextVersion, 'findOneAsync').resolves(mockContextVersion)
+      sinon.stub(ContextVersion, 'findOneCreating').resolves(mockContextVersion)
       sinon.stub(ContextVersion, 'recoverAsync').resolves()
       sinon.stub(mockContextVersion, 'populateAsync').resolves()
       sinon.stub(Docker.prototype, 'createImageBuilderAsync').resolves(mockContainer)
@@ -95,7 +95,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
 
     afterEach(function (done) {
       User.findByGithubIdAsync.restore()
-      ContextVersion.findOneAsync.restore()
+      ContextVersion.findOneCreating.restore()
       ContextVersion.recoverAsync.restore()
       mockContextVersion.populateAsync.restore()
       Docker.prototype.createImageBuilderAsync.restore()
@@ -144,19 +144,6 @@ describe('ContainerImageBuilderCreate unit test', function () {
     }) // end 'checkAllowed'
 
     describe('fetchRequiredModels', function () {
-      var expectedCVQuery = {
-        '_id': validJob.contextVersionId,
-        'build.dockerContainer': {
-          $exists: false
-        },
-        'build.started': {
-          $exists: true
-        },
-        'build.finished': {
-          $exists: false
-        }
-      }
-
       describe('on success', function () {
         beforeEach(function (done) {
           Worker.task(validJob).asCallback(done)
@@ -172,8 +159,8 @@ describe('ContainerImageBuilderCreate unit test', function () {
         })
 
         it('should use the correct query', function (done) {
-          sinon.assert.calledOnce(ContextVersion.findOneAsync)
-          sinon.assert.calledWith(ContextVersion.findOneAsync, expectedCVQuery)
+          sinon.assert.calledOnce(ContextVersion.findOneCreating)
+          sinon.assert.calledWith(ContextVersion.findOneCreating, validJob.contextVersionId)
           done()
         })
       }) // end 'on success'
@@ -207,14 +194,16 @@ describe('ContainerImageBuilderCreate unit test', function () {
 
         beforeEach(function (done) {
           BuildService.handleBuildComplete.resolves()
-          ContextVersion.findOneAsync.resolves(null)
+          ContextVersion.findOneCreating.rejects(new ContextVersion.NotFoundError({
+            q: 'this'
+          }))
           Worker.task(validJob).asCallback(function (err) {
             rejectError = err
             done()
           })
         })
 
-        it('should fatally reject', function (done) {
+        it('should WorkerStopError', function (done) {
           expect(rejectError).to.exist()
           expect(rejectError).to.be.an.instanceof(WorkerStopError)
           done()
@@ -225,8 +214,43 @@ describe('ContainerImageBuilderCreate unit test', function () {
           done()
         })
 
-        it('should set the correct query data', function (done) {
-          expect(rejectError.data.extra.query).to.deep.equal(expectedCVQuery)
+        it('should call handleBuildComplete', function (done) {
+          sinon.assert.calledOnce(BuildService.handleBuildComplete)
+          sinon.assert.calledWith(BuildService.handleBuildComplete, validJob.contextVersionBuildId, {
+            failed: true,
+            error: {
+              message: rejectError.message
+            }
+          })
+          done()
+        })
+      }) // end 'on context version not found'
+
+      describe('on context version IncorrectStateError', function () {
+        var rejectError
+
+        beforeEach(function (done) {
+          BuildService.handleBuildComplete.resolves()
+          ContextVersion.findOneCreating.rejects(new ContextVersion.IncorrectStateError('funning', {}))
+          Worker.task(validJob).asCallback(function (err) {
+            rejectError = err
+            done()
+          })
+        })
+
+        it('should WorkerStopError', function (done) {
+          expect(rejectError).to.exist()
+          expect(rejectError).to.be.an.instanceof(WorkerStopError)
+          done()
+        })
+
+        it('should set the correct error message', function (done) {
+          expect(rejectError.message).to.match(/ContextVersion not in correct state/)
+          done()
+        })
+
+        it('should not call handleBuildComplete', function (done) {
+          sinon.assert.notCalled(BuildService.handleBuildComplete)
           done()
         })
       }) // end 'on context version not found'
