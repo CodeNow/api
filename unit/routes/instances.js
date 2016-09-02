@@ -12,8 +12,9 @@ const instances = require('routes/instances')
 const IsolationService = require('models/services/isolation-service')
 
 const lab = exports.lab = Lab.script()
-const describe = lab.describe
+const afterEach = lab.afterEach
 const beforeEach = lab.beforeEach
+const describe = lab.describe
 const it = lab.it
 
 describe('/instances', () => {
