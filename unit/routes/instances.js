@@ -101,7 +101,7 @@ describe('/instances', () => {
         .then(function () {
           sinon.assert.calledOnce(IsolationService.autoIsolate)
           sinon.assert.calledWith(IsolationService.autoIsolate,
-            mockForkedInstance,
+            [mockForkedInstance],
             {
               repo: 'repoName',
               branch: 'branch12',
