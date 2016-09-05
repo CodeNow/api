@@ -108,44 +108,4 @@ describe('User Integration Tests', function () {
       })
     })
   })
-
-  describe('findGithubOrgMembersByOrgName', function () {
-    it('should have a `findByGithubOrgMembersByOrgName` method', function (done) {
-      expect(user.findGithubOrgMembersByOrgName).to.be.a.function()
-      done()
-    })
-
-    it('should return an empty list if no user exists', function (done) {
-      githubAPIOrgMembersMock('empty-org', githubId, username, { returnEmpty: true })
-      user.findGithubOrgMembersByOrgName('empty-org', function (err, res) {
-        if (err) { done(err) }
-        expect(res).to.be.an.array()
-        expect(res.length).to.equal(0)
-        done()
-      })
-    })
-
-    it('should return an array of found users', function (done) {
-      githubAPIOrgMembersMock(orgName, githubId, username)
-      user.findGithubOrgMembersByOrgName(orgName, function (err, res) {
-        if (err) { done(err) }
-        expect(res).to.be.an.array()
-        expect(res.length).to.greaterThan(0)
-        res.forEach(function (member) {
-          expect(member).to.be.an.object()
-          expect(member.accounts).to.be.an.object()
-          expect(member.accounts.github).to.be.an.object()
-          expect(member.accounts.github.id).to.be.a.number()
-          expect(member.accounts.github.username).to.be.a.string()
-        })
-        var runnableUser = res.filter(function (member) {
-          return member.accounts.github.username === username
-        })[0]
-        expect(runnableUser).to.be.an.object()
-        expect(runnableUser.accounts.github.id).to.equal(githubId)
-        expect(runnableUser.accounts.github.username).to.equal(username)
-        done()
-      })
-    })
-  })
 })
