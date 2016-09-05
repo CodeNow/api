@@ -21,7 +21,6 @@ require('sinon-as-promised')(require('bluebird'))
 
 var User = require('models/mongo/user')
 var githubAPIUsernameQueryMock = require('../../../functional/fixtures/mocks/github/users-username')
-var githubAPIOrgMembersMock = require('../../../functional/fixtures/mocks/github/org-members')
 require('models/redis')
 
 var randomInt = function () {
@@ -35,13 +34,11 @@ describe('User Integration Tests', function () {
   var name
   var username
   var githubId
-  var orgName
 
   function createNewUser (done) {
     email = Faker.Internet.email()
     name = Faker.Name.findName()
     username = Faker.Helpers.slugify(Faker.Internet.userName())
-    orgName = Faker.Helpers.slugify(Faker.Internet.userName())
     githubId = randomInt()
     function createNewUserModel () {
       return new User({
