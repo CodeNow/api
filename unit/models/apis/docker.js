@@ -354,8 +354,7 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false,
-          tid: '000-0000-0000-0000'
+          noCache: false
         }
         model.createImageBuilder(opts, function (err) {
           if (err) { return done(err) }
@@ -373,8 +372,7 @@ describe('docker: ' + moduleName, function () {
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername,
-            tid: opts.tid
+            ownerUsername: opts.ownerUsername
           })
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.deep.equal({
             dockerTag: ctx.mockDockerTag,
@@ -407,8 +405,7 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false,
-          tid: '000-0000-0000-0000'
+          noCache: false
         }
         model.createImageBuilder(opts, function (err) {
           if (err) { return done(err) }
@@ -437,8 +434,7 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false,
-          tid: '000-0000-0000-0000'
+          noCache: false
         }
         model.createImageBuilder(opts, function (err) {
           expect(err).to.exist()
@@ -456,8 +452,7 @@ describe('docker: ' + moduleName, function () {
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername,
-            tid: opts.tid
+            ownerUsername: opts.ownerUsername
           })
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.deep.equal({
             dockerTag: ctx.mockDockerTag,
@@ -506,8 +501,7 @@ describe('docker: ' + moduleName, function () {
             sessionUser: ctx.mockSessionUser,
             contextVersion: ctx.mockContextVersion,
             network: ctx.mockNetwork,
-            noCache: false,
-            tid: '000-0000-0000-0000'
+            noCache: false
           }
           model.createImageBuilder(opts, function (err) {
             if (err) { return done(err) }
@@ -588,8 +582,7 @@ describe('docker: ' + moduleName, function () {
         manualBuild: 'manualBuild',
         noCache: 'noCache',
         sessionUser: ctx.mockSessionUser,
-        ownerUsername: 'ownerUsername',
-        tid: 'tid'
+        ownerUsername: 'ownerUsername'
       }
       var labels = model._createImageBuilderLabels(opts)
       var expectedLabels = {
@@ -603,7 +596,6 @@ describe('docker: ' + moduleName, function () {
         sessionUserGithubId: opts.sessionUser.accounts.github.id.toString(),
         sessionUserUsername: opts.sessionUser.accounts.github.username,
         ownerUsername: opts.ownerUsername,
-        tid: opts.tid,
         'com.docker.swarm.constraints': '["org==owner"]',
         type: 'image-builder-container'
       }
@@ -618,12 +610,10 @@ describe('docker: ' + moduleName, function () {
         noCache: false,
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser,
-        tid: 123
+        sessionUser: ctx.mockSessionUser
       })
       expect(imageBuilderContainerLabels['contextVersion._id']).to.equal(ctx.mockContextVersion._id)
       expect(imageBuilderContainerLabels.noCache).to.equal('false')
-      expect(imageBuilderContainerLabels.tid).to.equal('123')
       done()
     })
 
@@ -1747,7 +1737,6 @@ describe('docker: ' + moduleName, function () {
 
     describe('success', function () {
       it('should callback labels with node constraints', function (done) {
-        keypather.set(process, 'domain.runnableData.tid', 'abcdef-abcdef-abcdef')
         model._createUserContainerLabels(ctx.opts, function (err, labels) {
           if (err) { return done(err) }
           var opts = ctx.opts
@@ -1758,7 +1747,6 @@ describe('docker: ' + moduleName, function () {
             contextVersionId: opts.contextVersion._id.toString(),
             ownerUsername: opts.ownerUsername,
             sessionUserGithubId: opts.sessionUserGithubId.toString(),
-            tid: process.domain.runnableData.tid,
             'com.docker.swarm.constraints': '["org==132456","node==~ip-10-0-0-1.132456"]',
             type: 'user-container'
           })
@@ -1767,7 +1755,6 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should callback labels no node constraints', function (done) {
-        keypather.set(process, 'domain.runnableData.tid', 'abcdef-abcdef-abcdef')
         delete ctx.opts.contextVersion.dockerHost
         model._createUserContainerLabels(ctx.opts, function (err, labels) {
           if (err) { return done(err) }
@@ -1779,7 +1766,6 @@ describe('docker: ' + moduleName, function () {
             contextVersionId: opts.contextVersion._id.toString(),
             ownerUsername: opts.ownerUsername,
             sessionUserGithubId: opts.sessionUserGithubId.toString(),
-            tid: process.domain.runnableData.tid,
             'com.docker.swarm.constraints': '["org==132456"]',
             type: 'user-container'
           })

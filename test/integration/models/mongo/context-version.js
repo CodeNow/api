@@ -239,11 +239,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
         })
       })
       beforeEach(function (done) {
-        ctx.domain = {
-          runnableData: {
-            tid: uuid()
-          }
-        }
         mongoFactory.createInfraCodeVersion({context: ctx.cv.context}, function (err, icv) {
           if (err) { return done(err) }
           ctx.icv = icv
@@ -296,7 +291,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
               manual: true
             }
           }
-          ContextVersion.buildSelf(ctx.startedCv, ctx.mockSessionUser, opts, ctx.domain)
+          ContextVersion.buildSelf(ctx.startedCv, ctx.mockSessionUser, opts)
             .catch(function (err) {
               expect(err.message).to.contain('cannot build a context version that is already building or built')
               sinon.assert.notCalled(ContextVersion.prototype.modifyAppCodeVersionWithLatestCommitAsync)
@@ -318,7 +313,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           }
           it('should call modifyAppCodeVersionWithLatestCommitAsync, dedupeAsync, _startBuild,' +
             'setBuildStartedAsync, populateOwnerAsync, and dedupeBuildAsync', function (done) {
-            ContextVersion.buildSelf(ctx.cv, ctx.mockSessionUser, opts, ctx.domain)
+            ContextVersion.buildSelf(ctx.cv, ctx.mockSessionUser, opts)
               .then(function () {
                 sinon.assert.calledWith(
                   ContextVersion.prototype.modifyAppCodeVersionWithLatestCommitAsync,
@@ -330,8 +325,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                   ContextVersion._startBuild,
                   ctx.cv,
                   ctx.mockSessionUser,
-                  opts,
-                  ctx.domain
+                  opts
                 )
                 sinon.assert.calledWith(
                   ContextVersion.prototype.setBuildStartedAsync,
@@ -347,7 +341,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
               })
           })
           it('should build a normal build', function (done) {
-            ContextVersion.buildSelf(ctx.cv, ctx.mockSessionUser, opts, ctx.domain)
+            ContextVersion.buildSelf(ctx.cv, ctx.mockSessionUser, opts)
               .then(function (contextVersion) {
                 expect(contextVersion._id.toString(), 'cv id').to.equal(ctx.cv._id.toString())
                 sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
@@ -356,8 +350,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                   ownerUsername: contextVersion.owner.username,
                   contextId: contextVersion.context.toString(),
                   contextVersionId: contextVersion._id.toString(),
-                  noCache: false,
-                  tid: ctx.domain.runnableData.tid
+                  noCache: false
                 }))
               })
               .asCallback(done)
@@ -392,7 +385,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                     manual: true
                   }
                 }
-                ContextVersion.buildSelf(ctx.copiedCv, ctx.mockSessionUser, opts, ctx.domain)
+                ContextVersion.buildSelf(ctx.copiedCv, ctx.mockSessionUser, opts)
                   .then(function (contextVersion) {
                     expect(contextVersion._id.toString(), 'cv id')
                       .to.equal(ctx.startedCv._id.toString())
@@ -424,7 +417,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                   noCache: true
                 }
                 it('should attempt to skip all dedup functions with noCache', function (done) {
-                  ContextVersion.buildSelf(ctx.copiedCv, ctx.mockSessionUser, opts, ctx.domain)
+                  ContextVersion.buildSelf(ctx.copiedCv, ctx.mockSessionUser, opts)
                     .then(function () {
                       sinon.assert.notCalled(ContextVersion.prototype.dedupeAsync)
                       sinon.assert.calledOnce(ContextVersion.prototype.setBuildStartedAsync)
@@ -438,7 +431,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                     .asCallback(done)
                 })
                 it('should build the given cv', function (done) {
-                  ContextVersion.buildSelf(ctx.copiedCv, ctx.mockSessionUser, opts, ctx.domain)
+                  ContextVersion.buildSelf(ctx.copiedCv, ctx.mockSessionUser, opts)
                     .then(function (contextVersion) {
                       expect(contextVersion._id.toString(), 'cv id')
                         .to.equal(ctx.copiedCv._id.toString())
@@ -448,8 +441,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                         ownerUsername: contextVersion.owner.username,
                         contextId: contextVersion.context.toString(),
                         contextVersionId: contextVersion._id.toString(),
-                        noCache: true,
-                        tid: ctx.domain.runnableData.tid
+                        noCache: true
                       }))
                     })
                     .asCallback(done)
@@ -478,11 +470,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
         })
       })
       beforeEach(function (done) {
-        ctx.domain = {
-          runnableData: {
-            tid: uuid()
-          }
-        }
         mongoFactory.createInfraCodeVersion({context: ctx.cv.context}, function (err, icv) {
           if (err) { return done(err) }
           ctx.icv = icv
@@ -522,7 +509,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
             },
             noCache: true
           }
-          ContextVersion.buildSelf(ctx.cv, ctx.mockSessionUser, opts, ctx.domain)
+          ContextVersion.buildSelf(ctx.cv, ctx.mockSessionUser, opts)
             .then(function (contextVersion) {
               ctx.startedCv = contextVersion
             })
@@ -552,7 +539,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
             }
           }
           var oldBuildId = ctx.copiedCv.build._id.toString()
-          ContextVersion._startBuild(ctx.copiedCv, ctx.mockSessionUser, opts, ctx.domain)
+          ContextVersion._startBuild(ctx.copiedCv, ctx.mockSessionUser, opts)
             .then(function (contextVersion) {
               expect(contextVersion._id.toString(), 'cv id').to.equal(ctx.copiedCv._id.toString())
               // the build._id should have changed
@@ -573,14 +560,14 @@ describe('ContextVersion ModelIntegration Tests', function () {
             noCache: true
           }
           it('should ignore calling dedupeBuild when noCache', function (done) {
-            ContextVersion._startBuild(ctx.copiedCv, ctx.mockSessionUser, opts, ctx.domain)
+            ContextVersion._startBuild(ctx.copiedCv, ctx.mockSessionUser, opts)
               .then(function (contextVersion) {
                 sinon.assert.notCalled(ContextVersion.prototype.dedupeBuildAsync)
               })
               .asCallback(done)
           })
           it('should create a build job when noCache', function (done) {
-            ContextVersion._startBuild(ctx.copiedCv, ctx.mockSessionUser, opts, ctx.domain)
+            ContextVersion._startBuild(ctx.copiedCv, ctx.mockSessionUser, opts)
               .then(function (contextVersion) {
                 expect(contextVersion._id.toString(), 'cv id').to.equal(ctx.copiedCv._id.toString())
                 sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
@@ -589,8 +576,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                   ownerUsername: contextVersion.owner.username,
                   contextId: contextVersion.context.toString(),
                   contextVersionId: contextVersion._id.toString(),
-                  noCache: true,
-                  tid: ctx.domain.runnableData.tid
+                  noCache: true
                 }))
               })
               .asCallback(done)
@@ -1630,7 +1616,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
       var contextVersion
       var opts
       var sessionUser
-      var domain
       beforeEach(function (done) {
         ctx.c = new Context()
         contextVersion = new ContextVersion({
@@ -1641,11 +1626,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
           },
           context: ctx.c._id
         })
-        domain = {
-          runnableData: {
-            tid: uuid()
-          }
-        }
         sessionUser = {}
         keypather.set(sessionUser, 'accounts.github.id', 1234)
         sinon.stub(contextVersion, 'modifyAppCodeVersionWithLatestCommitAsync').resolves(contextVersion)
@@ -1668,7 +1648,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           }
         }
         contextVersion._doc.build.started = new Date()
-        ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+        ContextVersion.buildSelf(contextVersion, sessionUser, opts)
           .catch(function (err) {
             expect(err.message).to.contain('cannot build a context version that is already building or built')
             sinon.assert.notCalled(contextVersion.modifyAppCodeVersionWithLatestCommitAsync)
@@ -1685,18 +1665,18 @@ describe('ContextVersion ModelIntegration Tests', function () {
           done()
         })
         it('should attempt to call dedupeAsync, but not remove, before starting the build', function (done) {
-          ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          ContextVersion.buildSelf(contextVersion, sessionUser, opts)
             .then(function (contextVersion) {
               sinon.assert.calledOnce(contextVersion.dedupeAsync)
               sinon.assert.notCalled(ContextVersion.removeByIdAsync)
-              sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts, domain)
+              sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts)
             })
             .asCallback(done)
         })
         it('should try to start the build of a normal build', function (done) {
-          ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          ContextVersion.buildSelf(contextVersion, sessionUser, opts)
             .then(function (contextVersion) {
-              sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts, domain)
+              sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts)
             })
             .asCallback(done)
         })
@@ -1712,7 +1692,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           opts = {
             noCache: true
           }
-          ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          ContextVersion.buildSelf(contextVersion, sessionUser, opts)
             .then(function (contextVersion) {
               sinon.assert.notCalled(contextVersion.dedupeAsync)
             })
@@ -1722,9 +1702,9 @@ describe('ContextVersion ModelIntegration Tests', function () {
           opts = {
             noCache: true
           }
-          ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          ContextVersion.buildSelf(contextVersion, sessionUser, opts)
             .then(function (contextVersion) {
-              sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts, domain)
+              sinon.assert.calledWith(ContextVersion._startBuild, contextVersion, sessionUser, opts)
             })
             .asCallback(done)
         })
@@ -1753,14 +1733,14 @@ describe('ContextVersion ModelIntegration Tests', function () {
           done()
         })
         it('should not call _startBuild when a dedupe happens', function (done) {
-          ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          ContextVersion.buildSelf(contextVersion, sessionUser, opts)
             .then(function () {
               sinon.assert.notCalled(ContextVersion._startBuild)
             })
             .asCallback(done)
         })
         it('should remove itself, and return the dupe cv', function (done) {
-          ContextVersion.buildSelf(contextVersion, sessionUser, opts, domain)
+          ContextVersion.buildSelf(contextVersion, sessionUser, opts)
             .then(function (shouldBeNewCv) {
               expect(shouldBeNewCv).to.equal(newCv)
               sinon.assert.calledOnce(contextVersion.dedupeAsync)
@@ -1776,7 +1756,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
       var contextVersion
       var opts
       var sessionUser
-      var domain
       beforeEach(function (done) {
         context = new Context()
         contextVersion = new ContextVersion({
@@ -1787,11 +1766,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
           },
           context: context._id
         })
-        domain = {
-          runnableData: {
-            tid: uuid()
-          }
-        }
         sessionUser = {}
         keypather.set(sessionUser, 'accounts.github.id', 1234)
         sinon.stub(contextVersion, 'setBuildStartedAsync').resolves(contextVersion)
@@ -1819,7 +1793,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           done()
         })
         it('should call setBuildStartedAsync, dedupeBuildAsync, and populateOwnerAsync before rabbit', function (done) {
-          ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          ContextVersion._startBuild(contextVersion, sessionUser, opts)
             .then(function (contextVersion) {
               sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
               sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
@@ -1829,7 +1803,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
             .asCallback(done)
         })
         it('should create a build job for a normal build', function (done) {
-          ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          ContextVersion._startBuild(contextVersion, sessionUser, opts)
             .then(function (contextVersion) {
               sinon.assert.calledOnce(rabbitMQ.createImageBuilderContainer)
               sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
@@ -1838,8 +1812,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                 ownerUsername: 'hello',
                 contextId: contextVersion.context.toString(),
                 contextVersionId: contextVersion._id.toString(),
-                noCache: false,
-                tid: domain.runnableData.tid
+                noCache: false
               }))
             })
             .asCallback(done)
@@ -1853,7 +1826,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           done()
         })
         it('should call setBuildStartedAsync, populateOwnerAsync, and getAndUpdateHashAsync', function (done) {
-          ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          ContextVersion._startBuild(contextVersion, sessionUser, opts)
             .then(function (contextVersion) {
               sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
               sinon.assert.calledWith(contextVersion.populateOwnerAsync, sessionUser)
@@ -1863,7 +1836,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
             .asCallback(done)
         })
         it('should create a build job for a no-cached build', function (done) {
-          ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          ContextVersion._startBuild(contextVersion, sessionUser, opts)
             .then(function (contextVersion) {
               sinon.assert.calledOnce(rabbitMQ.createImageBuilderContainer)
               sinon.assert.calledWith(rabbitMQ.createImageBuilderContainer, sinon.match({
@@ -1872,8 +1845,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                 ownerUsername: 'hello',
                 contextId: context._id.toString(),
                 contextVersionId: contextVersion._id.toString(),
-                noCache: true,
-                tid: domain.runnableData.tid
+                noCache: true
               }))
             })
             .asCallback(done)
@@ -1896,7 +1868,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           done()
         })
         it('should flow through the normal build flow up until actually making the job', function (done) {
-          ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          ContextVersion._startBuild(contextVersion, sessionUser, opts)
             .then(function (contextVersion) {
               sinon.assert.calledWith(contextVersion.setBuildStartedAsync, sessionUser, opts)
               sinon.assert.calledOnce(contextVersion.dedupeBuildAsync)
@@ -1906,7 +1878,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
             .asCallback(done)
         })
         it('should not attempt to create an image-builder job', function (done) {
-          ContextVersion._startBuild(contextVersion, sessionUser, opts, domain)
+          ContextVersion._startBuild(contextVersion, sessionUser, opts)
             .then(function () {
               sinon.assert.notCalled(rabbitMQ.createImageBuilderContainer)
             })

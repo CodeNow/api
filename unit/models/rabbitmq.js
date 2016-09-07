@@ -119,7 +119,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         contextVersionBuildId: 'G45GH4GERGFSG',
         dockerHost: '0.0.0.0',
         noCache: false,
-        tid: '9494949',
         ownerUsername: 'tjmehta'
       }
       done()
