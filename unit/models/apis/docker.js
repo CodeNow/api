@@ -1108,7 +1108,7 @@ describe('docker: ' + moduleName, function () {
         sinon.assert.calledOnce(model._containerAction)
         sinon.assert.calledWith(model._containerAction, testId, 'update', {
           Memory: 4194304,
-          MemoryReservation: 1
+          MemoryReservation: 4194304
         })
         done()
       })
