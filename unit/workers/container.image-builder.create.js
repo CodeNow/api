@@ -307,11 +307,6 @@ describe('ContainerImageBuilderCreate unit test', function () {
           expect(createOpts.noCache).to.equal(validJob.noCache)
           done()
         })
-
-        it('should pass the job tid', function (done) {
-          expect(createOpts.tid).to.equal(validJob.tid)
-          done()
-        })
       }) // end 'createImageBuilderContainer'
 
       describe('markContextVersionAsRecovered', function () {

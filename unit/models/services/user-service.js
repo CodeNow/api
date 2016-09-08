@@ -14,7 +14,7 @@ var keypather = require('keypather')()
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
-var UserService = require('models/services/user-service')
+const UserService = require('models/services/user-service')
 const rabbitMQ = require('models/rabbitmq')
 
 var BigPoppaClient = require('@runnable/big-poppa-client')

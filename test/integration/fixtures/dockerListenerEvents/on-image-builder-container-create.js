@@ -49,7 +49,6 @@ module.exports = function (contextVersion) {
           sessionUserGithubId: '10',
           sessionUserUsername: '4c0df1c9-7881-4604-aac3-c8608c029a3e',
           ownerUsername: '4c0df1c9-7881-4604-aac3-c8608c029a3e',
-          tid: '1',
           'com.docker.swarm.constraints': '[\'org==10\']',
           type: 'image-builder-container'
         },
