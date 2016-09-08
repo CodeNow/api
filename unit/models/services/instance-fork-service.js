@@ -106,7 +106,7 @@ describe('InstanceForkService', function () {
       })
 
       // I hate this type of test generation, but it's quicker.
-      ;[ 'repo', 'branch', 'commit', 'user', 'isolated' ].forEach(function (key) {
+      [ 'repo', 'branch', 'commit', 'user', 'isolated' ].forEach(function (key) {
         it('should require options to contain ' + key, function (done) {
           var opts = omit(mockOpts, key)
           InstanceForkService.forkRepoInstance(mockInstance, opts, mockSessionUser)
@@ -901,7 +901,7 @@ describe('InstanceForkService', function () {
     it('should create new instance with branch-masterName pattern', function (done) {
       InstanceForkService.forkMasterInstance(master, 'build1', 'feature-1', mockSessionUser)
         .then(function () {
-          sinon.assert.calledOnce(InstanceService.createInstance);
+          sinon.assert.calledOnce(InstanceService.createInstance)
           sinon.assert.calledWith(
             InstanceService.createInstance,
             {
@@ -926,7 +926,7 @@ describe('InstanceForkService', function () {
     it('should sanitize branch name', function (done) {
       InstanceForkService.forkMasterInstance(master, 'build1', 'a1/b2/c3-d4,e5.f6 g7_h7', mockSessionUser)
         .then(function () {
-          sinon.assert.calledOnce(InstanceService.createInstance);
+          sinon.assert.calledOnce(InstanceService.createInstance)
           sinon.assert.calledWith(
             InstanceService.createInstance,
             {
@@ -962,7 +962,7 @@ describe('InstanceForkService', function () {
     it('should update the master instance with hasAddedBranches flag and notify frontend', function (done) {
       InstanceForkService.forkMasterInstance(master, 'build1', 'feature-1', mockSessionUser)
         .then(function () {
-          sinon.assert.calledOnce(Instance.findOneAndUpdateAsync);
+          sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
           sinon.assert.calledWith(
             Instance.findOneAndUpdateAsync,
             { _id: master._id },
@@ -972,7 +972,7 @@ describe('InstanceForkService', function () {
               },
             },
             { new: true }
-          );
+          )
           sinon.assert.calledOnce(mockUpdatedInstance.emitInstanceUpdate)
         })
         .asCallback(done)
