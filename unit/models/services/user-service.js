@@ -108,7 +108,7 @@ describe('User Service', function () {
     })
   })
 
-  describe('isUserPartOfOrg', function () {
+  describe('isUserPartOfOrgByGithubId', function () {
     var orgGithubId = '232323'
     var user = {}
     var userGithubId = '1111'
@@ -126,16 +126,95 @@ describe('User Service', function () {
       })
 
       it('should resolve when the user has no orgs', function (done) {
-        var orgExists = UserService.isUserPartOfOrg(bigPoppaUser, orgGithubId)
+        var orgExists = UserService.isUserPartOfOrgByGithubId(bigPoppaUser, orgGithubId)
         expect(orgExists).to.be.false()
         done()
       })
 
       it('should resolve when the user has the org', function (done) {
         bigPoppaUser.organizations.push(bigPoppaOrg)
-        var orgExists = UserService.isUserPartOfOrg(bigPoppaUser, orgGithubId)
+        var orgExists = UserService.isUserPartOfOrgByGithubId(bigPoppaUser, orgGithubId)
         expect(orgExists).to.be.true()
         done()
+      })
+    })
+  })
+
+  describe('isUserPartOfOrg', function () {
+    var orgId = 232323
+    var user = {}
+    var userGithubId = '1111'
+    keypather.set(user, 'accounts.github.id', userGithubId)
+    var bigPoppaUser
+    var bigPoppaOrg = {
+      id: orgId
+    }
+    describe('success', function () {
+      beforeEach(function (done) {
+        bigPoppaUser = {
+          organizations: []
+        }
+        done()
+      })
+
+      it('should resolve when the user has no orgs', function (done) {
+        var orgExists = UserService.isUserPartOfOrg(bigPoppaUser, orgId)
+        expect(orgExists).to.be.false()
+        done()
+      })
+
+      it('should resolve when the user has the org', function (done) {
+        bigPoppaUser.organizations.push(bigPoppaOrg)
+        var orgExists = UserService.isUserPartOfOrg(bigPoppaUser, orgId)
+        expect(orgExists).to.be.true()
+        done()
+      })
+    })
+  })
+
+  describe('validateSessionUserPartOfOrg', function () {
+    var orgId = 232323
+    var user = {}
+    var userGithubId = '1111'
+    keypather.set(user, 'accounts.github.id', userGithubId)
+    var bigPoppaUser
+    var bigPoppaOrg = {
+      id: orgId
+    }
+    beforeEach(function (done) {
+      sinon.stub(UserService, 'getUser').resolves(bigPoppaUser)
+      done()
+    })
+
+    afterEach(function (done) {
+      UserService.getUser.restore()
+      done()
+    })
+
+    describe('success', function () {
+      beforeEach(function (done) {
+        bigPoppaUser = {
+          organizations: []
+        }
+        done()
+      })
+
+      it('should throw a UserNotFoundError when the user doesnt have the org', function (done) {
+        UserService.validateSessionUserPartOfOrg(user, orgId)
+          .catch(errors.UserNotAllowedError, function (err) {
+            expect(err).to.exist()
+            done()
+          })
+      })
+
+      it('should resolve when the user has the org', function (done) {
+        bigPoppaUser.organizations.push(bigPoppaOrg)
+        UserService.getUser.resolves(bigPoppaUser)
+        UserService.validateSessionUserPartOfOrg(user, orgId)
+          .then(function (user) {
+            expect(user).to.exist()
+            done()
+          })
       })
     })
   })

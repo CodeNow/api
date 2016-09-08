@@ -374,4 +374,47 @@ describe('Organization Service', function () {
       })
     })
   })
+
+  describe('updateFlagsOnOrg', function () {
+    const goodOpts = {
+      hasConfirmedSetup: true
+    }
+    const badOpts = {
+      hasConfirmedSetup: 'evenBetterName'
+    }
+    beforeEach(function (done) {
+      sinon.stub(UserService, 'validateSessionUserPartOfOrg').resolves(bigPoppaUser)
+      sinon.stub(OrganizationService, 'updateById').resolves(bigPoppaOrg)
+      done()
+    })
+
+    afterEach(function (done) {
+      UserService.validateSessionUserPartOfOrg.restore()
+      OrganizationService.updateById.restore()
+      done()
+    })
+
+    describe('failures', function () {
+      it('should validate and fail because of Joi', function (done) {
+        OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, badOpts)
+          .catch(function (err) {
+            expect(err.message).to.match(/hasConfirmedSetup/)
+            done()
+          })
+      })
+    })
+    describe('success', function () {
+      it('should resolve after updating the org\'s flags', function (done) {
+        OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, goodOpts)
+          .tap(function (org) {
+            sinon.assert.calledOnce(UserService.validateSessionUserPartOfOrg)
+            sinon.assert.calledWith(UserService.validateSessionUserPartOfOrg, sessionUser, bigPoppaOrg.id)
+            sinon.assert.calledOnce(OrganizationService.updateById)
+            sinon.assert.calledWith(OrganizationService.updateById, bigPoppaOrg.id, goodOpts)
+            expect(org).to.equal(bigPoppaOrg)
+          })
+          .asCallback(done)
+      })
+    })
+  })
 })
