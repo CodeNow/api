@@ -6,7 +6,6 @@
 var clone = require('101/clone')
 var Code = require('code')
 var createCount = require('callback-count')
-var Hermes = require('runnable-hermes')
 var Lab = require('lab')
 var Promise = require('bluebird')
 var rabbitMQ = require('models/rabbitmq')
@@ -24,18 +23,11 @@ var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('RabbitMQ Model: ' + moduleName, function () {
-  var HermesMock
-
   beforeEach(function (done) {
     sinon.stub(rabbitMQ._publisher, 'connect')
     sinon.stub(rabbitMQ._publisher, 'disconnect')
     sinon.stub(rabbitMQ._publisher, 'publishEvent')
     sinon.stub(rabbitMQ._publisher, 'publishTask')
-    HermesMock = {
-      connect: sinon.stub().returnsThis(),
-      on: sinon.stub().yieldsAsync()
-    }
-    sinon.stub(Hermes, 'hermesSingletonFactory').returns(HermesMock)
     done()
   })
 
@@ -44,7 +36,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     rabbitMQ._publisher.disconnect.restore()
     rabbitMQ._publisher.publishEvent.restore()
     rabbitMQ._publisher.publishTask.restore()
-    Hermes.hermesSingletonFactory.restore()
     done()
   })
 
@@ -55,9 +46,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         if (err) { return done(err) }
         expect(out).to.be.an.instanceof(Promise)
         sinon.assert.calledOnce(rabbitMQ._publisher.connect)
-        sinon.assert.calledOnce(HermesMock.connect)
-        sinon.assert.calledOnce(HermesMock.on)
-        sinon.assert.calledWith(HermesMock.on, 'ready', sinon.match.func)
         done()
       })
     })
@@ -70,38 +58,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       expect(out).to.equal('foo')
       sinon.assert.calledOnce(rabbitMQ._publisher.disconnect)
       done()
-    })
-  })
-
-  describe('_validate', function () {
-    it('should pass validation', function (done) {
-      var payload = {
-        instance: {
-          _id: 1,
-          owner: {
-            github: 2
-          }
-        }
-      }
-      var keys = [ 'instance._id', 'instance.owner.github' ]
-      rabbitMQ._validate(payload, keys, 'job.name')
-      done()
-    })
-    it('should fail validation', function (done) {
-      var payload = {
-        instance: {
-          _id: 1,
-          owner: null
-        }
-      }
-      var keys = [ 'instance._id', 'instance.owner.github' ]
-      try {
-        rabbitMQ._validate(payload, keys, 'job.name')
-        done(new Error('Should never happen'))
-      } catch (e) {
-        expect(e.message).to.equal('Validation failed: "instance.owner.github" is required')
-        done()
-      }
     })
   })
 
@@ -171,7 +127,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.startInstanceContainer(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'start-instance-container',
+          'instance.start',
           validJobData)
         done()
       })
@@ -213,7 +169,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.createInstanceContainer(opts)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'create-instance-container',
+          'instance.container.create',
           opts)
         done()
       })
@@ -355,45 +311,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
           delete options[key]
           try {
             rabbitMQ.deleteInstanceContainer(options)
-          } catch (e) {
-            expect(e).to.exist()
-            expect(e.message).match(new RegExp(key))
-          }
-          count.next()
-        })
-      })
-    })
-  })
-
-  describe('publishASGCreate', function () {
-    var validJobData
-    beforeEach(function (done) {
-      validJobData = {
-        githubId: 18274533
-      }
-      done()
-    })
-
-    describe('success', function () {
-      it('should create a job', function (done) {
-        rabbitMQ.publishASGCreate(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'asg.create',
-          validJobData)
-        done()
-      })
-    })
-
-    describe('validation errors', function () {
-      it('should throw the validation error', function (done) {
-        var requiredKeys = Object.keys(validJobData)
-        var count = createCount(requiredKeys.length, done)
-        requiredKeys.forEach(function (key) {
-          var options = clone(validJobData)
-          delete options[key]
-          try {
-            rabbitMQ.publishASGCreate(options)
           } catch (e) {
             expect(e).to.exist()
             expect(e.message).match(new RegExp(key))
@@ -953,46 +870,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       })
     })
   }) // end redeployIsolation
-
-  describe('khronosDeleteContainer', function () {
-    var validJobData
-    beforeEach(function (done) {
-      validJobData = {
-        containerId: 'efgh',
-        dockerHost: '10.10.10.10'
-      }
-      done()
-    })
-
-    describe('success', function () {
-      it('should create a job', function (done) {
-        rabbitMQ.khronosDeleteContainer(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'khronos:containers:delete',
-          validJobData)
-        done()
-      })
-    })
-
-    describe('validation errors', function () {
-      it('should throw the validation error', function (done) {
-        var requiredKeys = Object.keys(validJobData)
-        var count = createCount(requiredKeys.length, done)
-        requiredKeys.forEach(function (key) {
-          var options = clone(validJobData)
-          delete options[key]
-          try {
-            rabbitMQ.khronosDeleteContainer(options)
-          } catch (e) {
-            expect(e).to.exist()
-            expect(e.message).match(new RegExp(key))
-          }
-          count.next()
-        })
-      })
-    })
-  }) // end khronosDeleteContainer
 
   describe('instanceContainerErrored', function () {
     var validJobData
