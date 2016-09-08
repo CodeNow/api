@@ -106,7 +106,7 @@ describe('InstanceForkService', function () {
       })
 
       // I hate this type of test generation, but it's quicker.
-      [ 'repo', 'branch', 'commit', 'user', 'isolated' ].forEach(function (key) {
+      ;[ 'repo', 'branch', 'commit', 'user', 'isolated' ].forEach(function (key) {
         it('should require options to contain ' + key, function (done) {
           var opts = omit(mockOpts, key)
           InstanceForkService.forkRepoInstance(mockInstance, opts, mockSessionUser)
