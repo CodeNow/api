@@ -337,7 +337,6 @@ describe('BuildService', function () {
         contextVersions: [ ctx.cv._id ]
       })
       ctx.sessionUser = { _id: 'user-id' }
-      ctx.domain = { runnableData: { tid: 'some-id' } }
       sinon.stub(Build, 'findByIdAsync').resolves(ctx.build)
       sinon.stub(BuildService, 'findBuild').resolves(ctx.build)
       sinon.stub(ContextVersion, 'buildSelf').resolves(ctx.newCv)
@@ -360,7 +359,7 @@ describe('BuildService', function () {
 
     it('should fail if build was not found', function (done) {
       BuildService.findBuild.rejects(new Error('Access denied'))
-      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -373,7 +372,7 @@ describe('BuildService', function () {
     it('should fail if build completed', function (done) {
       ctx.build.completed = new Date()
       BuildService.findBuild.resolves(ctx.build)
-      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -388,7 +387,7 @@ describe('BuildService', function () {
     it('should fail if build started', function (done) {
       ctx.build.started = new Date()
       BuildService.findBuild.resolves(ctx.build)
-      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -402,7 +401,7 @@ describe('BuildService', function () {
 
     it('should fail if context versions lookup failed', function (done) {
       ContextVersion.findByIdAsync.rejects(new Error('CV lookup failed'))
-      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -414,7 +413,7 @@ describe('BuildService', function () {
 
     it('should fail if no cvs were found', function (done) {
       ContextVersion.findByIdAsync.resolves(null)
-      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -430,7 +429,7 @@ describe('BuildService', function () {
       var build = clone(ctx.build)
       build.contextVersions = []
       BuildService.findBuild.resolves(build)
-      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -446,7 +445,7 @@ describe('BuildService', function () {
       var build = clone(ctx.build)
       build.contextVersions.push('507f1f77bcf86cd799439011')
       BuildService.findBuild.resolves(build)
-      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -460,7 +459,7 @@ describe('BuildService', function () {
 
     it('should fail if setBuildInProgress failed', function (done) {
       ctx.build.setInProgressAsync.rejects(new Error('setBuildInProgress failed'))
-      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -475,7 +474,7 @@ describe('BuildService', function () {
       ctx.cv.build = {
         started: new Date()
       }
-      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -490,7 +489,7 @@ describe('BuildService', function () {
       ctx.cv.build = {
         started: new Date()
       }
-      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+      BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
       })
@@ -502,7 +501,7 @@ describe('BuildService', function () {
 
     describe('check args', function () {
       it('should call findBuild with correct args', function (done) {
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .tap(function () {
           sinon.assert.calledOnce(BuildService.findBuild)
           sinon.assert.calledWith(BuildService.findBuild, '507f1f77bcf86cd799439011')
@@ -511,7 +510,7 @@ describe('BuildService', function () {
       })
 
       it('should call ContextVersion.findByIdAsync with correct args', function (done) {
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .tap(function () {
           sinon.assert.calledOnce(ContextVersion.findByIdAsync)
           sinon.assert.calledWith(ContextVersion.findByIdAsync, ctx.cv._id)
@@ -520,7 +519,7 @@ describe('BuildService', function () {
       })
 
       it('should call setInProgressAsync with correct args', function (done) {
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .tap(function () {
           sinon.assert.calledOnce(ctx.build.setInProgressAsync)
           sinon.assert.calledWith(ctx.build.setInProgressAsync, ctx.sessionUser)
@@ -529,16 +528,16 @@ describe('BuildService', function () {
       })
 
       it('should call buildSelf with correct args', function (done) {
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .tap(function () {
           sinon.assert.calledOnce(ContextVersion.buildSelf)
-          sinon.assert.calledWith(ContextVersion.buildSelf, ctx.cv, ctx.sessionUser, { message: 'new build', triggeredAction: { manual: true } }, ctx.domain)
+          sinon.assert.calledWith(ContextVersion.buildSelf, ctx.cv, ctx.sessionUser, { message: 'new build', triggeredAction: { manual: true } })
         })
         .asCallback(done)
       })
 
       it('should call replaceContextVersionAsync with correct args', function (done) {
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .tap(function () {
           sinon.assert.calledOnce(ctx.build.replaceContextVersionAsync)
           sinon.assert.calledWith(ctx.build.replaceContextVersionAsync, ctx.cv, ctx.newCv)
@@ -547,7 +546,7 @@ describe('BuildService', function () {
       })
 
       it('should call replaceContextVersionAsync with correct args', function (done) {
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .tap(function () {
           sinon.assert.calledOnce(ctx.build.replaceContextVersionAsync)
           sinon.assert.calledWith(ctx.build.replaceContextVersionAsync, ctx.cv, ctx.newCv)
@@ -557,7 +556,7 @@ describe('BuildService', function () {
 
       it('should call modifyErroredAsync with correct args', function (done) {
         ContextVersion.buildSelf.rejects(new Error('Build error'))
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .tap(function () {
           sinon.assert.calledOnce(ctx.build.modifyErroredAsync)
           sinon.assert.calledWith(ctx.build.modifyErroredAsync, ctx.cv._id)
@@ -566,7 +565,7 @@ describe('BuildService', function () {
       })
 
       it('should call modifyErroredAsync with correct args', function (done) {
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .tap(function () {
           sinon.assert.calledOnce(ctx.build.modifyCompletedIfFinishedAsync)
           sinon.assert.calledWith(ctx.build.modifyCompletedIfFinishedAsync, ctx.newCv.build)
@@ -575,7 +574,7 @@ describe('BuildService', function () {
       })
 
       it('should call findByIdAsync with correct args', function (done) {
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .tap(function () {
           sinon.assert.calledOnce(Build.findByIdAsync)
           sinon.assert.calledWith(Build.findByIdAsync, ctx.build._id)
@@ -589,7 +588,7 @@ describe('BuildService', function () {
         ctx.cv.build = {
           started: new Date()
         }
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .then(function (build) {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(
@@ -605,7 +604,7 @@ describe('BuildService', function () {
       })
 
       it('should build cv if started', function (done) {
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .then(function (build) {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(
@@ -623,7 +622,7 @@ describe('BuildService', function () {
 
       it('should call modifyErroredAsync if buildSelf failed', function (done) {
         ContextVersion.buildSelf.rejects(new Error('Build error'))
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .then(function (build) {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(
@@ -642,7 +641,7 @@ describe('BuildService', function () {
 
       it('should call modifyErroredAsync if replaceContextVersionAsync failed', function (done) {
         ctx.build.replaceContextVersionAsync.rejects(new Error('Build error'))
-        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser, ctx.domain)
+        BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .then(function (build) {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(

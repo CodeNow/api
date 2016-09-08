@@ -112,8 +112,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             contextVersion: ctx.cv,
             network: {
               hostIp: '1.1.1.1'
-            },
-            tid: 1
+            }
           }
           ctx.cv.populate('infraCodeVersion', function () {
             if (err) { return done(err) }
