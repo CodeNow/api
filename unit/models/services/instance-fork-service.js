@@ -969,7 +969,7 @@ describe('InstanceForkService', function () {
             {
               $set: {
                 hasAddedBranches: true
-              },
+              }
             },
             { new: true }
           )
