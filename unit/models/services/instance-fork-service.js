@@ -863,9 +863,9 @@ describe('InstanceForkService', function () {
     })
   })
   describe('#forkMasterInstance', function () {
-    var mockUpdatedInstance
-    var mockSessionUser
-    var master
+    let mockUpdatedInstance
+    let mockSessionUser
+    let master
 
     beforeEach(function (done) {
       mockSessionUser = {
