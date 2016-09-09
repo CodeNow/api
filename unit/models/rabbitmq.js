@@ -15,7 +15,6 @@ var lab = exports.lab = Lab.script()
 
 var it = lab.it
 var describe = lab.describe
-var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var expect = Code.expect
 
@@ -24,18 +23,12 @@ var moduleName = path.relative(process.cwd(), __filename)
 
 describe('RabbitMQ Model: ' + moduleName, function () {
   beforeEach(function (done) {
-    sinon.stub(rabbitMQ._publisher, 'connect')
-    sinon.stub(rabbitMQ._publisher, 'disconnect')
-    sinon.stub(rabbitMQ._publisher, 'publishEvent')
-    sinon.stub(rabbitMQ._publisher, 'publishTask')
-    done()
-  })
-
-  afterEach(function (done) {
-    rabbitMQ._publisher.connect.restore()
-    rabbitMQ._publisher.disconnect.restore()
-    rabbitMQ._publisher.publishEvent.restore()
-    rabbitMQ._publisher.publishTask.restore()
+    rabbitMQ._publisher = {
+      connect: sinon.stub(),
+      disconnect: sinon.stub(),
+      publishEvent: sinon.stub(),
+      publishTask: sinon.stub()
+    }
     done()
   })
 
