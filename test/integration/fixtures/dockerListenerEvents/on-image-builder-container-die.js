@@ -38,7 +38,6 @@ module.exports = function (contextVersion, container, user, exitCode) {
           sessionUserGithubId: user.accounts.github.id.toString(),
           sessionUserUsername: user.accounts.github.username,
           ownerUsername: user.accounts.github.username,
-          tid: '1',
           'com.docker.swarm.constraints': '["org==10"]',
           type: 'image-builder-container'
         },

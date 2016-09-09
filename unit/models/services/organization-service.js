@@ -28,6 +28,7 @@ describe('Organization Service', function () {
   var user
   var userGithubId
   var githubOrg
+  var githubUser
   var sessionUser
   beforeEach(function (done) {
     orgGithubId = '232323'
@@ -48,13 +49,14 @@ describe('Organization Service', function () {
       id: orgGithubId,
       login: orgGithubName
     }
+    githubUser = {
+      id: userGithubId,
+      accessToken: 'asdasdasdas2e2e3q2eqd',
+      username: 'user'
+    }
     sessionUser = {
       accounts: {
-        github: {
-          id: userGithubId,
-          accessToken: 'asdasdasdas2e2e3q2eqd',
-          username: 'user'
-        }
+        github: githubUser
       },
       email: 'asdassadasdasd',
       created: new Date()
@@ -338,6 +340,35 @@ describe('Organization Service', function () {
           .tap(function () {
             sinon.assert.calledOnce(BigPoppaClient.prototype.addUserToOrganization)
             sinon.assert.calledWith(BigPoppaClient.prototype.addUserToOrganization, bigPoppaOrg.id, bigPoppaUser.id)
+          })
+          .asCallback(done)
+      })
+    })
+  })
+
+  describe('getUsersByOrgName', function () {
+    beforeEach(function (done) {
+      sinon.stub(OrganizationService, 'getByGithubUsername').resolves(bigPoppaOrg)
+      sinon.stub(UserService, 'getMongoUsersByBigPoppaUsers').resolves([githubUser])
+      done()
+    })
+
+    afterEach(function (done) {
+      OrganizationService.getByGithubUsername.restore()
+      UserService.getMongoUsersByBigPoppaUsers.restore()
+      done()
+    })
+
+    describe('success', function () {
+      it('should fetch the users from publicFind using githubIds from the org\'s users', function (done) {
+        bigPoppaOrg.users = [bigPoppaUser]
+        OrganizationService.getUsersByOrgName(bigPoppaOrg.name)
+          .tap(function (githubUsers) {
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, bigPoppaOrg.name)
+            sinon.assert.calledOnce(UserService.getMongoUsersByBigPoppaUsers)
+            sinon.assert.calledWith(UserService.getMongoUsersByBigPoppaUsers, [bigPoppaUser])
+            expect(githubUsers).to.deep.equal([githubUser])
           })
           .asCallback(done)
       })

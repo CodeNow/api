@@ -1,29 +1,29 @@
 require('loadenv')()
 
-var Boom = require('dat-middleware').Boom
-var Code = require('code')
-var Lab = require('lab')
-var moment = require('moment')
-var Promise = require('bluebird')
-var sinon = require('sinon')
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
+const Code = require('code')
+const Lab = require('lab')
+const moment = require('moment')
+const Promise = require('bluebird')
+const sinon = require('sinon')
+require('sinon-as-promised')(Promise)
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var ContextVersion = require('models/mongo/context-version')
-var error = require('error')
-var errors = require('errors')
-var Instance = require('models/mongo/instance')
-var InstanceService = require('models/services/instance-service')
-var PermissionService = require('models/services/permission-service')
-var rabbitmq = require('models/rabbitmq')
-var Worker = require('workers/instance.container.create')
+const ContextVersion = require('models/mongo/context-version')
+const error = require('error')
+const errors = require('errors')
+const Instance = require('models/mongo/instance')
+const InstanceService = require('models/services/instance-service')
+const PermissionService = require('models/services/permission-service')
+const rabbitmq = require('models/rabbitmq')
+const Worker = require('workers/instance.container.create')
 
-var lab = exports.lab = Lab.script()
+const lab = exports.lab = Lab.script()
 
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
 describe('createInstanceContainer', function () {
   describe('finalRetryFn', function () {
@@ -73,12 +73,9 @@ describe('createInstanceContainer', function () {
           }
         }
       }
-      sinon.stub(ContextVersion, 'findById')
-        .yieldsAsync(null, ctx.contextVersion)
-      sinon.stub(InstanceService, 'createContainer')
-        .returns(Promise.resolve())
-      sinon.stub(PermissionService, 'checkOwnerAllowed')
-        .returns(Promise.resolve())
+      sinon.stub(ContextVersion, 'findById').yieldsAsync(null, ctx.contextVersion)
+      sinon.stub(InstanceService, 'createContainer').resolves()
+      sinon.stub(PermissionService, 'checkOwnerAllowed').resolves()
       done()
     })
 
@@ -90,11 +87,6 @@ describe('createInstanceContainer', function () {
     })
 
     describe('success', function () {
-      beforeEach(function (done) {
-        InstanceService.createContainer.yieldsAsync()
-        done()
-      })
-
       it('should call InstanceService.createContainer', function (done) {
         Worker.task(ctx.job)
           .asCallback(function (err) {
@@ -108,7 +100,7 @@ describe('createInstanceContainer', function () {
     describe('error', function () {
       beforeEach(function (done) {
         sinon.stub(rabbitmq, 'publishInstanceRebuild')
-        sinon.stub(Instance, 'setContainerCreateError').returns(Promise.resolve())
+        sinon.stub(Instance, 'setContainerCreateError').resolves()
         sinon.stub(error, 'log')
         done()
       })
@@ -172,14 +164,14 @@ describe('createInstanceContainer', function () {
       describe('unknown', function () {
         beforeEach(function (done) {
           ctx.err = new Error('boom')
-          InstanceService.createContainer.yieldsAsync(ctx.err)
+          InstanceService.createContainer.rejects(ctx.err)
           done()
         })
 
         it('should call InstanceService.createContainer', function (done) {
           Worker.task(ctx.job)
             .asCallback(function (err) {
-              expect(err.cause).to.equal(ctx.err)
+              expect(err.message).to.equal(ctx.err.message)
               done()
             })
         })
@@ -187,15 +179,15 @@ describe('createInstanceContainer', function () {
 
       describe('4XX', function () {
         beforeEach(function (done) {
-          ctx.err = Boom.notFound('boom')
-          InstanceService.createContainer.yieldsAsync(ctx.err)
+          ctx.err = new Instance.NotFoundError({})
+          InstanceService.createContainer.rejects(ctx.err)
           done()
         })
 
         it('should call InstanceService.createContainer', function (done) {
           Worker.task(ctx.job)
             .asCallback(function (err) {
-              expect(err.data.originalError.cause).to.equal(ctx.err)
+              expect(err.data.originalError.message).to.equal(ctx.err.message)
               done()
             })
         })
@@ -210,14 +202,14 @@ describe('createInstanceContainer', function () {
             }
           }
           ContextVersion.findById.yieldsAsync(null, ctx.contextVersion)
-          InstanceService.createContainer.yieldsAsync(ctx.err)
+          InstanceService.createContainer.rejects(ctx.err)
           done()
         })
 
         it('should not trigger a re-build', function (done) {
           Worker.task(ctx.job)
             .asCallback(function (err) {
-              expect(err.cause).to.equal(ctx.err)
+              expect(err.message).to.equal(ctx.err.message)
               sinon.assert.notCalled(rabbitmq.publishInstanceRebuild)
               sinon.assert.notCalled(error.log)
               done()
@@ -228,7 +220,7 @@ describe('createInstanceContainer', function () {
       describe('image not found error', function () {
         beforeEach(function (done) {
           ctx.err = new Error('image 1234 not found')
-          InstanceService.createContainer.yieldsAsync(ctx.err)
+          InstanceService.createContainer.rejects(ctx.err)
           done()
         })
 
@@ -266,7 +258,7 @@ describe('createInstanceContainer', function () {
           it('should not trigger a re-build', function (done) {
             Worker.task(ctx.job)
               .asCallback(function (err) {
-                expect(err.cause).to.equal(ctx.err)
+                expect(err.message).to.equal(ctx.err.message)
                 sinon.assert.calledOnce(ContextVersion.findById)
                 sinon.assert.calledWith(
                   ContextVersion.findById,
