@@ -41,17 +41,15 @@ function ensureIndexes (cb) {
 // we need to setup this before starting api.
 // this create exchanges that is used by api
 var publishedEvents = [
+  'container.life-cycle.created',
+  'container.life-cycle.died',
   'container.life-cycle.started',
   'container.network.attached',
   'container.state.polled',
   'dock.removed',
   'docker.events-stream.connected',
   'docker.events-stream.disconnected',
-  'instance.expired',
-  'on-image-builder-container-create',
-  'on-image-builder-container-die',
-  'on-instance-container-create',
-  'on-instance-container-die'
+  'instance.expired'
 ]
 
 var opts = {
