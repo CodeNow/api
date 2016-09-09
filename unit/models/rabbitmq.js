@@ -2,23 +2,25 @@
  * @module unit/models/rabbitmq
  */
 'use strict'
-
 var clone = require('101/clone')
 var Code = require('code')
 var createCount = require('callback-count')
 var Lab = require('lab')
+var path = require('path')
 var Promise = require('bluebird')
-var rabbitMQ = require('models/rabbitmq')
 var sinon = require('sinon')
+
+var rabbitMQ = require('models/rabbitmq')
+var Publisher = require('ponos/lib/rabbitmq')
 
 var lab = exports.lab = Lab.script()
 
-var it = lab.it
-var describe = lab.describe
+var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
+var describe = lab.describe
 var expect = Code.expect
+var it = lab.it
 
-var path = require('path')
 var moduleName = path.relative(process.cwd(), __filename)
 
 describe('RabbitMQ Model: ' + moduleName, function () {
@@ -29,12 +31,18 @@ describe('RabbitMQ Model: ' + moduleName, function () {
       publishEvent: sinon.stub(),
       publishTask: sinon.stub()
     }
+    sinon.stub(Publisher.prototype, 'connect')
+    done()
+  })
+
+  afterEach(function (done) {
+    Publisher.prototype.connect.restore()
     done()
   })
 
   describe('connect', function () {
     it('should call connect', function (done) {
-      rabbitMQ._publisher.connect.returns(Promise.resolve())
+      Publisher.prototype.connect.returns(Promise.resolve())
       var out = rabbitMQ.connect().asCallback(function (err) {
         if (err) { return done(err) }
         expect(out).to.be.an.instanceof(Promise)
