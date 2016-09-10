@@ -141,7 +141,7 @@ describe('Context Version Delete Worker', function () {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(rabbitMQ.contextVersionDeleted)
         sinon.assert.calledWith(rabbitMQ.contextVersionDeleted, {
-          contextVersion: testContextVersion
+          contextVersion: testContextVersion.toJSON()
         })
         done()
       })
