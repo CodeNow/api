@@ -7,10 +7,10 @@ var log = require('middlewares/logger')(__filename).log
 module.exports.emitBuildComplete = emitBuildComplete
 
 function emitBuildComplete (cv, failure, error) {
-  log.trace({cv: cv, stack: new Error().stack}, 'emitBuildComplete')
+  log.trace({ cv: cv }, 'emitBuildComplete')
   if (!cv) {
     var err = new Error('you forgot to pass cv to emitBuildComplete')
-    log.fatal({err: err}, err.message)
+    log.fatal({ err: err, stack: new Error().stack }, err.message)
     throw err
   }
   if (cv.toJSON) {
