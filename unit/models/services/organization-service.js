@@ -377,10 +377,14 @@ describe('Organization Service', function () {
 
   describe('updateFlagsOnOrg', function () {
     const goodOpts = {
-      hasConfirmedSetup: true
+      metadata: {
+        hasConfirmedSetup: true
+      }
     }
     const badOpts = {
-      hasConfirmedSetup: 'evenBetterName'
+      metadata: {
+        hasConfirmedSetup: 'evenBetterName'
+      }
     }
     beforeEach(function (done) {
       sinon.stub(UserService, 'validateSessionUserPartOfOrg').resolves(bigPoppaUser)
@@ -410,9 +414,7 @@ describe('Organization Service', function () {
             sinon.assert.calledOnce(UserService.validateSessionUserPartOfOrg)
             sinon.assert.calledWith(UserService.validateSessionUserPartOfOrg, sessionUser, bigPoppaOrg.id)
             sinon.assert.calledOnce(OrganizationService.updateById)
-            sinon.assert.calledWith(OrganizationService.updateById, bigPoppaOrg.id, {
-              metadata: goodOpts
-            })
+            sinon.assert.calledWith(OrganizationService.updateById, bigPoppaOrg.id, goodOpts)
             expect(org).to.equal(bigPoppaOrg)
           })
           .asCallback(done)
