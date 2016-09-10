@@ -410,7 +410,9 @@ describe('Organization Service', function () {
             sinon.assert.calledOnce(UserService.validateSessionUserPartOfOrg)
             sinon.assert.calledWith(UserService.validateSessionUserPartOfOrg, sessionUser, bigPoppaOrg.id)
             sinon.assert.calledOnce(OrganizationService.updateById)
-            sinon.assert.calledWith(OrganizationService.updateById, bigPoppaOrg.id, goodOpts)
+            sinon.assert.calledWith(OrganizationService.updateById, bigPoppaOrg.id, {
+              metadata: goodOpts
+            })
             expect(org).to.equal(bigPoppaOrg)
           })
           .asCallback(done)
