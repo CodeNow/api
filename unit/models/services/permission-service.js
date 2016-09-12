@@ -337,6 +337,13 @@ describe('PermissionService', function () {
       .asCallback(done)
     })
 
+    it('should reject if sessionUser is helloRunnable', function (done) {
+      PermissionService.isOwnerOf(helloRunnable, { owner: { github: '1' } })
+        .catch(function (err) {
+          expect(err.message).to.equal('HelloRunnable should not check orgs')
+          done()
+        })
+    })
     it('should resolve if sessionUser shares an org', function (done) {
       user.organizations = [org]
       PermissionService.isOwnerOf({
