@@ -19,7 +19,7 @@ var multi = require('../../fixtures/multi-factory')
 var uuid = require('uuid')
 var primus = require('../../fixtures/primus')
 
-describe('XXX POST /contexts/:id/versions/:id/appCodeVersions', function () {
+describe('POST /contexts/:id/versions/:id/appCodeVersions', function () {
   var ctx = {}
 
   before(api.start.bind(ctx))

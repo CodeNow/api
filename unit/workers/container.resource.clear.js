@@ -33,28 +33,6 @@ describe('container.resource.clear unit test', function () {
     done()
   })
 
-  describe('job validation', function () {
-    it('should throw if missing containerId', function (done) {
-      delete testJob.containerId
-
-      ContainerResourceClear(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(WorkerStopError)
-        expect(err.data.err.message).to.match(/containerId.*required/)
-        done()
-      })
-    })
-
-    it('should throw if containerId is a number', function (done) {
-      testJob.containerId = 123445
-
-      ContainerResourceClear(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(WorkerStopError)
-        expect(err.data.err.message).to.match(/containerId.*must be a string/)
-        done()
-      })
-    })
-  }) // end job validation
-
   describe('valid jobs', function () {
     beforeEach(function (done) {
       sinon.stub(Docker.prototype, 'clearContainerMemoryAsync')
@@ -68,7 +46,7 @@ describe('container.resource.clear unit test', function () {
 
     it('should update container memory', function (done) {
       Docker.prototype.clearContainerMemoryAsync.returns(Promise.resolve())
-      ContainerResourceClear(testJob).asCallback(function (err) {
+      ContainerResourceClear.task(testJob).asCallback(function (err) {
         if (err) { return done(err) }
         sinon.assert.calledOnce(Docker.prototype.clearContainerMemoryAsync)
         sinon.assert.calledWith(Docker.prototype.clearContainerMemoryAsync, testId)
@@ -82,7 +60,7 @@ describe('container.resource.clear unit test', function () {
           statusCode: 404
         }
       }))
-      ContainerResourceClear(testJob).asCallback(function (err) {
+      ContainerResourceClear.task(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(WorkerStopError)
         sinon.assert.calledOnce(Docker.prototype.clearContainerMemoryAsync)
         sinon.assert.calledWith(Docker.prototype.clearContainerMemoryAsync, testId)

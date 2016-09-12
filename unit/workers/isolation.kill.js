@@ -8,7 +8,6 @@ var lab = exports.lab = Lab.script()
 
 var clone = require('101/clone')
 var objectId = require('objectid')
-var omit = require('101/omit')
 var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
@@ -19,7 +18,6 @@ var IsolationService = require('models/services/isolation-service')
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach
 var describe = lab.describe
@@ -69,50 +67,10 @@ describe('Workers: Isolation Kill', function () {
     done()
   })
 
-  describe('validation', function () {
-    it('should fatally fail if job is null', function (done) {
-      Worker(null).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job is {}', function (done) {
-      Worker({}).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job has no isolationId', function (done) {
-      var data = omit(testData, 'isolationId')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job has no triggerRedeploy', function (done) {
-      var data = omit(testData, 'triggerRedeploy')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-  })
-
   it('should fail if findOneAndUpdateAsync failed', function (done) {
     var error = new Error('Mongo error')
     Isolation.findOneAndUpdateAsync.rejects(error)
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
@@ -122,7 +80,7 @@ describe('Workers: Isolation Kill', function () {
   it('should fail if findInstanceAsync failed', function (done) {
     var error = new Error('Mongo error')
     Instance.findAsync.rejects(error)
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
@@ -132,7 +90,7 @@ describe('Workers: Isolation Kill', function () {
   it('should fail if killInstance failed', function (done) {
     var error = new Error('instance kill error')
     InstanceService.killInstance.rejects(error)
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
@@ -142,7 +100,7 @@ describe('Workers: Isolation Kill', function () {
   it('should fail if IsolationService.redeployIfAllKilled failed', function (done) {
     var error = new Error('Mongo error')
     IsolationService.redeployIfAllKilled.rejects(error)
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
@@ -150,7 +108,7 @@ describe('Workers: Isolation Kill', function () {
   })
 
   it('should update the isolation with the state of killing', function (done) {
-    Worker(testData)
+    Worker.task(testData)
       .then(function () {
         sinon.assert.calledOnce(Isolation.findOneAndUpdateAsync)
         sinon.assert.calledWith(Isolation.findOneAndUpdateAsync, {
@@ -167,7 +125,7 @@ describe('Workers: Isolation Kill', function () {
   it('should not update the isolation with the state of killing if triggerRedeploy=false', function (done) {
     var data = clone(testData)
     data.triggerRedeploy = false
-    Worker(data)
+    Worker.task(data)
       .then(function () {
         sinon.assert.notCalled(Isolation.findOneAndUpdateAsync)
       })
@@ -175,7 +133,7 @@ describe('Workers: Isolation Kill', function () {
   })
 
   it('should should call Instance.findAsync with the right parameters', function (done) {
-    Worker(testData)
+    Worker.task(testData)
       .then(function () {
         sinon.assert.calledOnce(Instance.findAsync)
         sinon.assert.calledWith(Instance.findAsync, {
@@ -193,7 +151,7 @@ describe('Workers: Isolation Kill', function () {
   })
 
   it('should call kill on all instances', function (done) {
-    Worker(testData)
+    Worker.task(testData)
       .then(function () {
         sinon.assert.calledTwice(InstanceService.killInstance)
         sinon.assert.calledWith(InstanceService.killInstance, instancesToStop[0])
@@ -203,7 +161,7 @@ describe('Workers: Isolation Kill', function () {
   })
 
   it('should call IsolationService.redeployIfAllKilled', function (done) {
-    Worker(testData)
+    Worker.task(testData)
       .then(function () {
         sinon.assert.calledOnce(IsolationService.redeployIfAllKilled)
         sinon.assert.calledWith(IsolationService.redeployIfAllKilled, objectId(testIsolationId))
