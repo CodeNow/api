@@ -51,7 +51,7 @@ describe('container.life-cycle.started unit test', function () {
     it('should create image-builder job is correct type', function (done) {
       rabbitMQ.publishContainerImageBuilderStarted.returns()
 
-      ContainerLifeCycleStarted(testJob).asCallback(function (err) {
+      ContainerLifeCycleStarted.task(testJob).asCallback(function (err) {
         if (err) { return done(err) }
 
         sinon.assert.calledOnce(rabbitMQ.publishContainerImageBuilderStarted)
@@ -63,7 +63,7 @@ describe('container.life-cycle.started unit test', function () {
     it('should do nothing if unknown type', function (done) {
       testJob.inspectData.Config.Labels.type = 'unknown'
 
-      ContainerLifeCycleStarted(testJob).asCallback(function (err) {
+      ContainerLifeCycleStarted.task(testJob).asCallback(function (err) {
         if (err) { return done(err) }
 
         sinon.assert.notCalled(rabbitMQ.publishContainerImageBuilderStarted)
@@ -74,7 +74,7 @@ describe('container.life-cycle.started unit test', function () {
     it('should do nothing if empty job', function (done) {
       testJob = 'unknown'
 
-      ContainerLifeCycleStarted(testJob).asCallback(function (err) {
+      ContainerLifeCycleStarted.task(testJob).asCallback(function (err) {
         if (err) { return done(err) }
 
         sinon.assert.notCalled(rabbitMQ.publishContainerImageBuilderStarted)

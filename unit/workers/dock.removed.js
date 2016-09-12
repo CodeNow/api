@@ -46,7 +46,7 @@ describe('Worker: dock.removed unit test', function () {
       sinon.stub(Instance, 'findInstancesBuildingOnDockerHost').resolves(rebuildInstances)
       sinon.stub(ContextVersion, 'markDockRemovedByDockerHost').resolves(null)
       sinon.stub(InstanceService, 'emitInstanceUpdate').resolves(null)
-      sinon.stub(rabbitMQ, 'asgInstanceTerminate').returns()
+      sinon.stub(rabbitMQ, 'dockPurged').returns()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       sinon.stub(rabbitMQ, 'publishInstanceRebuild').returns()
       sinon.stub(PermissionService, 'checkOwnerAllowed').resolves()
@@ -58,7 +58,7 @@ describe('Worker: dock.removed unit test', function () {
       Instance.findInstancesBuiltByDockerHost.restore()
       Instance.findInstancesBuildingOnDockerHost.restore()
       ContextVersion.markDockRemovedByDockerHost.restore()
-      rabbitMQ.asgInstanceTerminate.restore()
+      rabbitMQ.dockPurged.restore()
       rabbitMQ.redeployInstanceContainer.restore()
       rabbitMQ.publishInstanceRebuild.restore()
       PermissionService.checkOwnerAllowed.restore()
@@ -80,8 +80,8 @@ describe('Worker: dock.removed unit test', function () {
           sinon.assert.notCalled(Instance.findInstancesBuiltByDockerHost)
           sinon.assert.notCalled(Instance.findInstancesBuildingOnDockerHost)
           sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
-          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
-          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+          sinon.assert.calledOnce(rabbitMQ.dockPurged)
+          sinon.assert.calledWith(rabbitMQ.dockPurged, {
             ipAddress: testTarget
           })
           done()
@@ -100,8 +100,8 @@ describe('Worker: dock.removed unit test', function () {
           sinon.assert.calledOnce(Instance.findInstancesBuiltByDockerHost)
           sinon.assert.calledOnce(Instance.findInstancesBuildingOnDockerHost)
           sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
-          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
-          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+          sinon.assert.calledOnce(rabbitMQ.dockPurged)
+          sinon.assert.calledWith(rabbitMQ.dockPurged, {
             ipAddress: testTarget
           })
           done()
@@ -140,8 +140,8 @@ describe('Worker: dock.removed unit test', function () {
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
           sinon.assert.callCount(InstanceService.emitInstanceUpdate, 4)
-          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
-          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+          sinon.assert.calledOnce(rabbitMQ.dockPurged)
+          sinon.assert.calledWith(rabbitMQ.dockPurged, {
             ipAddress: testTarget
           })
           done()
@@ -159,8 +159,8 @@ describe('Worker: dock.removed unit test', function () {
           sinon.assert.calledOnce(Instance.findInstancesBuiltByDockerHost)
           sinon.assert.calledOnce(Instance.findInstancesBuildingOnDockerHost)
           sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
-          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
-          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+          sinon.assert.calledOnce(rabbitMQ.dockPurged)
+          sinon.assert.calledWith(rabbitMQ.dockPurged, {
             ipAddress: testTarget
           })
           done()
@@ -196,10 +196,10 @@ describe('Worker: dock.removed unit test', function () {
           sinon.assert.calledOnce(ContextVersion.markDockRemovedByDockerHost)
           sinon.assert.calledWith(ContextVersion.markDockRemovedByDockerHost, testHost)
           sinon.assert.callCount(InstanceService.emitInstanceUpdate, 4)
-          sinon.assert.calledOnce(rabbitMQ.asgInstanceTerminate)
+          sinon.assert.calledOnce(rabbitMQ.dockPurged)
           sinon.assert.calledOnce(Instance.findInstancesBuiltByDockerHost)
           sinon.assert.calledOnce(Instance.findInstancesBuildingOnDockerHost)
-          sinon.assert.calledWith(rabbitMQ.asgInstanceTerminate, {
+          sinon.assert.calledWith(rabbitMQ.dockPurged, {
             ipAddress: testTarget
           })
           done()

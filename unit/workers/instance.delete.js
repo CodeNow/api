@@ -84,57 +84,11 @@ describe('Instance Delete Worker', function () {
     })
 
     describe('errors', function () {
-      describe('invalid Job', function () {
-        it('should throw a task fatal error if the job is missing entirely', function (done) {
-          Worker().asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err).to.be.instanceOf(WorkerStopError)
-            expect(err.data.validationError).to.exist()
-            expect(err.data.validationError.message)
-              .to.match(/instance.delete.job.+required/)
-            done()
-          })
-        })
-
-        it('should throw a task fatal error if the job is missing a instanceId', function (done) {
-          Worker({}).asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err).to.be.instanceOf(WorkerStopError)
-            expect(err.data.validationError).to.exist()
-            expect(err.data.validationError.message)
-              .to.match(/instanceId.*required/i)
-            done()
-          })
-        })
-
-        it('should throw a task fatal error if the job is not an object', function (done) {
-          Worker(true).asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err).to.be.instanceOf(WorkerStopError)
-            expect(err.data.validationError).to.exist()
-            expect(err.data.validationError.message)
-              .to.contain('must be an object')
-            done()
-          })
-        })
-
-        it('should throw a task fatal error if the instanceId is not a string', function (done) {
-          Worker({instanceId: {}}).asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err).to.be.instanceOf(WorkerStopError)
-            expect(err.data.validationError).to.exist()
-            expect(err.data.validationError.message)
-              .to.match(/instanceId.*string/i)
-            done()
-          })
-        })
-      })
-
       it('should reject with any findById error', function (done) {
         var mongoError = new Error('Mongo failed')
         Instance.findByIdAsync.rejects(mongoError)
 
-        Worker(testData).asCallback(function (err) {
+        Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(mongoError)
           done()
@@ -144,7 +98,7 @@ describe('Instance Delete Worker', function () {
       it('should reject when instance not found with WorkerStopError', function (done) {
         Instance.findByIdAsync.resolves(null)
 
-        Worker(testData).asCallback(function (err) {
+        Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.be.instanceOf(WorkerStopError)
           expect(err.message).to.match(/instance not found/i)
@@ -156,7 +110,7 @@ describe('Instance Delete Worker', function () {
         var neoError = new Error('Neo failed')
         Instance.prototype.removeSelfFromGraph.rejects(neoError)
 
-        Worker(testData).asCallback(function (err) {
+        Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(neoError.message)
           done()
@@ -169,7 +123,7 @@ describe('Instance Delete Worker', function () {
         var error = new Error('pugsly')
         IsolationService.deleteIsolation.rejects(error)
 
-        Worker(testData).asCallback(function (err) {
+        Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(error)
           done()
@@ -180,7 +134,7 @@ describe('Instance Delete Worker', function () {
         var mongoError = new Error('Mongo failed')
         Instance.prototype.removeAsync.rejects(mongoError)
 
-        Worker(testData).asCallback(function (err) {
+        Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(mongoError)
           done()
@@ -191,7 +145,7 @@ describe('Instance Delete Worker', function () {
         var mongoError = new Error('Mongo failed')
         InstanceService.deleteAllInstanceForks.rejects(mongoError)
 
-        Worker(testData).asCallback(function (err) {
+        Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(mongoError)
           done()
@@ -200,14 +154,14 @@ describe('Instance Delete Worker', function () {
     })
 
     it('should return no error', function (done) {
-      Worker(testData).asCallback(function (err) {
+      Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         done()
       })
     })
 
     it('should find an instance by id', function (done) {
-      Worker(testData).asCallback(function (err) {
+      Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Instance.findByIdAsync)
         sinon.assert.calledWithExactly(Instance.findByIdAsync, testInstanceId)
@@ -216,7 +170,7 @@ describe('Instance Delete Worker', function () {
     })
 
     it('should remove the instance from the graph', function (done) {
-      Worker(testData).asCallback(function (err) {
+      Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Instance.prototype.removeSelfFromGraph)
         done()
@@ -227,7 +181,7 @@ describe('Instance Delete Worker', function () {
       testInstance.isolated = 'deadbeefdeadbeefdeadbeef'
       testInstance.isIsolationGroupMaster = true
 
-      Worker(testData).asCallback(function (err) {
+      Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(IsolationService.deleteIsolation)
         sinon.assert.calledWithExactly(
@@ -239,7 +193,7 @@ describe('Instance Delete Worker', function () {
     })
 
     it('should remove the mongo model', function (done) {
-      Worker(testData).asCallback(function (err) {
+      Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(Instance.prototype.removeAsync)
         done()
@@ -247,7 +201,7 @@ describe('Instance Delete Worker', function () {
     })
 
     it('should enqueue a job to remove the container', function (done) {
-      Worker(testData).asCallback(function (err) {
+      Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceService.deleteInstanceContainer)
         sinon.assert.calledWithExactly(InstanceService.deleteInstanceContainer,
@@ -257,7 +211,7 @@ describe('Instance Delete Worker', function () {
     })
 
     it('should delete all instance forks', function (done) {
-      Worker(testData).asCallback(function (err) {
+      Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
         sinon.assert.calledWithExactly(InstanceService.deleteAllInstanceForks, testInstance)
@@ -266,7 +220,7 @@ describe('Instance Delete Worker', function () {
     })
 
     it('should emit events about the instance deletion', function (done) {
-      Worker(testData).asCallback(function (err) {
+      Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(messenger.emitInstanceDelete)
         sinon.assert.calledWithExactly(messenger.emitInstanceDelete, testInstance)
@@ -278,7 +232,7 @@ describe('Instance Delete Worker', function () {
       it('should not delete container if there is no container', function (done) {
         testInstance.container = null
         Instance.findByIdAsync.resolves(testInstance)
-        Worker(testData).asCallback(function (err) {
+        Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
           done()
@@ -290,7 +244,7 @@ describe('Instance Delete Worker', function () {
           dockerContainer: null
         }
         Instance.findByIdAsync.resolves(testInstance)
-        Worker(testData).asCallback(function (err) {
+        Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.notCalled(InstanceService.deleteInstanceContainer)
           done()
@@ -299,7 +253,7 @@ describe('Instance Delete Worker', function () {
     })
 
     it('should perform all these tasks in order', function (done) {
-      Worker(testData).asCallback(function (err) {
+      Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.callOrder(
           Instance.findByIdAsync,

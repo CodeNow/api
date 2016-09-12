@@ -11,8 +11,7 @@ var api = require('../../../app')
 var async = require('async')
 var cleanMongo = require('./clean-mongo')
 var exec = require('child_process').exec
-var Hermes = require('runnable-hermes')
-var put = require('101/put')
+var Publisher = require('ponos/lib/rabbitmq')
 
 module.exports = {
   start: startApi,
@@ -42,44 +41,49 @@ function ensureIndexes (cb) {
 // we need to setup this before starting api.
 // this create exchanges that is used by api
 var publishedEvents = [
+  'container.life-cycle.created',
+  'container.life-cycle.died',
   'container.life-cycle.started',
   'container.network.attached',
+  'container.state.polled',
   'dock.removed',
   'docker.events-stream.connected',
-  'docker.events-stream.disconnected'
+  'docker.events-stream.disconnected',
+  'instance.expired'
 ]
 
 var opts = {
+  name: 'test-publisher',
   hostname: process.env.RABBITMQ_HOSTNAME,
   password: process.env.RABBITMQ_PASSWORD,
   port: process.env.RABBITMQ_PORT,
   username: process.env.RABBITMQ_USERNAME,
-  name: 'mavis-sauron'
+  events: publishedEvents
 }
-var rabbitPublisher = new Hermes(put({
-  publishedEvents: publishedEvents
-}, opts))
+var rabbitPublisher = new Publisher(opts)
 
 var started = false
 function startApi (done) {
   if (started) { return done() }
   started = true
-  rabbitPublisher.connect(function (err) {
-    if (err) { return done(err) }
-    api.start(function (err2) {
-      if (err2) { return done(err2) }
-      cleanMongo.removeEverything(function (err3) {
-        if (err3) { return done(err3) }
-        ensureIndexes(done)
+  rabbitPublisher.connect()
+    .then(function (err) {
+      if (err) { return done(err) }
+      api.start(function (err2) {
+        if (err2) { return done(err2) }
+        cleanMongo.removeEverything(function (err3) {
+          if (err3) { return done(err3) }
+          ensureIndexes(done)
+        })
       })
     })
-  })
 }
 
 function stopApi (done) {
   if (!started) { return done() }
   started = false
-  rabbitPublisher.close(function () {
+  rabbitPublisher.disconnect()
+  .then(function () {
     api.stop(done)
   })
 }
