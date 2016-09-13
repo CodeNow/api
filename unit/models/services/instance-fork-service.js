@@ -888,13 +888,13 @@ describe('InstanceForkService', function () {
         emitInstanceUpdate: sinon.stub()
       }
       sinon.stub(InstanceService, 'createInstance').resolves(master)
-      sinon.stub(Instance, 'findOneAndUpdateAsync').resolves(mockUpdatedInstance)
+      sinon.stub(InstanceService, 'updateInstance').resolves(mockUpdatedInstance)
       done()
     })
 
     afterEach(function (done) {
       InstanceService.createInstance.restore()
-      Instance.findOneAndUpdateAsync.restore()
+      InstanceService.updateInstance.restore()
       done()
     })
 
@@ -954,7 +954,7 @@ describe('InstanceForkService', function () {
         .catch(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal('Error happened')
-          sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
+          sinon.assert.notCalled(InstanceService.updateInstance)
         })
         .asCallback(done)
     })
@@ -962,18 +962,13 @@ describe('InstanceForkService', function () {
     it('should update the master instance with hasAddedBranches flag and notify frontend', function (done) {
       InstanceForkService.forkMasterInstance(master, 'build1', 'feature-1', mockSessionUser)
         .then(function () {
-          sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+          sinon.assert.calledOnce(InstanceService.updateInstance)
           sinon.assert.calledWith(
-            Instance.findOneAndUpdateAsync,
-            { _id: master._id },
-            {
-              $set: {
-                hasAddedBranches: true
-              }
-            },
-            { new: true }
+            InstanceService.updateInstance,
+            master,
+            { hasAddedBranches: true },
+            mockSessionUser
           )
-          sinon.assert.calledOnce(mockUpdatedInstance.emitInstanceUpdate)
         })
         .asCallback(done)
     })
