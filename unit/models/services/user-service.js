@@ -1,6 +1,7 @@
 'use strict'
 require('loadenv')()
 
+const errors = require('errors')
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
