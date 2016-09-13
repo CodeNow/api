@@ -297,6 +297,7 @@ var factory = module.exports = {
       isIsolationGroupMaster: props.isIsolationGroupMaster,
       parent: props.parent || 'sdf',
       build: props.build._id,
+      shouldNotAutofork: props.shouldNotAutofork || true,
       contextVersion: props.cv,
       locked: props.locked,
       created: new Date(),
