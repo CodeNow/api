@@ -20,7 +20,6 @@ var sinon = require('sinon')
 var Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
 var Worker = require('workers/instance.rebuild')
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 describe('Worker: instance.rebuild unit test', function () {
   var testInstanceId = '507f1f77bcf86cd799439011'
@@ -55,45 +54,6 @@ describe('Worker: instance.rebuild unit test', function () {
       done()
     })
 
-    describe('invalid Job', function () {
-      it('should throw a task fatal error if the job is missing a instanceId', function (done) {
-        Worker({}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/instanceId.*required/i)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the instanceId is not a string', function (done) {
-        Worker({instanceId: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/instanceId.*string/i)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the job is missing entirely', function (done) {
-        Worker().asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/instance.rebuild.job.+required/)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the job is not an object', function (done) {
-        Worker(true).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.contain('must be an object')
-          done()
-        })
-      })
-    })
-
     describe('instance lookup fails', function () {
       var fetchError = new Error('Fetch error')
       beforeEach(function (done) {
@@ -101,7 +61,7 @@ describe('Worker: instance.rebuild unit test', function () {
         done()
       })
       it('should callback with error', function (done) {
-        Worker(testData)
+        Worker.task(testData)
           .asCallback(function (err) {
             expect(err.message).to.equal(fetchError.message)
             sinon.assert.calledOnce(Instance.findByIdAsync)
@@ -117,7 +77,7 @@ describe('Worker: instance.rebuild unit test', function () {
         done()
       })
       it('should callback with error', function (done) {
-        Worker(testData)
+        Worker.task(testData)
           .asCallback(function (err) {
             expect(err.message).to.match(/instance not found/gi)
             sinon.assert.calledOnce(Instance.findByIdAsync)
@@ -136,7 +96,7 @@ describe('Worker: instance.rebuild unit test', function () {
         })
 
         it('should callback with error', function (done) {
-          Worker(testData)
+          Worker.task(testData)
             .asCallback(function (err) {
               expect(err.message).to.equal(mongoErr.message)
               sinon.assert.calledOnce(Instance.findByIdAsync)
@@ -156,7 +116,7 @@ describe('Worker: instance.rebuild unit test', function () {
         })
 
         it('should callback with error', function (done) {
-          Worker(testData)
+          Worker.task(testData)
             .asCallback(function (err) {
               expect(err.message).to.match(/user not found/gi)
               sinon.assert.calledOnce(Instance.findByIdAsync)
@@ -176,7 +136,7 @@ describe('Worker: instance.rebuild unit test', function () {
         })
 
         it('should callback with error', function (done) {
-          Worker(testData)
+          Worker.task(testData)
             .asCallback(function (err) {
               expect(err.message).to.match(/creator has no github access token/gi)
               sinon.assert.calledOnce(Instance.findByIdAsync)
@@ -197,7 +157,7 @@ describe('Worker: instance.rebuild unit test', function () {
         })
 
         it('should callback with error', function (done) {
-          Worker(testData)
+          Worker.task(testData)
             .asCallback(function (err) {
               expect(err.message).to.match(/login.*failed/ig)
               sinon.assert.calledOnce(Instance.findByIdAsync)
@@ -219,7 +179,7 @@ describe('Worker: instance.rebuild unit test', function () {
         })
 
         it('should callback with error', function (done) {
-          Worker(testData)
+          Worker.task(testData)
             .asCallback(function (err) {
               expect(err.message).to.match(/unable.*to.*login/ig)
               sinon.assert.calledOnce(Instance.findByIdAsync)
@@ -262,7 +222,7 @@ describe('Worker: instance.rebuild unit test', function () {
         done()
       })
       it('should callback with fatal error', function (done) {
-        Worker(testData)
+        Worker.task(testData)
           .asCallback(function (err) {
             expect(err.message).to.contain(deepCopyError.message)
             sinon.assert.calledOnce(Instance.findByIdAsync)
@@ -316,7 +276,7 @@ describe('Worker: instance.rebuild unit test', function () {
       })
 
       it('should callback with fatal error', function (done) {
-        Worker(testData)
+        Worker.task(testData)
           .asCallback(function (err) {
             expect(err.message).to.contain(buildError.message)
             sinon.assert.calledOnce(Instance.findByIdAsync)
@@ -375,7 +335,7 @@ describe('Worker: instance.rebuild unit test', function () {
       })
 
       it('should callback with fatal error', function (done) {
-        Worker(testData)
+        Worker.task(testData)
           .asCallback(function (err) {
             expect(err.message).to.contain(updateError.message)
             sinon.assert.calledOnce(Instance.findByIdAsync)
@@ -431,7 +391,7 @@ describe('Worker: instance.rebuild unit test', function () {
         done()
       })
       it('should callback with fatal error', function (done) {
-        Worker(testData)
+        Worker.task(testData)
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledOnce(Instance.findByIdAsync)
