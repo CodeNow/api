@@ -399,8 +399,15 @@ describe('Organization Service', function () {
     })
 
     describe('failures', function () {
-      it('should validate and fail because of Joi', function (done) {
+      it('should validate and fail because of Joi (bad values)', function (done) {
         OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, badOpts)
+          .catch(function (err) {
+            expect(err.message).to.match(/hasConfirmedSetup/)
+            done()
+          })
+      })
+      it('should validate and fail because of Joi (missing values)', function (done) {
+        OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, { metadata: {} })
           .catch(function (err) {
             expect(err.message).to.match(/hasConfirmedSetup/)
             done()
