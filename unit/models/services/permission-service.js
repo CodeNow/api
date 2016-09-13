@@ -340,7 +340,7 @@ describe('PermissionService', function () {
     it('should reject if sessionUser is helloRunnable', function (done) {
       PermissionService.isOwnerOf(helloRunnable, { owner: { github: '1' } })
         .catch(function (err) {
-          expect(err.message).to.equal('HelloRunnable should not check orgs')
+          expect(err.message).to.equal('HelloRunnable should always fails org owner checks')
           done()
         })
     })
