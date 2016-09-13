@@ -96,28 +96,6 @@ describe('isolation.match-commit', function () {
   })
 
   describe('errors', function () {
-    describe('job validation', function () {
-      it('should throw if missing isolationId', function (done) {
-        delete testJob.isolationId
-
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err.message).to.contain('Invalid Job')
-          done()
-        })
-      })
-
-      it('should throw if missing sessionUserGithubId', function (done) {
-        delete testJob.sessionUserGithubId
-
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
-          expect(err).to.be.an.instanceof(WorkerStopError)
-          expect(err.message).to.contain('Invalid Job')
-          done()
-        })
-      })
-    })
-
     describe('behavior errors', function () {
       var testErr
 
@@ -128,7 +106,7 @@ describe('isolation.match-commit', function () {
 
       it('should throw error if findById failed', function (done) {
         Instance.findById.yieldsAsync(testErr)
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
+        matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.cause).to.deep.equal(testErr)
           done()
@@ -137,7 +115,7 @@ describe('isolation.match-commit', function () {
 
       it('should throw error if findInstancesInIsolationWithSameRepoAndBranch failed', function (done) {
         Instance.findInstancesInIsolationWithSameRepoAndBranch.yieldsAsync(testErr)
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
+        matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.cause).to.deep.equal(testErr)
           done()
@@ -147,7 +125,7 @@ describe('isolation.match-commit', function () {
       it('should throw a WorkerStopError if the master instances has no repo or commit', function (done) {
         masterInstance.contextVersion.appCodeVersions[0].commit = undefined
         Instance.findById.yieldsAsync(null, masterInstance)
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
+        matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/instance does not have repo.*commit/i)
           done()
@@ -157,7 +135,7 @@ describe('isolation.match-commit', function () {
       it('should throw a WorkerStopError if the job instance is no longer in the same isolation', function (done) {
         masterInstance.isolated = objectId('5743c95f450e812600d066c6')
         Instance.findById.yieldsAsync(null, masterInstance)
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
+        matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/instance.*isolation.*matched/i)
           done()
@@ -166,7 +144,7 @@ describe('isolation.match-commit', function () {
 
       it('should throw a WorkerStopError if there are no child instances', function (done) {
         Instance.findInstancesInIsolationWithSameRepoAndBranch.yieldsAsync(null, [])
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
+        matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/no.*instances.*found/i)
           done()
@@ -175,7 +153,7 @@ describe('isolation.match-commit', function () {
 
       it('should throw error if updateInstanceCommitToNewCommit failed', function (done) {
         InstanceService.updateInstanceCommitToNewCommit.rejects(testErr)
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err, res) {
+        matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err, res) {
           expect(err).to.exist()
           expect(err).to.deep.equal(testErr)
           done()
@@ -184,7 +162,7 @@ describe('isolation.match-commit', function () {
 
       it('should throw fatal error if updateInstanceCommitToNewCommit failed with 404', function (done) {
         InstanceService.updateInstanceCommitToNewCommit.rejects(Boom.notFound('Context Version not found'))
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err, res) {
+        matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err, res) {
           expect(err).to.exist()
           expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.equal('Failed to match commits. Some entities were removed')
@@ -196,7 +174,7 @@ describe('isolation.match-commit', function () {
 
   describe('valid job', function () {
     it('should call findInstancesInIsolationWithSameRepoAndBranch', function (done) {
-      matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
+      matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
 
         sinon.assert.calledOnce(Instance.findInstancesInIsolationWithSameRepoAndBranch)
@@ -212,7 +190,7 @@ describe('isolation.match-commit', function () {
     })
 
     it('should call findByGithubIdAsync', function (done) {
-      matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
+      matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
 
         sinon.assert.calledOnce(User.findByGithubId)
@@ -227,7 +205,7 @@ describe('isolation.match-commit', function () {
 
     describe('updateInstanceCommitToNewCommit', function () {
       it('should call updateInstanceCommitToNewCommit', function (done) {
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
+        matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.called(InstanceService.updateInstanceCommitToNewCommit)
           done()
@@ -235,7 +213,7 @@ describe('isolation.match-commit', function () {
       })
 
       it('should filter out instances with the same commit as the enqueue commit', function (done) {
-        matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
+        matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(InstanceService.updateInstanceCommitToNewCommit)
           sinon.assert.calledWithExactly(
@@ -255,7 +233,7 @@ describe('isolation.match-commit', function () {
       childInstance2.contextVersion.appCodeVersions[0].commit = secondCommitHash
       testJob.instanceId = childInstance._id.toString()
 
-      matchCommitWithIsolationGroupMaster(testJob).asCallback(function (err) {
+      matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceService.updateInstanceCommitToNewCommit)
         sinon.assert.calledWithExactly(

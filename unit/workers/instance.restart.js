@@ -6,7 +6,6 @@
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
-var omit = require('101/omit')
 var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
@@ -80,55 +79,10 @@ describe('Workers: Instance Restart', function () {
     done()
   })
 
-  describe('validation', function () {
-    it('should fatally fail if job is null', function (done) {
-      Worker(null).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-    it('should fatally fail if job is {}', function (done) {
-      Worker({}).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-    it('should fatally fail if job has no instanceId', function (done) {
-      var data = omit(testData, 'instanceId')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-    it('should fatally fail if job has no containerId', function (done) {
-      var data = omit(testData, 'containerId')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-    it('should fatally fail if job has no sessionUserGithubId', function (done) {
-      var data = omit(testData, 'sessionUserGithubId')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-  })
   it('should fail if findOneStarting failed', function (done) {
     var error = new Error('Mongo error')
     Instance.findOneStarting.rejects(error)
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
@@ -136,7 +90,7 @@ describe('Workers: Instance Restart', function () {
   })
   it('should fail fatally if findOneStarting returned no instance', function (done) {
     Instance.findOneStarting.resolves(null)
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err).to.be.instanceOf(WorkerStopError)
       expect(err.message).to.equal('Instance not found')
@@ -146,7 +100,7 @@ describe('Workers: Instance Restart', function () {
   it('should fail if docker restartContainer failed', function (done) {
     var error = new Error('Docker error')
     Docker.prototype.restartContainerAsync.rejects(error)
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
@@ -155,14 +109,14 @@ describe('Workers: Instance Restart', function () {
   it('should fail if sending events failed', function (done) {
     var error = new Error('Primus error')
     InstanceService.emitInstanceUpdate.rejects(error)
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       expect(err.message).to.equal(error.message)
       done()
     })
   })
   it('should call findOneStarting', function (done) {
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(Instance.findOneStarting)
       sinon.assert.calledWith(Instance.findOneStarting, testInstanceId, dockerContainer)
@@ -170,7 +124,7 @@ describe('Workers: Instance Restart', function () {
     })
   })
   it('should call restartContainer', function (done) {
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(Docker.prototype.restartContainerAsync)
       sinon.assert.calledWith(Docker.prototype.restartContainerAsync, dockerContainer)
@@ -178,7 +132,7 @@ describe('Workers: Instance Restart', function () {
     })
   })
   it('should call emitInstanceUpdate', function (done) {
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
       sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'restart', true)
@@ -186,7 +140,7 @@ describe('Workers: Instance Restart', function () {
     })
   })
   it('should call out to various models and helper methods in the correct order', function (done) {
-    Worker(testData).asCallback(function (err) {
+    Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.callOrder(
         Instance.findOneStarting,
