@@ -306,7 +306,7 @@ var factory = module.exports = {
       },
       parent: props.parent || 'sdf',
       shortHash: shortHash.slice(0, 6),
-      shouldNotAutofork: props.shouldNotAutofork,
+      shouldNotAutofork: props.shouldNotAutofork
     }
   },
   getNextId: function () {
