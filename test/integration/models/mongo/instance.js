@@ -286,12 +286,14 @@ describe('Instance Model Integration Tests', function () {
               api: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 masterPod: true,
                 branch: masterBranch,
-                cv: api.cv
+                cv: api.cv,
+                shouldNotAutofork: false
               }),
               worker: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 masterPod: true,
                 branch: masterBranch,
-                cv: worker.cv
+                cv: worker.cv,
+                shouldNotAutofork: false
               })
             })
           })
@@ -341,16 +343,19 @@ describe('Instance Model Integration Tests', function () {
               api: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 masterPod: true,
                 branch: masterBranch,
-                cv: results.api
+                cv: results.api,
+                shouldNotAutofork: false
               }),
               childApi: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 branch: branch,
-                cv: results.childApi
+                cv: results.childApi,
+                shouldNotAutofork: false
               }),
               worker: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 masterPod: true,
                 branch: masterBranch,
-                cv: results.worker
+                cv: results.worker,
+                shouldNotAutofork: false
               })
             })
           })
@@ -405,21 +410,25 @@ describe('Instance Model Integration Tests', function () {
               api: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 masterPod: true,
                 branch: masterBranch,
-                cv: results.api
+                cv: results.api,
+                shouldNotAutofork: false
               }),
               isolatedApi: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 cv: results.isolatedApi,
                 branch: branch,
-                isolated: 'asdsadasdasdasd'
+                isolated: 'asdsadasdasdasd',
+                shouldNotAutofork: false
               }),
               worker: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 masterPod: true,
                 branch: branch,
-                cv: results.worker
+                cv: results.worker,
+                shouldNotAutofork: false
               }),
               workerChild: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 branch: masterBranch,
-                cv: results.workerChild
+                cv: results.workerChild,
+                shouldNotAutofork: false
               })
             })
           })
@@ -486,17 +495,20 @@ describe('Instance Model Integration Tests', function () {
               api: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 masterPod: true,
                 branch: masterBranch,
-                cv: results.api
+                cv: results.api,
+                shouldNotAutofork: false
               }),
               isolatedApi: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 branch: branch,
                 cv: results.isolatedApi,
-                isolated: 'asdsadasdasdasd'
+                isolated: 'asdsadasdasdasd',
+                shouldNotAutofork: false
               }),
               worker: mongoFactory.createInstanceWithPropsAsync(mockOwner, {
                 masterPod: true,
                 branch: masterBranch,
-                cv: results.worker
+                cv: results.worker,
+                shouldNotAutofork: false
               })
             })
           })
