@@ -355,6 +355,8 @@ describe('BillingService', function () {
     let getBigPoppaUserIdAndAssertUserIsPartOfOrgStub
     let postPaymentMethodForOrganizationStub
     const stripeToken = 'tok_2342382i37823'
+    const userEmail = 'jorge@runnable.com'
+
     beforeEach(function (done) {
       getBigPoppaUserIdAndAssertUserIsPartOfOrgStub =
         sinon.stub(BillingService, 'getBigPoppaUserIdAndAssertUserIsPartOfOrg').resolves(userMock)
@@ -378,7 +380,7 @@ describe('BillingService', function () {
     })
 
     it('should call `getBigPoppaUserIdAndAssertUserIsPartOfOrg`', function (done) {
-      return BillingService.postPaymentMethodForOrganization(orgId, userGithubId, stripeToken)
+      return BillingService.postPaymentMethodForOrganization(orgId, userGithubId, stripeToken, userEmail)
         .then(function () {
           sinon.assert.calledOnce(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub)
           sinon.assert.calledWithExactly(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub, userGithubId, orgId)
@@ -387,10 +389,10 @@ describe('BillingService', function () {
     })
 
     it('should call `postPaymentMethodForOrganization`', function (done) {
-      return BillingService.postPaymentMethodForOrganization(orgId, userGithubId, stripeToken)
+      return BillingService.postPaymentMethodForOrganization(orgId, userGithubId, stripeToken, userEmail)
         .then(function () {
           sinon.assert.calledOnce(postPaymentMethodForOrganizationStub)
-          sinon.assert.calledWithExactly(postPaymentMethodForOrganizationStub, orgId, stripeToken, userMock.id)
+          sinon.assert.calledWithExactly(postPaymentMethodForOrganizationStub, orgId, stripeToken, userMock.id, userEmail)
         })
         .asCallback(done)
     })

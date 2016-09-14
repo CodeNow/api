@@ -131,8 +131,8 @@
   },
   "engineStrict": true,
   "engine": {
-    "node": "0.10.38",
-    "npm": "2.8.3"
+    "node": "4.2.2",
+    "npm": "2.14.7"
   },
   "scripts": {
     "_bdd": "NODE_PATH=./lib NODE_ENV=test lab --assert code --verbose --leaks --context-timeout 80000 --timeout 80000",
