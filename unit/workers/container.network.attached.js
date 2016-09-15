@@ -11,7 +11,7 @@ var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
-var Worker = require('workers/container.network.attached')
+var Worker = require('workers/container.network.attached').task
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 var Isolation = require('models/mongo/isolation')
@@ -83,76 +83,6 @@ describe('Workers: Container Network Attach', function () {
     InstanceService.killInstance.restore()
     Isolation.findOneAsync.restore()
     done()
-  })
-
-  describe('validation', function () {
-    it('should fatally fail if job is null', function (done) {
-      Worker(null).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job is {}', function (done) {
-      Worker({}).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job has no id', function (done) {
-      var data = omit(testData, 'id')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job has no containerIp', function (done) {
-      var data = omit(testData, 'containerIp')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job has no ownerUsername', function (done) {
-      var data = omit(testData, 'inspectData.Config.Labels.ownerUsername')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job has no instanceId', function (done) {
-      var data = omit(testData, 'inspectData.Config.Labels.instanceId')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job has no networkSettings', function (done) {
-      var data = omit(testData, 'inspectData.Config.NetworkSettings.Ports')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
   })
 
   it('should fail if findOneByContainerIdAsync failed', function (done) {

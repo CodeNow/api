@@ -3,7 +3,6 @@
  */
 'use strict'
 
-var clone = require('101/clone')
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
@@ -12,9 +11,8 @@ var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
 var ContextVersion = require('models/mongo/context-version')
-var InstanceContainerCreated = require('workers/instance.container.created')
+var InstanceContainerCreated = require('workers/instance.container.created').task
 var InstanceService = require('models/services/instance-service')
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var User = require('models/mongo/user')
 
 var afterEach = lab.afterEach
@@ -109,44 +107,6 @@ describe('InstanceContainerCreated Unit tests', function () {
     })
   })
   describe('failure', function () {
-    it('should fail if validation failed: null', function (done) {
-      InstanceContainerCreated(null).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        sinon.assert.notCalled(ContextVersion.recoverAsync)
-        sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(InstanceService.startInstance)
-        done()
-      })
-    })
-
-    it('should fail if validation failed: {}', function (done) {
-      InstanceContainerCreated({}).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        sinon.assert.notCalled(ContextVersion.recoverAsync)
-        sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(InstanceService.startInstance)
-        done()
-      })
-    })
-
-    it('should fail if validation failed: no labels', function (done) {
-      var data = clone(ctx.data)
-      data.inspectData.Config.Labels = null
-      InstanceContainerCreated(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        sinon.assert.notCalled(ContextVersion.recoverAsync)
-        sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(InstanceService.startInstance)
-        done()
-      })
-    })
-
     it('should callback with error if context version fetch failed', function (done) {
       var mongoError = new Error('Mongo error')
       ContextVersion.recoverAsync.rejects(mongoError)
