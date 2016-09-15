@@ -11,7 +11,7 @@ var sinon = require('sinon')
 var Docker = require('models/apis/docker')
 var InstanceService = require('models/services/instance-service')
 var Isolation = require('models/mongo/isolation')
-var OnImageBuilderContainerDie = require('workers/container.image-builder.died')
+var OnImageBuilderContainerDie = require('workers/container.image-builder.died').task
 var rabbitMQ = require('models/rabbitmq')
 
 require('sinon-as-promised')(require('bluebird'))
