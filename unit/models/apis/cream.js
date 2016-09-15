@@ -36,6 +36,7 @@ describe('Cream API', function () {
   const organizationId = 1
   const stripeToken = 'tok_2342389232'
   const ownerBigPoppaId = 2
+  const userEmail = 'jorge@runnable.com'
 
   describe('#getPlanForOrganization', function () {
     beforeEach(stub_makeRequest)
@@ -83,13 +84,14 @@ describe('Cream API', function () {
     afterEach(restore_makeRequestStub)
 
     it('should call the `_makeRequest` function', function (done) {
-      CreamAPI.postPaymentMethodForOrganization(organizationId, stripeToken, ownerBigPoppaId)
+      CreamAPI.postPaymentMethodForOrganization(organizationId, stripeToken, ownerBigPoppaId, userEmail)
         .then(function () {
           sinon.assert.calledOnce(_makeRequestStub)
           sinon.assert.calledWithExactly(_makeRequestStub, 'payment-method', organizationId, {
             stripeToken: stripeToken,
             user: {
-              id: ownerBigPoppaId
+              id: ownerBigPoppaId,
+              email: userEmail
             }
           })
         })

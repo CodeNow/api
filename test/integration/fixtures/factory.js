@@ -282,30 +282,31 @@ var factory = module.exports = {
       props.isolated = VALID_OBJECT_ID
     }
     return {
-      shortHash: shortHash.slice(0, 6),
-      name: name,
-      lowerName: name.toLowerCase(),
-      owner: {
-        github: ownerGithubId,
-        username: props.username || ownerGithubId.toString()
-      },
+      build: props.build._id,
+      contextVersion: props.cv,
+      created: new Date(),
       createdBy: {
         github: ownerGithubId,
         username: props.username || ownerGithubId.toString()
       },
-      isolated: props.isolated,
-      isIsolationGroupMaster: props.isIsolationGroupMaster,
-      parent: props.parent || 'sdf',
-      build: props.build._id,
-      contextVersion: props.cv,
-      locked: props.locked,
-      created: new Date(),
-      masterPod: props.masterPod || false,
+      dependencies: props.dependencies || [],
       env: props.env || [],
+      isIsolationGroupMaster: props.isIsolationGroupMaster,
+      isolated: props.isolated,
+      locked: props.locked,
+      lowerName: name.toLowerCase(),
+      masterPod: props.masterPod || false,
+      name: name,
       network: {
         hostIp: '127.0.0.1'
       },
-      dependencies: props.dependencies || []
+      owner: {
+        github: ownerGithubId,
+        username: props.username || ownerGithubId.toString()
+      },
+      parent: props.parent || 'sdf',
+      shortHash: shortHash.slice(0, 6),
+      shouldNotAutofork: props.shouldNotAutofork
     }
   },
   getNextId: function () {

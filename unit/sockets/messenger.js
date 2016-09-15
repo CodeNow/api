@@ -38,10 +38,9 @@ describe('Messenger: ' + moduleName, function () {
       done()
     })
 
-    it('should throw error if missing instance', function (done) {
-      expect(function () {
-        Messenger._emitInstanceUpdateAction()
-      }).to.throw(Error, 'emitInstanceUpdate missing instance')
+    it('should not update room', function (done) {
+      Messenger._emitInstanceUpdateAction()
+      sinon.assert.notCalled(Messenger.messageRoom)
       done()
     })
 
@@ -149,25 +148,15 @@ describe('Messenger: ' + moduleName, function () {
       errorModule.log.restore()
       done()
     })
-    it('should throw if instance is null', function (done) {
-      try {
-        Messenger.emitInstanceUpdate(null, 'update')
-        done(new Error('Should never happen'))
-      } catch (err) {
-        expect(err.message).to.equal('emitInstanceUpdate missing instance or action')
-        sinon.assert.notCalled(Messenger._emitInstanceUpdateAction)
-        done()
-      }
+    it('should not emit if instance is null', function (done) {
+      Messenger.emitInstanceUpdate(null, 'update')
+      sinon.assert.notCalled(Messenger._emitInstanceUpdateAction)
+      done()
     })
-    it('should throw if action is null', function (done) {
-      try {
-        Messenger.emitInstanceUpdate({ _id: 'some-id' }, null)
-        done(new Error('Should never happen'))
-      } catch (err) {
-        expect(err.message).to.equal('emitInstanceUpdate missing instance or action')
-        sinon.assert.notCalled(Messenger._emitInstanceUpdateAction)
-        done()
-      }
+    it('should not emit if action is null', function (done) {
+      Messenger.emitInstanceUpdate({ _id: 'some-id' }, null)
+      sinon.assert.notCalled(Messenger._emitInstanceUpdateAction)
+      done()
     })
     it('should trigger an error if instance was not fully populated and bypass emitInstanceUpdate', function (done) {
       Messenger.emitInstanceUpdate({ _id: 'some-id' }, 'update')
