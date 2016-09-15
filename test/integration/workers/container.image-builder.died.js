@@ -15,7 +15,7 @@ var messenger = require('socket/messenger')
 var mockFactory = require('../fixtures/factory')
 var mockOnBuilderDieMessage = require('../fixtures/dockerListenerEvents/on-image-builder-container-die')
 var mongooseControl = require('models/mongo/mongoose-control.js')
-var OnImageBuilderContainerDie = require('workers/container.image-builder.died')
+var OnImageBuilderContainerDie = require('workers/container.image-builder.died').task
 var rabbitMQ = require('models/rabbitmq')
 var User = require('models/mongo/user.js')
 
