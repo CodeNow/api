@@ -7,13 +7,12 @@ require('sinon-as-promised')(require('bluebird'))
 var Boom = require('dat-middleware').Boom
 var Code = require('code')
 var Lab = require('lab')
-var omit = require('101/omit')
 var sinon = require('sinon')
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
-var Worker = require('workers/instance.container.errored')
+var Worker = require('workers/instance.container.errored').task
 
 var lab = exports.lab = Lab.script()
 
@@ -46,56 +45,6 @@ describe('Workers: Instance Start', function () {
     InstanceService.emitInstanceUpdate.restore()
     done()
   })
-
-  describe('validation', function () {
-    it('should fatally fail if job is null', function (done) {
-      Worker(null).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job is {}', function (done) {
-      Worker({}).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job has no instanceId', function (done) {
-      var data = omit(testData, 'instanceId')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job has no containerId', function (done) {
-      var data = omit(testData, 'containerId')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-
-    it('should fatally fail if job has no sessionUserGithubId', function (done) {
-      var data = omit(testData, 'error')
-      Worker(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        done()
-      })
-    })
-  }) // end validation
 
   describe('flow', function () {
     var testInstance = 'that instance'

@@ -13,7 +13,7 @@ var omit = require('101/omit')
 var Promise = require('bluebird')
 
 var rabbitMQ = require('models/rabbitmq')
-var Worker = require('workers/instance.container.redeploy')
+var Worker = require('workers/instance.container.redeploy').task
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 var ContextVersion = require('models/mongo/context-version')
@@ -27,10 +27,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('InstanceContainerRedeploy: ' + moduleName, function () {
+describe('InstanceContainerRedeploy unit test ', function () {
   var ctx = {}
   ctx.mockInstance = {
     _id: '5633e9273e2b5b0c0077fd41',
@@ -93,72 +90,6 @@ describe('InstanceContainerRedeploy: ' + moduleName, function () {
       InstanceService.deleteInstanceContainer.restore()
       Worker._createNewContainer.restore()
       done()
-    })
-
-    describe('invalid Job', function () {
-      it('should throw a task fatal error if the job is missing a instanceId', function (done) {
-        Worker({}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/instanceId.*required/i)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the sessionUserGithubId is not a string', function (done) {
-        Worker({instanceId: '1', sessionUserGithubId: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/sessionUserGithubId.*number/i)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the job is missing a sessionUserGithubId', function (done) {
-        Worker({instanceId: '1'}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/sessionUserGithubId.*required/i)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the instanceId is not a string', function (done) {
-        Worker({instanceId: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/instanceId.*string/i)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the job is missing entirely', function (done) {
-        Worker().asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/instance.container.redeploy.job.+required/)
-          done()
-        })
-      })
-      it('should throw a task fatal error if the job is not an object', function (done) {
-        Worker(true).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.contain('must be an object')
-          done()
-        })
-      })
-      it('should throw a task fatal error if the deploymentUuid is not a string', function (done) {
-        Worker({instanceId: '1', sessionUserGithubId: 1, deploymentUuid: {}}).asCallback(function (err) {
-          expect(err).to.be.instanceOf(WorkerStopError)
-          expect(err.data.validationError).to.exist()
-          expect(err.data.validationError.message)
-            .to.match(/deploymentUuid.*string/i)
-          done()
-        })
-      })
     })
 
     describe('instance lookup fails', function () {
