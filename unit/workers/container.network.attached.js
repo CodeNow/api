@@ -6,7 +6,6 @@
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 
-var omit = require('101/omit')
 var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
