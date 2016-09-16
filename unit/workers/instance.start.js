@@ -214,4 +214,17 @@ describe('Workers: Instance Start', function () {
       done()
     })
   })
+
+  it('should emit instance errored on final retry', (done) => {
+    Worker.finalRetryFn(testData).asCallback(function (err) {
+      if (err) { return done(err) }
+      sinon.assert.calledOnce(rabbitMQ.instanceContainerErrored)
+      sinon.assert.calledWith(rabbitMQ.instanceContainerErrored, {
+        instanceId: testData.instanceId,
+        containerId: testData.containerId,
+        error: new Error('Could not start instance')
+      })
+      done()
+    })
+  })
 })
