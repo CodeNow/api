@@ -89,7 +89,7 @@ describe('Instance Model Tests', function () {
       var instance = mongoFactory.createNewInstance('container-stopping')
       Instance.assertNotStartingOrStopping(instance)
       .tap(function (result) {
-        expect(result).to.equal(instance)
+        expect(result.toJSON()).to.equal(instance.toJSON())
       })
       .asCallback(done)
     })
