@@ -201,7 +201,7 @@ describe('Cream API', function () {
       }
       CreamAPI._makeRequest(path, organizationId)
         .then(function (res) {
-          expect(res).to.deep.equal(obj)
+          expect(res).to.equal(obj)
         })
         .asCallback(done)
     })

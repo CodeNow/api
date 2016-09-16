@@ -289,7 +289,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
         })
 
         it('should pass the fetched session user', function (done) {
-          expect(createOpts.sessionUser).to.deep.equal(mockUser)
+          expect(createOpts.sessionUser).to.equal(mockUser)
           done()
         })
 
@@ -299,7 +299,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
         })
 
         it('should pass the fetched context version', function (done) {
-          expect(createOpts.contextVersion).to.deep.equal(mockContextVersion)
+          expect(createOpts.contextVersion).to.equal(mockContextVersion)
           done()
         })
 

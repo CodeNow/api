@@ -108,7 +108,7 @@ describe('isolation.match-commit', function () {
         Instance.findById.yieldsAsync(testErr)
         matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err.cause).to.deep.equal(testErr)
+          expect(err.cause).to.equal(testErr)
           done()
         })
       })
@@ -117,7 +117,7 @@ describe('isolation.match-commit', function () {
         Instance.findInstancesInIsolationWithSameRepoAndBranch.yieldsAsync(testErr)
         matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err.cause).to.deep.equal(testErr)
+          expect(err.cause).to.equal(testErr)
           done()
         })
       })
@@ -155,7 +155,7 @@ describe('isolation.match-commit', function () {
         InstanceService.updateInstanceCommitToNewCommit.rejects(testErr)
         matchCommitWithIsolationGroupMaster.task(testJob).asCallback(function (err, res) {
           expect(err).to.exist()
-          expect(err).to.deep.equal(testErr)
+          expect(err).to.equal(testErr)
           done()
         })
       })

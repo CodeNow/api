@@ -679,7 +679,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           )
           var update = ContextVersion.updateBy.firstCall.args[2]
           expect(update).to.exist()
-          expect(update.$set).to.deep.contain({
+          expect(update.$set).to.contain({
             'build.error.message': buildErr.message,
             'build.error.stack': buildErr.stack,
             'build.failed': true
@@ -743,7 +743,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           },
           end: sinon.spy(function () {
             expect(cache).to.have.length(1)
-            expect(cache[0]).to.deep.equal([
+            expect(cache[0]).to.equal([
               {
                 type: 'log',
                 content: 'hello\nworld\n'
@@ -781,7 +781,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           },
           end: sinon.spy(function () {
             expect(cache).to.have.length(1)
-            expect(cache[0]).to.deep.equal([
+            expect(cache[0]).to.equal([
               {
                 type: 'log',
                 content: 'hello'
@@ -987,7 +987,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                   {transformRules: transformRules},
                   function (err, updatedCv) {
                     expect(err).to.be.null()
-                    expect(updatedCv.appCodeVersions[0].transformRules.exclude).to.deep.equal(transformRules.exclude)
+                    expect(updatedCv.appCodeVersions[0].transformRules.exclude).to.equal(transformRules.exclude)
                     done()
                   })
               })
@@ -1006,7 +1006,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
         })
         cv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
           expect(err).to.be.null()
-          expect(updatedCv).to.deep.equal(cv)
+          expect(updatedCv).to.equal(cv)
           done()
         })
       })
@@ -1042,7 +1042,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                 }
                 newCv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
                   expect(err).to.be.null()
-                  expect(updatedCv).to.deep.equal(newCv)
+                  expect(updatedCv).to.equal(newCv)
                   done()
                 })
               })
@@ -1075,7 +1075,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
             if (err) {
               return done(err)
             }
-            expect(doc).to.deep.equal(ctx.mockContextVersion)
+            expect(doc).to.equal(ctx.mockContextVersion)
             sinon.assert.calledWith(
               ContextVersion.findOneAndUpdate,
               {
@@ -1156,7 +1156,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           expect(result.$and[i].appCodeVersions).to.be.an.object()
           expect(result.$and[i].appCodeVersions.$elemMatch).to.be.an.object()
           var $elemMatch = result.$and[i].appCodeVersions.$elemMatch
-          expect($elemMatch).to.deep.equal(appCodeVersions[i])
+          expect($elemMatch).to.equal(appCodeVersions[i])
         }
         done()
       })
@@ -1283,7 +1283,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           }
           expect(ContextVersion.find.calledOnce).to.be.true()
           expect(ContextVersion.find.firstCall.args[0])
-            .to.deep.equal(expectedQuery)
+            .to.equal(expectedQuery)
           done()
         })
       })
@@ -1300,7 +1300,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           }
           expect(ContextVersion.find.calledOnce).to.be.true()
           expect(ContextVersion.find.firstCall.args[2])
-            .to.deep.equal(expectedOptions)
+            .to.equal(expectedOptions)
           done()
         })
       })
@@ -1403,7 +1403,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           }
           expect(ContextVersion.find.calledOnce).to.be.true()
           expect(ContextVersion.find.firstCall.args[0])
-            .to.deep.equal(expectedQuery)
+            .to.equal(expectedQuery)
           done()
         })
       })
@@ -1420,7 +1420,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
           }
           expect(ContextVersion.find.calledOnce).to.be.true()
           expect(ContextVersion.find.firstCall.args[2])
-            .to.deep.equal(expectedOptions)
+            .to.equal(expectedOptions)
           done()
         })
       })

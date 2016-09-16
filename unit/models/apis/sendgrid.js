@@ -101,8 +101,8 @@ describe('sendgrid: ' + moduleName, function () {
               expect(emailObject.subject, 'subject').to.equal(emailOpts.subject)
               expect(emailObject.text, 'text').to.equal(emailOpts.body)
               expect(emailObject.html, 'html').to.equal(emailOpts.htmlBody)
-              expect(emailObject.smtpapi.header.sub.hello, 'sub').to.deep.equal([emailOpts.substitutions.hello])
-              expect(emailObject.smtpapi.header.filters, 'template').to.deep.equal({
+              expect(emailObject.smtpapi.header.sub.hello, 'sub').to.equal([emailOpts.substitutions.hello])
+              expect(emailObject.smtpapi.header.filters, 'template').to.equal({
                 'templates': {
                   'settings': {
                     'enable': 1,
