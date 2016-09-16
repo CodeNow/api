@@ -188,7 +188,7 @@ describe('Workers: Instance Stop', function () {
       sinon.assert.calledWith(rabbitMQ.instanceContainerErrored, {
         instanceId: testData.instanceId,
         containerId: testData.containerId,
-        error: new Error('Could not stop instance')
+        error: 'Could not stop instance, retry limit reached'
       })
       done()
     })

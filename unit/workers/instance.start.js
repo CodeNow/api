@@ -222,7 +222,7 @@ describe('Workers: Instance Start', function () {
       sinon.assert.calledWith(rabbitMQ.instanceContainerErrored, {
         instanceId: testData.instanceId,
         containerId: testData.containerId,
-        error: new Error('Could not start instance')
+        error: 'Could not start instance, retry limit reached'
       })
       done()
     })
