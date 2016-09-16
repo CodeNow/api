@@ -1042,7 +1042,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
                 }
                 newCv.modifyAppCodeVersionWithLatestCommit({id: 'some-id'}, function (err, updatedCv) {
                   expect(err).to.be.null()
-                  expect(updatedCv).to.equal(newCv)
+                  expect(updatedCv.toJSON()).to.equal(newCv.toJSON())
                   done()
                 })
               })

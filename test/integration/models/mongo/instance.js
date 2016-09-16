@@ -159,7 +159,7 @@ describe('Instance Model Integration Tests', function () {
         expect(err).to.not.exist()
         expect(savedInstance.container.error).to.not.exist()
         expect(inst.container.error).to.not.exist()
-        expect(savedInstance).to.equal(inst)
+        expect(savedInstance.toJSON()).to.equal(inst.toJSON())
         expect(error.log.callCount).to.equal(1)
         var errArg = error.log.getCall(0).args[0]
         expect(errArg.output.statusCode).to.equal(409)
