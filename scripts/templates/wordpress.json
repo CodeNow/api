@@ -1,7 +1,7 @@
 {
   "from": "runnable/wordpress",
   "defaultTag": "4.6",
-  "ports": [80],
+  "ports": [80,443],
   "env": {
     "WORDPRESS_DB_USER": "mysql",
     "WORDPRESS_DB_PASSWORD": "mysql",
