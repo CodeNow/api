@@ -62,7 +62,7 @@ describe('joi: ' + moduleName, function () {
             opts,
             sinon.match.func
           )
-          expect(validData).to.deep.equal(ctx.data)
+          expect(validData).to.equal(ctx.data)
           done()
         })
       })

@@ -180,7 +180,7 @@ describe('InstanceForkService', function () {
       InstanceForkService.forkRepoInstance(mockInstance, mockOpts, mockSessionUser)
         .asCallback(function (err, instance) {
           expect(err).to.not.exist()
-          expect(instance).to.deep.equal(mockNewInstance)
+          expect(instance).to.equal(mockNewInstance)
           done()
         }
       )
@@ -813,7 +813,7 @@ describe('InstanceForkService', function () {
           two,
           pushInfo
         )
-        expect(results).to.deep.equal([ 1, 2 ])
+        expect(results).to.equal([ 1, 2 ])
         done()
       })
     })
@@ -825,7 +825,7 @@ describe('InstanceForkService', function () {
       InstanceForkService._forkOne.onSecondCall().rejects(error)
       InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
         expect(err).to.not.exist()
-        expect(results).to.deep.equal([ 1 ])
+        expect(results).to.equal([ 1 ])
         sinon.assert.calledOnce(Bunyan.prototype.error)
         sinon.assert.calledWithExactly(
           Bunyan.prototype.error,
@@ -857,7 +857,7 @@ describe('InstanceForkService', function () {
       InstanceForkService._forkOne.onCall(1).resolves(null)
       InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
         expect(err).to.not.exist()
-        expect(results).to.deep.equal([])
+        expect(results).to.equal([])
         done()
       })
     })

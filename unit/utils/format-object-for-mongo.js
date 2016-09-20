@@ -16,7 +16,7 @@ describe('format-object-for-mongo unit test', function () {
       goodKey: 555
     }
     formatObjectForMongo(testObject)
-    expect(testObject).to.deep.equal({
+    expect(testObject).to.equal({
       'bad-key-boo': 123,
       goodKey: 555
     })
@@ -53,7 +53,7 @@ describe('format-object-for-mongo unit test', function () {
       str: 'coolString'
     }
     formatObjectForMongo(testObject)
-    expect(testObject).to.deep.equal({
+    expect(testObject).to.equal({
       'another-bad-object': {
         'bad-key-boo': 123,
         goodKey: 555,

@@ -133,10 +133,10 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions', function () {
           expect(cv.appCodeVersions.length).to.equal(2)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !!appCodeVersion.additionalRepo
-          })).to.deep.contain(expected)
+          })).to.contain(expected)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !appCodeVersion.additionalRepo
-          })).to.deep.contain(ctx.mainAppCodeVersion)
+          })).to.contain(ctx.mainAppCodeVersion)
           done()
         })
       }))

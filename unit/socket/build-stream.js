@@ -108,7 +108,7 @@ describe('build stream: ' + moduleName, function () {
     })
 
     readableStream.on('end', function () {
-      expect(writeStream.jsonBuffer).to.deep.equal([
+      expect(writeStream.jsonBuffer).to.equal([
         { type: 'log', content: 'RUN echo hello' },
         { type: 'log', content: 'RUN echo world' }
       ])

@@ -90,7 +90,7 @@ describe('lib/logger.js unit test', function () {
           ns.run(function () {
             ns.set('tid', testTid)
             var serialized = logger._serializers.tx()
-            expect(serialized).to.deep.equal({
+            expect(serialized).to.equal({
               tid: testTid
             })
             done()
@@ -179,7 +179,7 @@ describe('lib/logger.js unit test', function () {
         cat: 'key'
       }
       var out = _removeExtraKeys(testObj)
-      expect(out).to.deep.equal(testObj)
+      expect(out).to.equal(testObj)
       done()
     })
 
@@ -194,7 +194,7 @@ describe('lib/logger.js unit test', function () {
       keypath.set(inputData, 'cert', 'bad')
       keypath.set(inputData, 'key', 'bad')
       var out = _removeExtraKeys(inputData)
-      expect(out).to.deep.equal(testObj)
+      expect(out).to.equal(testObj)
       done()
     })
 
@@ -213,7 +213,7 @@ describe('lib/logger.js unit test', function () {
       keypath.set(inputData, 'cert', 'bad')
       keypath.set(inputData, 'key', 'bad')
       var out = _removeExtraKeys(inputData)
-      expect(out).to.deep.equal(testObj)
+      expect(out).to.equal(testObj)
       done()
     })
 
@@ -252,7 +252,7 @@ describe('lib/logger.js unit test', function () {
         }
       }
       var out = _removeExtraKeys(inputData)
-      expect(out).to.deep.equal({
+      expect(out).to.equal({
         data: {
           data: {
             owner: {
@@ -269,7 +269,7 @@ describe('lib/logger.js unit test', function () {
         }
       })
       // Make sure the original object wasn't modified
-      expect(inputData).to.deep.equal({
+      expect(inputData).to.equal({
         data: {
           owner: {
             github: 234234234,
@@ -299,7 +299,7 @@ describe('lib/logger.js unit test', function () {
         }
       }
       var obj = removeEnvsAtPropertyPath(['instance'])(originalObj)
-      expect(obj.instance.env).to.deep.equal([ 'RUNNABLE_ID=1' ])
+      expect(obj.instance.env).to.equal([ 'RUNNABLE_ID=1' ])
       done()
     })
 
@@ -313,7 +313,7 @@ describe('lib/logger.js unit test', function () {
         }
       }
       var obj = removeEnvsAtPropertyPath(['instance'])(originalObj)
-      expect(obj.instance.ENV).to.deep.equal([ 'RUNNABLE_ID=1' ])
+      expect(obj.instance.ENV).to.equal([ 'RUNNABLE_ID=1' ])
       done()
     })
 
@@ -325,7 +325,7 @@ describe('lib/logger.js unit test', function () {
         ]
       }
       var obj = removeEnvsAtPropertyPath([''])(originalObj)
-      expect(obj.Env).to.deep.equal([ 'RUNNABLE_ID=1' ])
+      expect(obj.Env).to.equal([ 'RUNNABLE_ID=1' ])
       done()
     })
   })

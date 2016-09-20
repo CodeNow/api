@@ -86,7 +86,7 @@ describe('User - /users/:id', function () {
 
           expect(code).to.equal(200)
           expectNoSensitiveFields(body)
-          expect(body.userOptions).to.deep.equal({
+          expect(body.userOptions).to.equal({
             uiState: {
               shownCoachMarks: {
                 editButton: true
@@ -116,7 +116,7 @@ describe('User - /users/:id', function () {
           }
 
           expect(code).to.equal(200)
-          expect(body.userOptions).to.deep.equal({
+          expect(body.userOptions).to.equal({
             uiState: {
               shownCoachMarks: {
                 editButton: true
@@ -133,7 +133,7 @@ describe('User - /users/:id', function () {
               return done(err)
             }
             expect(code).to.equal(200)
-            expect(body.userOptions).to.deep.equal({
+            expect(body.userOptions).to.equal({
               uiState: {
                 shownCoachMarks: {
                   editButton: true,

@@ -366,7 +366,7 @@ describe('docker: ' + moduleName, function () {
             Docker.getDockerTag,
             opts.contextVersion
           )
-          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.deep.equal({
+          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
             contextVersion: opts.contextVersion,
             dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
@@ -374,7 +374,7 @@ describe('docker: ' + moduleName, function () {
             sessionUser: opts.sessionUser,
             ownerUsername: opts.ownerUsername
           })
-          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.deep.equal({
+          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
             noCache: opts.noCache,
             contextVersion: opts.contextVersion
@@ -446,7 +446,7 @@ describe('docker: ' + moduleName, function () {
             Docker.getDockerTag,
             opts.contextVersion
           )
-          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.deep.equal({
+          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
             contextVersion: opts.contextVersion,
             dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
@@ -454,7 +454,7 @@ describe('docker: ' + moduleName, function () {
             sessionUser: opts.sessionUser,
             ownerUsername: opts.ownerUsername
           })
-          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.deep.equal({
+          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
             noCache: opts.noCache,
             contextVersion: opts.contextVersion
@@ -599,7 +599,7 @@ describe('docker: ' + moduleName, function () {
         'com.docker.swarm.constraints': '["org==owner"]',
         type: 'image-builder-container'
       }
-      expect(labels).to.deep.equal(expectedLabels)
+      expect(labels).to.equal(expectedLabels)
       // assert type casting to string for known value originally of type Number
       expect(labels.sessionUserGithubId).to.be.a.string()
       done()
@@ -698,7 +698,7 @@ describe('docker: ' + moduleName, function () {
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
           'RUNNABLE_PUSH_IMAGE=true'
         ]
-        expect(envs).to.deep.equal(expectedEnvs)
+        expect(envs).to.equal(expectedEnvs)
         done()
       })
     })
@@ -749,7 +749,7 @@ describe('docker: ' + moduleName, function () {
         if (err) { return done(err) }
         expect(buildInfo.dockerImage).to.equal(dockerLogs.successDockerImage)
         expect(buildInfo.failed).to.equal(false)
-        expect(buildInfo.log).to.deep.equal(
+        expect(buildInfo.log).to.equal(
           dockerLogs.success
             .split('\n')
             .map(JSON.parse.bind(JSON))
@@ -1458,7 +1458,7 @@ describe('docker: ' + moduleName, function () {
           'BASE_URL=https://app.runnable-gamma.com/CodeNow/test-ws-client/'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal(originalEnvs)
+        expect(envs).to.equal(originalEnvs)
         done()
       })
 
@@ -1468,7 +1468,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=$EXAMPLE'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'EXAMPLE=37',
           'HELLO=37'
         ])
@@ -1481,7 +1481,7 @@ describe('docker: ' + moduleName, function () {
           'H=$E'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'E=37',
           'H=37'
         ])
@@ -1494,7 +1494,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=$EXAMPLE-$EXAMPLE'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'EXAMPLE=37',
           'HELLO=37-37'
         ])
@@ -1509,7 +1509,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=_YO$_YO-YOO$YOO-YOOO$YOOO'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'YOOO=3',
           'YOO=2',
           '_YO=1',
@@ -1524,7 +1524,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=YO$23'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           '23=3',
           'HELLO=YO$23'
         ])
@@ -1539,7 +1539,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=_YO${_YO}-YOO${YOO}-YOOO${YOOO}'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'YOOO=3',
           'YOO=2',
           '_YO=1',
@@ -1558,7 +1558,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=_YO${_YO}-YOO${YOO}-YOOO${YOOO}'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'START=_YO${_YO}-YOO${YOO}-YOOO${YOOO}',
           'YOOO=3',
           'YOO=2',
@@ -1577,7 +1577,7 @@ describe('docker: ' + moduleName, function () {
           'YO="432${YO}"'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'YO=3',
           'YO=2',
           'YO=1',
@@ -1596,7 +1596,7 @@ describe('docker: ' + moduleName, function () {
           'FOO=$BAZ'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'FOO=1',
           'BAR=1',
           'FOO=1',
@@ -1613,7 +1613,7 @@ describe('docker: ' + moduleName, function () {
           'A=$B'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'B=/HI/',
           'A=/HI/'
         ])
@@ -1740,7 +1740,7 @@ describe('docker: ' + moduleName, function () {
         model._createUserContainerLabels(ctx.opts, function (err, labels) {
           if (err) { return done(err) }
           var opts = ctx.opts
-          expect(labels).to.deep.equal({
+          expect(labels).to.equal({
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
             instanceShortHash: opts.instance.shortHash,
@@ -1759,7 +1759,7 @@ describe('docker: ' + moduleName, function () {
         model._createUserContainerLabels(ctx.opts, function (err, labels) {
           if (err) { return done(err) }
           var opts = ctx.opts
-          expect(labels).to.deep.equal({
+          expect(labels).to.equal({
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
             instanceShortHash: opts.instance.shortHash,
