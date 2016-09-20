@@ -14,6 +14,7 @@ var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var ContainerImageBuilderCreated = require('workers/container.image-builder.started')
 var ContextVersion = require('models/mongo/context-version')
+var InstanceService = require('models/services/instance-service')
 var messenger = require('socket/messenger')
 
 var afterEach = lab.afterEach
@@ -56,6 +57,7 @@ describe('container.image-builder.started unit test', function () {
     beforeEach(function (done) {
       sinon.stub(ContextVersion, 'updateAsync')
       sinon.stub(ContextVersion, 'findAsync')
+      sinon.stub(InstanceService, 'emitInstanceUpdateByCvBuildId').returns()
       sinon.stub(messenger, 'emitContextVersionUpdate')
       done()
     })
@@ -63,6 +65,7 @@ describe('container.image-builder.started unit test', function () {
     afterEach(function (done) {
       ContextVersion.updateAsync.restore()
       ContextVersion.findAsync.restore()
+      InstanceService.emitInstanceUpdateByCvBuildId.restore()
       messenger.emitContextVersionUpdate.restore()
       done()
     })
@@ -118,6 +121,8 @@ describe('container.image-builder.started unit test', function () {
         sinon.assert.calledTwice(messenger.emitContextVersionUpdate)
         sinon.assert.calledWith(messenger.emitContextVersionUpdate, testCv1, 'build_running')
         sinon.assert.calledWith(messenger.emitContextVersionUpdate, testCv2, 'build_running')
+
+        sinon.assert.calledWith(InstanceService.emitInstanceUpdateByCvBuildId, testCvBuildId, 'build_running')
         done()
       })
     })
