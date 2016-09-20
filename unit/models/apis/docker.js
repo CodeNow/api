@@ -1793,5 +1793,50 @@ describe('docker: ' + moduleName, function () {
         })
       })
     })
-  })
+  }) // end _createUserContainerLabels
+
+  describe('pushImage', function () {
+    let pushStub
+    let docker
+    const testImage = 'chill/fire:ice'
+    beforeEach(function (done) {
+      docker = new Docker()
+      pushStub = {
+        push: sinon.stub()
+      }
+      sinon.stub(docker.docker, 'getImage').returns(pushStub)
+      sinon.stub(docker.docker.modem, 'followProgress')
+      done()
+    })
+
+    afterEach(function (done) {
+      docker.docker.getImage.restore()
+      docker.docker.modem.followProgress.restore()
+      done()
+    })
+
+    it('should call push', function (done) {
+      const testStream = 'thisisatest'
+      pushStub.push.yieldsAsync(null, testStream)
+      docker.docker.modem.followProgress.yieldsAsync(null)
+
+      docker.pushImage(testImage).asCallback(function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(docker.docker.getImage)
+        sinon.assert.calledWith(docker.docker.getImage, testImage)
+        sinon.assert.calledOnce(pushStub.push)
+        sinon.assert.calledWith(pushStub.push, { tag: 'ice' }, sinon.match.func)
+        done()
+      })
+    })
+
+    it('should resolve error', function (done) {
+      const testError = 'someerror'
+      pushStub.push.yieldsAsync(testError)
+      docker.pushImage(testImage).asCallback(function (err) {
+        expect(err.message).to.equal(testError)
+        done()
+      })
+    })
+  }) // end pushImage
 })
