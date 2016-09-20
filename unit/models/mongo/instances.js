@@ -2127,4 +2127,64 @@ describe('Instance Model Tests', function () {
         })
     })
   })
+
+  describe('markAsCreating', function () {
+    const testInstanceId = '123'
+    const testContextVersionId = '456'
+    const testContainerId = '678'
+    const testContainerInfo = {
+      test: 'data'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdateAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAndUpdateAsync.restore()
+      done()
+    })
+
+    it('should throw NotFound', (done) => {
+      Instance.findOneAndUpdateAsync.resolves()
+      Instance.markAsCreating(
+        testInstanceId,
+        testContextVersionId,
+        testContainerId,
+        testContainerInfo
+      ).asCallback((err) => {
+        expect(err).to.be.an.instanceOf(Instance.NotFoundError)
+        done()
+      })
+    })
+
+    it('should markAsCreating', (done) => {
+      Instance.findOneAndUpdateAsync.resolves({})
+      Instance.markAsCreating(
+        testInstanceId,
+        testContextVersionId,
+        testContainerId,
+        testContainerInfo
+      ).asCallback((err) => {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+        sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+          _id: testInstanceId,
+          'contextVersion.id': testContextVersionId,
+          $or: [{
+            container: testContainerId
+          }, {
+            container: {
+              $exists: false
+            }
+          }]
+        }, {
+          $set: {
+            container: testContainerInfo
+          }
+        })
+        done()
+      })
+    })
+  }) // end markAsCreating
 })
