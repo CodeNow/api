@@ -208,7 +208,6 @@ describe('Organization Service', function () {
         BigPoppaClient.prototype.getOrganizations.resolves([])
         OrganizationService.getByGithubId(orgGithubId)
           .asCallback(function (err) {
-            console.log(err)
             expect(err.message).to.match(/Organization not found/)
             done()
           })
