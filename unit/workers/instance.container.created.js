@@ -9,7 +9,7 @@ const sinon = require('sinon')
 const ContextVersion = require('models/mongo/context-version')
 const Instance = require('models/mongo/instance')
 const InstanceService = require('models/services/instance-service')
-const rabbitMQ = require('models/rabbitmq')
+const Docker = require('models/apis/docker')
 const User = require('models/mongo/user')
 const Worker = require('workers/instance.container.created')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
@@ -105,13 +105,13 @@ describe('InstanceContainerCreatedWorker Unit tests', function () {
     describe('_findAndSetCreatingInstance', function () {
       beforeEach(function (done) {
         sinon.stub(Instance, 'markAsCreating')
-        sinon.stub(Worker.prototype, '_publishRemoveAndStopWorker')
+        sinon.stub(Worker.prototype, '_removeContainerAndStopWorker')
         done()
       })
 
       afterEach(function (done) {
         Instance.markAsCreating.restore()
-        Worker.prototype._publishRemoveAndStopWorker.restore()
+        Worker.prototype._removeContainerAndStopWorker.restore()
         done()
       })
 
@@ -132,7 +132,7 @@ describe('InstanceContainerCreatedWorker Unit tests', function () {
           done()
         })
 
-        it('should _publishRemoveAndStopWorker on NotFound', (done) => {
+        it('should _removeContainerAndStopWorker on NotFound', (done) => {
           Instance.markAsCreating.rejects(new Instance.NotFoundError({}))
           worker._findAndSetCreatingInstance().asCallback((err) => {
             if (err) { return done(err) }
@@ -152,37 +152,37 @@ describe('InstanceContainerCreatedWorker Unit tests', function () {
       })
     }) // end _findAndSetCreatingInstance
 
-    describe('_publishRemoveAndStopWorker', function () {
+    describe('_removeContainerAndStopWorker', function () {
       const testError = new Error('bad')
 
       beforeEach(function (done) {
-        sinon.stub(rabbitMQ, 'publishContainerRemove')
+        sinon.stub(Docker.prototype, 'removeContainerAsync')
         done()
       })
 
       afterEach(function (done) {
-        rabbitMQ.publishContainerRemove.restore()
+        Docker.prototype.removeContainerAsync.restore()
         done()
       })
 
       it('should publish container.remove', (done) => {
-        expect(() => {
-          worker._publishRemoveAndStopWorker(testError)
-        }).to.throw()
-        sinon.assert.calledOnce(rabbitMQ.publishContainerRemove)
-        sinon.assert.calledWith(rabbitMQ.publishContainerRemove, {
-          containerId: testId
+        Docker.prototype.removeContainerAsync.resolves()
+        worker._removeContainerAndStopWorker(testError).asCallback(() => {
+          sinon.assert.calledOnce(Docker.prototype.removeContainerAsync)
+          sinon.assert.calledWith(Docker.prototype.removeContainerAsync, testId)
+          done()
         })
-        done()
       })
 
       it('should throw worker stop error', (done) => {
-        expect(() => {
-          worker._publishRemoveAndStopWorker(testError)
-        }).to.throw(WorkerStopError, /bad/)
-        done()
+        Docker.prototype.removeContainerAsync.resolves()
+        worker._removeContainerAndStopWorker(testError).asCallback((err) => {
+          expect(err).to.be.an.instanceOf(WorkerStopError)
+          expect(err.message).to.contain(testError.message)
+          done()
+        })
       })
-    }) // end _publishRemoveAndStopWorker
+    }) // end _removeContainerAndStopWorker
 
     describe('_startInstance', function () {
       const testInstance = {
