@@ -41,11 +41,21 @@ describe('InstanceContainerCreatedWorker Unit tests', function () {
       }
     }
   }
-  const testJob = {
+  let testJob = {
     id: testId,
     host: testHost,
     inspectData: testInspect
   }
+
+  beforeEach(function (done) {
+    testJob = {
+      id: testId,
+      host: testHost,
+      inspectData: testInspect
+    }
+
+    done()
+  })
 
   describe('task', function () {
     beforeEach(function (done) {
@@ -185,13 +195,14 @@ describe('InstanceContainerCreatedWorker Unit tests', function () {
     }) // end _removeContainerAndStopWorker
 
     describe('_startInstance', function () {
-      const testInstance = {
-        shsortHash: '12323'
-      }
+      let testInstance
 
       beforeEach(function (done) {
         sinon.stub(InstanceService, 'startInstance')
         sinon.stub(User, 'findByGithubIdAsync')
+        testInstance = {
+          shsortHash: '12323'
+        }
         done()
       })
 
