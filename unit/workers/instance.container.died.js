@@ -274,7 +274,7 @@ describe('InstanceContainerDiedWorker', function () {
         expect(err.message).to.equal(mongoError.message)
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
-          ctx.mockInstance, ctx.sessionUserGithubId, 'update', true)
+          ctx.mockInstance, ctx.sessionUserGithubId, 'update')
         done()
       })
     })

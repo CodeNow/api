@@ -173,7 +173,7 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
           sinon.assert.calledWith(messenger.emitContextVersionUpdate, cv2, 'build_started')
 
           sinon.assert.calledOnce(InstanceService.emitInstanceUpdateByCvBuildId)
-          sinon.assert.calledWith(InstanceService.emitInstanceUpdateByCvBuildId, testCvBuildId, 'patch')
+          sinon.assert.calledWith(InstanceService.emitInstanceUpdateByCvBuildId, testCvBuildId, 'update')
 
           done()
         })
