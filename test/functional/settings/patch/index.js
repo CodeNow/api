@@ -73,7 +73,7 @@ describe('PATCH /settings/:id', function () {
         expect(body.notifications.slack.apiToken).to.equal(
           newSettings.notifications.slack.apiToken
         )
-        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
+        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.equal(
           newSettings.notifications.slack.githubUsernameToSlackIdMap
         )
         done()
@@ -100,7 +100,7 @@ describe('PATCH /settings/:id', function () {
         expect(body.notifications.slack.apiToken).to.equal(
           newSettings.notifications.slack.apiToken
         )
-        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
+        expect(body.notifications.slack.githubUsernameToSlackIdMap).to.equal(
           newSettings.notifications.slack.githubUsernameToSlackIdMap
         )
         expect(body.ignoredHelpCards.length).to.equal(1)

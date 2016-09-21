@@ -907,7 +907,7 @@ describe('BuildService', function () {
     it('should create a new context version', function (done) {
       BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err, newContextVersion) {
         expect(err).to.not.exist()
-        expect(newContextVersion).to.deep.equal(mockContextVersion)
+        expect(newContextVersion).to.equal(mockContextVersion)
         sinon.assert.calledOnce(Context.findOne)
         sinon.assert.calledWithExactly(
           Context.findOne,

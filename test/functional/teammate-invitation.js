@@ -143,7 +143,7 @@ describe('TeammateInvitation', function () {
         sinon.assert.calledOnce(SendGrid.prototype.inviteUser)
         sinon.assert.notCalled(SendGrid.prototype.inviteAdmin)
         var inviteUserArgs = SendGrid.prototype.inviteUser.args[0]
-        expect(inviteUserArgs[0], 'recipient').deep.to.equal(opts.recipient)
+        expect(inviteUserArgs[0], 'recipient').to.equal(opts.recipient)
         expect(inviteUserArgs[1]._id.toString(), 'sessionUser').to.equal(ctx.user.id())
         expect(inviteUserArgs[2], 'organizationId').to.equal(superOrg.githubId)
         expect(res).to.be.an.object()
@@ -178,7 +178,7 @@ describe('TeammateInvitation', function () {
         sinon.assert.calledOnce(SendGrid.prototype.inviteAdmin)
         sinon.assert.notCalled(SendGrid.prototype.inviteUser)
         var inviteAdminArgs = SendGrid.prototype.inviteAdmin.args[0]
-        expect(inviteAdminArgs[0], 'recipient').to.deep.equal(opts.recipient)
+        expect(inviteAdminArgs[0], 'recipient').to.equal(opts.recipient)
         expect(inviteAdminArgs[1]._id.toString(), 'sessionUser').to.equal(ctx.user.id())
         expect(inviteAdminArgs[2], 'emailMessage').to.equal('asdasdasd')
         expect(res).to.be.an.object()

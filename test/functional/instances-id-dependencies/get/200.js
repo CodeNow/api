@@ -73,7 +73,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           expect(err).to.not.exist()
           expect(data).to.be.an.array()
           expect(data).to.have.a.length(1)
-          expect(data[0]).to.deep.contain({
+          expect(data[0]).to.contain({
             id: ctx.instance.attrs._id.toString(),
             shortHash: ctx.instance.attrs.shortHash.toString(),
             lowerName: ctx.instance.attrs.lowerName,

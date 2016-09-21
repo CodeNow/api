@@ -89,7 +89,7 @@ describe('Instance Model Tests', function () {
       var instance = mongoFactory.createNewInstance('container-stopping')
       Instance.assertNotStartingOrStopping(instance)
       .tap(function (result) {
-        expect(result).to.equal(instance)
+        expect(result.toJSON()).to.equal(instance.toJSON())
       })
       .asCallback(done)
     })
@@ -659,7 +659,7 @@ describe('Instance Model Tests', function () {
             var expected = assign(instance, {
               hostname: instance.getElasticHostname(ownerName)
             }).toJSON()
-            expect(instances[0].toJSON()).to.deep.equal(expected)
+            expect(instances[0].toJSON()).to.equal(expected)
             sinon.assert.calledWith(
               Instance.find,
               {
@@ -677,7 +677,7 @@ describe('Instance Model Tests', function () {
             var expected = assign(instance, {
               hostname: instance.getElasticHostname(ownerName)
             }).toJSON()
-            expect(instances[0].toJSON()).to.deep.equal(expected)
+            expect(instances[0].toJSON()).to.equal(expected)
             sinon.assert.calledWith(Instance.find,
               {
                 'owner.github': instance.owner.github,
@@ -701,7 +701,7 @@ describe('Instance Model Tests', function () {
         ]
       })
       var hostnames = instanceWithOnlyEnvs.getHostnamesFromEnvsAndFnr()
-      expect(hostnames).to.deep.equal([
+      expect(hostnames).to.equal([
         'hello-staging-' + ownerName + '.runnableapp.com',
         'adelle-staging-' + ownerName + '.runnableapp.com'
       ])
@@ -720,7 +720,7 @@ describe('Instance Model Tests', function () {
         }
       ])
       var hostnames = instanceWithOnlyFnR.getHostnamesFromEnvsAndFnr()
-      expect(hostnames).to.deep.equal([
+      expect(hostnames).to.equal([
         'hello-staging-' + ownerName + '.runnableapp.com',
         'adelle-staging-' + ownerName + '.runnableapp.com'
       ])
@@ -746,7 +746,7 @@ describe('Instance Model Tests', function () {
       ])
 
       var hostnames = instanceWithBoth.getHostnamesFromEnvsAndFnr()
-      expect(hostnames).to.deep.equal([
+      expect(hostnames).to.equal([
         'hello2-staging-' + ownerName + '.runnableapp.com',
         'adelle-staging-' + ownerName + '.runnableapp.com',
         'hello-staging-' + ownerName + '.runnableapp.com',
@@ -1163,22 +1163,22 @@ describe('Instance Model Tests', function () {
   describe('addDefaultIsolationOpts', function () {
     it('should add default options for Isolation', function (done) {
       var opts = {}
-      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+      expect(Instance.addDefaultIsolationOpts(opts)).to.equal({
         $or: [
           { isolated: { $exists: false } },
           { isIsolationGroupMaster: true }
         ]
       })
       // enforce the function returns a new object, not the same one
-      expect(opts).to.deep.equal({})
+      expect(opts).to.equal({})
       opts = { isolated: 4 }
-      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({ isolated: 4 })
+      expect(Instance.addDefaultIsolationOpts(opts)).to.equal({ isolated: 4 })
       opts = { isIsolationGroupMaster: true }
-      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+      expect(Instance.addDefaultIsolationOpts(opts)).to.equal({
         isIsolationGroupMaster: true
       })
       opts = { $or: [{ value: 4 }] }
-      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+      expect(Instance.addDefaultIsolationOpts(opts)).to.equal({
         $or: [
           { value: 4 },
           { isolated: { $exists: false } },
@@ -1190,17 +1190,17 @@ describe('Instance Model Tests', function () {
 
     it('should not add them when looking up by lowerName', function (done) {
       var opts = {}
-      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+      expect(Instance.addDefaultIsolationOpts(opts)).to.equal({
         $or: [
           { isolated: { $exists: false } },
           { isIsolationGroupMaster: true }
         ]
       })
       // enforce the function returns a new object, not the same one
-      expect(opts).to.deep.equal({})
+      expect(opts).to.equal({})
       // check by lowerName
       opts = { lowerName: 'foobar' }
-      expect(Instance.addDefaultIsolationOpts(opts)).to.deep.equal({
+      expect(Instance.addDefaultIsolationOpts(opts)).to.equal({
         lowerName: 'foobar'
       })
       done()
@@ -1258,7 +1258,7 @@ describe('Instance Model Tests', function () {
             ctx.mockSessionUser,
             'update'
           )
-          expect(instances).to.deep.equal(ctx.mockInstances)
+          expect(instances).to.equal(ctx.mockInstances)
           done()
         })
       })

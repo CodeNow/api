@@ -45,7 +45,7 @@ describe('build-files: ' + moduleName, function () {
           Key: 'sourceKey',
           VersionId: 'version'
         }
-        expect(model.s3.getObject.getCall(0).args[0]).to.deep.equal(data)
+        expect(model.s3.getObject.getCall(0).args[0]).to.equal(data)
         expect(model.putFileStream.calledWith('destKey', readStream))
           .to.be.true()
         done()

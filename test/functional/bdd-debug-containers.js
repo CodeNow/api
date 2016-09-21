@@ -139,19 +139,19 @@ describe('BDD - Debug Containers', function () {
       ctx.user.createDebugContainer(opts, function (err, dc) {
         if (err) { return done(err) }
         expect(dc).to.exist()
-        expect(dc).to.deep.contain({
+        expect(dc).to.contain({
           instance: opts.instance,
           contextVersion: opts.contextVersion,
           layerId: layer
         })
         expect(dc.inspect).to.exist()
-        expect(dc.inspect).to.deep.contain({
+        expect(dc.inspect).to.contain({
           dockerHost: ctx.instance.attrs.contextVersion.dockerHost,
           Cmd: [ 'sleep', '28800' ],
           State: { Running: true }
         })
         expect(Docker.prototype.createContainer.calledOnce).to.be.true()
-        expect(Docker.prototype.createContainer.getCall(0).args[0]).to.deep.contain({
+        expect(Docker.prototype.createContainer.getCall(0).args[0]).to.contain({
           Cmd: [ 'sleep', '28800' ],
           Image: layer
         })
@@ -203,7 +203,7 @@ describe('BDD - Debug Containers', function () {
         expect(code).to.equal(200)
         expect(body).to.be.an.array()
         expect(body).to.have.length(3)
-        expect(body).to.deep.include([
+        expect(body).to.include([
           { name: 'foo', path: '/', isDir: true },
           { name: 'bar', path: '/', isDir: true },
           { name: 'baz.txt', path: '/', isDir: false }

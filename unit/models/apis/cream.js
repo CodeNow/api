@@ -103,6 +103,7 @@ describe('Cream API', function () {
     let requestStub
     let response
     const path = 'invoices'
+
     beforeEach(function (done) {
       response = {
         statusCode: 200,
@@ -113,11 +114,13 @@ describe('Cream API', function () {
       })
       done()
     })
+
     afterEach(function (done) {
       requestStub.restore()
       done()
     })
-    it('should call the `resquest` module with the GET `method` and `url`', function (done) {
+
+    it('should call the `request` module with the GET `method` and `url`', function (done) {
       CreamAPI._makeRequest(path, organizationId)
         .then(function () {
           sinon.assert.calledOnce(requestStub)
@@ -131,9 +134,9 @@ describe('Cream API', function () {
         .asCallback(done)
     })
 
-    it('should call the `resquest` module with the POST `method`, `body` and `url` if body is passed', function (done) {
+    it('should call the `request` module with the POST `method`, `body` and `url` if body is passed', function (done) {
       let body = {}
-      return CreamAPI._makeRequest(path, organizationId, body)
+      CreamAPI._makeRequest(path, organizationId, body)
         .then(function () {
           sinon.assert.calledOnce(requestStub)
           sinon.assert.calledWith(requestStub, {
@@ -201,7 +204,7 @@ describe('Cream API', function () {
       }
       CreamAPI._makeRequest(path, organizationId)
         .then(function (res) {
-          expect(res).to.deep.equal(obj)
+          expect(res).to.equal(obj)
         })
         .asCallback(done)
     })

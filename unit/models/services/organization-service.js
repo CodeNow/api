@@ -368,7 +368,7 @@ describe('Organization Service', function () {
             sinon.assert.calledWith(OrganizationService.getByGithubUsername, bigPoppaOrg.name)
             sinon.assert.calledOnce(UserService.getMongoUsersByBigPoppaUsers)
             sinon.assert.calledWith(UserService.getMongoUsersByBigPoppaUsers, [bigPoppaUser])
-            expect(githubUsers).to.deep.equal([githubUser])
+            expect(githubUsers).to.equal([githubUser])
           })
           .asCallback(done)
       })

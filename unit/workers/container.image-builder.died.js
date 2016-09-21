@@ -339,7 +339,7 @@ describe('OnImageBuilderContainerDie', function () {
         .asCallback(function (err, instances) {
           expect(err).to.not.exist()
           expect(instances).to.have.length(2)
-          expect(instances).to.deep.equal([
+          expect(instances).to.equal([
             { _id: 'id-1', contextVersion: { _id: 'cv-1' } },
             { _id: 'id-2', contextVersion: { _id: 'cv-2' } }
           ])

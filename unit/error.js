@@ -60,7 +60,7 @@ describe('Error: ' + moduleName, function () {
       expect(rollbar.handleErrorWithPayloadData.getCall(0).args[0].message)
         .to.equal('hello error')
       expect(rollbar.handleErrorWithPayloadData.getCall(0).args[1])
-        .to.deep.contain({ level: 'info' })
+        .to.contain({ level: 'info' })
       done()
     })
   })
