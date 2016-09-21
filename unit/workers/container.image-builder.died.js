@@ -523,8 +523,10 @@ describe('OnImageBuilderContainerDie', function () {
     it('should publish push image and clear memory', (done) => {
       const testImageTag = 'asdf.com/asdf/asdf:123'
       const testContainerId = '1232435678'
+      const testUrl = 'http://123.4.4.5:4242'
       const testJob = {
         id: testContainerId,
+        host: testUrl,
         inspectData: {
           Config: {
             Labels: {
@@ -539,7 +541,8 @@ describe('OnImageBuilderContainerDie', function () {
 
         sinon.assert.calledOnce(rabbitMQ.pushImage)
         sinon.assert.calledWith(rabbitMQ.pushImage, {
-          imageTag: testImageTag
+          imageTag: testImageTag,
+          dockerHostUrl: testUrl
         })
 
         sinon.assert.calledOnce(rabbitMQ.clearContainerMemory)
