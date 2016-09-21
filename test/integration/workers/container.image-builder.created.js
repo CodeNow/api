@@ -147,7 +147,7 @@ describe('OnImageBuilderContainerCreate Integration Tests', function () {
               sinon.assert.calledWith(
                 messenger._emitInstanceUpdateAction,
                 sinon.match.has('_id', ctx.instance._id),
-                'patch'
+                'build_started'
               )
             })
             .asCallback(done)
