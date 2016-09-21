@@ -122,7 +122,7 @@ describe('container.image-builder.started unit test', function () {
         sinon.assert.calledWith(messenger.emitContextVersionUpdate, testCv1, 'build_running')
         sinon.assert.calledWith(messenger.emitContextVersionUpdate, testCv2, 'build_running')
 
-        sinon.assert.calledWith(InstanceService.emitInstanceUpdateByCvBuildId, testCvBuildId, 'build_running')
+        sinon.assert.calledWith(InstanceService.emitInstanceUpdateByCvBuildId, testCvBuildId, 'patch')
         done()
       })
     })
