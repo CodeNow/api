@@ -11,10 +11,11 @@ const Instance = require('models/mongo/instance')
 const InstanceService = require('models/services/instance-service')
 const Docker = require('models/apis/docker')
 const User = require('models/mongo/user')
-const Worker = require('workers/instance.container.created')
+const InstanceContainerCreated = require('workers/instance.container.created')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const lab = exports.lab = Lab.script()
+const Worker = InstanceContainerCreated._Worker
 require('sinon-as-promised')(require('bluebird'))
 
 const afterEach = lab.afterEach
@@ -69,7 +70,7 @@ describe('InstanceContainerCreatedWorker Unit tests', function () {
     })
 
     it('should call run', (done) => {
-      Worker.task(testJob).then(() => {
+      InstanceContainerCreated.task(testJob).then(() => {
         sinon.assert.calledOnce(Worker.prototype.run)
         done()
       })
