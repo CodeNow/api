@@ -48,7 +48,7 @@ describe('BillingService', function () {
     })
 
     it('should get the user from Big Poppa', function (done) {
-      return BillingService.getBigPoppaUserIdAndAssertUserIsPartOfOrg(userGithubId, orgId)
+      BillingService.getBigPoppaUserIdAndAssertUserIsPartOfOrg(userGithubId, orgId)
         .then(function (response) {
           sinon.assert.calledOnce(getBigPoppaUserByGithubIdStub)
           sinon.assert.calledWithExactly(getBigPoppaUserByGithubIdStub, userGithubId)
@@ -57,7 +57,7 @@ describe('BillingService', function () {
     })
 
     it('should return then user if found', function (done) {
-      return BillingService.getBigPoppaUserIdAndAssertUserIsPartOfOrg(userGithubId, orgId)
+      BillingService.getBigPoppaUserIdAndAssertUserIsPartOfOrg(userGithubId, orgId)
         .then(function (response) {
           expect(response).to.equal(userMock)
         })
@@ -87,7 +87,7 @@ describe('BillingService', function () {
     })
 
     it('should get the user from Big Poppa', function (done) {
-      return BillingService.getBigPoppaUserByGithubId(userGithubId)
+      BillingService.getBigPoppaUserByGithubId(userGithubId)
         .then(function (response) {
           sinon.assert.calledOnce(getUsersStub)
           sinon.assert.calledWithExactly(getUsersStub, { githubId: userGithubId })
@@ -96,7 +96,7 @@ describe('BillingService', function () {
     })
 
     it('should return then user if found', function (done) {
-      return BillingService.getBigPoppaUserByGithubId(userGithubId)
+      BillingService.getBigPoppaUserByGithubId(userGithubId)
         .then(function (response) {
           expect(response).to.equal(userMock)
         })
@@ -142,7 +142,7 @@ describe('BillingService', function () {
     })
 
     it('should call `getBigPoppaUserIdAndAssertUserIsPartOfOrg`', function (done) {
-      return BillingService.getPlanForOrganization(orgId, userGithubId, token)
+      BillingService.getPlanForOrganization(orgId, userGithubId, token)
         .then(function () {
           sinon.assert.calledOnce(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub)
           sinon.assert.calledWithExactly(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub, userGithubId, orgId)
@@ -151,7 +151,7 @@ describe('BillingService', function () {
     })
 
     it('should call `getPlanForOrganization`', function (done) {
-      return BillingService.getPlanForOrganization(orgId, userGithubId, token)
+      BillingService.getPlanForOrganization(orgId, userGithubId, token)
         .then(function () {
           sinon.assert.calledOnce(getPlanForOrganizationStub)
           sinon.assert.calledWithExactly(getPlanForOrganizationStub, orgId)
@@ -198,7 +198,7 @@ describe('BillingService', function () {
     })
 
     it('should call `getBigPoppaUserIdAndAssertUserIsPartOfOrg`', function (done) {
-      return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
+      BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
         .then(function () {
           sinon.assert.calledOnce(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub)
           sinon.assert.calledWithExactly(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub, userGithubId, orgId)
@@ -207,7 +207,7 @@ describe('BillingService', function () {
     })
 
     it('should call `getInvoicesForOrganization`', function (done) {
-      return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
+      BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
         .then(function () {
           sinon.assert.calledOnce(getInvoicesForOrganizationStub)
           sinon.assert.calledWithExactly(getInvoicesForOrganizationStub, orgId)
@@ -216,7 +216,7 @@ describe('BillingService', function () {
     })
 
     it('should call `Github.getUserById` and add the github user', function (done) {
-      return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
+      BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
         .then(function (res) {
           sinon.assert.calledOnce(getUserByIdStub)
           sinon.assert.calledWithExactly(getUserByIdStub, githubId)
@@ -230,7 +230,7 @@ describe('BillingService', function () {
 
     it('should not call `Github.getUserById` if there is not github id', function (done) {
       invoice.paidBy.githubId = null
-      return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
+      BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
         .then(function (res) {
           sinon.assert.notCalled(getUserByIdStub)
           expect(res[0]).to.be.an.object()
@@ -243,7 +243,7 @@ describe('BillingService', function () {
     it('should return the error even when `getUserById` throws an error', function (done) {
       getUserByIdStub.rejects(new Error())
 
-      return BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
+      BillingService.getInvoicesForOrganization(orgId, userGithubId, token)
         .then(function (res) {
           sinon.assert.calledOnce(getUserByIdStub)
           sinon.assert.calledWithExactly(getUserByIdStub, githubId)
@@ -294,7 +294,7 @@ describe('BillingService', function () {
     })
 
     it('should call `getBigPoppaUserIdAndAssertUserIsPartOfOrg`', function (done) {
-      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
+      BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
         .then(function () {
           sinon.assert.calledOnce(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub)
           sinon.assert.calledWithExactly(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub, userGithubId, orgId)
@@ -303,7 +303,7 @@ describe('BillingService', function () {
     })
 
     it('should call `getPaymentMethodForOrganization`', function (done) {
-      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
+      BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
         .then(function () {
           sinon.assert.calledOnce(getPaymentMethodForOrganizationStub)
           sinon.assert.calledWithExactly(getPaymentMethodForOrganizationStub, orgId)
@@ -312,7 +312,7 @@ describe('BillingService', function () {
     })
 
     it('should call `Github.getUserById` and add the github user', function (done) {
-      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
+      BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
         .then(function (res) {
           sinon.assert.calledOnce(getUserByIdStub)
           sinon.assert.calledWithExactly(getUserByIdStub, githubId)
@@ -326,7 +326,7 @@ describe('BillingService', function () {
 
     it('should not call `Github.getUserById` if there is not github id', function (done) {
       paymentMethod.owner.githubId = null
-      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
+      BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
         .then(function (res) {
           sinon.assert.notCalled(getUserByIdStub)
           expect(res).to.be.an.object()
@@ -339,7 +339,7 @@ describe('BillingService', function () {
     it('should return the error even when `getUserById` throws an error', function (done) {
       getUserByIdStub.rejects(new Error())
 
-      return BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
+      BillingService.getPaymentMethodForOrganization(orgId, userGithubId, token)
         .then(function (res) {
           sinon.assert.calledOnce(getUserByIdStub)
           sinon.assert.calledWithExactly(getUserByIdStub, githubId)
@@ -380,7 +380,7 @@ describe('BillingService', function () {
     })
 
     it('should call `getBigPoppaUserIdAndAssertUserIsPartOfOrg`', function (done) {
-      return BillingService.postPaymentMethodForOrganization(orgId, userGithubId, stripeToken, userEmail)
+      BillingService.postPaymentMethodForOrganization(orgId, userGithubId, stripeToken, userEmail)
         .then(function () {
           sinon.assert.calledOnce(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub)
           sinon.assert.calledWithExactly(getBigPoppaUserIdAndAssertUserIsPartOfOrgStub, userGithubId, orgId)
@@ -389,7 +389,7 @@ describe('BillingService', function () {
     })
 
     it('should call `postPaymentMethodForOrganization`', function (done) {
-      return BillingService.postPaymentMethodForOrganization(orgId, userGithubId, stripeToken, userEmail)
+      BillingService.postPaymentMethodForOrganization(orgId, userGithubId, stripeToken, userEmail)
         .then(function () {
           sinon.assert.calledOnce(postPaymentMethodForOrganizationStub)
           sinon.assert.calledWithExactly(postPaymentMethodForOrganizationStub, orgId, stripeToken, userMock.id, userEmail)

@@ -166,7 +166,7 @@ describe('Workers: Instance Stop', function () {
     Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
-      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'stopping', true)
+      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'stopping')
       done()
     })
   })

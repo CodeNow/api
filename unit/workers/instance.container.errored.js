@@ -79,7 +79,7 @@ describe('Workers: Instance Start', function () {
       Worker(testData).asCallback(function (err) {
         if (err) { return done(err) }
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
-        sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, null, 'errored', false)
+        sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, null, 'errored')
         done()
       })
     })

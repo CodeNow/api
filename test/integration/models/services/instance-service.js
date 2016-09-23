@@ -120,7 +120,7 @@ describe('Instance Services Integration Tests', function () {
             expect(instance).to.exist()
             var jsoned = instance.toJSON()
             // -----
-            expect(jsoned).to.deep.include({
+            expect(jsoned).to.include({
               createdBy: {
                 github: 1234,
                 gravatar: 'sdasdasdasdasdasd',
@@ -132,14 +132,14 @@ describe('Instance Services Integration Tests', function () {
                 username: 'owner'
               }
             })
-            expect(jsoned).to.deep.include({
+            expect(jsoned).to.include({
               build: ctx.build._id,
               name: body.name,
               lowerName: body.name.toLowerCase(),
               env: body.env
             })
             expect(instance.elasticHostname).to.exist()
-            expect(instance.contextVersion._id).to.deep.equal(ctx.completedCv._id)
+            expect(instance.contextVersion._id).to.equal(ctx.completedCv._id)
             // -----
             sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
               cvId: ctx.completedCv._id.toString(),
@@ -257,13 +257,13 @@ describe('Instance Services Integration Tests', function () {
             expect(instance).to.exist()
             var jsoned = instance.toJSON()
 
-            expect(jsoned).to.deep.include({
+            expect(jsoned).to.include({
               build: ctx.build._id,
               env: body.env,
               contextVersion: ctx.completedCv.toJSON()
             })
             expect(instance.elasticHostname).to.exist()
-            expect(instance.contextVersion._id).to.deep.equal(ctx.completedCv._id)
+            expect(instance.contextVersion._id).to.equal(ctx.completedCv._id)
             // -----
             sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
               cvId: ctx.completedCv._id.toString(),

@@ -430,7 +430,7 @@ describe('InstanceContainerRedeploy unit test ', function () {
             sinon.assert.calledWith(Worker._createNewContainer, testData)
             sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
             sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
-              instance, testData.sessionUserGithubId, 'redeploy', true)
+              instance, testData.sessionUserGithubId, 'redeploy')
             done()
           })
       })

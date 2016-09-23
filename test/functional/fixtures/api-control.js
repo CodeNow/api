@@ -6,12 +6,13 @@ if (!authMiddlewares.requireWhitelist.isSinonProxy) {
   // Duck it, we never need to restore this stub anyways right?
   sinon.stub(authMiddlewares, 'requireWhitelist').callsArg(2)
 }
+var async = require('async')
+var Publisher = require('ponos/lib/rabbitmq')
 
 var api = require('../../../app')
-var async = require('async')
 var cleanMongo = require('./clean-mongo')
 var exec = require('child_process').exec
-var Publisher = require('ponos/lib/rabbitmq')
+var rabbitMQ = require('models/rabbitmq')
 
 module.exports = {
   start: startApi,
@@ -66,6 +67,7 @@ var started = false
 function startApi (done) {
   if (started) { return done() }
   started = true
+  sinon.stub(rabbitMQ, 'pushImage')
   rabbitPublisher.connect()
     .then(function (err) {
       if (err) { return done(err) }
@@ -80,6 +82,7 @@ function startApi (done) {
 }
 
 function stopApi (done) {
+  rabbitMQ.pushImage.restore()
   if (!started) { return done() }
   started = false
   rabbitPublisher.disconnect()

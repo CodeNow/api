@@ -85,7 +85,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
         expect(code).to.equal(200)
         expect(body).to.be.an.array()
         expect(body).to.have.length(3)
-        expect(body).to.deep.include(
+        expect(body).to.include(
           { name: 'dir1', path: '/', isDir: true },
           { name: 'dir2', path: '/', isDir: true },
           { name: 'file1.txt', path: '/', isDir: false }
@@ -104,7 +104,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
         expect(code).to.equal(200)
         expect(body).to.be.an.array()
         expect(body).to.have.length(2)
-        expect(body).to.deep.include(
+        expect(body).to.include(
           { name: 'dir1_dir1', path: '/dir1', isDir: true },
           { name: 'dir1_file1.txt', path: '/dir1', isDir: false }
         )
@@ -122,7 +122,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
         expect(code).to.equal(200)
         expect(body).to.be.an.array()
         expect(body).to.have.length(1)
-        expect(body).to.deep.include(
+        expect(body).to.include(
           { name: 'dir1_dir1_file1.txt.', path: '/dir1/dir1_dir1', isDir: false }
         )
         done()
@@ -139,7 +139,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
         expect(code).to.equal(200)
         expect(body).to.be.an.array()
         expect(body).to.have.length(1)
-        expect(body).to.deep.include(
+        expect(body).to.include(
           { name: 'dir2_dir1', path: '/dir2', isDir: true }
         )
         done()
@@ -181,7 +181,7 @@ describe('File System - /instances/:id/containers/:id/files', function () {
         expect(code).to.equal(200)
         expect(body).to.be.an.array()
         expect(body).to.have.length(3)
-        expect(body).to.deep.include(
+        expect(body).to.include(
           { name: 'dir1', path: '/', isDir: true },
           { name: 'dir2', path: '/', isDir: true },
           { name: 'file1.txt', path: '/', isDir: false }
