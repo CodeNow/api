@@ -25,6 +25,7 @@ const expect = Code.expect
 const it = lab.it
 
 describe('InstanceContainerCreatedWorker Unit tests', function () {
+  let testJob
   const testId = '123123123'
   const testHost = 'http://10.2.2.2:4242'
   const testInstanceId = '123123123'
@@ -41,11 +42,6 @@ describe('InstanceContainerCreatedWorker Unit tests', function () {
         sessionUserGithubId: testSessionUserGithubId
       }
     }
-  }
-  let testJob = {
-    id: testId,
-    host: testHost,
-    inspectData: testInspect
   }
 
   beforeEach(function (done) {
