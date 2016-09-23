@@ -695,8 +695,7 @@ describe('docker: ' + moduleName, function () {
           // network envs
           'RUNNABLE_WAIT_FOR_WEAVE=' + process.env.RUNNABLE_WAIT_FOR_WEAVE,
           'NODE_ENV=' + process.env.NODE_ENV,
-          'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
-          'RUNNABLE_PUSH_IMAGE=true'
+          'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts)
         ]
         expect(envs).to.equal(expectedEnvs)
         done()
@@ -1798,7 +1797,9 @@ describe('docker: ' + moduleName, function () {
   describe('pushImage', function () {
     let pushStub
     let docker
-    const testImage = 'chill/fire:ice'
+    const testImage = 'chill/fire'
+    const testTag = 'ice'
+    const testImageTag = `${testImage}:${testTag}`
     beforeEach(function (done) {
       docker = new Docker()
       pushStub = {
@@ -1820,12 +1821,12 @@ describe('docker: ' + moduleName, function () {
       pushStub.push.yieldsAsync(null, testStream)
       docker.docker.modem.followProgress.yieldsAsync(null)
 
-      docker.pushImage(testImage).asCallback(function (err) {
+      docker.pushImage(testImageTag).asCallback(function (err) {
         if (err) { return done(err) }
         sinon.assert.calledOnce(docker.docker.getImage)
         sinon.assert.calledWith(docker.docker.getImage, testImage)
         sinon.assert.calledOnce(pushStub.push)
-        sinon.assert.calledWith(pushStub.push, { tag: 'ice' }, sinon.match.func)
+        sinon.assert.calledWith(pushStub.push, { tag: testTag }, sinon.match.func)
         done()
       })
     })

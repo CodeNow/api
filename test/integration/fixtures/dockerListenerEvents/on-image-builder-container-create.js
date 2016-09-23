@@ -97,8 +97,7 @@ module.exports = function (contextVersion) {
         'RUNNABLE_WAIT_FOR_WEAVE=for i in {1..10}; do grep -q ethwe /proc/net/dev && break; sleep 1; test ' +
         '\'$i\' = \'10\' && echo Runnable: network failed && exit 55; done;',
         'NODE_ENV=test',
-        'RUNNABLE_BUILD_FLAGS={\'Memory\:512000000,\'forcerm\:true}',
-        'RUNNABLE_PUSH_IMAGE=true'
+        'RUNNABLE_BUILD_FLAGS={\'Memory\:512000000,\'forcerm\:true}'
       ],
       '_events': {}
     }
