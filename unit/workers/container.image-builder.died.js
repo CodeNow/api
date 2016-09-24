@@ -326,6 +326,7 @@ describe('OnImageBuilderContainerDie', function () {
         })
         done()
       })
+
       it('should publish notification job to RabbitMQ if the build was succesful', function (done) {
         worker._createContainersIfSuccessful([ctx.instance])
         sinon.assert.calledOnce(rabbitMQ.instanceDeployed)
@@ -335,6 +336,7 @@ describe('OnImageBuilderContainerDie', function () {
         })
         done()
       })
+
       it('should not publish notification job to RabbitMQ if build was manual', function (done) {
         ctx.instance.contextVersion.build = {
           triggeredAction: {
@@ -345,6 +347,7 @@ describe('OnImageBuilderContainerDie', function () {
         sinon.assert.notCalled(rabbitMQ.instanceDeployed)
         done()
       })
+
       it('should not publish jobs to RabbitMQ if the build was unsuccesful', function (done) {
         worker.inspectData.State.ExitCode = 1
         worker._createContainersIfSuccessful([ctx.instance])
@@ -435,28 +438,20 @@ describe('OnImageBuilderContainerDie', function () {
       })
     })
 
-    describe('_publishParallelTasks', function () {
+    describe('_clearBuildResources', function () {
       beforeEach(function (done) {
-        sinon.stub(rabbitMQ, 'pushImage')
         sinon.stub(rabbitMQ, 'clearContainerMemory')
         done()
       })
 
       afterEach(function (done) {
-        rabbitMQ.pushImage.restore()
         rabbitMQ.clearContainerMemory.restore()
         done()
       })
 
       it('should publish push image and clear memory', (done) => {
-        worker._publishParallelTasks().asCallback((err) => {
+        worker._clearBuildResources().asCallback((err) => {
           if (err) { return done(err) }
-
-          sinon.assert.calledOnce(rabbitMQ.pushImage)
-          sinon.assert.calledWith(rabbitMQ.pushImage, {
-            imageTag: testImageTag,
-            dockerHostUrl: testHost
-          })
 
           sinon.assert.calledOnce(rabbitMQ.clearContainerMemory)
           sinon.assert.calledWith(rabbitMQ.clearContainerMemory, {
@@ -465,6 +460,6 @@ describe('OnImageBuilderContainerDie', function () {
           done()
         })
       })
-    }) // end _publishParallelTasks
+    }) // end _clearBuildResources
   }) // end Worker methods
 })
