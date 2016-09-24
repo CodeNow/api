@@ -160,7 +160,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         sinon.spy(BuildService, 'handleBuildComplete')
         sinon.spy(Build, 'updateFailedByContextVersionIds')
         sinon.spy(Build, 'updateCompletedByContextVersionIds')
-        sinon.spy(ContextVersion, 'updateBuildErrorByContainer')
         sinon.stub(User.prototype, 'findGithubUserByGithubId').yieldsAsync(null, {
           login: 'nathan219',
           avatar_url: 'testingtesting123'
@@ -178,7 +177,6 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         BuildService.handleBuildComplete.restore()
         Build.updateFailedByContextVersionIds.restore()
         Build.updateCompletedByContextVersionIds.restore()
-        ContextVersion.updateBuildErrorByContainer.restore()
         User.prototype.findGithubUserByGithubId.restore()
         done()
       })
