@@ -69,11 +69,7 @@ describe('Context Version Unit Test', function () {
           })
 
         sinon.assert.calledOnce(ContextVersion.findBy)
-        sinon.assert.calledWith(ContextVersion.findBy,
-          'build._id',
-          buildId, {
-            'build.log': false
-          })
+        sinon.assert.calledWith(ContextVersion.findBy, 'build._id', buildId)
         done()
       })
     })
