@@ -62,26 +62,6 @@ describe('OnImageBuilderContainerDie', function () {
       done()
     })
 
-    describe('_getBuildInfo', function () {
-      it('should get correct build data', function (done) {
-        worker._getBuildInfo().asCallback(function (err, buildInfo) {
-          if (err) { return done(err) }
-          expect(buildInfo.failed).to.equal(false)
-          done()
-        })
-      })
-
-      it('should add timout error to info', function (done) {
-        worker.inspectData.State.ExitCode = 124
-        worker._getBuildInfo().asCallback(function (err, buildInfo) {
-          if (err) { return done(err) }
-          expect(buildInfo.failed).to.equal(true)
-          expect(buildInfo.error.message).to.equal('timed out')
-          done()
-        })
-      })
-    })
-
     describe('_handleAutoDeploy', function () {
       beforeEach(function (done) {
         sinon.stub(InstanceService, 'updateBuildByRepoAndBranch').resolves([
@@ -336,7 +316,7 @@ describe('OnImageBuilderContainerDie', function () {
       })
 
       it('should publish jobs to RabbitMQ if the build was successful', function (done) {
-        worker._createContainersIfSuccessful([ctx.instance], { failed: false })
+        worker._createContainersIfSuccessful([ctx.instance])
         sinon.assert.calledOnce(rabbitMQ.createInstanceContainer)
         sinon.assert.calledWith(rabbitMQ.createInstanceContainer, {
           contextVersionId: contextVersionId,
@@ -347,7 +327,7 @@ describe('OnImageBuilderContainerDie', function () {
         done()
       })
       it('should publish notification job to RabbitMQ if the build was succesful', function (done) {
-        worker._createContainersIfSuccessful([ctx.instance], { failed: false })
+        worker._createContainersIfSuccessful([ctx.instance])
         sinon.assert.calledOnce(rabbitMQ.instanceDeployed)
         sinon.assert.calledWith(rabbitMQ.instanceDeployed, {
           cvId: ctx.instance.contextVersion._id.toString(),
@@ -361,12 +341,13 @@ describe('OnImageBuilderContainerDie', function () {
             manual: true
           }
         }
-        worker._createContainersIfSuccessful([ctx.instance], { failed: false })
+        worker._createContainersIfSuccessful([ctx.instance])
         sinon.assert.notCalled(rabbitMQ.instanceDeployed)
         done()
       })
       it('should not publish jobs to RabbitMQ if the build was unsuccesful', function (done) {
-        worker._createContainersIfSuccessful([ctx.instance], { failed: true })
+        worker.inspectData.State.ExitCode = 1
+        worker._createContainersIfSuccessful([ctx.instance])
         sinon.assert.notCalled(rabbitMQ.createInstanceContainer)
         done()
       })
