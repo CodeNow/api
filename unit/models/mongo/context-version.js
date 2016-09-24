@@ -17,7 +17,7 @@ var expect = Code.expect
 var it = lab.it
 
 describe('Context Version Unit Test', function () {
-  describe('updateFailedBuild', function () {
+  describe('updateAndGetFailedBuild', function () {
     var mockContextVersion
     beforeEach(function (done) {
       mockContextVersion = {
@@ -52,7 +52,7 @@ describe('Context Version Unit Test', function () {
       const testErrorMessage = 'jksdhfalskdjfhadsf'
       const buildId = 12341
 
-      ContextVersion.updateFailedBuild(buildId, testErrorMessage).asCallback(() => {
+      ContextVersion.updateAndGetFailedBuild(buildId, testErrorMessage).asCallback(() => {
         sinon.assert.calledOnce(ContextVersion.findByAsync)
         sinon.assert.calledOnce(ContextVersion.updateByAsync)
         sinon.assert.calledWith(ContextVersion.updateByAsync,
@@ -68,9 +68,9 @@ describe('Context Version Unit Test', function () {
         done()
       })
     })
-  }) // end updateFailedBuild
+  }) // end updateAndGetFailedBuild
 
-  describe('updateSuccessfulBuild', () => {
+  describe('updateAndGetSuccessfulBuild', () => {
     var mockContextVersion
     beforeEach((done) => {
       mockContextVersion = {
@@ -105,7 +105,7 @@ describe('Context Version Unit Test', function () {
       const testDockerImage = 'asdasdfgvaw4fgaw323kjh23kjh4gq3kj'
       const buildId = 12341
 
-      ContextVersion.updateSuccessfulBuild(buildId, testDockerImage).asCallback(() => {
+      ContextVersion.updateAndGetSuccessfulBuild(buildId, testDockerImage).asCallback(() => {
         sinon.assert.calledOnce(ContextVersion.updateByAsync)
         sinon.assert.calledWith(ContextVersion.updateByAsync,
           'build._id',
@@ -123,7 +123,7 @@ describe('Context Version Unit Test', function () {
         done()
       })
     })
-  }) // end updateSuccessfulBuild
+  }) // end updateAndGetSuccessfulBuild
 
   describe('findOneCreating', function () {
     var mockContextVersionId = '507f1f77bcf86cd799439011'

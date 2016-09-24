@@ -41,8 +41,8 @@ describe('BuildService', function () {
         dockerTag: testDockerTag
       }
 
-      sinon.stub(ContextVersion, 'updateFailedBuild')
-      sinon.stub(ContextVersion, 'updateSuccessfulBuild')
+      sinon.stub(ContextVersion, 'updateAndGetFailedBuild')
+      sinon.stub(ContextVersion, 'updateAndGetSuccessfulBuild')
       sinon.stub(Build, 'updateFailedByContextVersionIdsAsync')
       sinon.stub(Build, 'updateCompletedByContextVersionIdsAsync')
       sinon.stub(Instance, 'findByContextVersionIdsAsync').resolves([testInstance])
@@ -51,8 +51,8 @@ describe('BuildService', function () {
     })
 
     afterEach(function (done) {
-      ContextVersion.updateFailedBuild.restore()
-      ContextVersion.updateSuccessfulBuild.restore()
+      ContextVersion.updateAndGetFailedBuild.restore()
+      ContextVersion.updateAndGetSuccessfulBuild.restore()
       Build.updateFailedByContextVersionIdsAsync.restore()
       Build.updateCompletedByContextVersionIdsAsync.restore()
       Instance.findByContextVersionIdsAsync.restore()
@@ -62,8 +62,8 @@ describe('BuildService', function () {
 
     describe('success', function () {
       beforeEach(function (done) {
-        ContextVersion.updateFailedBuild.resolves([mockContextVersion])
-        ContextVersion.updateSuccessfulBuild.resolves([mockContextVersion])
+        ContextVersion.updateAndGetFailedBuild.resolves([mockContextVersion])
+        ContextVersion.updateAndGetSuccessfulBuild.resolves([mockContextVersion])
         Build.updateCompletedByContextVersionIdsAsync.resolves()
         done()
       })
@@ -76,7 +76,7 @@ describe('BuildService', function () {
             sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [mockContextVersion._id])
             sinon.assert.calledOnce(Instance.prototype.updateCv)
             sinon.assert.calledWith(
-              ContextVersion.updateSuccessfulBuild,
+              ContextVersion.updateAndGetSuccessfulBuild,
               testBuildId,
               testDockerTag
             )
@@ -93,7 +93,7 @@ describe('BuildService', function () {
       describe('build failed w/ exit code', function () {
         beforeEach(function (done) {
           testBuildInfo.failed = true
-          ContextVersion.updateFailedBuild.resolves([mockContextVersion])
+          ContextVersion.updateAndGetFailedBuild.resolves([mockContextVersion])
           done()
         })
 
@@ -110,7 +110,7 @@ describe('BuildService', function () {
               sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [mockContextVersion._id])
               sinon.assert.calledOnce(Instance.prototype.updateCv)
               sinon.assert.calledWith(
-                ContextVersion.updateFailedBuild,
+                ContextVersion.updateAndGetFailedBuild,
                 testBuildId
               )
               sinon.assert.calledWith(
@@ -130,7 +130,7 @@ describe('BuildService', function () {
               sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [mockContextVersion._id])
               sinon.assert.calledOnce(Instance.prototype.updateCv)
               sinon.assert.calledWith(
-                ContextVersion.updateFailedBuild,
+                ContextVersion.updateAndGetFailedBuild,
                 testBuildId,
                 testError
               )
@@ -161,10 +161,10 @@ describe('BuildService', function () {
         })
       })
 
-      describe('CV.updateSuccessfulBuild error', function () {
+      describe('CV.updateAndGetSuccessfulBuild error', function () {
         beforeEach(function (done) {
           ctx.err = new Error('boom1')
-          ContextVersion.updateSuccessfulBuild.rejects(ctx.err)
+          ContextVersion.updateAndGetSuccessfulBuild.rejects(ctx.err)
           done()
         })
 
@@ -181,7 +181,7 @@ describe('BuildService', function () {
       describe('Build.updateCompletedByContextVersionIds error', function () {
         beforeEach(function (done) {
           ctx.err = new Error('boom2')
-          ContextVersion.updateSuccessfulBuild.resolves([mockContextVersion])
+          ContextVersion.updateAndGetSuccessfulBuild.resolves([mockContextVersion])
           Build.updateCompletedByContextVersionIdsAsync.rejects(ctx.err)
           done()
         })
