@@ -1890,7 +1890,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
       assign(cv.build, {
         dockerTag: 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
         dockerContainer: '1234567890123456789012345678901234567890123456789012345678901234',
-        dockerImage: 'bbbd03498dab',
         completed: completed
       })
     }

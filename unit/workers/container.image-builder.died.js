@@ -66,9 +66,7 @@ describe('OnImageBuilderContainerDie', function () {
       it('should get correct build data', function (done) {
         worker._getBuildInfo().asCallback(function (err, buildInfo) {
           if (err) { return done(err) }
-          expect(buildInfo.dockerHost).to.equal(testHost)
           expect(buildInfo.failed).to.equal(false)
-          expect(buildInfo.dockerImage).to.equal(testImageTag)
           done()
         })
       })
@@ -77,9 +75,7 @@ describe('OnImageBuilderContainerDie', function () {
         worker.inspectData.State.ExitCode = 124
         worker._getBuildInfo().asCallback(function (err, buildInfo) {
           if (err) { return done(err) }
-          expect(buildInfo.dockerHost).to.equal(testHost)
           expect(buildInfo.failed).to.equal(true)
-          expect(buildInfo.dockerImage).to.equal(testImageTag)
           expect(buildInfo.error.message).to.equal('timed out')
           done()
         })

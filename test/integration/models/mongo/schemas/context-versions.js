@@ -44,7 +44,6 @@ describe('CV Schema Integration Tests', function () {
         VersionId: validation.VALID_OBJECT_ID
       }],
       build: {
-        dockerImage: 'testing',
         dockerTag: 'adsgasdfgasdf'
       },
       appCodeVersions: [{
@@ -94,9 +93,6 @@ describe('CV Schema Integration Tests', function () {
         newVersion.build.triggeredBy = { github: validation.VALID_GITHUB_ID }
         return newVersion
       }, 'build.message', 500)
-    })
-    describe('Docker Image', function () {
-      validation.stringLengthValidationChecking(createNewVersion, 'build.dockerImage', 200)
     })
     describe('Docker Tag', function () {
       validation.stringLengthValidationChecking(createNewVersion, 'build.dockerTag', 500)

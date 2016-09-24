@@ -102,16 +102,14 @@ describe('Context Version Unit Test', function () {
     })
 
     it('should save a successful build', (done) => {
-      const testDockerImage = 'asdasdfgvaw4fgaw323kjh23kjh4gq3kj'
       const buildId = 12341
 
-      ContextVersion.updateAndGetSuccessfulBuild(buildId, testDockerImage).asCallback(() => {
+      ContextVersion.updateAndGetSuccessfulBuild(buildId).asCallback(() => {
         sinon.assert.calledOnce(ContextVersion.updateByAsync)
         sinon.assert.calledWith(ContextVersion.updateByAsync,
           'build._id',
           buildId, {
             $set: {
-              'build.dockerImage': testDockerImage,
               'build.failed': false,
               'build.completed': sinon.match.number,
               'state': ContextVersion.states.buildSucceeded
