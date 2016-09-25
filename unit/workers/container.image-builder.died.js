@@ -356,7 +356,7 @@ describe('OnImageBuilderContainerDie', function () {
       })
     })
 
-    describe('_killIsolationIfNeeded', function () {
+    describe('_filterOutAndKillIsolatedInstances', function () {
       var mockInstance
       var mockInstance1
       beforeEach(function (done) {
@@ -382,7 +382,7 @@ describe('OnImageBuilderContainerDie', function () {
       it('should fail if findOneAsync fails', function (done) {
         var error = new Error('Mongo error')
         Isolation.findOneAsync.rejects(error)
-        worker._killIsolationIfNeeded([mockInstance])
+        worker._filterOutAndKillIsolatedInstances([mockInstance])
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -391,7 +391,7 @@ describe('OnImageBuilderContainerDie', function () {
       })
 
       it('should call Isolation.findOneAsync', function (done) {
-        worker._killIsolationIfNeeded([mockInstance])
+        worker._filterOutAndKillIsolatedInstances([mockInstance])
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledOnce(Isolation.findOneAsync)
@@ -404,7 +404,7 @@ describe('OnImageBuilderContainerDie', function () {
       })
 
       it('should call rabbitMQ.killIsolation', function (done) {
-        worker._killIsolationIfNeeded([mockInstance])
+        worker._filterOutAndKillIsolatedInstances([mockInstance])
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.calledOnce(rabbitMQ.killIsolation)
@@ -418,7 +418,7 @@ describe('OnImageBuilderContainerDie', function () {
 
       it('should not call rabbitMQ.killIsolation if no isolation found', function (done) {
         Isolation.findOneAsync.resolves(null)
-        worker._killIsolationIfNeeded([mockInstance])
+        worker._filterOutAndKillIsolatedInstances([mockInstance])
           .asCallback(function (err) {
             expect(err).to.not.exist()
             sinon.assert.notCalled(rabbitMQ.killIsolation)
@@ -428,7 +428,7 @@ describe('OnImageBuilderContainerDie', function () {
 
       it('should return an array of instances which were not triggered on isolation', function (done) {
         Isolation.findOneAsync.onSecondCall().resolves(null)
-        worker._killIsolationIfNeeded([mockInstance1, mockInstance])
+        worker._filterOutAndKillIsolatedInstances([mockInstance1, mockInstance])
           .asCallback(function (err, data) {
             expect(err).to.not.exist()
             expect(data[0]).to.equal(mockInstance)
