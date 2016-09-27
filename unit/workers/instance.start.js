@@ -112,7 +112,7 @@ describe('Workers: Instance Start', function () {
     Docker.prototype.startContainerAsync.rejects(error)
     Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
-      expect(err).to.deep.equal(error)
+      expect(err).to.equal(error)
       done()
     })
   })
@@ -199,7 +199,7 @@ describe('Workers: Instance Start', function () {
     Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
-      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'starting', true)
+      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'starting')
       done()
     })
   })
@@ -211,6 +211,19 @@ describe('Workers: Instance Start', function () {
         Instance.findOneStarting,
         InstanceService.emitInstanceUpdate,
         Docker.prototype.startContainerAsync)
+      done()
+    })
+  })
+
+  it('should emit instance errored on final retry', (done) => {
+    Worker.finalRetryFn(testData).asCallback(function (err) {
+      if (err) { return done(err) }
+      sinon.assert.calledOnce(rabbitMQ.instanceContainerErrored)
+      sinon.assert.calledWith(rabbitMQ.instanceContainerErrored, {
+        instanceId: testData.instanceId,
+        containerId: testData.containerId,
+        error: 'Could not start instance, retry limit reached'
+      })
       done()
     })
   })

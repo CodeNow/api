@@ -15,7 +15,7 @@ var messenger = require('socket/messenger')
 var mockFactory = require('../fixtures/factory')
 var mockOnBuilderDieMessage = require('../fixtures/dockerListenerEvents/on-image-builder-container-die')
 var mongooseControl = require('models/mongo/mongoose-control.js')
-var OnImageBuilderContainerDie = require('workers/container.image-builder.died')
+var Worker = require('workers/container.image-builder.died')
 var rabbitMQ = require('models/rabbitmq')
 var User = require('models/mongo/user.js')
 
@@ -49,10 +49,12 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
 
   before(function (done) {
     sinon.stub(rabbitMQ, 'clearContainerMemory')
+    sinon.stub(rabbitMQ, 'pushImage')
     done()
   })
 
   after(function (done) {
+    rabbitMQ.pushImage.restore()
     rabbitMQ.clearContainerMemory.restore()
     done()
   })
@@ -183,7 +185,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
       describe('With a successful build', function () {
         it('should attempt to deploy', function (done) {
           var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user)
-          OnImageBuilderContainerDie(job)
+          Worker.task(job)
             .asCallback(function (err) {
               if (err) { done(err) }
               sinon.assert.calledOnce(BuildService.handleBuildComplete)
@@ -266,7 +268,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
       describe('With an unsuccessful build', function () {
         it('should update the UI with a socket event', function (done) {
           var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user, 1)
-          OnImageBuilderContainerDie(job)
+          Worker.task(job)
             .asCallback(function (err) {
               if (err) { return done(err) }
               sinon.assert.calledOnce(BuildService.handleBuildComplete)
@@ -376,7 +378,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
 
           it('should update the instance with the second cv, and update both cvs', function (done) {
             var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user)
-            OnImageBuilderContainerDie(job)
+            Worker.task(job)
               .asCallback(function (err) {
                 if (err) { return done(err) }
                 sinon.assert.calledOnce(BuildService.handleBuildComplete)

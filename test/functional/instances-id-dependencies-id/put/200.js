@@ -100,7 +100,7 @@ function expectInstanceDep (data, expectedInstances) {
   expect(data).to.be.an.array()
   expect(data).to.have.a.length(expectedInstances.length)
   expectedInstances.forEach(function (expectedInstance, i) {
-    expect(data[i]).to.deep.contain({
+    expect(data[i]).to.contain({
       id: expectedInstance.attrs._id.toString(),
       shortHash: expectedInstance.attrs.shortHash.toString(),
       lowerName: expectedInstance.attrs.lowerName,

@@ -100,12 +100,12 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
       ctx.appCodeVersion.setTransformRules(transformRules, function (err, body, code) {
         if (err) { return done(err) }
         expect(code).to.equal(200)
-        expect(body.transformRules.exclude).to.deep.contain(transformRules.exclude)
+        expect(body.transformRules.exclude).to.contain(transformRules.exclude)
         transformRules.replace.forEach(function (rule, index) {
-          expect(body.transformRules.replace[index]).to.deep.contain(rule)
+          expect(body.transformRules.replace[index]).to.contain(rule)
         })
         transformRules.rename.forEach(function (rule, index) {
-          expect(body.transformRules.rename[index]).to.deep.contain(rule)
+          expect(body.transformRules.rename[index]).to.contain(rule)
         })
         done()
       })
@@ -144,10 +144,10 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
           expect(cv.appCodeVersions.length).to.equal(2)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !!appCodeVersion.additionalRepo
-          })).to.deep.contain(expected)
+          })).to.contain(expected)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !appCodeVersion.additionalRepo
-          })).to.deep.contain(ctx.mainAppCodeVersion)
+          })).to.contain(ctx.mainAppCodeVersion)
           done()
         })
       }))
@@ -167,10 +167,10 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
           expect(cv.appCodeVersions.length).to.equal(2)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !!appCodeVersion.additionalRepo
-          })).to.deep.contain(expected)
+          })).to.contain(expected)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !appCodeVersion.additionalRepo
-          })).to.deep.contain(ctx.mainAppCodeVersion)
+          })).to.contain(ctx.mainAppCodeVersion)
           done()
         })
       }))
@@ -193,10 +193,10 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
           expect(cv.appCodeVersions.length).to.equal(2)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !!appCodeVersion.additionalRepo
-          })).to.deep.contain(expected)
+          })).to.contain(expected)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !appCodeVersion.additionalRepo
-          })).to.deep.contain(ctx.mainAppCodeVersion)
+          })).to.contain(ctx.mainAppCodeVersion)
           done()
         })
       }))
@@ -220,10 +220,10 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
           expect(cv.appCodeVersions.length).to.equal(2)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !!appCodeVersion.additionalRepo
-          })).to.deep.contain(expected)
+          })).to.contain(expected)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !appCodeVersion.additionalRepo
-          })).to.deep.contain(ctx.mainAppCodeVersion)
+          })).to.contain(ctx.mainAppCodeVersion)
           done()
         })
       }))
@@ -246,10 +246,10 @@ describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function ()
           expect(cv.appCodeVersions.length).to.equal(2)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !!appCodeVersion.additionalRepo
-          })).to.deep.contain(expected)
+          })).to.contain(expected)
           expect(find(cv.appCodeVersions, function (appCodeVersion) {
             return !appCodeVersion.additionalRepo
-          })).to.deep.contain(ctx.mainAppCodeVersion)
+          })).to.contain(ctx.mainAppCodeVersion)
           done()
         })
       }))

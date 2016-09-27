@@ -2,222 +2,238 @@
  * @module unit/workers/instance.container.created
  */
 'use strict'
+const Code = require('code')
+const Lab = require('lab')
+const sinon = require('sinon')
 
-var clone = require('101/clone')
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
+const ContextVersion = require('models/mongo/context-version')
+const Instance = require('models/mongo/instance')
+const InstanceService = require('models/services/instance-service')
+const Docker = require('models/apis/docker')
+const User = require('models/mongo/user')
+const InstanceContainerCreated = require('workers/instance.container.created')
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var Code = require('code')
-var sinon = require('sinon')
+const lab = exports.lab = Lab.script()
+const Worker = InstanceContainerCreated._Worker
 require('sinon-as-promised')(require('bluebird'))
 
-var ContextVersion = require('models/mongo/context-version')
-var InstanceContainerCreated = require('workers/instance.container.created')
-var InstanceService = require('models/services/instance-service')
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
-var User = require('models/mongo/user')
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
-
-describe('InstanceContainerCreated Unit tests', function () {
-  var ctx
+describe('InstanceContainerCreatedWorker Unit tests', function () {
+  let testJob
+  const testId = '123123123'
+  const testHost = 'http://10.2.2.2:4242'
+  const testInstanceId = '123123123'
+  const testContextVersionId = '567865786'
+  const testSessionUserGithubId = '7893'
+  const testInspect = {
+    NetworkSettings: {
+      Ports: '8080'
+    },
+    Config: {
+      Labels: {
+        instanceId: testInstanceId,
+        contextVersionId: testContextVersionId,
+        sessionUserGithubId: testSessionUserGithubId
+      }
+    }
+  }
 
   beforeEach(function (done) {
-    ctx = {}
-    ctx.mockInstance = {
-      _id: '555',
-      shortHash: 'abc',
-      network: {
-        hostIp: '0.0.0.0'
-      },
-      toJSON: function () { return {} }
+    testJob = {
+      id: testId,
+      host: testHost,
+      inspectData: testInspect
     }
-    ctx.data = {
-      id: '111',
-      host: '10.0.0.1',
-      inspectData: {
-        NetworkSettings: {
-          Ports: [123]
-        },
-        Config: {
-          Labels: {
-            instanceId: ctx.mockInstance._id,
-            ownerUsername: 'fifo',
-            sessionUserGithubId: 444,
-            contextVersionId: '123',
-            tid: 'some-tid',
-            deploymentUuid: 'some-deployment-uuid'
-          }
-        }
-      }
-    }
-    ctx.user = {
-      accounts: {
-        github: {
-          id: 123123
-        }
-      }
-    }
-    ctx.cv = new ContextVersion({ _id: '123' })
-    sinon.stub(User, 'findByGithubIdAsync').resolves(ctx.user)
-    sinon.stub(ContextVersion, 'recoverAsync').resolves(ctx.cv)
-    sinon.stub(InstanceService, 'updateContainerInspect').yieldsAsync(null, ctx.mockInstance)
-    sinon.stub(InstanceService, 'startInstance').resolves(ctx.mockInstance)
+
     done()
   })
 
-  afterEach(function (done) {
-    User.findByGithubIdAsync.restore()
-    ContextVersion.recoverAsync.restore()
-    InstanceService.updateContainerInspect.restore()
-    InstanceService.startInstance.restore()
-    done()
+  describe('task', function () {
+    beforeEach(function (done) {
+      sinon.stub(Worker.prototype, 'run').resolves()
+      done()
+    })
+
+    afterEach(function (done) {
+      Worker.prototype.run.restore()
+      done()
+    })
+
+    it('should call run', (done) => {
+      InstanceContainerCreated.task(testJob).then(() => {
+        sinon.assert.calledOnce(Worker.prototype.run)
+        done()
+      })
+    }) // end task
   })
 
-  describe('success', function () {
-    it('should call 4 methods', function (done) {
-      InstanceContainerCreated(ctx.data).asCallback(function (err) {
-        expect(err).to.not.exist()
-        var query = {
-          '_id': ctx.data.inspectData.Config.Labels.instanceId,
-          'contextVersion.id': ctx.data.inspectData.Config.Labels.contextVersionId,
-          'container': {
-            $exists: false
-          }
+  describe('worker class', function () {
+    let worker
+
+    beforeEach(function (done) {
+      worker = new Worker(testJob)
+      done()
+    })
+
+    describe('run', function () {
+      beforeEach(function (done) {
+        sinon.stub(ContextVersion, 'recoverAsync').resolves()
+        sinon.stub(Worker.prototype, '_findAndSetCreatingInstance')
+        sinon.stub(Worker.prototype, '_startInstance')
+        done()
+      })
+
+      afterEach(function (done) {
+        Worker.prototype._findAndSetCreatingInstance.restore()
+        Worker.prototype._startInstance.restore()
+        ContextVersion.recoverAsync.restore()
+        done()
+      })
+
+      it('should call flow', (done) => {
+        worker.run().asCallback(() => {
+          sinon.assert.callOrder(
+            ContextVersion.recoverAsync,
+            Worker.prototype._findAndSetCreatingInstance,
+            Worker.prototype._startInstance
+          )
+          sinon.assert.calledWith(ContextVersion.recoverAsync, testContextVersionId)
+          done()
+        })
+      })
+    }) // end run
+
+    describe('_findAndSetCreatingInstance', function () {
+      beforeEach(function (done) {
+        sinon.stub(Instance, 'markAsCreating')
+        sinon.stub(Worker.prototype, '_removeContainerAndStopWorker')
+        done()
+      })
+
+      afterEach(function (done) {
+        Instance.markAsCreating.restore()
+        Worker.prototype._removeContainerAndStopWorker.restore()
+        done()
+      })
+
+      it('should call markAsCreating', (done) => {
+        Instance.markAsCreating.resolves()
+        worker._findAndSetCreatingInstance().asCallback((err) => {
+          if (err) { return done(err) }
+          sinon.assert.calledOnce(Instance.markAsCreating)
+          sinon.assert.calledWith(Instance.markAsCreating,
+            testInstanceId,
+            testContextVersionId,
+            testId, {
+              dockerContainer: testId,
+              dockerHost: testHost,
+              inspect: testInspect,
+              ports: testInspect.NetworkSettings.Ports
+            })
+          done()
+        })
+
+        it('should _removeContainerAndStopWorker on NotFound', (done) => {
+          Instance.markAsCreating.rejects(new Instance.NotFoundError({}))
+          worker._findAndSetCreatingInstance().asCallback((err) => {
+            if (err) { return done(err) }
+            sinon.assert.calledOnce(Instance.markAsCreating)
+            sinon.assert.calledWith(Instance.markAsCreating,
+              testInstanceId,
+              testContextVersionId,
+              testId, {
+                dockerContainer: testId,
+                dockerHost: testHost,
+                inspect: testInspect,
+                ports: testInspect.NetworkSettings.Ports
+              })
+            done()
+          })
+        })
+      })
+    }) // end _findAndSetCreatingInstance
+
+    describe('_removeContainerAndStopWorker', function () {
+      const testError = new Error('bad')
+
+      beforeEach(function (done) {
+        sinon.stub(Docker.prototype, 'removeContainerAsync')
+        done()
+      })
+
+      afterEach(function (done) {
+        Docker.prototype.removeContainerAsync.restore()
+        done()
+      })
+
+      it('should publish container.remove', (done) => {
+        Docker.prototype.removeContainerAsync.resolves()
+        worker._removeContainerAndStopWorker(testError).asCallback(() => {
+          sinon.assert.calledOnce(Docker.prototype.removeContainerAsync)
+          sinon.assert.calledWith(Docker.prototype.removeContainerAsync, testId)
+          done()
+        })
+      })
+
+      it('should throw worker stop error', (done) => {
+        Docker.prototype.removeContainerAsync.resolves()
+        worker._removeContainerAndStopWorker(testError).asCallback((err) => {
+          expect(err).to.be.an.instanceOf(WorkerStopError)
+          expect(err.message).to.contain(testError.message)
+          done()
+        })
+      })
+    }) // end _removeContainerAndStopWorker
+
+    describe('_startInstance', function () {
+      let testInstance
+
+      beforeEach(function (done) {
+        sinon.stub(InstanceService, 'startInstance')
+        sinon.stub(User, 'findByGithubIdAsync')
+        testInstance = {
+          shsortHash: '12323'
         }
-        var updateData = {
-          container: {
-            dockerContainer: ctx.data.id,
-            dockerHost: ctx.data.host,
-            inspect: ctx.data.inspectData,
-            ports: ctx.data.inspectData.NetworkSettings.Ports
-          }
+        done()
+      })
+
+      afterEach(function (done) {
+        InstanceService.startInstance.restore()
+        User.findByGithubIdAsync.restore()
+        done()
+      })
+
+      it('should reject if no user found', (done) => {
+        User.findByGithubIdAsync.resolves()
+        worker._startInstance(testInstance).asCallback((err) => {
+          expect(err.message).to.include('User not found')
+          expect(err.data.extra.githubId).to.equal(testSessionUserGithubId)
+          done()
+        })
+      })
+
+      it('should start instance', (done) => {
+        const testUser = {
+          id: 'user'
         }
-        sinon.assert.calledOnce(ContextVersion.recoverAsync)
-        sinon.assert.calledWith(ContextVersion.recoverAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
-        sinon.assert.calledOnce(InstanceService.updateContainerInspect)
-        sinon.assert.calledWith(InstanceService.updateContainerInspect,
-          query, updateData)
-        sinon.assert.calledOnce(InstanceService.startInstance)
-        sinon.assert.calledWith(InstanceService.startInstance, ctx.mockInstance.shortHash, ctx.user)
-        done()
-      })
-    })
-  })
-  describe('failure', function () {
-    it('should fail if validation failed: null', function (done) {
-      InstanceContainerCreated(null).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        sinon.assert.notCalled(ContextVersion.recoverAsync)
-        sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(InstanceService.startInstance)
-        done()
-      })
-    })
+        User.findByGithubIdAsync.resolves(testUser)
+        InstanceService.startInstance.resolves(testUser)
+        worker._startInstance(testInstance).asCallback((err) => {
+          if (err) { return done(err) }
+          sinon.assert.calledOnce(User.findByGithubIdAsync)
+          sinon.assert.calledWith(User.findByGithubIdAsync, testSessionUserGithubId)
 
-    it('should fail if validation failed: {}', function (done) {
-      InstanceContainerCreated({}).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        sinon.assert.notCalled(ContextVersion.recoverAsync)
-        sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(InstanceService.startInstance)
-        done()
+          sinon.assert.calledOnce(InstanceService.startInstance)
+          sinon.assert.calledWith(InstanceService.startInstance, testInspect.shsortHash, testUser)
+          done()
+        })
       })
-    })
-
-    it('should fail if validation failed: no labels', function (done) {
-      var data = clone(ctx.data)
-      data.inspectData.Config.Labels = null
-      InstanceContainerCreated(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        sinon.assert.notCalled(ContextVersion.recoverAsync)
-        sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(InstanceService.startInstance)
-        done()
-      })
-    })
-
-    it('should callback with error if context version fetch failed', function (done) {
-      var mongoError = new Error('Mongo error')
-      ContextVersion.recoverAsync.rejects(mongoError)
-      InstanceContainerCreated(ctx.data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.equal(mongoError.message)
-        sinon.assert.calledOnce(ContextVersion.recoverAsync)
-        sinon.assert.calledWith(ContextVersion.recoverAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
-        sinon.assert.notCalled(InstanceService.updateContainerInspect)
-        sinon.assert.notCalled(InstanceService.startInstance)
-        done()
-      })
-    })
-
-    it('should fail if updateContainerInspect failed', function (done) {
-      var mongoError = new Error('Mongo error')
-      InstanceService.updateContainerInspect.yieldsAsync(mongoError)
-      InstanceContainerCreated(ctx.data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.equal(mongoError.message)
-        var query = {
-          '_id': ctx.data.inspectData.Config.Labels.instanceId,
-          'contextVersion.id': ctx.data.inspectData.Config.Labels.contextVersionId,
-          'container': {
-            $exists: false
-          }
-        }
-        var updateData = {
-          container: {
-            dockerContainer: ctx.data.id,
-            dockerHost: ctx.data.host,
-            inspect: ctx.data.inspectData,
-            ports: ctx.data.inspectData.NetworkSettings.Ports
-          }
-        }
-        sinon.assert.calledOnce(ContextVersion.recoverAsync)
-        sinon.assert.calledWith(ContextVersion.recoverAsync, ctx.data.inspectData.Config.Labels.contextVersionId)
-        sinon.assert.calledOnce(InstanceService.updateContainerInspect)
-        sinon.assert.calledWith(InstanceService.updateContainerInspect,
-          query, updateData)
-        sinon.assert.notCalled(InstanceService.startInstance)
-        done()
-      })
-    })
-
-    it('should callback with error if user lookup failed', function (done) {
-      var userLookupError = new Error('Mongo error')
-      User.findByGithubIdAsync.rejects(userLookupError)
-      InstanceContainerCreated(ctx.data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.equal(userLookupError.message)
-        sinon.assert.calledOnce(ContextVersion.recoverAsync)
-        sinon.assert.calledOnce(InstanceService.updateContainerInspect)
-        sinon.assert.calledOnce(User.findByGithubIdAsync)
-        sinon.assert.notCalled(InstanceService.startInstance)
-        done()
-      })
-    })
-
-    it('should callback with error if start instance failed', function (done) {
-      var startInstanceError = new Error('Start instance error')
-      InstanceService.startInstance.rejects(startInstanceError)
-      InstanceContainerCreated(ctx.data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.equal(startInstanceError.message)
-        sinon.assert.calledOnce(ContextVersion.recoverAsync)
-        sinon.assert.calledOnce(InstanceService.updateContainerInspect)
-        sinon.assert.calledOnce(User.findByGithubIdAsync)
-        sinon.assert.calledOnce(InstanceService.startInstance)
-        done()
-      })
-    })
-  })
+    }) // end _startInstance
+  }) // end worker class
 })

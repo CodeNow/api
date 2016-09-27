@@ -313,8 +313,7 @@ describe('Workers: Container Network Attach', function () {
       sinon.assert.calledWith(InstanceService.emitInstanceUpdate,
         mockModifiedInstance,
         null,
-        'start',
-        false
+        'start'
       )
       done()
     })

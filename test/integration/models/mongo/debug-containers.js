@@ -84,7 +84,7 @@ describe('Debug Containers Integration Tests', function () {
         if (err) { return done(err) }
         expect(Docker.prototype.createContainer.calledOnce).to.be.true()
         var createArgs = Docker.prototype.createContainer.getCall(0).args[0]
-        expect(createArgs).to.deep.equal({
+        expect(createArgs).to.equal({
           Cmd: [ 'sleep', '28800' ],
           Image: dc.layerId,
           Labels: {
@@ -120,7 +120,7 @@ describe('Debug Containers Integration Tests', function () {
         expect(Docker.prototype.removeContainer.calledWith(4)).to.be.true()
         Docker.prototype.stopContainer.restore()
         Docker.prototype.removeContainer.restore()
-        expect(dc).to.deep.equal(ctx.dc)
+        expect(dc).to.equal(ctx.dc)
         done()
       })
     })

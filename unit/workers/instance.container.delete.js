@@ -64,7 +64,7 @@ describe('instance.container.delete unit test', function () {
       it('should throw error if removeHostsForInstance failed', function (done) {
         Hosts.prototype.removeHostsForInstance.yieldsAsync(testErr)
         InstanceContainerDelete.task(testJob).asCallback(function (err) {
-          expect(err.cause).to.deep.equal(testErr)
+          expect(err.cause).to.equal(testErr)
           done()
         })
       })
@@ -72,7 +72,7 @@ describe('instance.container.delete unit test', function () {
       it('should throw error if stopContainer failed', function (done) {
         Docker.prototype.stopContainer.yieldsAsync(testErr)
         InstanceContainerDelete.task(testJob).asCallback(function (err) {
-          expect(err.cause).to.deep.equal(testErr)
+          expect(err.cause).to.equal(testErr)
           done()
         })
       })
@@ -80,7 +80,7 @@ describe('instance.container.delete unit test', function () {
       it('should throw error if stopContainer failed', function (done) {
         Docker.prototype.removeContainer.yieldsAsync(testErr)
         InstanceContainerDelete.task(testJob).asCallback(function (err) {
-          expect(err.cause).to.deep.equal(testErr)
+          expect(err.cause).to.equal(testErr)
           done()
         })
       })

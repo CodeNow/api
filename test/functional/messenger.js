@@ -68,7 +68,7 @@ describe('messenger Unit Tests', function () {
         if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org')
           expect(data.name).to.equal('test')
-          expect(data.data).to.deep.contain({test: '1234'})
+          expect(data.data).to.contain({test: '1234'})
           expect(Object.keys(data.data)).to.have.length(1)
           primus.end()
         } else {
@@ -129,7 +129,7 @@ describe('messenger Unit Tests', function () {
         if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org')
           expect(data.name).to.equal('test')
-          expect(data.data).to.deep.contain({test: '1234'})
+          expect(data.data).to.contain({test: '1234'})
           expect(Object.keys(data.data)).to.have.length(1)
           primus1.end()
           primus2.end()
@@ -187,7 +187,7 @@ describe('messenger Unit Tests', function () {
         if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org')
           expect(data.name).to.equal('test')
-          expect(data.data).to.deep.contain({test: '1234'})
+          expect(data.data).to.contain({test: '1234'})
           expect(Object.keys(data.data)).to.have.length(1)
           primus1.end()
         } else {
@@ -198,7 +198,7 @@ describe('messenger Unit Tests', function () {
         if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org')
           expect(data.name).to.equal('test')
-          expect(data.data).to.deep.contain({test: '1234'})
+          expect(data.data).to.contain({test: '1234'})
           expect(Object.keys(data.data)).to.have.length(1)
           primus2.end()
         } else {
@@ -209,7 +209,7 @@ describe('messenger Unit Tests', function () {
         if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org')
           expect(data.name).to.equal('test')
-          expect(data.data).to.deep.contain({test: '1234'})
+          expect(data.data).to.contain({test: '1234'})
           expect(Object.keys(data.data)).to.have.length(1)
           primus3.end()
         } else {
@@ -246,7 +246,7 @@ describe('messenger Unit Tests', function () {
         } else if (data.event === 'ROOM_MESSAGE') {
           expect(data.type).to.equal('org')
           expect(data.name).to.equal('test')
-          expect(data.data).to.deep.contain({test: '1234'})
+          expect(data.data).to.contain({test: '1234'})
           expect(Object.keys(data.data)).to.have.length(1)
           primus1.write({
             id: 2222,

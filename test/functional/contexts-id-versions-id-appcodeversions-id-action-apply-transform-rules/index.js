@@ -110,7 +110,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
       var optimusRules = optimus.transform.firstCall.args[0].rules
       ctx.expectedRuleSet.forEach(function (rule, index) {
         Object.keys(rule).forEach(function (key) {
-          expect(rule[key]).to.deep.equal(optimusRules[index][key])
+          expect(rule[key]).to.equal(optimusRules[index][key])
         })
       })
       done()

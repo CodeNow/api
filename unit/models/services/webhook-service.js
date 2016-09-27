@@ -64,7 +64,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         Instance.findNonIsolatedForkedInstances.resolves([])
         WebhookService.autoDelete(githubPushInfo)
           .then(function (instances) {
-            expect(instances).to.deep.equal([])
+            expect(instances).to.equal([])
             sinon.assert.notCalled(rabbitMQ.deleteInstance)
           })
           .asCallback(done)
@@ -78,7 +78,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         Instance.findNonIsolatedForkedInstances.resolves(instances)
         WebhookService.autoDelete(githubPushInfo)
           .then(function (instances) {
-            expect(instances).to.deep.equal(['sdasdsaddgfasdfgasdfasdf', 'erfvsdfsavxscvsacfvserw'])
+            expect(instances).to.equal(['sdasdsaddgfasdfgasdfasdf', 'erfvsdfsavxscvsacfvserw'])
             sinon.assert.calledTwice(rabbitMQ.deleteInstance)
             sinon.assert.calledWith(rabbitMQ.deleteInstance, {
               instanceId: 'sdasdsaddgfasdfgasdfasdf'
@@ -129,7 +129,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         })
         WebhookService.autoDeploy([], githubPushInfo)
           .then(function (results) {
-            expect(results).to.deep.equal([])
+            expect(results).to.equal([])
             sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
           })
           .asCallback(done)
@@ -142,7 +142,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         })
         WebhookService.autoDeploy(instances, githubPushInfo)
           .then(function (results) {
-            expect(results).to.deep.equal([])
+            expect(results).to.equal([])
             sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
           })
           .asCallback(done)
@@ -154,7 +154,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         })
         WebhookService.autoDeploy(instances, githubPushInfo)
           .then(function (results) {
-            expect(results).to.deep.equal([{
+            expect(results).to.equal([{
               hello: 'asdfasdfdsa'
             }])
             sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)

@@ -45,7 +45,7 @@ describe('token.js unit test: ' + moduleName, function () {
       }, testCookie, function (err) {
         expect(err).to.equal(testErr)
         sinon.assert.calledOnce(RedisToken.prototype.setValue)
-        expect(JSON.parse(RedisToken.prototype.setValue.lastCall.args[0])).to.deep.equal({
+        expect(JSON.parse(RedisToken.prototype.setValue.lastCall.args[0])).to.equal({
           userGithubOrgs: [],
           userId: '',
           cookie: testCookie,
@@ -75,7 +75,7 @@ describe('token.js unit test: ' + moduleName, function () {
         expect(err).to.not.exist()
 
         sinon.assert.calledOnce(RedisToken.prototype.setValue)
-        expect(JSON.parse(RedisToken.prototype.setValue.lastCall.args[0])).to.deep.equal({
+        expect(JSON.parse(RedisToken.prototype.setValue.lastCall.args[0])).to.equal({
           userGithubOrgs: [],
           userId: '',
           cookie: testCookie,

@@ -111,7 +111,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransf
     var rule = { action: 'replace', search: 'dood', replace: 'rood' }
     ctx.appCodeVersion.testTransformRule(rule, function (err, resp) {
       if (err) { return done(err) }
-      expect(resp).to.deep.equal(last(ctx.optimusResponse.results))
+      expect(resp).to.equal(last(ctx.optimusResponse.results))
 
       var expectedRuleSet = [
         { action: 'exclude', files: [ 'a.txt' ] },
@@ -124,7 +124,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransf
       var optimusRules = optimus.transform.firstCall.args[0].rules
       expectedRuleSet.forEach(function (expected, index) {
         Object.keys(expected).forEach(function (key) {
-          expect(optimusRules[index][key]).to.deep.equal(expected[key])
+          expect(optimusRules[index][key]).to.equal(expected[key])
         })
       })
       done()
@@ -135,7 +135,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransf
     var rule = { action: 'rename', source: 'cool.txt', dest: 'world.txt' }
     ctx.appCodeVersion.testTransformRule(rule, function (err, resp) {
       if (err) { return done(err) }
-      expect(resp).to.deep.equal(last(ctx.optimusResponse.results))
+      expect(resp).to.equal(last(ctx.optimusResponse.results))
 
       var expectedRuleSet = [
         { action: 'exclude', files: [ 'a.txt' ] },
@@ -148,7 +148,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransf
       var optimusRules = optimus.transform.firstCall.args[0].rules
       expectedRuleSet.forEach(function (expected, index) {
         Object.keys(expected).forEach(function (key) {
-          expect(optimusRules[index][key]).to.deep.equal(expected[key])
+          expect(optimusRules[index][key]).to.equal(expected[key])
         })
       })
       done()
@@ -158,7 +158,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransf
   it('should test a change to an existing replace rule', function (done) {
     ctx.appCodeVersion.testTransformRule(ctx.replaceRule, function (err, resp) {
       if (err) { return done(err) }
-      expect(resp).to.deep.equal(last(ctx.optimusResponse.results))
+      expect(resp).to.equal(last(ctx.optimusResponse.results))
 
       var expectedRuleSet = [
         { action: 'exclude', files: [ 'a.txt' ] },
@@ -169,7 +169,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransf
       var optimusRules = optimus.transform.firstCall.args[0].rules
       expectedRuleSet.forEach(function (expected, index) {
         Object.keys(expected).forEach(function (key) {
-          expect(optimusRules[index][key]).to.deep.equal(expected[key])
+          expect(optimusRules[index][key]).to.equal(expected[key])
         })
       })
       done()
@@ -179,7 +179,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransf
   it('should test a change to an existing rename rule', function (done) {
     ctx.appCodeVersion.testTransformRule(ctx.renameRule, function (err, resp) {
       if (err) { return done(err) }
-      expect(resp).to.deep.equal(last(ctx.optimusResponse.results))
+      expect(resp).to.equal(last(ctx.optimusResponse.results))
 
       var expectedRuleSet = [
         { action: 'exclude', files: [ 'a.txt' ] },
@@ -190,7 +190,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransf
       var optimusRules = optimus.transform.firstCall.args[0].rules
       expectedRuleSet.forEach(function (expected, index) {
         Object.keys(expected).forEach(function (key) {
-          expect(optimusRules[index][key]).to.deep.equal(expected[key])
+          expect(optimusRules[index][key]).to.equal(expected[key])
         })
       })
       done()

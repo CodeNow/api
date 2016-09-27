@@ -166,7 +166,7 @@ describe('Workers: Instance Stop', function () {
     Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
-      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'stopping', true)
+      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, testSessionUserGithubId, 'stopping')
       done()
     })
   })
@@ -177,6 +177,19 @@ describe('Workers: Instance Stop', function () {
         Instance.findOneStoppingAsync,
         InstanceService.emitInstanceUpdate,
         Docker.prototype.stopContainerAsync)
+      done()
+    })
+  })
+
+  it('should emit instance errored on final retry', (done) => {
+    Worker.finalRetryFn(testData).asCallback(function (err) {
+      if (err) { return done(err) }
+      sinon.assert.calledOnce(rabbitMQ.instanceContainerErrored)
+      sinon.assert.calledWith(rabbitMQ.instanceContainerErrored, {
+        instanceId: testData.instanceId,
+        containerId: testData.containerId,
+        error: 'Could not stop instance, retry limit reached'
+      })
       done()
     })
   })
