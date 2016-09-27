@@ -68,8 +68,6 @@ function startApi (done) {
   if (started) { return done() }
   started = true
   sinon.stub(rabbitMQ, 'pushImage')
-  sinon.stub(rabbitMQ, 'clearContainerMemory')
-
   rabbitPublisher.connect()
     .then(function (err) {
       if (err) { return done(err) }
@@ -85,7 +83,6 @@ function startApi (done) {
 
 function stopApi (done) {
   rabbitMQ.pushImage.restore()
-  rabbitMQ.clearContainerMemory.restore()
   if (!started) { return done() }
   started = false
   rabbitPublisher.disconnect()

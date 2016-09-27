@@ -29,26 +29,29 @@ var it = lab.it
 describe('ContainerImageBuilderCreate unit test', function () {
   describe('finalRetryFn', function () {
     beforeEach(function (done) {
-      sinon.stub(BuildService, 'updateFailedBuild')
+      sinon.stub(BuildService, 'handleBuildComplete')
       done()
     })
 
     afterEach(function (done) {
-      BuildService.updateFailedBuild.restore()
+      BuildService.handleBuildComplete.restore()
       done()
     })
 
     it('should call build complete', function (done) {
       var testId = '123123123'
-      BuildService.updateFailedBuild.resolves()
+      BuildService.handleBuildComplete.resolves()
       Worker.finalRetryFn({
         contextVersionBuildId: testId
       }).asCallback(function (err) {
         if (err) { return done(err) }
-        sinon.assert.calledOnce(BuildService.updateFailedBuild)
-        sinon.assert.calledWith(BuildService.updateFailedBuild, testId,
-          'Failed to create build container, max retries reached'
-        )
+        sinon.assert.calledOnce(BuildService.handleBuildComplete)
+        sinon.assert.calledWith(BuildService.handleBuildComplete, testId, {
+          failed: true,
+          error: {
+            message: 'Failed to create build container, max retries reached'
+          }
+        })
         done()
       })
     })
@@ -86,7 +89,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
       sinon.stub(Docker.prototype, 'createImageBuilderAsync').resolves(mockContainer)
       sinon.stub(Docker, 'getDockerTag').returns(mockDockerTag)
       sinon.stub(PermissionService, 'checkOwnerAllowed').resolves()
-      sinon.stub(BuildService, 'updateFailedBuild')
+      sinon.stub(BuildService, 'handleBuildComplete')
       done()
     })
 
@@ -98,14 +101,14 @@ describe('ContainerImageBuilderCreate unit test', function () {
       Docker.prototype.createImageBuilderAsync.restore()
       Docker.getDockerTag.restore()
       PermissionService.checkOwnerAllowed.restore()
-      BuildService.updateFailedBuild.restore()
+      BuildService.handleBuildComplete.restore()
       done()
     })
 
     describe('checkAllowed', function () {
       it('should fatally reject if owner is not allowed', function (done) {
         PermissionService.checkOwnerAllowed.rejects(new errors.OrganizationNotAllowedError('not allowed'))
-        BuildService.updateFailedBuild.resolves()
+        BuildService.handleBuildComplete.resolves()
         Worker.task(validJob).asCallback(function (err) {
           expect(err).to.be.an.instanceOf(WorkerStopError)
           done()
@@ -114,7 +117,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
 
       it('should fatally reject if org is not found', function (done) {
         PermissionService.checkOwnerAllowed.rejects(new errors.OrganizationNotFoundError('not allowed'))
-        BuildService.updateFailedBuild.resolves()
+        BuildService.handleBuildComplete.resolves()
         Worker.task(validJob).asCallback(function (err) {
           expect(err).to.be.an.instanceOf(WorkerStopError)
           done()
@@ -123,13 +126,18 @@ describe('ContainerImageBuilderCreate unit test', function () {
     }) // end 'checkAllowed'
 
     describe('WorkerStopError', function () {
-      it('should updateFailedBuild', function (done) {
+      it('should handleBuildComplete', function (done) {
         PermissionService.checkOwnerAllowed.rejects(new errors.OrganizationNotAllowedError('not allowed'))
-        BuildService.updateFailedBuild.resolves()
+        BuildService.handleBuildComplete.resolves()
         Worker.task(validJob).asCallback(function (err) {
           expect(err).to.be.an.instanceOf(WorkerStopError)
-          sinon.assert.calledOnce(BuildService.updateFailedBuild)
-          sinon.assert.calledWith(BuildService.updateFailedBuild, validJob.contextVersionBuildId, err.message)
+          sinon.assert.calledOnce(BuildService.handleBuildComplete)
+          sinon.assert.calledWith(BuildService.handleBuildComplete, validJob.contextVersionBuildId, {
+            failed: true,
+            error: {
+              message: err.message
+            }
+          })
           done()
         })
       })
@@ -161,7 +169,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
         var rejectError
 
         beforeEach(function (done) {
-          BuildService.updateFailedBuild.resolves()
+          BuildService.handleBuildComplete.resolves()
           User.findByGithubIdAsync.resolves(null)
           Worker.task(validJob).asCallback(function (err) {
             rejectError = err
@@ -185,7 +193,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
         var rejectError
 
         beforeEach(function (done) {
-          BuildService.updateFailedBuild.resolves()
+          BuildService.handleBuildComplete.resolves()
           ContextVersion.findOneCreating.rejects(new ContextVersion.NotFoundError({
             q: 'this'
           }))
@@ -206,9 +214,14 @@ describe('ContainerImageBuilderCreate unit test', function () {
           done()
         })
 
-        it('should call updateFailedBuild', function (done) {
-          sinon.assert.calledOnce(BuildService.updateFailedBuild)
-          sinon.assert.calledWith(BuildService.updateFailedBuild, validJob.contextVersionBuildId, rejectError.message)
+        it('should call handleBuildComplete', function (done) {
+          sinon.assert.calledOnce(BuildService.handleBuildComplete)
+          sinon.assert.calledWith(BuildService.handleBuildComplete, validJob.contextVersionBuildId, {
+            failed: true,
+            error: {
+              message: rejectError.message
+            }
+          })
           done()
         })
       }) // end 'on context version not found'
@@ -217,7 +230,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
         var rejectError
 
         beforeEach(function (done) {
-          BuildService.updateFailedBuild.resolves()
+          BuildService.handleBuildComplete.resolves()
           ContextVersion.findOneCreating.rejects(new ContextVersion.IncorrectStateError('funning', {}))
           Worker.task(validJob).asCallback(function (err) {
             rejectError = err
@@ -236,8 +249,8 @@ describe('ContainerImageBuilderCreate unit test', function () {
           done()
         })
 
-        it('should not call updateFailedBuild', function (done) {
-          sinon.assert.notCalled(BuildService.updateFailedBuild)
+        it('should not call handleBuildComplete', function (done) {
+          sinon.assert.notCalled(BuildService.handleBuildComplete)
           done()
         })
       }) // end 'on context version not found'

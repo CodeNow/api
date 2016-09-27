@@ -157,10 +157,10 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         sinon.spy(Instance.prototype, 'emitInstanceUpdate')
         sinon.spy(messenger, '_emitInstanceUpdateAction')
         sinon.spy(messenger, 'emitContextVersionUpdate')
-        sinon.spy(BuildService, 'updateSuccessfulBuild')
-        sinon.spy(BuildService, 'updateFailedBuild')
+        sinon.spy(BuildService, 'handleBuildComplete')
         sinon.spy(Build, 'updateFailedByContextVersionIds')
         sinon.spy(Build, 'updateCompletedByContextVersionIds')
+        sinon.spy(ContextVersion, 'updateBuildErrorByContainer')
         sinon.stub(User.prototype, 'findGithubUserByGithubId').yieldsAsync(null, {
           login: 'nathan219',
           avatar_url: 'testingtesting123'
@@ -175,21 +175,20 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
         messenger.emitContextVersionUpdate.restore()
         Instance.emitInstanceUpdates.restore()
         Instance.prototype.emitInstanceUpdate.restore()
-        BuildService.updateSuccessfulBuild.restore()
-        BuildService.updateFailedBuild.restore()
+        BuildService.handleBuildComplete.restore()
         Build.updateFailedByContextVersionIds.restore()
         Build.updateCompletedByContextVersionIds.restore()
+        ContextVersion.updateBuildErrorByContainer.restore()
         User.prototype.findGithubUserByGithubId.restore()
         done()
       })
-
       describe('With a successful build', function () {
         it('should attempt to deploy', function (done) {
           var job = mockOnBuilderDieMessage(ctx.cv, ctx.usedDockerContainer, ctx.user)
           Worker.task(job)
             .asCallback(function (err) {
               if (err) { done(err) }
-              sinon.assert.calledOnce(BuildService.updateSuccessfulBuild)
+              sinon.assert.calledOnce(BuildService.handleBuildComplete)
               sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
               sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
 
@@ -272,7 +271,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
           Worker.task(job)
             .asCallback(function (err) {
               if (err) { return done(err) }
-              sinon.assert.calledOnce(BuildService.updateFailedBuild)
+              sinon.assert.calledOnce(BuildService.handleBuildComplete)
 
               sinon.assert.calledOnce(Build.updateFailedByContextVersionIds)
               // updateFailedByContextVersionIds calls updateCompletedByContextVersionIds
@@ -382,7 +381,7 @@ describe('OnImageBuilderContainerDie Integration Tests', function () {
             Worker.task(job)
               .asCallback(function (err) {
                 if (err) { return done(err) }
-                sinon.assert.calledOnce(BuildService.updateSuccessfulBuild)
+                sinon.assert.calledOnce(BuildService.handleBuildComplete)
                 sinon.assert.calledOnce(Build.updateCompletedByContextVersionIds)
                 sinon.assert.notCalled(Build.updateFailedByContextVersionIds)
 
