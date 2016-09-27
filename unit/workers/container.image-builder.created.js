@@ -14,7 +14,6 @@ var sinon = require('sinon')
 var WorkerError = require('error-cat/errors/worker-error')
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var BuildService = require('models/services/build-service')
 var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var InstanceService = require('models/services/instance-service')
@@ -63,7 +62,6 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
         sinon.stub(messenger, 'emitContextVersionUpdate')
         sinon.stub(Docker.prototype, 'startContainerAsync').resolves()
         sinon.stub(InstanceService, 'emitInstanceUpdateByCvBuildId')
-        sinon.stub(BuildService, 'handleBuildComplete')
         done()
       })
 
@@ -73,7 +71,6 @@ describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
         messenger.emitContextVersionUpdate.restore()
         Docker.prototype.startContainerAsync.restore()
         InstanceService.emitInstanceUpdateByCvBuildId.restore()
-        BuildService.handleBuildComplete.restore()
         done()
       })
 

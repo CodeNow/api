@@ -249,7 +249,6 @@ var factory = module.exports = {
     if (buildExtend && buildExtend.completed) {
       assign(cv.build, {
         dockerTag: 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
-        dockerImage: 'bbbd03498dab',
         completed: buildExtend.completed
       })
     }
@@ -342,7 +341,6 @@ var factory = module.exports = {
         VersionId: VALID_OBJECT_ID
       }],
       build: {
-        dockerImage: 'testing',
         dockerTag: 'adsgasdfgasdf'
       },
       appCodeVersions: [

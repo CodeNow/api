@@ -1,6 +1,4 @@
-/**
- * @module unit/models/services/build-service
- */
+'use strict'
 var clone = require('101/clone')
 var Code = require('code')
 var Lab = require('lab')
@@ -29,19 +27,19 @@ var it = lab.it
 
 describe('BuildService', function () {
   var ctx = {}
-  describe('handleBuildComplete', function () {
-    var mockContextVersion
-    var testBuildId
-    var testInstance
-    var testBuildInfo
+
+  describe('updateSuccessfulBuild', function () {
+    let mockContextVersion
+    let testBuildId
+    let testInstance
+    let testBuildInfo
     beforeEach(function (done) {
       mockContextVersion = { _id: 123 }
       testBuildId = '507c7f79bcf86cd7994f6c0e'
       testInstance = new Instance({})
       testBuildInfo = {}
 
-      sinon.stub(ContextVersion, 'updateBuildCompletedByBuildIdAsync')
-      sinon.stub(Build, 'updateFailedByContextVersionIdsAsync')
+      sinon.stub(ContextVersion, 'updateAndGetSuccessfulBuild')
       sinon.stub(Build, 'updateCompletedByContextVersionIdsAsync')
       sinon.stub(Instance, 'findByContextVersionIdsAsync').resolves([testInstance])
       sinon.stub(Instance.prototype, 'updateCv').resolves()
@@ -49,8 +47,7 @@ describe('BuildService', function () {
     })
 
     afterEach(function (done) {
-      ContextVersion.updateBuildCompletedByBuildIdAsync.restore()
-      Build.updateFailedByContextVersionIdsAsync.restore()
+      ContextVersion.updateAndGetSuccessfulBuild.restore()
       Build.updateCompletedByContextVersionIdsAsync.restore()
       Instance.findByContextVersionIdsAsync.restore()
       Instance.prototype.updateCv.restore()
@@ -59,22 +56,21 @@ describe('BuildService', function () {
 
     describe('success', function () {
       beforeEach(function (done) {
-        ContextVersion.updateBuildCompletedByBuildIdAsync.resolves([mockContextVersion])
+        ContextVersion.updateAndGetSuccessfulBuild.resolves([mockContextVersion])
         Build.updateCompletedByContextVersionIdsAsync.resolves()
         done()
       })
 
       it('it should handle successful build', function (done) {
-        BuildService.handleBuildComplete(testBuildId, testBuildInfo)
+        BuildService.updateSuccessfulBuild(testBuildId, testBuildInfo)
           .asCallback(function (err) {
             if (err) { return done(err) }
             sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
             sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [mockContextVersion._id])
             sinon.assert.calledOnce(Instance.prototype.updateCv)
             sinon.assert.calledWith(
-              ContextVersion.updateBuildCompletedByBuildIdAsync,
-              testBuildId,
-              testBuildInfo
+              ContextVersion.updateAndGetSuccessfulBuild,
+              testBuildId
             )
             sinon.assert.calledWith(
               Build.updateCompletedByContextVersionIdsAsync,
@@ -86,10 +82,73 @@ describe('BuildService', function () {
     })
 
     describe('errors', function () {
+      describe('CV.updateAndGetSuccessfulBuild error', function () {
+        beforeEach(function (done) {
+          ctx.err = new Error('boom1')
+          ContextVersion.updateAndGetSuccessfulBuild.rejects(ctx.err)
+          done()
+        })
+
+        it('should callback the error', function (done) {
+          BuildService.updateSuccessfulBuild(testBuildId).asCallback(function (err) {
+            sinon.assert.notCalled(Instance.findByContextVersionIdsAsync)
+            sinon.assert.notCalled(Instance.prototype.updateCv)
+            expect(err).to.equal(ctx.err)
+            done()
+          })
+        })
+      })
+
+      describe('Build.updateCompletedByContextVersionIds error', function () {
+        beforeEach(function (done) {
+          ctx.err = new Error('boom2')
+          ContextVersion.updateAndGetSuccessfulBuild.resolves([mockContextVersion])
+          Build.updateCompletedByContextVersionIdsAsync.rejects(ctx.err)
+          done()
+        })
+
+        it('should callback the error', function (done) {
+          BuildService.updateSuccessfulBuild(testBuildId)
+            .asCallback(function (err) {
+              sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
+              sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [mockContextVersion._id])
+              sinon.assert.calledOnce(Instance.prototype.updateCv)
+              expect(err).to.equal(ctx.err)
+              done()
+            })
+        })
+      })
+    })
+  })
+
+  describe('updateFailedBuild', function () {
+    let mockContextVersion
+    let testBuildId
+    let testInstance
+    beforeEach(function (done) {
+      mockContextVersion = { _id: 123 }
+      testBuildId = '507c7f79bcf86cd7994f6c0e'
+      testInstance = new Instance({})
+
+      sinon.stub(ContextVersion, 'updateAndGetFailedBuild')
+      sinon.stub(Build, 'updateFailedByContextVersionIdsAsync')
+      sinon.stub(Instance, 'findByContextVersionIdsAsync').resolves([testInstance])
+      sinon.stub(Instance.prototype, 'updateCv').resolves()
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.updateAndGetFailedBuild.restore()
+      Build.updateFailedByContextVersionIdsAsync.restore()
+      Instance.findByContextVersionIdsAsync.restore()
+      Instance.prototype.updateCv.restore()
+      done()
+    })
+
+    describe('errors', function () {
       describe('build failed w/ exit code', function () {
         beforeEach(function (done) {
-          testBuildInfo.failed = true
-          ContextVersion.updateBuildCompletedByBuildIdAsync.resolves([mockContextVersion])
+          ContextVersion.updateAndGetFailedBuild.resolves([mockContextVersion])
           done()
         })
 
@@ -100,15 +159,34 @@ describe('BuildService', function () {
           })
 
           it('it should handle failed build', function (done) {
-            BuildService.handleBuildComplete(testBuildId, testBuildInfo).asCallback(function (err) {
+            BuildService.updateFailedBuild(testBuildId).asCallback(function (err) {
               if (err) { return done(err) }
               sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
               sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [mockContextVersion._id])
               sinon.assert.calledOnce(Instance.prototype.updateCv)
               sinon.assert.calledWith(
-                ContextVersion.updateBuildCompletedByBuildIdAsync,
+                ContextVersion.updateAndGetFailedBuild,
+                testBuildId
+              )
+              sinon.assert.calledWith(
+                Build.updateFailedByContextVersionIdsAsync,
+                [mockContextVersion._id]
+              )
+              done()
+            })
+          })
+
+          it('it should handle failed build with message', function (done) {
+            const testError = 'bad'
+            BuildService.updateFailedBuild(testBuildId, testError).asCallback(function (err) {
+              if (err) { return done(err) }
+              sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
+              sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [mockContextVersion._id])
+              sinon.assert.calledOnce(Instance.prototype.updateCv)
+              sinon.assert.calledWith(
+                ContextVersion.updateAndGetFailedBuild,
                 testBuildId,
-                testBuildInfo
+                testError
               )
               sinon.assert.calledWith(
                 Build.updateFailedByContextVersionIdsAsync,
@@ -126,7 +204,7 @@ describe('BuildService', function () {
           })
 
           it('should callback the error', function (done) {
-            BuildService.handleBuildComplete(testBuildId, testBuildInfo).asCallback(function (err) {
+            BuildService.updateFailedBuild(testBuildId).asCallback(function (err) {
               sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
               sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [mockContextVersion._id])
               sinon.assert.calledOnce(Instance.prototype.updateCv)
@@ -134,43 +212,6 @@ describe('BuildService', function () {
               done()
             })
           })
-        })
-      })
-
-      describe('CV.updateBuildCompletedByBuildIdAsync error', function () {
-        beforeEach(function (done) {
-          ctx.err = new Error('boom1')
-          ContextVersion.updateBuildCompletedByBuildIdAsync.rejects(ctx.err)
-          done()
-        })
-
-        it('should callback the error', function (done) {
-          BuildService.handleBuildComplete(testBuildId, testBuildInfo).asCallback(function (err) {
-            sinon.assert.notCalled(Instance.findByContextVersionIdsAsync)
-            sinon.assert.notCalled(Instance.prototype.updateCv)
-            expect(err).to.equal(ctx.err)
-            done()
-          })
-        })
-      })
-
-      describe('Build.updateCompletedByContextVersionIds error', function () {
-        beforeEach(function (done) {
-          ctx.err = new Error('boom2')
-          ContextVersion.updateBuildCompletedByBuildIdAsync.resolves([mockContextVersion])
-          Build.updateCompletedByContextVersionIdsAsync.rejects(ctx.err)
-          done()
-        })
-
-        it('should callback the error', function (done) {
-          BuildService.handleBuildComplete(testBuildId, testBuildInfo)
-            .asCallback(function (err) {
-              sinon.assert.calledOnce(Instance.findByContextVersionIdsAsync)
-              sinon.assert.calledWith(Instance.findByContextVersionIdsAsync, [mockContextVersion._id])
-              sinon.assert.calledOnce(Instance.prototype.updateCv)
-              expect(err).to.equal(ctx.err)
-              done()
-            })
         })
       })
     })
