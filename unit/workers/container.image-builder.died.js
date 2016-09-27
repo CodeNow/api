@@ -450,15 +450,12 @@ describe('OnImageBuilderContainerDie', function () {
       })
 
       it('should publish push image and clear memory', (done) => {
-        worker._clearBuildResources().asCallback((err) => {
-          if (err) { return done(err) }
-
-          sinon.assert.calledOnce(rabbitMQ.clearContainerMemory)
-          sinon.assert.calledWith(rabbitMQ.clearContainerMemory, {
-            containerId: testContainerId
-          })
-          done()
+        worker._clearBuildResources()
+        sinon.assert.calledOnce(rabbitMQ.clearContainerMemory)
+        sinon.assert.calledWith(rabbitMQ.clearContainerMemory, {
+          containerId: testContainerId
         })
+        done()
       })
     }) // end _clearBuildResources
   }) // end Worker methods
