@@ -10,7 +10,6 @@ var after = lab.after
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 
-var Boom = require('dat-middleware').Boom
 var isObject = require('101/is-object')
 var keypather = require('keypather')()
 var assign = require('101/assign')
@@ -637,67 +636,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
         done()
       })
     }) // end getUserContainerMemoryLimit
-
-    describe('updateBuildErrorByContainer', function () {
-      beforeEach(function (done) {
-        sinon.stub(ContextVersion, 'updateBy').yields()
-        ctx.mockContextVersions = [
-          {
-            _id: '098765432109876543214321',
-            build: {
-              completed: Date.now()
-            }
-          }
-        ]
-        ctx.dockerContainer = '123456789012345678901234'
-        sinon.stub(ContextVersion, 'findBy').yields(null, ctx.mockContextVersions)
-        sinon.stub(messenger, 'emitContextVersionUpdate')
-        done()
-      })
-      afterEach(function (done) {
-        ContextVersion.updateBy.restore()
-        ContextVersion.findBy.restore()
-        messenger.emitContextVersionUpdate.restore()
-        done()
-      })
-      it('should update contextVersions with matching build properties', function (done) {
-        var buildErr = Boom.badRequest('message', {
-          docker: {
-            log: [{some: 'object'}]
-          }
-        })
-        ContextVersion.updateBuildErrorByContainer(ctx.dockerContainer, buildErr, function (err, contextVersions) {
-          if (err) {
-            return done(err)
-          }
-          expect(contextVersions).to.equal(ctx.mockContextVersions)
-          sinon.assert.calledOnce(ContextVersion.updateBy)
-          sinon.assert.calledWith(
-            ContextVersion.updateBy,
-            'build.dockerContainer',
-            ctx.dockerContainer
-          )
-          var update = ContextVersion.updateBy.firstCall.args[2]
-          expect(update).to.exist()
-          expect(update.$set).to.contain({
-            'build.error.message': buildErr.message,
-            'build.error.stack': buildErr.stack,
-            'build.failed': true
-          })
-          expect(update.$set['build.completed']).to.exist()
-          sinon.assert.calledWith(
-            ContextVersion.findBy,
-            'build.dockerContainer',
-            ctx.dockerContainer
-          )
-          sinon.assert.calledWith(
-            messenger.emitContextVersionUpdate,
-            ctx.mockContextVersions[0]
-          )
-          done()
-        })
-      })
-    })
 
     describe('save context version validation', function () {
       it('should not possible to save cv without owner', function (done) {
@@ -1952,7 +1890,6 @@ describe('ContextVersion ModelIntegration Tests', function () {
       assign(cv.build, {
         dockerTag: 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
         dockerContainer: '1234567890123456789012345678901234567890123456789012345678901234',
-        dockerImage: 'bbbd03498dab',
         completed: completed
       })
     }

@@ -7,7 +7,6 @@ require('loadenv')()
 var clone = require('101/clone')
 var Code = require('code')
 var createCount = require('callback-count')
-var dockerFrame = require('docker-frame')
 var Dockerode = require('dockerode')
 var error = require('error')
 var indexBy = require('101/index-by')
@@ -15,11 +14,9 @@ var joi = require('utils/joi')
 var keypather = require('keypather')()
 var Lab = require('lab')
 var monitor = require('monitor-dog')
-var multiline = require('multiline')
 var path = require('path')
 var pluck = require('101/pluck')
 var sinon = require('sinon')
-var through2 = require('through2')
 var url = require('url')
 
 var Docker = require('models/apis/docker')
@@ -37,30 +34,6 @@ var expectErr = function (expectedErr, done) {
     expect(err).to.equal(expectedErr)
     done()
   }
-}
-
-var dockerLogs = {
-  success: multiline.stripIndent(function () { /*
-    {"type":"docker","content":"Step 1 : ADD ./ca.pem /ca.pem","timestamp":"2015-10-09T20:11:42.000Z"}
-    {"type":"docker","content":" ---> bf20e0312c8c","timestamp":"2015-10-09T20:11:42.319Z"}
-    {"type":"docker","content":"Step 2 : ADD ./cert.pem /cert.pem","timestamp":"2015-10-09T20:11:42.332Z"}
-    {"type":"docker","content":" ---> e1969cb6ba66","timestamp":"2015-10-09T20:11:42.556Z"}
-    {"type":"docker","content":"Successfully built 6853db027fad","timestamp":"2015-10-09T20:11:43.262Z"}
-    {"type":"log","content":"Runnable: Build completed successfully!","timestamp":"2015-10-09T20:11:43.657Z"}
-  */}),
-  successDockerImage: '6853db027fad', // must match id in log
-  failure: multiline.stripIndent(function () { /*
-    {"type":"docker","content":"Step 1 : ADD ./ca.pem /ca.pem","timestamp":"2015-10-09T20:11:42.000Z"}
-    {"type":"docker","content":" ---> bf20e0312c8c","timestamp":"2015-10-09T20:11:42.319Z"}
-    {"type":"docker","content":"Step 2 : RUN vim ./cert.pem","timestamp":"2015-10-09T20:11:42.332Z"}
-    {"type":"docker","content":" ---> e1969cb6ba66","timestamp":"2015-10-09T20:11:42.556Z"}
-    {"type":"docker","content":"\u001b[91m/bin/sh: 1: \u001b[0m"}
-    {"type":"docker","content":"\u001b[91mvim: not found\n\u001b[0m"}
-    {"type":"docker","content":"Runnable: The command [vim what] returned a non-zero code: 127\r\n","type":"error"}
-  */}),
-  jsonParseError: multiline.stripIndent(function () { /*
-    {"type":"docker",[]
-  */})
 }
 
 describe('docker: ' + moduleName, function () {
@@ -726,101 +699,6 @@ describe('docker: ' + moduleName, function () {
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts)
         ])
         done()
-      })
-    })
-  })
-
-  describe('getBuildInfo', function () {
-    beforeEach(function (done) {
-      sinon.stub(model, '_containerAction')
-      done()
-    })
-    afterEach(function (done) {
-      model._containerAction.restore()
-      done()
-    })
-
-    it('should cleanse and parse logs', function (done) {
-      var stream = through2()
-      model._containerAction.yieldsAsync(null, stream)
-      var exitCode = 0
-      model.getBuildInfo('containerId', exitCode, function (err, buildInfo) {
-        if (err) { return done(err) }
-        expect(buildInfo.dockerImage).to.equal(dockerLogs.successDockerImage)
-        expect(buildInfo.failed).to.equal(false)
-        expect(buildInfo.log).to.equal(
-          dockerLogs.success
-            .split('\n')
-            .map(JSON.parse.bind(JSON))
-        )
-        done()
-      })
-      stream.write(dockerFrame(1, dockerLogs.success))
-      stream.end()
-    })
-
-    describe('errors', function () {
-      it('should callback with error if logs faild', function (done) {
-        var dockerErr = new Error('Docker error')
-        model._containerAction.yieldsAsync(dockerErr)
-        model.getBuildInfo('containerId', 0, function (err) {
-          expect(err).to.exist()
-          expect(err).to.equal(dockerErr)
-          done()
-        })
-      })
-
-      it('should handle docker log stream err', function (done) {
-        var stream = through2()
-        model._containerAction.yieldsAsync(null, stream)
-        var streamOn = stream.on
-        var emitErr = new Error('boom')
-        sinon.stub(stream, 'on', streamErrHandlerAttached)
-        model.getBuildInfo('containerId', 0, function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/docker logs/)
-          expect(err.message).to.match(new RegExp(emitErr.message))
-          done()
-        })
-        function streamErrHandlerAttached () {
-          var ret = streamOn.apply(stream, arguments)
-          stream.on.restore()
-          stream.emit('error', emitErr)
-          return ret
-        }
-      })
-      it('should handle parse err', function (done) {
-        var stream = through2()
-        model._containerAction.yieldsAsync(null, stream)
-        model.getBuildInfo('containerId', 1, function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/json parse/)
-          done()
-        })
-        stream.write(dockerFrame(1, dockerLogs.jsonParseError))
-        stream.end()
-      })
-      it('should handle streamCleanser err', function (done) {
-        var stream = through2()
-        model._containerAction.yieldsAsync(null, stream)
-        var emitErr = new Error('boom')
-        var streamPipe = stream.pipe
-        sinon.stub(stream, 'pipe', handlePipe)
-        model.getBuildInfo('containerId', 1, function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/cleanser/)
-          expect(err.message).to.match(new RegExp(emitErr.message))
-          done()
-        })
-        function handlePipe (streamCleanser) {
-          var ret = streamPipe.apply(stream, arguments)
-          stream.pipe.restore()
-          // emit error on stream cleanser on next tick
-          process.nextTick(
-            streamCleanser.emit.bind(streamCleanser, 'error', emitErr)
-          )
-          return ret
-        }
       })
     })
   })

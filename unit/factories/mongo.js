@@ -34,7 +34,6 @@ var factory = module.exports = {
         VersionId: VALID_OBJECT_ID
       }],
       build: {
-        dockerImage: 'testing',
         dockerTag: 'adsgasdfgasdf'
       },
       appCodeVersions: [
