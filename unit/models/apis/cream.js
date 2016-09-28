@@ -163,6 +163,24 @@ describe('Cream API', function () {
         })
     })
 
+    it('should throw an notFound error if a 404 status code error is received', function (done) {
+      var errorMessage = 'No payment method'
+      response = {
+        statusCode: 404,
+        body: {
+          message: errorMessage
+        }
+      }
+      CreamAPI._makeRequest(path, organizationId)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.output.statusCode).to.equal(404)
+          expect(err.data.err.message).to.equal(errorMessage)
+          expect(err.message).to.match(/payment.*method/i)
+          done()
+        })
+    })
+
     it('should throw an bad request error if a 400 status code error is received', function (done) {
       var errorMessage = 'superString'
       response = {
@@ -176,7 +194,7 @@ describe('Cream API', function () {
           expect(err).to.exist()
           expect(err.output.statusCode).to.equal(400)
           expect(err.data.err.message).to.equal(errorMessage)
-          expect(err.message).to.match(/cream.*bad.*request/i)
+          expect(err.message).to.match(/bad.*request/i)
           expect(err.message).to.match(/super/i)
           done()
         })
