@@ -496,7 +496,7 @@ describe('Isolation Services Model', function () {
     var children = [mockMasterInstance, mockChildInstance]
 
     beforeEach(function (done) {
-      mockMasterInstance.getDependenciesAsync = sinon.stub().resolves([
+      mockMasterInstance.getDependencies = sinon.stub().resolves([
         mockDependencyInstance,
         mockOtherDependencyInstance
       ])
@@ -524,7 +524,7 @@ describe('Isolation Services Model', function () {
           })
       })
       it('should throw an error if the instance doesn\'t have an elasticHostname', function (done) {
-        mockMasterInstance.getDependenciesAsync.resolves([{}])
+        mockMasterInstance.getDependencies.resolves([{}])
         IsolationService._updateDependenciesForInstanceWithChildren(
           mockMasterInstance,
           [{}]
@@ -541,7 +541,7 @@ describe('Isolation Services Model', function () {
       IsolationService._updateDependenciesForInstanceWithChildren(mockMasterInstance, children)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(mockMasterInstance.getDependenciesAsync)
+          sinon.assert.calledOnce(mockMasterInstance.getDependencies)
           done()
         })
     })

@@ -162,7 +162,7 @@ describe('Isolation Services Integration Tests', function () {
    */
   function checkDependencies (master, dependents) {
     if (!master) { return null }
-    return master.getDependenciesAsync()
+    return master.getDependencies()
       .then(function (nodeArray) {
         return nodeArray.map(pluck('name'))
       })

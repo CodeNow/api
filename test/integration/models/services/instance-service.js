@@ -156,7 +156,7 @@ describe('Instance Services Integration Tests', function () {
               sinon.match.has('_id', instance._id),
               'post'
             )
-            return instance.getDependenciesAsync()
+            return instance.getDependencies()
           })
           .then(function (deps) {
             expect(deps.length).to.equal(1)
@@ -283,7 +283,7 @@ describe('Instance Services Integration Tests', function () {
               sinon.match.has('_id', instance._id),
               'post'
             )
-            return instance.getDependenciesAsync()
+            return instance.getDependencies()
           })
           .then(function (deps) {
             expect(deps.length).to.equal(0)
