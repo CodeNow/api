@@ -775,7 +775,7 @@ describe('Instance Model Tests', function () {
 
     describe('Test invalidating cache entries', function () {
       beforeEach(function (done) {
-        sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
+        sinon.stub(instance, 'getDependencies').resolves([])
         sinon.stub(Instance, 'find').yieldsAsync(null, [])
         done()
       })
@@ -816,7 +816,7 @@ describe('Instance Model Tests', function () {
       })
       describe('Envs', function () {
         it('should add a new dep for each env, when starting with none', function (done) {
-          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
+          sinon.stub(instance, 'getDependencies').resolves([])
           instance.env = [
             'as=hello-staging-' + ownerName + '.runnableapp.com',
             'df=adelle-staging-' + ownerName + '.runnableapp.com'
@@ -838,7 +838,7 @@ describe('Instance Model Tests', function () {
           })
         })
         it('should not allow it to add itself', function (done) {
-          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
+          sinon.stub(instance, 'getDependencies').resolves([])
           instance.env = [
             'as=' + instance.elasticHostname
           ]
@@ -852,7 +852,7 @@ describe('Instance Model Tests', function () {
           })
         })
         it('should add 1 new dep, and keep the existing one', function (done) {
-          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [masterInstances[1]])
+          sinon.stub(instance, 'getDependencies').resolves([masterInstances[1]])
           instance.env = [
             'as=hello-staging-' + ownerName + '.runnableapp.com',
             'df=adelle-staging-' + ownerName + '.runnableapp.com'
@@ -871,7 +871,7 @@ describe('Instance Model Tests', function () {
           })
         })
         it('should remove one of the existing, but leave the other', function (done) {
-          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances)
+          sinon.stub(instance, 'getDependencies').resolves(masterInstances)
           instance.env = [
             'df=adelle-staging-' + ownerName + '.runnableapp.com' // Keep masterInstance[1]
           ]
@@ -889,7 +889,7 @@ describe('Instance Model Tests', function () {
           })
         })
         it('should remove both of the existing', function (done) {
-          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances)
+          sinon.stub(instance, 'getDependencies').resolves(masterInstances)
           instance.setDependenciesFromEnvironment(ownerName, function (err) {
             if (err) {
               done(err)
@@ -907,7 +907,7 @@ describe('Instance Model Tests', function () {
           })
         })
         it('should remove the existing one, and add the new one', function (done) {
-          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [masterInstances[1]])
+          sinon.stub(instance, 'getDependencies').resolves([masterInstances[1]])
           instance.env = [
             'df=hello-staging-' + ownerName + '.runnableapp.com' // Add masterInstance[0]
           ]
@@ -944,7 +944,7 @@ describe('Instance Model Tests', function () {
             masterPod: true,
             hostname: 'potatoes-staging-' + ownerName + '.runnableapp.com'
           })) // 5
-          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
+          sinon.stub(instance, 'getDependencies').resolves(masterInstances.slice(0, 3))
           instance.env = [
             'df=hello-staging-' + ownerName + '.runnableapp.com', // keep masterInstance[0]
             'asd=chicken-staging-' + ownerName + '.runnableapp.com', // add masterInstance[3]
@@ -975,7 +975,7 @@ describe('Instance Model Tests', function () {
       })
       describe('FnR', function () {
         it('should add a new dep for each replace rule, when starting with none', function (done) {
-          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
+          sinon.stub(instance, 'getDependencies').resolves([])
           var firstAppCodeVersion = keypather.get(instance, 'contextVersion.appCodeVersions[0]')
           firstAppCodeVersion.transformRules.replace = [
             {
@@ -1024,7 +1024,7 @@ describe('Instance Model Tests', function () {
             masterPod: true,
             hostname: 'potatoes-staging-' + ownerName + '.runnableapp.com'
           })) // 5
-          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
+          sinon.stub(instance, 'getDependencies').resolves(masterInstances.slice(0, 3))
           instance.contextVersion.appCodeVersions[0].transformRules.replace = [
             {
               action: 'Replace',
@@ -1088,7 +1088,7 @@ describe('Instance Model Tests', function () {
             masterPod: true,
             hostname: 'potatoes-staging-' + ownerName + '.runnableapp.com'
           })) // 5
-          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
+          sinon.stub(instance, 'getDependencies').resolves(masterInstances.slice(0, 3))
           instance.contextVersion.appCodeVersions[0].transformRules.replace = [
             {
               action: 'Replace',

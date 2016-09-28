@@ -861,12 +861,13 @@ describe('Instance Model Integration Tests', function () {
           ctx.hello.setDependenciesFromEnvironment(ownerName, done)
         })
         it('should add a new dep for each env, when starting with none', function (done) {
-          ctx.hello.getDependencies(function (err, dependencies) {
-            expect(dependencies).to.be.array()
-            expect(dependencies.length).to.equal(1)
-            expect(dependencies[0]._id).to.equal(ctx['adelle']._id)
-            done(err)
-          })
+          ctx.hello.getDependencies()
+            .asCallback(function (err, dependencies) {
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(1)
+              expect(dependencies[0]._id).to.equal(ctx['adelle']._id)
+              done(err)
+            })
         })
         it('should add 1 new dep, and keep the existing one', function (done) {
           ctx.hello.env.push([
@@ -876,14 +877,15 @@ describe('Instance Model Integration Tests', function () {
             if (err) {
               return done(err)
             }
-            ctx.hello.getDependencies(function (err, dependencies) {
-              expect(dependencies).to.be.array()
-              expect(dependencies.length).to.equal(2)
-              var ids = dependencies.map(pluck('_id.toString()'))
-              expect(ids).to.include(ctx.goodbye._id.toString())
-              expect(ids).to.include(ctx.adelle._id.toString())
-              done(err)
-            })
+            ctx.hello.getDependencies()
+              .asCallback(function (err, dependencies) {
+                expect(dependencies).to.be.array()
+                expect(dependencies.length).to.equal(2)
+                var ids = dependencies.map(pluck('_id.toString()'))
+                expect(ids).to.include(ctx.goodbye._id.toString())
+                expect(ids).to.include(ctx.adelle._id.toString())
+                done(err)
+              })
           })
         })
         it('should remove the only dependency', function (done) {
@@ -892,11 +894,12 @@ describe('Instance Model Integration Tests', function () {
             if (err) {
               return done(err)
             }
-            ctx.hello.getDependencies(function (err, dependencies) {
-              expect(dependencies).to.be.array()
-              expect(dependencies.length).to.equal(0)
-              done(err)
-            })
+            ctx.hello.getDependencies()
+              .asCallback(function (err, dependencies) {
+                expect(dependencies).to.be.array()
+                expect(dependencies.length).to.equal(0)
+                done(err)
+              })
           })
         })
       })
@@ -926,13 +929,14 @@ describe('Instance Model Integration Tests', function () {
             if (err) {
               return done(err)
             }
-            ctx.hello.getDependencies(function (err, dependencies) {
-              expect(dependencies).to.be.array()
-              expect(dependencies.length).to.equal(1)
-              expect(dependencies[0]._id).to.equal(ctx['fb1-adelle']._id)
-              expect(dependencies[0].elasticHostname).to.equal(ctx['fb1-adelle'].elasticHostname)
-              done(err)
-            })
+            ctx.hello.getDependencies()
+              .asCallback(function (err, dependencies) {
+                expect(dependencies).to.be.array()
+                expect(dependencies.length).to.equal(1)
+                expect(dependencies[0]._id).to.equal(ctx['fb1-adelle']._id)
+                expect(dependencies[0].elasticHostname).to.equal(ctx['fb1-adelle'].elasticHostname)
+                done(err)
+              })
           })
         })
         it('should add 1 new dep, and keep the existing one', function (done) {
@@ -943,14 +947,15 @@ describe('Instance Model Integration Tests', function () {
             if (err) {
               return done(err)
             }
-            ctx.hello.getDependencies(function (err, dependencies) {
-              expect(dependencies).to.be.array()
-              expect(dependencies.length).to.equal(2)
-              var ids = dependencies.map(pluck('_id.toString()'))
-              expect(ids).to.include(ctx.goodbye._id.toString())
-              expect(ids).to.include(ctx['fb1-adelle']._id.toString())
-              done(err)
-            })
+            ctx.hello.getDependencies()
+              .asCallback(function (err, dependencies) {
+                expect(dependencies).to.be.array()
+                expect(dependencies.length).to.equal(2)
+                var ids = dependencies.map(pluck('_id.toString()'))
+                expect(ids).to.include(ctx.goodbye._id.toString())
+                expect(ids).to.include(ctx['fb1-adelle']._id.toString())
+                done(err)
+              })
           })
         })
         it('should remove the only dependency', function (done) {
@@ -959,11 +964,12 @@ describe('Instance Model Integration Tests', function () {
             if (err) {
               return done(err)
             }
-            ctx.hello.getDependencies(function (err, dependencies) {
-              expect(dependencies).to.be.array()
-              expect(dependencies.length).to.equal(0)
-              done(err)
-            })
+            ctx.hello.getDependencies()
+              .asCallback(function (err, dependencies) {
+                expect(dependencies).to.be.array()
+                expect(dependencies.length).to.equal(0)
+                done(err)
+              })
           })
         })
       })
@@ -1016,15 +1022,16 @@ describe('Instance Model Integration Tests', function () {
           ctx['fb1-hello'].setDependenciesFromEnvironment(ownerName, done)
         })
         it('should add the isolated branch as the dep from the start', function (done) {
-          ctx['fb1-hello'].getDependencies(function (err, dependencies) {
-            if (err) {
-              return done(err)
-            }
-            expect(dependencies).to.be.array()
-            expect(dependencies.length).to.equal(1)
-            expect(dependencies[0]._id).to.equal(ctx[fb1GoodbyeName]._id)
-            done()
-          })
+          ctx['fb1-hello'].getDependencies()
+            .asCallback(function (err, dependencies) {
+              if (err) {
+                return done(err)
+              }
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(1)
+              expect(dependencies[0]._id).to.equal(ctx[fb1GoodbyeName]._id)
+              done()
+            })
         })
         it('should add 1 new dep, and keep the existing one', function (done) {
           ctx['fb1-hello'].env.push([
@@ -1034,17 +1041,18 @@ describe('Instance Model Integration Tests', function () {
             if (err) {
               return done(err)
             }
-            ctx['fb1-hello'].getDependencies(function (err, dependencies) {
-              if (err) {
-                return done(err)
-              }
-              expect(dependencies).to.be.array()
-              expect(dependencies.length).to.equal(2)
-              var ids = dependencies.map(pluck('_id.toString()'))
-              expect(ids).to.include(ctx[fb1GoodbyeName]._id.toString())
-              expect(ids).to.include(ctx.adelle._id.toString())
-              done()
-            })
+            ctx['fb1-hello'].getDependencies()
+              .asCallback(function (err, dependencies) {
+                if (err) {
+                  return done(err)
+                }
+                expect(dependencies).to.be.array()
+                expect(dependencies.length).to.equal(2)
+                var ids = dependencies.map(pluck('_id.toString()'))
+                expect(ids).to.include(ctx[fb1GoodbyeName]._id.toString())
+                expect(ids).to.include(ctx.adelle._id.toString())
+                done()
+              })
           })
         })
         it('should remove the only dependency', function (done) {
@@ -1053,14 +1061,15 @@ describe('Instance Model Integration Tests', function () {
             if (err) {
               return done(err)
             }
-            ctx['fb1-hello'].getDependencies(function (err, dependencies) {
-              if (err) {
-                return done(err)
-              }
-              expect(dependencies).to.be.array()
-              expect(dependencies.length).to.equal(0)
-              done()
-            })
+            ctx['fb1-hello'].getDependencies()
+              .asCallback(function (err, dependencies) {
+                if (err) {
+                  return done(err)
+                }
+                expect(dependencies).to.be.array()
+                expect(dependencies.length).to.equal(0)
+                done()
+              })
           })
         })
       })
@@ -1282,12 +1291,13 @@ describe('Instance Model Integration Tests', function () {
     describe('with instances in the graph', function () {
       it('should give us no dependencies when none are defined', function (done) {
         var i = instances[0]
-        i.getDependencies(function (err, deps) {
-          expect(err).to.be.null()
-          expect(deps).to.be.an.array()
-          expect(deps).to.have.length(0)
-          done()
-        })
+        i.getDependencies()
+          .asCallback(function (err, deps) {
+            expect(err).to.be.null()
+            expect(deps).to.be.an.array()
+            expect(deps).to.have.length(0)
+            done()
+          })
       })
 
       it('should allow us to add first dependency', function (done) {
@@ -1299,15 +1309,16 @@ describe('Instance Model Integration Tests', function () {
             expect(err).to.be.null()
             expect(limitedInstance).to.exist()
             expect(limitedInstance.instanceId).to.equal(d._id)
-            i.getDependencies(function (err, deps) {
-              expect(err).to.be.null()
-              expect(deps).to.be.an.array()
-              expect(deps).to.have.length(1)
-              // getDeps adds networking to the result
-              expect(deps[0]._id).to.equal(d._id)
-              expect(deps[0].elasticHostname).to.equal(d.elasticHostname)
-              done()
-            })
+            i.getDependencies()
+              .asCallback(function (err, deps) {
+                expect(err).to.be.null()
+                expect(deps).to.be.an.array()
+                expect(deps).to.have.length(1)
+                // getDeps adds networking to the result
+                expect(deps[0]._id).to.equal(d._id)
+                expect(deps[0].elasticHostname).to.equal(d.elasticHostname)
+                done()
+              })
           })
       })
 
@@ -1319,11 +1330,12 @@ describe('Instance Model Integration Tests', function () {
 
         it('should give the network for a dependency', function (done) {
           var i = instances[0]
-          i.getDependencies(function (err, deps) {
-            if (err) { return done(err) }
-            expect(deps[0].network).to.equal(instances[1].network)
-            done()
-          })
+          i.getDependencies()
+            .asCallback(function (err, deps) {
+              if (err) { return done(err) }
+              expect(deps[0].network).to.equal(instances[1].network)
+              done()
+            })
         })
 
         it('should allow us to remove the dependency', function (done) {
@@ -1332,12 +1344,13 @@ describe('Instance Model Integration Tests', function () {
           i.removeDependency(d._id)
             .asCallback(function (err) {
               expect(err).to.be.null()
-              i.getDependencies(function (err, deps) {
-                expect(err).to.be.null()
-                expect(deps).to.be.an.array()
-                expect(deps).to.have.length(0)
-                done()
-              })
+              i.getDependencies()
+                .asCallback(function (err, deps) {
+                  expect(err).to.be.null()
+                  expect(deps).to.be.an.array()
+                  expect(deps).to.have.length(0)
+                  done()
+                })
             })
         })
 
@@ -1349,15 +1362,16 @@ describe('Instance Model Integration Tests', function () {
               expect(err).to.be.null()
               expect(limitedInstance).to.exist()
               expect(limitedInstance.instanceId).to.equal(d._id)
-              i.getDependencies(function (err, deps) {
-                expect(err).to.be.null()
-                expect(deps).to.be.an.array()
-                expect(deps).to.have.length(2)
-                var ids = deps.map(pluck('_id.toString()'))
-                expect(ids).to.include(instances[2]._id.toString())
-                expect(ids).to.include(instances[1]._id.toString())
-                done()
-              })
+              i.getDependencies()
+                .asCallback(function (err, deps) {
+                  expect(err).to.be.null()
+                  expect(deps).to.be.an.array()
+                  expect(deps).to.have.length(2)
+                  var ids = deps.map(pluck('_id.toString()'))
+                  expect(ids).to.include(instances[2]._id.toString())
+                  expect(ids).to.include(instances[1]._id.toString())
+                  done()
+                })
             })
         })
 
