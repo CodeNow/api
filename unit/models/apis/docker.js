@@ -1126,6 +1126,7 @@ describe('docker: ' + moduleName, function () {
       ctx.mockInstance = {
         _id: '123456789012345678901234',
         shortHash: 'abcdef',
+        elasticHostname: 'google.com',
         env: [
           'FOO=1',
           'URL=${RUNNABLE_CONTAINER_ID}-$FOO.runnableapp.com',
@@ -1190,6 +1191,7 @@ describe('docker: ' + moduleName, function () {
             Labels: ctx.mockLabels,
             Env: [
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash,
+              'RUNNABLE_CONTAINER_URL=' + ctx.mockInstance.elasticHostname,
               'FOO=1',
               'URL=' + ctx.mockInstance.shortHash + '-1.runnableapp.com',
               'BAR=' + ctx.mockInstance.shortHash + '-1.runnableapp.com'
@@ -1226,6 +1228,7 @@ describe('docker: ' + moduleName, function () {
             Labels: ctx.mockLabels,
             Env: [
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash,
+              'RUNNABLE_CONTAINER_URL=' + ctx.mockInstance.elasticHostname,
               'FOO=1',
               'URL=' + ctx.mockInstance.shortHash + '-1.runnableapp.com',
               'BAR=' + ctx.mockInstance.shortHash + '-1.runnableapp.com'
