@@ -559,6 +559,7 @@ describe('docker: ' + moduleName, function () {
       }
       var labels = model._createImageBuilderLabels(opts)
       var expectedLabels = {
+        githubOrgId: 'owner',
         'contextVersion.build._id': ctx.mockContextVersion.build._id,
         'contextVersion._id': ctx.mockContextVersion._id,
         'contextVersion.context': ctx.mockContextVersion.context,
@@ -1621,6 +1622,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           var opts = ctx.opts
           expect(labels).to.equal({
+            githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
             instanceShortHash: opts.instance.shortHash,
@@ -1640,6 +1642,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           var opts = ctx.opts
           expect(labels).to.equal({
+            githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
             instanceShortHash: opts.instance.shortHash,
