@@ -77,24 +77,24 @@ describe('TeammateInvitation', function () {
   beforeEach(function (done) {
     ctx.name = randStr(5)
     ctx.j = request.jar()
+    sinon.stub(SendGrid.prototype, 'inviteAdmin').returns(Promise.resolve(true))
+    sinon.stub(SendGrid.prototype, 'inviteUser').returns(Promise.resolve(true))
     require('./fixtures/multi-factory').createUser({
       requestDefaults: { jar: ctx.j }
     }, function (err, user) {
       if (err) {
-        done(err)
+        return done(err)
       }
       ctx.user = user
       whitelistUserOrgs(user, [superOrg])
       githubUserOrgsMock(ctx.user, superOrg.githubId, superOrg.name)
-      done()
+      return done()
     })
-    sinon.stub(SendGrid.prototype, 'inviteAdmin').returns(Promise.resolve(true))
-    sinon.stub(SendGrid.prototype, 'inviteUser').returns(Promise.resolve(true))
   })
   afterEach(function (done) {
-    nock.cleanAll()
     SendGrid.prototype.inviteAdmin.restore()
     SendGrid.prototype.inviteUser.restore()
+    nock.cleanAll()
     done()
   })
   after(api.stop.bind(ctx))

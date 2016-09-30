@@ -5,7 +5,8 @@ module.exports.whitelistUserOrgs = function (user, orgs) {
   const bigPoppaNock = nock('http://' + process.env.BIG_POPPA_HOST)
   var userId = user.attrs.accounts.github.id
   bigPoppaNock
-    .get('/user/?githubId=' + userId)
+    .get('/user')
+    .query(true)
     .times(1000)
     .reply(
       200,
@@ -52,4 +53,28 @@ module.exports.whitelistOrgs = function (orgs) {
         }
       )
   })
+}
+module.exports.sessionUser = function (orgs) {
+  const bigPoppaNock = nock('http://' + process.env.BIG_POPPA_HOST)
+  bigPoppaNock
+    .filteringPath(function (path) {
+      if (path.match(/.*user.*github/i)) {
+        return '/user'
+      }
+    })
+    .get('/user')
+    .times(1000)
+    .reply(
+      200,
+      [{
+        id: 1,
+        githubId: 198198,
+        isActive: true,
+        organizations: [{
+          name: 'super-org',
+          githubId: 123123,
+          allowed: true
+        }]
+      }]
+    )
 }
