@@ -143,7 +143,8 @@ module.exports = {
         if (user) {
           return cb(null, user)
         }
-        self.createUser(cb)
+        let opts = { orgs: [{ githubId: ownerId, name: 'Runnable', allowed: true }] }
+        self.createUser(opts, cb)
       },
       function createContext (user, cb) {
         var body = { name: randStr(5) }
