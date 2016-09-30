@@ -68,7 +68,7 @@ module.exports = {
     var User = require('@runnable/api-client')
     opts.userContentDomain = process.env.USER_CONTENT_DOMAIN
     var user = new User(host, opts)
-    sessionUser({})
+    sessionUser(opts.orgs)
     user.githubLogin(token, function (err) {
       if (err) {
         return cb(err)

@@ -56,6 +56,13 @@ module.exports.whitelistOrgs = function (orgs) {
 }
 module.exports.sessionUser = function (orgs) {
   const bigPoppaNock = nock('http://' + process.env.BIG_POPPA_HOST)
+  if (!orgs) {
+    orgs = [{
+      name: 'super-org',
+      githubId: 123123,
+      allowed: true
+    }]
+  }
   bigPoppaNock
     .filteringPath(function (path) {
       if (path.match(/.*user.*github/i)) {
@@ -70,11 +77,7 @@ module.exports.sessionUser = function (orgs) {
         id: 1,
         githubId: 198198,
         isActive: true,
-        organizations: [{
-          name: 'super-org',
-          githubId: 123123,
-          allowed: true
-        }]
+        organizations: orgs
       }]
     )
 }

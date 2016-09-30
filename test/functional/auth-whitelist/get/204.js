@@ -50,7 +50,8 @@ describe('GET /auth/whitelist/:name', function () {
   beforeEach(function (done) {
     ctx.j = request.jar()
     require('../../fixtures/multi-factory').createUser({
-      requestDefaults: { jar: ctx.j }
+      requestDefaults: { jar: ctx.j },
+      orgs: [runnableOrg]
     }, function (err, user) {
       ctx.user = user
       whitelistUserOrgs(ctx.user, [runnableOrg])
