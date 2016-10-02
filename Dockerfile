@@ -14,7 +14,6 @@ WORKDIR /api
 RUN npm set strict-ssl false
 RUN echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
 RUN npm install
-
 #End
 
 #Start: File
