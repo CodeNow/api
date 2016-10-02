@@ -349,13 +349,13 @@ describe('Organization Service', function () {
   describe('getUsersByOrgName', function () {
     beforeEach(function (done) {
       sinon.stub(OrganizationService, 'getByGithubUsername').resolves(bigPoppaOrg)
-      sinon.stub(UserService, 'getMongoUsersByBigPoppaUsers').resolves([githubUser])
+      sinon.stub(UserService, 'getCompleteUserById').resolves([githubUser])
       done()
     })
 
     afterEach(function (done) {
       OrganizationService.getByGithubUsername.restore()
-      UserService.getMongoUsersByBigPoppaUsers.restore()
+      UserService.getCompleteUserById.restore()
       done()
     })
 
@@ -366,8 +366,8 @@ describe('Organization Service', function () {
           .tap(function (githubUsers) {
             sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
             sinon.assert.calledWith(OrganizationService.getByGithubUsername, bigPoppaOrg.name)
-            sinon.assert.calledOnce(UserService.getMongoUsersByBigPoppaUsers)
-            sinon.assert.calledWith(UserService.getMongoUsersByBigPoppaUsers, [bigPoppaUser])
+            sinon.assert.calledOnce(UserService.getCompleteUserById)
+            sinon.assert.calledWith(UserService.getCompleteUserById, [bigPoppaUser])
             expect(githubUsers).to.equal([githubUser])
           })
           .asCallback(done)
