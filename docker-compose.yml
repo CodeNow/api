@@ -1,4 +1,0 @@
-services:
-  web:
-    image : busybox:latests
-    command: echo "hello!!!"
