@@ -15,6 +15,7 @@ var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
 const UserService = require('models/services/user-service')
+const User = require('models/mongo/user')
 const rabbitMQ = require('models/rabbitmq')
 
 var BigPoppaClient = require('@runnable/big-poppa-client')
@@ -291,6 +292,176 @@ describe('User Service', function () {
             expect(err).to.equal(error)
             done()
           })
+      })
+    })
+  })
+
+  describe('getCompleteUserById', function () {
+    var findByIdStub
+    var getByGithubIdStub
+    var user
+    const githubId = 1981198
+    const userId = 546
+    var bigPoppaUser
+    beforeEach(function (done) {
+      user = {
+        accounts: {
+          github: {
+            id: githubId
+          }
+        },
+        set: sinon.stub()
+      }
+      bigPoppaUser = {}
+      findByIdStub = sinon.stub(User, 'findByIdAsync').resolves(user)
+      getByGithubIdStub = sinon.stub(UserService, 'getByGithubId').resolves(bigPoppaUser)
+      done()
+    })
+    afterEach(function (done) {
+      findByIdStub.restore()
+      getByGithubIdStub.restore()
+      done()
+    })
+
+    it('should find the user by their id', function (done) {
+      UserService.getCompleteUserById(userId)
+      .then(function (res) {
+        sinon.assert.calledOnce(findByIdStub)
+        sinon.assert.calledWithExactly(findByIdStub, userId)
+      })
+      .asCallback(done)
+    })
+
+    it('should fetch the big poppa user', function (done) {
+      UserService.getCompleteUserById(userId)
+      .then(function (res) {
+        sinon.assert.calledOnce(getByGithubIdStub)
+        sinon.assert.calledWithExactly(getByGithubIdStub, githubId)
+      })
+      .asCallback(done)
+    })
+
+    it('should set the big poppa user', function (done) {
+      UserService.getCompleteUserById(userId)
+      .then(function (res) {
+        sinon.assert.calledOnce(user.set)
+        sinon.assert.calledWithExactly(user.set, 'bigPoppaUser', bigPoppaUser)
+      })
+      .asCallback(done)
+    })
+
+    it('should return the user', function (done) {
+      UserService.getCompleteUserById(userId)
+      .then(function (res) {
+        expect(res).to.equal(user)
+      })
+      .asCallback(done)
+    })
+
+    it('should not matter if the big poppa user is not found', function (done) {
+      getByGithubIdStub.rejects(new Error(''))
+
+      UserService.getCompleteUserById(userId)
+      .then(function (res) {
+        expect(res).to.equal(user)
+        sinon.assert.notCalled(user.set)
+      })
+      .asCallback(done)
+    })
+
+    it('should throw an error if no user is found', function (done) {
+      findByIdStub.resolves(null)
+
+      UserService.getCompleteUserById(userId)
+      .asCallback(function (err, res) {
+        expect(err).to.be.an.instanceof(errors.UserNotFoundError)
+        expect(err.message).to.match(/user.*not.*found/i)
+        done()
+      })
+    })
+  })
+
+  describe('getCompleteUserByGithubId', function () {
+    var findByGithubIdStub
+    var getByGithubIdStub
+    var user
+    const githubId = 1981198
+    const userId = 546
+    var bigPoppaUser
+    beforeEach(function (done) {
+      user = {
+        accounts: {
+          github: {
+            id: githubId
+          }
+        },
+        set: sinon.stub()
+      }
+      bigPoppaUser = {}
+      findByGithubIdStub = sinon.stub(User, 'findByGithubIdAsync').resolves(user)
+      getByGithubIdStub = sinon.stub(UserService, 'getByGithubId').resolves(bigPoppaUser)
+      done()
+    })
+    afterEach(function (done) {
+      findByGithubIdStub.restore()
+      getByGithubIdStub.restore()
+      done()
+    })
+
+    it('should find the user by their id', function (done) {
+      UserService.getCompleteUserByGithubId(githubId)
+      .then(function (res) {
+        sinon.assert.calledOnce(findByGithubIdStub)
+        sinon.assert.calledWithExactly(findByGithubIdStub, githubId)
+      })
+      .asCallback(done)
+    })
+
+    it('should fetch the big poppa user', function (done) {
+      UserService.getCompleteUserByGithubId(githubId)
+      .then(function (res) {
+        sinon.assert.calledOnce(getByGithubIdStub)
+        sinon.assert.calledWithExactly(getByGithubIdStub, githubId)
+      })
+      .asCallback(done)
+    })
+
+    it('should set the big poppa user', function (done) {
+      UserService.getCompleteUserByGithubId(githubId)
+      .then(function (res) {
+        sinon.assert.calledOnce(user.set)
+        sinon.assert.calledWithExactly(user.set, 'bigPoppaUser', bigPoppaUser)
+      })
+      .asCallback(done)
+    })
+
+    it('should return the user', function (done) {
+      UserService.getCompleteUserByGithubId(githubId)
+      .then(function (res) {
+        expect(res).to.equal(user)
+      })
+      .asCallback(done)
+    })
+
+    it('should not matter if the big poppa user is not found', function (done) {
+      getByGithubIdStub.rejects(new Error(''))
+
+      UserService.getCompleteUserByGithubId(githubId)
+      .then(function (res) {
+        expect(res).to.equal(user)
+        sinon.assert.notCalled(user.set)
+      })
+      .asCallback(done)
+    })
+
+    it('should throw an error if no user is found', function (done) {
+      findByGithubIdStub.resolves(null)
+
+      UserService.getCompleteUserByGithubId(githubId)
+      .asCallback(function (err, res) {
+        expect(err).to.be.an.instanceof(errors.UserNotFoundError)
+        expect(err.message).to.match(/user.*not.*found/i)
+        done()
       })
     })
   })
