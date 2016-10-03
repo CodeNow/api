@@ -25,6 +25,7 @@ var expect = Code.expect
 var it = lab.it
 const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
 const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
+const sessionUser = require('../../fixtures/mocks/big-poppa').sessionUser
 
 describe('GET /instances', function () {
   var ctx = {}
@@ -560,6 +561,7 @@ describe('GET /instances', function () {
     })
     describe('name and owner', function () {
       it('should list instances by githubUsername and name', function (done) {
+        sessionUser([otherOrg])
         var query = {
           githubUsername: ctx.orgName,
           name: ctx.instance.attrs.name
