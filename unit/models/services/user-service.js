@@ -386,7 +386,6 @@ describe('User Service', function () {
     var getByGithubIdStub
     var user
     const githubId = 1981198
-    const userId = 546
     var bigPoppaUser
     beforeEach(function (done) {
       user = {
