@@ -1,0 +1,10 @@
+require('loadenv')()
+var User = require('models/mongo/user')
+
+console.log('1')
+var u = new User({ email: 'wow@google.com' })
+console.log(u)
+u.protectEmail()
+console.log('2')
+console.log(u)
+console.log('3')
