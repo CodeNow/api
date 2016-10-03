@@ -559,6 +559,7 @@ describe('docker: ' + moduleName, function () {
       }
       var labels = model._createImageBuilderLabels(opts)
       var expectedLabels = {
+        githubOrgId: 'owner',
         'contextVersion.build._id': ctx.mockContextVersion.build._id,
         'contextVersion._id': ctx.mockContextVersion._id,
         'contextVersion.context': ctx.mockContextVersion.context,
@@ -1126,6 +1127,7 @@ describe('docker: ' + moduleName, function () {
       ctx.mockInstance = {
         _id: '123456789012345678901234',
         shortHash: 'abcdef',
+        elasticHostname: 'google.com',
         env: [
           'FOO=1',
           'URL=${RUNNABLE_CONTAINER_ID}-$FOO.runnableapp.com',
@@ -1190,6 +1192,7 @@ describe('docker: ' + moduleName, function () {
             Labels: ctx.mockLabels,
             Env: [
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash,
+              'RUNNABLE_CONTAINER_URL=' + ctx.mockInstance.elasticHostname,
               'FOO=1',
               'URL=' + ctx.mockInstance.shortHash + '-1.runnableapp.com',
               'BAR=' + ctx.mockInstance.shortHash + '-1.runnableapp.com'
@@ -1226,6 +1229,7 @@ describe('docker: ' + moduleName, function () {
             Labels: ctx.mockLabels,
             Env: [
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash,
+              'RUNNABLE_CONTAINER_URL=' + ctx.mockInstance.elasticHostname,
               'FOO=1',
               'URL=' + ctx.mockInstance.shortHash + '-1.runnableapp.com',
               'BAR=' + ctx.mockInstance.shortHash + '-1.runnableapp.com'
@@ -1618,6 +1622,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           var opts = ctx.opts
           expect(labels).to.equal({
+            githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
             instanceShortHash: opts.instance.shortHash,
@@ -1637,6 +1642,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           var opts = ctx.opts
           expect(labels).to.equal({
+            githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
             instanceShortHash: opts.instance.shortHash,
