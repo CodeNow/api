@@ -94,6 +94,16 @@ describe('instance.container.delete unit test', function () {
           done()
         })
       })
+
+      it('should throw task fatal if `no such container`', function (done) {
+        testErr = new Error('Container action remove failed: Error response from daemon: No such container: 9c26fc6b0bbd4d0fdf775a21dd0e1b40481395d3eeff68')
+        Docker.prototype.removeContainer.yieldsAsync(testErr)
+        InstanceContainerDelete(testJob).asCallback(function (err) {
+          expect(err).to.be.an.instanceof(TaskFatalError)
+          expect(err.message).to.match(/no.*such.*container/i)
+          done()
+        })
+      })
     })
   })
 
