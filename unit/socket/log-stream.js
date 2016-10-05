@@ -184,7 +184,8 @@ describe('log stream: ' + moduleName, function () {
               ctx.data.containerId,
               {
                 tailLimit: process.env.DOCKER_LOG_TAIL_LIMIT,
-                baseDataName: 'api.socket.log'
+                baseDataName: 'api.socket.log',
+                tags: sinon.match.object
               }
             )
             sinon.assert.calledOnce(ctx.socket.write)
@@ -211,7 +212,8 @@ describe('log stream: ' + moduleName, function () {
               ctx.data.containerId,
               {
                 tailLimit: process.env.DOCKER_TEST_LOG_TAIL_LIMIT,
-                baseDataName: 'api.socket.log'
+                baseDataName: 'api.socket.log',
+                tags: sinon.match.object
               }
             )
             done()
