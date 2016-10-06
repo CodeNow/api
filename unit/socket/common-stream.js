@@ -65,7 +65,7 @@ describe('common stream: ' + moduleName, function () {
           writeStream.on('end', function () {
             done()
           })
-          commonStream.pipeLogsToClient(writeStream, version, { parseJSON: true })
+          commonStream.pipeLogsToClient(writeStream, 'asds', {}, version, { parseJSON: true })
           setTimeout(function () {
             readableStream.write(createFrame(1, 'asdfasdfdsdfdkjfsadlkfjsad'))
           })
@@ -101,7 +101,7 @@ describe('common stream: ' + moduleName, function () {
           ])
           done()
         })
-        commonStream.pipeLogsToClient(writeStream, version, { parseJSON: true })
+        commonStream.pipeLogsToClient(writeStream, 'asds', {}, version, { parseJSON: true })
         setTimeout(function () {
           readableStream.write(frames[0])
           readableStream.write(frames[1])
@@ -116,7 +116,7 @@ describe('common stream: ' + moduleName, function () {
           ])
           done()
         })
-        commonStream.pipeLogsToClient(writeStream, version, {})
+        commonStream.pipeLogsToClient(writeStream, 'asds', {}, version, {})
         setTimeout(function () {
           readableStream.write(frames[0])
           readableStream.write(frames[1])

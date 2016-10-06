@@ -181,11 +181,11 @@ describe('log stream: ' + moduleName, function () {
             sinon.assert.calledWith(
               commonStream.pipeLogsToClient,
               substream,
+              'api.socket.log',
+              sinon.match.object,
               ctx.data.containerId,
               {
-                tailLimit: process.env.DOCKER_LOG_TAIL_LIMIT,
-                baseDataName: 'api.socket.log',
-                tags: sinon.match.object
+                tailLimit: process.env.DOCKER_LOG_TAIL_LIMIT
               }
             )
             sinon.assert.calledOnce(ctx.socket.write)
@@ -209,11 +209,11 @@ describe('log stream: ' + moduleName, function () {
             sinon.assert.calledWith(
               commonStream.pipeLogsToClient,
               substream,
+              'api.socket.log',
+              sinon.match.object,
               ctx.data.containerId,
               {
                 tailLimit: process.env.DOCKER_TEST_LOG_TAIL_LIMIT,
-                baseDataName: 'api.socket.log',
-                tags: sinon.match.object
               }
             )
             done()
