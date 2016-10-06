@@ -1,31 +1,28 @@
-/**
- * @module unit/workers/docker.events-stream.disconnected
- */
 'use strict'
 
-var clone = require('101/clone')
-var expect = require('code').expect
-var Lab = require('lab')
-var sinon = require('sinon')
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
+const clone = require('101/clone')
+const expect = require('code').expect
+const Lab = require('lab')
+const sinon = require('sinon')
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var dockerEventStreamDisconnected = require('workers/docker.events-stream.disconnected')
-var rabbitMQ = require('models/rabbitmq')
+const dockerEventStreamDisconnected = require('workers/docker.events-stream.disconnected')
+const rabbitMQ = require('models/rabbitmq')
 
-var lab = exports.lab = Lab.script()
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var it = lab.it
+const lab = exports.lab = Lab.script()
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const it = lab.it
 
 describe('docker.events-stream.disconnected unit test', function () {
-  var testHost = 'http://host:4242'
-  var testOrg = '12345'
-  var baseJob = {
+  const testHost = 'http://host:4242'
+  const testOrg = '12345'
+  const baseJob = {
     host: testHost,
     org: testOrg
   }
-  var testJob
+  let testJob
 
   beforeEach(function (done) {
     testJob = clone(baseJob)
@@ -97,7 +94,7 @@ describe('docker.events-stream.disconnected unit test', function () {
 
         sinon.assert.calledOnce(rabbitMQ.publishDockRemoved)
         sinon.assert.calledWith(rabbitMQ.publishDockRemoved, {
-          githubId: 12345,
+          githubOrgId: 12345,
           host: testHost
         })
         done()
