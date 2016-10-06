@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "11.5.11",
+  "version": "11.5.18",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -82,7 +82,7 @@
     "passport": "~0.2.0",
     "passport-github": "1.1.0",
     "passport-strategy": "^1.0.0",
-    "ponos": "^5.3.0",
+    "ponos": "^5.6.1",
     "primus": "3.2.1",
     "primus-redis-rooms": "^0.3.1",
     "redis": "0.9.2",

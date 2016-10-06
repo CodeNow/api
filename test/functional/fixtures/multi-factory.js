@@ -19,6 +19,7 @@ var Promise = require('bluebird')
 var randStr = require('randomstring').generate
 var sinon = require('sinon')
 var uuid = require('uuid')
+const sessionUser = require('./mocks/big-poppa').sessionUser
 
 var log = logger.log
 
@@ -67,6 +68,7 @@ module.exports = {
     var User = require('@runnable/api-client')
     opts.userContentDomain = process.env.USER_CONTENT_DOMAIN
     var user = new User(host, opts)
+    sessionUser(opts.orgs)
     user.githubLogin(token, function (err) {
       if (err) {
         return cb(err)
@@ -141,7 +143,8 @@ module.exports = {
         if (user) {
           return cb(null, user)
         }
-        self.createUser(cb)
+        let opts = { orgs: [{ githubId: ownerId, name: 'Runnable', allowed: true }] }
+        self.createUser(opts, cb)
       },
       function createContext (user, cb) {
         var body = { name: randStr(5) }

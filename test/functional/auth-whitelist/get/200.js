@@ -14,8 +14,10 @@ var expect = Code.expect
 var api = require('../../fixtures/api-control')
 var request = require('request')
 var randStr = require('randomstring').generate
+var nock = require('nock')
 const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
 const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
+const sessionUser = require('../../fixtures/mocks/big-poppa').sessionUser
 
 var ctx = {}
 describe('GET /auth/whitelist/', function () {
@@ -39,7 +41,8 @@ describe('GET /auth/whitelist/', function () {
   beforeEach(function (done) {
     ctx.j = request.jar()
     require('../../fixtures/multi-factory').createUser({
-      requestDefaults: { jar: ctx.j }
+      requestDefaults: { jar: ctx.j },
+      orgs: [runnableOrg, otherOrg]
     }, function (err, user) {
       ctx.user = user
       whitelistOrgs([runnableOrg, otherOrg])
@@ -78,6 +81,8 @@ describe('GET /auth/whitelist/', function () {
   describe('User with no whitelisted orgs', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
+      nock.cleanAll()
+      sessionUser([])
       whitelistUserOrgs(ctx.user, [])
       done()
     })
@@ -104,6 +109,8 @@ describe('GET /auth/whitelist/', function () {
   describe('Non-Runnable user', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
+      nock.cleanAll()
+      sessionUser([otherOrg])
       whitelistUserOrgs(ctx.user, [otherOrg])
       done()
     })
