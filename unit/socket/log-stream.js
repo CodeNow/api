@@ -213,7 +213,7 @@ describe('log stream: ' + moduleName, function () {
               sinon.match.object,
               ctx.data.containerId,
               {
-                tailLimit: process.env.DOCKER_TEST_LOG_TAIL_LIMIT,
+                tailLimit: process.env.DOCKER_TEST_LOG_TAIL_LIMIT
               }
             )
             done()
