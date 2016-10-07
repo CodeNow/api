@@ -327,7 +327,8 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false
+          noCache: false,
+          tid: 'mediocre-tid'
         }
         model.createImageBuilder(opts, function (err) {
           if (err) { return done(err) }
@@ -340,6 +341,7 @@ describe('docker: ' + moduleName, function () {
             opts.contextVersion
           )
           expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
+            tid: opts.tid,
             contextVersion: opts.contextVersion,
             dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
@@ -555,10 +557,12 @@ describe('docker: ' + moduleName, function () {
         manualBuild: 'manualBuild',
         noCache: 'noCache',
         sessionUser: ctx.mockSessionUser,
-        ownerUsername: 'ownerUsername'
+        ownerUsername: 'ownerUsername',
+        tid: 'mediocre-tid'
       }
       var labels = model._createImageBuilderLabels(opts)
       var expectedLabels = {
+        tid: opts.tid,
         githubOrgId: 'owner',
         'contextVersion.build._id': ctx.mockContextVersion.build._id,
         'contextVersion._id': ctx.mockContextVersion._id,
@@ -1161,7 +1165,8 @@ describe('docker: ' + moduleName, function () {
         instance: ctx.mockInstance,
         contextVersion: ctx.mockContextVersion,
         ownerUsername: 'runnable',
-        sessionUserGithubId: 10
+        sessionUserGithubId: 10,
+        tid: 'mediocre-tid'
       }
       sinon.stub(Docker.prototype, '_createUserContainerLabels')
       sinon.stub(Docker.prototype, 'createContainer')
@@ -1611,7 +1616,8 @@ describe('docker: ' + moduleName, function () {
           }
         },
         ownerUsername: 'runnable',
-        sessionUserGithubId: 10
+        sessionUserGithubId: 10,
+        tid: 'mediocre-tid'
       }
       done()
     })
@@ -1622,6 +1628,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           var opts = ctx.opts
           expect(labels).to.equal({
+            tid: ctx.opts.tid,
             githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
