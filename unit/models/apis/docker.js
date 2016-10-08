@@ -1650,6 +1650,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           var opts = ctx.opts
           expect(labels).to.equal({
+            tid: ctx.opts.tid,
             githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
