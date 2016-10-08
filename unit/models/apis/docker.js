@@ -327,6 +327,7 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
+          ownerUsername: 'runnable',
           noCache: false,
           tid: 'mediocre-tid'
         }
@@ -340,14 +341,15 @@ describe('docker: ' + moduleName, function () {
             Docker.getDockerTag,
             opts.contextVersion
           )
+
           expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
-            tid: opts.tid,
             contextVersion: opts.contextVersion,
-            dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername
+            ownerUsername: opts.ownerUsername,
+            tid: opts.tid,
+            dockerTag: ctx.mockDockerTag
           })
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
@@ -409,6 +411,7 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
+          ownerUsername: 'runnable',
           noCache: false,
           tid: 'mediocre-tid'
         }
