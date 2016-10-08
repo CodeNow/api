@@ -103,5 +103,34 @@ describe('mongoose-control', function () {
         done()
       })
     })
+
+    describe('handling mongodb disconnect events', function () {
+
+      beforeEach(function (done) {
+        sinon.stub(mongoose.connection, 'on').yields()
+        sinon.stub(mongooseControl, '_exitIfFailedToReconnect')
+        sinon.stub(mongooseControl, '_exitIfFailedToOpen')
+        done()
+      })
+
+      it('should exit if it cannot connect', function (done) {
+        mongooseControl.start(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(mongooseControl._exitIfFailedToReconnect)
+          sinon.assert.calledOnce(mongooseControl._exitIfFailedToOpen)
+          done()
+        })
+      })
+
+      it('should attempt a retry if connection existed', function (done) {
+        mongoose.connection._hasOpened = true
+          mongooseControl.start(function (err) {
+            expect(err).to.not.exist()
+            sinon.assert.notCalled(mongooseControl._exitIfFailedToOpen)
+            sinon.assert.calledOnce(mongooseControl._exitIfFailedToReconnect)
+            done()
+          })
+        })
+    })
   })
 })
