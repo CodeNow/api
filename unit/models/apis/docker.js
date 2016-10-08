@@ -409,7 +409,8 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false
+          noCache: false,
+          tid: 'mediocre-tid'
         }
         model.createImageBuilder(opts, function (err) {
           expect(err).to.exist()
@@ -422,6 +423,7 @@ describe('docker: ' + moduleName, function () {
             opts.contextVersion
           )
           expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
+            tid: opts.tid,
             contextVersion: opts.contextVersion,
             dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
