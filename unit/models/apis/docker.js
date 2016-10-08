@@ -566,6 +566,7 @@ describe('docker: ' + moduleName, function () {
         githubOrgId: 'owner',
         'contextVersion.build._id': ctx.mockContextVersion.build._id,
         'contextVersion._id': ctx.mockContextVersion._id,
+        contextVersionId: ctx.mockContextVersion._id,
         'contextVersion.context': ctx.mockContextVersion.context,
         dockerTag: opts.dockerTag,
         manualBuild: opts.manualBuild,
