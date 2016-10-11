@@ -359,12 +359,13 @@ describe('User Service', function () {
     })
 
     it('should throw an error if it cant find the BP user', function (done) {
-      getByGithubIdStub.rejects(new Error(''))
+      let originalErr = new Error('')
+      getByGithubIdStub.rejects(originalErr)
 
       UserService.getCompleteUserById(userId)
       .asCallback(function (err, res) {
         expect(err).to.exist()
-        expect(err).to.equal(err)
+        expect(err).to.equal(originalErr)
         sinon.assert.notCalled(user.set)
         done()
       })
