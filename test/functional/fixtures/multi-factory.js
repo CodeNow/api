@@ -69,20 +69,22 @@ module.exports = {
     opts.userContentDomain = process.env.USER_CONTENT_DOMAIN
     var user = new User(host, opts)
     sessionUser(opts.orgs)
-    user.githubLogin(token, function (err) {
-      if (err) {
-        return cb(err)
-      } else {
-        user.attrs.accounts.github.accessToken = token
-        user.attrs.accounts.github.username = name
-        user.attrs.accounts._json = {}
-        log.trace({
-          token: token,
-          name: name,
-          userId: user.attrs.accounts.github.id
-        }, 'createdUser')
-        cb(null, user)
-      }
+    .then(function () {
+      user.githubLogin(token, function (err) {
+        if (err) {
+          return cb(err)
+        } else {
+          user.attrs.accounts.github.accessToken = token
+          user.attrs.accounts.github.username = name
+          user.attrs.accounts._json = {}
+          log.trace({
+            token: token,
+            name: name,
+            userId: user.attrs.accounts.github.id
+          }, 'createdUser')
+          cb(null, user)
+        }
+      })
     })
     return user
   },

@@ -57,7 +57,7 @@ describe('GET /auth/whitelist/', function () {
       require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
       ctx.name = randStr(5)
       whitelistUserOrgs(ctx.user, [runnableOrg])
-      done()
+      sessionUser([runnableOrg]).asCallback(done)
     })
 
     it('should return an array of all the whitelisted orgs', function (done) {
@@ -82,9 +82,8 @@ describe('GET /auth/whitelist/', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
       nock.cleanAll()
-      sessionUser([])
       whitelistUserOrgs(ctx.user, [])
-      done()
+      sessionUser([]).asCallback(done)
     })
 
     it('should return an array with no orgs', function (done) {
@@ -96,6 +95,7 @@ describe('GET /auth/whitelist/', function () {
         jar: ctx.j
       }
       request(opts, function (err, res, body) {
+        console.log('body', body)
         expect(err).to.be.null()
         expect(res).to.exist()
         expect(res.statusCode).to.equal(200)
@@ -110,9 +110,8 @@ describe('GET /auth/whitelist/', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
       nock.cleanAll()
-      sessionUser([otherOrg])
       whitelistUserOrgs(ctx.user, [otherOrg])
-      done()
+      sessionUser([otherOrg]).asCallback(done)
     })
 
     it('should return an array of all the whitelisted orgs', function (done) {
