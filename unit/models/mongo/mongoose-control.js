@@ -11,6 +11,7 @@ var Code = require('code')
 var fs = require('fs')
 var mongoose = require('mongoose')
 var sinon = require('sinon')
+var clock
 
 var mongooseControl = require('models/mongo/mongoose-control')
 
@@ -105,11 +106,19 @@ describe('mongoose-control', function () {
     })
 
     describe('handling mongodb disconnect events', function () {
-
       beforeEach(function (done) {
         sinon.stub(mongoose.connection, 'on').yields()
+        sinon.stub(process, 'exit')
         sinon.stub(mongooseControl, '_exitIfFailedToReconnect')
         sinon.stub(mongooseControl, '_exitIfFailedToOpen')
+        done()
+      })
+
+      afterEach(function (done) {
+        mongooseControl._exitIfFailedToReconnect.restore()
+        mongooseControl._exitIfFailedToOpen.restore()
+        mongoose.connection.on.restore()
+        process.exit.restore()
         done()
       })
 
@@ -124,13 +133,44 @@ describe('mongoose-control', function () {
 
       it('should attempt a retry if connection existed', function (done) {
         mongoose.connection._hasOpened = true
-          mongooseControl.start(function (err) {
-            expect(err).to.not.exist()
-            sinon.assert.notCalled(mongooseControl._exitIfFailedToOpen)
-            sinon.assert.calledOnce(mongooseControl._exitIfFailedToReconnect)
-            done()
-          })
+        mongooseControl.start(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.notCalled(mongooseControl._exitIfFailedToOpen)
+          sinon.assert.calledOnce(mongooseControl._exitIfFailedToReconnect)
+          done()
         })
+      })
+    })
+
+    describe('exiting node process when db disconnects', function () {
+      beforeEach(function (done) {
+        clock = sinon.useFakeTimers()
+        sinon.stub(mongoose.connection, 'on').yields()
+        sinon.stub(process, 'exit')
+        done()
+      })
+
+      afterEach(function (done) {
+        mongoose.connection.on.restore()
+        process.exit.restore()
+        clock.restore()
+        done()
+      })
+
+      it('should exit immediately if it cannot connect', function (done) {
+        mongooseControl._exitIfFailedToOpen()
+        sinon.assert.calledOnce(process.exit)
+        done()
+      })
+
+      it('should attempt to reconnect when it was connected once', function (done) {
+        mongooseControl._exitIfFailedToReconnect()
+        clock.tick(1000)
+        sinon.assert.notCalled(process.exit)
+        clock.tick(10000)
+        sinon.assert.calledOnce(process.exit)
+        done()
+      })
     })
   })
 })
