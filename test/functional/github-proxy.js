@@ -45,9 +45,7 @@ describe('Github Proxy', function () {
 
   describe('/user', function () {
     beforeEach(function (done) {
-      var count = createCount(2, done)
-      require('./fixtures/mocks/github/user-gzip')(ctx.user, null, null, count.next)
-      ctx.user.fetch(function (err) { count.next(err) })
+      require('./fixtures/mocks/github/user-gzip')(ctx.user, null, null, done)
     })
     it('should return the current user', function (done) {
       var r = ctx.user.client.get('/github/user')
