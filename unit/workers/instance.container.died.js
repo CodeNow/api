@@ -11,7 +11,7 @@ var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
-var InstanceContainerDied = require('workers/instance.container.died')
+var InstanceContainerDied = require('workers/instance.container.died').task
 var InstanceService = require('models/services/instance-service')
 var IsolationService = require('models/services/isolation-service')
 var Promise = require('bluebird')
@@ -202,41 +202,6 @@ describe('InstanceContainerDiedWorker', function () {
     })
   })
   describe('failure', function () {
-    it('should fail if validation failed: null', function (done) {
-      InstanceContainerDied(null).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        sinon.assert.notCalled(InstanceService.modifyExistingContainerInspect)
-        sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
-        done()
-      })
-    })
-
-    it('should fail if validation failed: {}', function (done) {
-      InstanceContainerDied({}).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        sinon.assert.notCalled(InstanceService.modifyExistingContainerInspect)
-        sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
-        done()
-      })
-    })
-
-    it('should fail if validation failed: no labels', function (done) {
-      var data = clone(ctx.data)
-      data.inspectData.Config.Labels = null
-      InstanceContainerDied(data).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.instanceOf(WorkerStopError)
-        expect(err.message).to.equal('Invalid Job')
-        sinon.assert.notCalled(InstanceService.modifyExistingContainerInspect)
-        sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
-        done()
-      })
-    })
-
     it('should fail if modifyExistingContainerInspect failed', function (done) {
       var mongoError = new Error('Mongo error')
       InstanceService.modifyExistingContainerInspect.rejects(mongoError)
