@@ -13,7 +13,6 @@ var expect = Code.expect
 
 var api = require('./fixtures/api-control')
 var multi = require('./fixtures/multi-factory')
-var createCount = require('callback-count')
 var concat = require('concat-stream')
 var zlib = require('zlib')
 var redis = require('models/redis')
