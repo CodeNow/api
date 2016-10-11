@@ -102,7 +102,6 @@ describe('GET /auth/whitelist/', function () {
         jar: ctx.j
       }
       request(opts, function (err, res, body) {
-        console.log('body', body)
         expect(err).to.be.null()
         expect(res).to.exist()
         expect(res.statusCode).to.equal(200)
