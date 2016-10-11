@@ -167,7 +167,7 @@ describe('mongoose-control', function () {
         mongooseControl._exitIfFailedToReconnect()
         clock.tick(1000)
         sinon.assert.notCalled(process.exit)
-        clock.tick(10000)
+        clock.tick(60000)
         sinon.assert.calledOnce(process.exit)
         done()
       })
