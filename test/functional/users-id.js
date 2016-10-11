@@ -117,14 +117,3 @@ function expectNoSensitiveFields (user) {
   expect(github.accessToken).to.not.exist()
   expect(github._json).to.not.exist()
 }
-
-function expectPrivateFields (user) {
-  expect(user).to.include(
-    ['_id', 'email', 'gravatar', 'userOptions'])
-  expect(user).to.not.include(['password'])
-}
-function expectPublicFields (user) {
-  expect(user).to.not.include(
-    ['email', 'password', 'votes', 'userOptions'])
-  expect(user).to.include(['_id', 'gravatar'])
-}
