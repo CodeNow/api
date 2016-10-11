@@ -18,6 +18,7 @@ var DebugContainer = require('models/mongo/debug-container')
 var monitorDog = require('monitor-dog')
 
 var Promise = require('bluebird')
+var PermissionService = require('models/services/permission-service')
 var commonStream = require('socket/common-stream')
 
 var path = require('path')
@@ -97,7 +98,7 @@ describe('terminal stream: ' + moduleName, function () {
     })
 
     beforeEach(function (done) {
-      sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve())
+      sinon.stub(PermissionService, 'ensureModelAccess').returns(Promise.resolve())
       sinon.stub(commonStream, 'validateDataArgs').returns(Promise.resolve())
       sinon.stub(commonStream, 'onValidateFailure').returnsArg(0)
       sinon.stub(terminalStream, '_setupStream').returns(Promise.resolve())
@@ -107,7 +108,7 @@ describe('terminal stream: ' + moduleName, function () {
     })
 
     afterEach(function (done) {
-      commonStream.checkOwnership.restore()
+      PermissionService.ensureModelAccess.restore()
       commonStream.validateDataArgs.restore()
       commonStream.onValidateFailure.restore()
       terminalStream._setupStream.restore()
@@ -162,8 +163,8 @@ describe('terminal stream: ' + moduleName, function () {
     it('should check ownership validation', function (done) {
       terminalStream.proxyStreamHandler(mockSocket, mockId, mockData)
         .then(function () {
-          sinon.assert.calledOnce(commonStream.checkOwnership)
-          sinon.assert.calledWith(commonStream.checkOwnership, mockSocket.request.sessionUser, mockInstance)
+          sinon.assert.calledOnce(PermissionService.ensureModelAccess)
+          sinon.assert.calledWith(PermissionService.ensureModelAccess, mockSocket.request.sessionUser, mockInstance)
         })
         .asCallback(done)
     })

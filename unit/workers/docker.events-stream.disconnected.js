@@ -1,6 +1,3 @@
-/**
- * @module unit/workers/docker.events-stream.disconnected
- */
 'use strict'
 
 const clone = require('101/clone')
@@ -8,6 +5,7 @@ const Lab = require('lab')
 const sinon = require('sinon')
 
 const dockerEventStreamDisconnected = require('workers/docker.events-stream.disconnected').task
+
 const rabbitMQ = require('models/rabbitmq')
 
 const lab = exports.lab = Lab.script()
@@ -43,7 +41,7 @@ describe('docker.events-stream.disconnected unit test', function () {
 
         sinon.assert.calledOnce(rabbitMQ.publishDockRemoved)
         sinon.assert.calledWith(rabbitMQ.publishDockRemoved, {
-          githubId: 12345,
+          githubOrgId: 12345,
           host: testHost
         })
         done()

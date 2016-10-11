@@ -17,7 +17,7 @@ var expect = Code.expect
 var it = lab.it
 
 describe('Context Version Unit Test', function () {
-  describe('updateBuildCompletedByBuildId', function () {
+  describe('updateAndGetFailedBuild', function () {
     var mockContextVersion
     beforeEach(function (done) {
       mockContextVersion = {
@@ -35,68 +35,32 @@ describe('Context Version Unit Test', function () {
           completed: true
         }
       }
-      sinon.stub(ContextVersion, 'updateBy').yieldsAsync()
-      sinon.stub(ContextVersion, 'findBy').yieldsAsync(null, [mockContextVersion])
+      sinon.stub(ContextVersion, 'updateByAsync').resolves()
+      sinon.stub(ContextVersion, 'findByAsync').resolves([mockContextVersion])
       sinon.stub(messenger, 'emitContextVersionUpdate').returns()
       done()
     })
 
     afterEach(function (done) {
-      ContextVersion.updateBy.restore()
-      ContextVersion.findBy.restore()
+      ContextVersion.updateByAsync.restore()
+      ContextVersion.findByAsync.restore()
       messenger.emitContextVersionUpdate.restore()
       done()
     })
 
-    it('should save a successful build', function (done) {
-      var opts = {
-        dockerImage: 'asdasdfgvaw4fgaw323kjh23kjh4gq3kj',
-        failed: false
-      }
-      var buildId = 12341
-
-      ContextVersion.updateBuildCompletedByBuildId(buildId, opts, function () {
-        sinon.assert.calledOnce(ContextVersion.updateBy)
-        sinon.assert.calledWith(ContextVersion.updateBy,
-          'build._id',
-          buildId, {
-            $set: {
-              'build.dockerImage': opts.dockerImage,
-              'build.failed': opts.failed,
-              'build.completed': sinon.match.number,
-              'state': ContextVersion.states.buildSucceeded
-            }
-          })
-
-        sinon.assert.calledOnce(ContextVersion.findBy)
-        sinon.assert.calledWith(ContextVersion.findBy,
-          'build._id',
-          buildId, {
-            'build.log': false
-          })
-        done()
-      })
-    })
-
     it('should save a failed build', function (done) {
-      var opts = {
-        failed: true,
-        error: {
-          message: 'jksdhfalskdjfhadsf'
-        },
-        'dockerHost': 'http://10.0.0.1:4242'
-      }
-      var buildId = 12341
+      const testErrorMessage = 'jksdhfalskdjfhadsf'
+      const buildId = 12341
 
-      ContextVersion.updateBuildCompletedByBuildId(buildId, opts, function () {
-        sinon.assert.calledOnce(ContextVersion.findBy)
-        sinon.assert.calledOnce(ContextVersion.updateBy)
-        sinon.assert.calledWith(ContextVersion.updateBy,
+      ContextVersion.updateAndGetFailedBuild(buildId, testErrorMessage).asCallback(() => {
+        sinon.assert.calledOnce(ContextVersion.findByAsync)
+        sinon.assert.calledOnce(ContextVersion.updateByAsync)
+        sinon.assert.calledWith(ContextVersion.updateByAsync,
           'build._id',
           buildId, {
             $set: {
-              'build.failed': opts.failed,
-              'build.error.message': opts.error.message,
+              'build.failed': true,
+              'build.error.message': testErrorMessage,
               'build.completed': sinon.match.number,
               'state': ContextVersion.states.buildErrored
             }
@@ -104,7 +68,60 @@ describe('Context Version Unit Test', function () {
         done()
       })
     })
-  })
+  }) // end updateAndGetFailedBuild
+
+  describe('updateAndGetSuccessfulBuild', () => {
+    var mockContextVersion
+    beforeEach((done) => {
+      mockContextVersion = {
+        _id: '55d3ef733e1b620e00eb6292',
+        state: 'starting',
+        name: 'name1',
+        owner: {
+          github: '2335750'
+        },
+        createdBy: {
+          github: '146592'
+        },
+        build: {
+          _id: '23412312h3nk1lj2h3l1k2',
+          completed: true
+        }
+      }
+      sinon.stub(ContextVersion, 'updateByAsync').resolves()
+      sinon.stub(ContextVersion, 'findByAsync').resolves([mockContextVersion])
+      sinon.stub(messenger, 'emitContextVersionUpdate').returns()
+      done()
+    })
+
+    afterEach((done) => {
+      ContextVersion.updateByAsync.restore()
+      ContextVersion.findByAsync.restore()
+      messenger.emitContextVersionUpdate.restore()
+      done()
+    })
+
+    it('should save a successful build', (done) => {
+      const buildId = 12341
+
+      ContextVersion.updateAndGetSuccessfulBuild(buildId).asCallback(() => {
+        sinon.assert.calledOnce(ContextVersion.updateByAsync)
+        sinon.assert.calledWith(ContextVersion.updateByAsync,
+          'build._id',
+          buildId, {
+            $set: {
+              'build.failed': false,
+              'build.completed': sinon.match.number,
+              'state': ContextVersion.states.buildSucceeded
+            }
+          })
+
+        sinon.assert.calledOnce(ContextVersion.findByAsync)
+        sinon.assert.calledWith(ContextVersion.findByAsync, 'build._id', buildId)
+        done()
+      })
+    })
+  }) // end updateAndGetSuccessfulBuild
 
   describe('findOneCreating', function () {
     var mockContextVersionId = '507f1f77bcf86cd799439011'
