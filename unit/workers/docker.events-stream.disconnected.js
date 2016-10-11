@@ -1,12 +1,11 @@
 'use strict'
 
 const clone = require('101/clone')
-const expect = require('code').expect
 const Lab = require('lab')
 const sinon = require('sinon')
-const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-const dockerEventStreamDisconnected = require('workers/docker.events-stream.disconnected')
+const dockerEventStreamDisconnected = require('workers/docker.events-stream.disconnected').task
+
 const rabbitMQ = require('models/rabbitmq')
 
 const lab = exports.lab = Lab.script()
@@ -34,58 +33,6 @@ describe('docker.events-stream.disconnected unit test', function () {
     rabbitMQ.publishDockRemoved.restore()
     done()
   })
-
-  describe('validate', function () {
-    it('should throw task fatal if missing host', function (done) {
-      delete testJob.host
-      dockerEventStreamDisconnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-
-        sinon.assert.notCalled(rabbitMQ.publishDockRemoved)
-        done()
-      })
-    })
-
-    it('should throw task fatal if invalid host', function (done) {
-      testJob.host = '10.0.0.1:3232'
-      dockerEventStreamDisconnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-
-        sinon.assert.notCalled(rabbitMQ.publishDockRemoved)
-        done()
-      })
-    })
-
-    it('should throw task fatal if missing org', function (done) {
-      delete testJob.org
-      dockerEventStreamDisconnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-
-        sinon.assert.notCalled(rabbitMQ.publishDockRemoved)
-        done()
-      })
-    })
-
-    it('should throw task fatal if org not a string', function (done) {
-      testJob.org = 12345
-      dockerEventStreamDisconnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-
-        sinon.assert.notCalled(rabbitMQ.publishDockRemoved)
-        done()
-      })
-    })
-
-    it('should throw task fatal if org not a number', function (done) {
-      testJob.org = '12a45'
-      dockerEventStreamDisconnected(testJob).asCallback(function (err) {
-        expect(err).to.be.instanceof(WorkerStopError)
-
-        sinon.assert.notCalled(rabbitMQ.publishDockRemoved)
-        done()
-      })
-    })
-  }) // end validate
 
   describe('valid job', function () {
     it('should publish dock removed', function (done) {
