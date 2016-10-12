@@ -41,12 +41,7 @@ describe('/users/:id/routes', function () {
         expect(code).to.equal(201)
         expect(body[0].srcHostname).to.equal(testHost)
         expect(body[0].destInstanceId).to.equal(testDest)
-        ctx.user.fetch(function (err, body) {
-          if (err) { return done(err) }
-          expect(body.routes[0].srcHostname).to.equal(testHost)
-          expect(body.routes[0].destInstanceId).to.equal(testDest)
-          done()
-        })
+        done()
       })
     })
     describe('with hello runnable', function () {
@@ -59,11 +54,7 @@ describe('/users/:id/routes', function () {
           destInstanceId: testDest
         }, function (err) {
           expect(err.data.statusCode).to.equal(400)
-          ctx.helloRunnable.fetch(function (err, body) {
-            if (err) { return done(err) }
-            expect(body.routes).to.have.length(0)
-            done()
-          })
+          done()
         })
       })
     })
@@ -85,13 +76,7 @@ describe('/users/:id/routes', function () {
           expect(body.length).to.equal(1)
           expect(body[0].srcHostname).to.equal(testHost)
           expect(body[0].destInstanceId).to.equal(newDest)
-          ctx.user.fetch(function (err, body) {
-            if (err) { return done(err) }
-            expect(body.routes.length).to.equal(1)
-            expect(body.routes[0].srcHostname).to.equal(testHost)
-            expect(body.routes[0].destInstanceId).to.equal(newDest)
-            done()
-          })
+          done()
         })
       })
     })

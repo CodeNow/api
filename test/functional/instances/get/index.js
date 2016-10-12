@@ -562,20 +562,22 @@ describe('GET /instances', function () {
     describe('name and owner', function () {
       it('should list instances by githubUsername and name', function (done) {
         sessionUser([otherOrg])
-        var query = {
-          githubUsername: ctx.orgName,
-          name: ctx.instance.attrs.name
-        }
-        var expected = [
-          {}
-        ]
-        expected[0].name = ctx.instance.attrs.name
-        // expected[0]['owner.username'] = ctx.orgName
-        expected[0]['owner.github'] = ctx.orgId
-        require('../../fixtures/mocks/github/users-username')(ctx.orgId, ctx.orgName)
-        require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName)
-        require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName)
-        ctx.user.fetchInstances(query, expects.success(200, expected, done))
+        .then(function () {
+          var query = {
+            githubUsername: ctx.orgName,
+            name: ctx.instance.attrs.name
+          }
+          var expected = [
+            {}
+          ]
+          expected[0].name = ctx.instance.attrs.name
+          // expected[0]['owner.username'] = ctx.orgName
+          expected[0]['owner.github'] = ctx.orgId
+          require('../../fixtures/mocks/github/users-username')(ctx.orgId, ctx.orgName)
+          require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName)
+          require('../../fixtures/mocks/github/user-orgs')(ctx.orgId, ctx.orgName)
+          ctx.user.fetchInstances(query, expects.success(200, expected, done))
+        })
       })
     })
   })

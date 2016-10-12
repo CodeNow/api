@@ -358,15 +358,17 @@ describe('User Service', function () {
       .asCallback(done)
     })
 
-    it('should not matter if the big poppa user is not found', function (done) {
-      getByGithubIdStub.rejects(new Error(''))
+    it('should throw an error if it cant find the BP user', function (done) {
+      let originalErr = new Error('')
+      getByGithubIdStub.rejects(originalErr)
 
       UserService.getCompleteUserById(userId)
-      .then(function (res) {
-        expect(res).to.equal(user)
+      .asCallback(function (err, res) {
+        expect(err).to.exist()
+        expect(err).to.equal(originalErr)
         sinon.assert.notCalled(user.set)
+        done()
       })
-      .asCallback(done)
     })
 
     it('should throw an error if no user is found', function (done) {

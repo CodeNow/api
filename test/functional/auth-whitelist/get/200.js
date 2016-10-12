@@ -1,5 +1,6 @@
 'use strict'
 
+const Promise = require('bluebird')
 var Lab = require('lab')
 var lab = exports.lab = Lab.script()
 var describe = lab.describe
@@ -56,8 +57,11 @@ describe('GET /auth/whitelist/', function () {
     beforeEach(function (done) {
       require('../../fixtures/mocks/github/user-orgs')(2828361, 'Runnable')
       ctx.name = randStr(5)
-      whitelistUserOrgs(ctx.user, [runnableOrg])
-      done()
+      Promise.all([
+        whitelistUserOrgs(ctx.user, [runnableOrg]),
+        sessionUser([runnableOrg])
+      ])
+      .asCallback(done)
     })
 
     it('should return an array of all the whitelisted orgs', function (done) {
@@ -82,9 +86,11 @@ describe('GET /auth/whitelist/', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
       nock.cleanAll()
-      sessionUser([])
-      whitelistUserOrgs(ctx.user, [])
-      done()
+      Promise.all([
+        whitelistUserOrgs(ctx.user, []),
+        sessionUser([])
+      ])
+      .asCallback(done)
     })
 
     it('should return an array with no orgs', function (done) {
@@ -110,9 +116,11 @@ describe('GET /auth/whitelist/', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
       nock.cleanAll()
-      sessionUser([otherOrg])
-      whitelistUserOrgs(ctx.user, [otherOrg])
-      done()
+      Promise.all([
+        whitelistUserOrgs(ctx.user, [otherOrg]),
+        sessionUser([otherOrg])
+      ])
+      .asCallback(done)
     })
 
     it('should return an array of all the whitelisted orgs', function (done) {
