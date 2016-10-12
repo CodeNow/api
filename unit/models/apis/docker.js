@@ -327,7 +327,9 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false
+          ownerUsername: 'runnable',
+          noCache: false,
+          tid: 'mediocre-tid'
         }
         model.createImageBuilder(opts, function (err) {
           if (err) { return done(err) }
@@ -339,13 +341,15 @@ describe('docker: ' + moduleName, function () {
             Docker.getDockerTag,
             opts.contextVersion
           )
+
           expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
             contextVersion: opts.contextVersion,
-            dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername
+            ownerUsername: opts.ownerUsername,
+            tid: opts.tid,
+            dockerTag: ctx.mockDockerTag
           })
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
@@ -407,7 +411,9 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false
+          ownerUsername: 'runnable',
+          noCache: false,
+          tid: 'mediocre-tid'
         }
         model.createImageBuilder(opts, function (err) {
           expect(err).to.exist()
@@ -420,6 +426,7 @@ describe('docker: ' + moduleName, function () {
             opts.contextVersion
           )
           expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
+            tid: opts.tid,
             contextVersion: opts.contextVersion,
             dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
@@ -555,13 +562,16 @@ describe('docker: ' + moduleName, function () {
         manualBuild: 'manualBuild',
         noCache: 'noCache',
         sessionUser: ctx.mockSessionUser,
-        ownerUsername: 'ownerUsername'
+        ownerUsername: 'ownerUsername',
+        tid: 'mediocre-tid'
       }
       var labels = model._createImageBuilderLabels(opts)
       var expectedLabels = {
+        tid: opts.tid,
         githubOrgId: 'owner',
         'contextVersion.build._id': ctx.mockContextVersion.build._id,
         'contextVersion._id': ctx.mockContextVersion._id,
+        contextVersionId: ctx.mockContextVersion._id,
         'contextVersion.context': ctx.mockContextVersion.context,
         dockerTag: opts.dockerTag,
         manualBuild: opts.manualBuild,
@@ -1161,7 +1171,8 @@ describe('docker: ' + moduleName, function () {
         instance: ctx.mockInstance,
         contextVersion: ctx.mockContextVersion,
         ownerUsername: 'runnable',
-        sessionUserGithubId: 10
+        sessionUserGithubId: 10,
+        tid: 'mediocre-tid'
       }
       sinon.stub(Docker.prototype, '_createUserContainerLabels')
       sinon.stub(Docker.prototype, 'createContainer')
@@ -1611,7 +1622,8 @@ describe('docker: ' + moduleName, function () {
           }
         },
         ownerUsername: 'runnable',
-        sessionUserGithubId: 10
+        sessionUserGithubId: 10,
+        tid: 'mediocre-tid'
       }
       done()
     })
@@ -1622,6 +1634,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           var opts = ctx.opts
           expect(labels).to.equal({
+            tid: ctx.opts.tid,
             githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
@@ -1642,6 +1655,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           var opts = ctx.opts
           expect(labels).to.equal({
+            tid: ctx.opts.tid,
             githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,

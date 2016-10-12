@@ -73,13 +73,13 @@ describe('middlewares/security unit test: ' + moduleName, function () {
       done()
     })
 
-    describe('when being hit with the https protocol', function () {
+    describe('internal requests', function () {
       beforeEach(function (done) {
-        req.headers['x-forwarded-protocol'] = 'https'
+        req.isInternalRequest = true
         done()
       })
 
-      it('should add the STS header', function (done) {
+      it('should next', function (done) {
         securityMiddleware(req, res, next)
         sinon.assert.calledOnce(next)
         sinon.assert.notCalled(res.status)
@@ -88,15 +88,61 @@ describe('middlewares/security unit test: ' + moduleName, function () {
         sinon.assert.calledWith(res.setHeader, 'Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
         done()
       })
+    }) // end internal requests
+    describe('ELB health check', function () {
+      beforeEach(function (done) {
+        req.headers['x-forwarded-proto'] = 'https'
+        req.headers['user-agent'] = 'ELB-HealthChecker/2.0'
+        done()
+      })
+
+      it('should return 200', function (done) {
+        securityMiddleware(req, res, next)
+        sinon.assert.calledOnce(res.status)
+        sinon.assert.calledWith(res.status, 200)
+        sinon.assert.calledOnce(res.end)
+        done()
+      })
+    }) // end ELB health check
+
+    describe('when being hit with the https protocol', function () {
+      it('should add the STS header', function (done) {
+        req.headers['x-forwarded-protocol'] = 'https'
+        securityMiddleware(req, res, next)
+        sinon.assert.calledOnce(next)
+        sinon.assert.notCalled(res.status)
+        sinon.assert.notCalled(res.end)
+        sinon.assert.calledOnce(res.setHeader)
+        sinon.assert.calledWith(res.setHeader, 'Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+        done()
+      })
+
+      it('should next', function (done) {
+        req.headers['x-forwarded-proto'] = 'https'
+        securityMiddleware(req, res, next)
+        sinon.assert.calledOnce(next)
+        sinon.assert.notCalled(res.status)
+        sinon.assert.notCalled(res.end)
+        done()
+      })
     })
 
     describe('when being hit with the http protocol', function () {
-      beforeEach(function (done) {
+      it('should redirect', function (done) {
         req.headers['x-forwarded-protocol'] = 'http'
+        securityMiddleware(req, res, next)
+        sinon.assert.notCalled(next)
+        sinon.assert.calledOnce(res.status)
+        sinon.assert.calledWith(res.status, 301)
+        sinon.assert.calledOnce(res.end)
+        sinon.assert.calledTwice(res.setHeader)
+        sinon.assert.calledWith(res.setHeader, 'Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+        sinon.assert.calledWith(res.setHeader, 'Location', 'https://' + req.headers.host + req.originalUrl)
         done()
       })
 
       it('should redirect', function (done) {
+        req.headers['x-forwarded-proto'] = 'http'
         securityMiddleware(req, res, next)
         sinon.assert.notCalled(next)
         sinon.assert.calledOnce(res.status)

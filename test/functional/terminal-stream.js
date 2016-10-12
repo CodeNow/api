@@ -10,11 +10,12 @@ var after = lab.after
 var afterEach = lab.afterEach
 
 var api = require('./fixtures/api-control')
-var commonStream = require('socket/common-stream')
 var Instance = require('models/mongo/instance')
 var Primus = require('primus')
 var Promise = require('bluebird')
+require('sinon-as-promised')(Promise)
 var sinon = require('sinon')
+var PermissionService = require('models/services/permission-service')
 var Socket = Primus.createSocket({
   transformer: process.env.PRIMUS_TRANSFORMER,
   plugin: {
@@ -53,12 +54,12 @@ describe('Terminal stream', function () {
           dockerContainer: 'containerId'
         }
       })
-      sinon.stub(commonStream, 'checkOwnership').returns(Promise.resolve(true))
+      sinon.stub(PermissionService, 'ensureModelAccess').resolves(true)
       done()
     })
     afterEach(function (done) {
       Instance.findOne.restore()
-      commonStream.checkOwnership.restore()
+      PermissionService.ensureModelAccess.restore()
       done()
     })
     requiredParams.forEach(function (param, i) {

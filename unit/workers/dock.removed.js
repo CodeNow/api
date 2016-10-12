@@ -27,8 +27,10 @@ const errors = require('errors')
 describe('Worker: dock.removed unit test', function () {
   const testTarget = 'goku'
   const testHost = 'http://' + testTarget + ':4242'
+  const testGithubOrgId = 1738
   const testData = {
-    host: testHost
+    host: testHost,
+    githubOrgId: testGithubOrgId
   }
   const rebuildInstances = [
     { _id: '1', owner: { github: '213333' } },
@@ -82,7 +84,8 @@ describe('Worker: dock.removed unit test', function () {
           sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
           sinon.assert.calledOnce(rabbitMQ.dockPurged)
           sinon.assert.calledWith(rabbitMQ.dockPurged, {
-            ipAddress: testTarget
+            ipAddress: testTarget,
+            githubOrgId: testGithubOrgId
           })
           done()
         })
@@ -102,7 +105,8 @@ describe('Worker: dock.removed unit test', function () {
           sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
           sinon.assert.calledOnce(rabbitMQ.dockPurged)
           sinon.assert.calledWith(rabbitMQ.dockPurged, {
-            ipAddress: testTarget
+            ipAddress: testTarget,
+            githubOrgId: testGithubOrgId
           })
           done()
         })
@@ -142,7 +146,8 @@ describe('Worker: dock.removed unit test', function () {
           sinon.assert.callCount(InstanceService.emitInstanceUpdate, 4)
           sinon.assert.calledOnce(rabbitMQ.dockPurged)
           sinon.assert.calledWith(rabbitMQ.dockPurged, {
-            ipAddress: testTarget
+            ipAddress: testTarget,
+            githubOrgId: testGithubOrgId
           })
           done()
         })
@@ -161,7 +166,8 @@ describe('Worker: dock.removed unit test', function () {
           sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
           sinon.assert.calledOnce(rabbitMQ.dockPurged)
           sinon.assert.calledWith(rabbitMQ.dockPurged, {
-            ipAddress: testTarget
+            ipAddress: testTarget,
+            githubOrgId: testGithubOrgId
           })
           done()
         })
@@ -200,7 +206,8 @@ describe('Worker: dock.removed unit test', function () {
           sinon.assert.calledOnce(Instance.findInstancesBuiltByDockerHost)
           sinon.assert.calledOnce(Instance.findInstancesBuildingOnDockerHost)
           sinon.assert.calledWith(rabbitMQ.dockPurged, {
-            ipAddress: testTarget
+            ipAddress: testTarget,
+            githubOrgId: testGithubOrgId
           })
           done()
         })
