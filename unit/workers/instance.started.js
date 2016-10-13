@@ -23,9 +23,7 @@ const it = lab.it
 
 describe('Workers: Instance Started', function () {
   const testInstanceId = '5633e9273e2b5b0c0077fd41'
-  const testData = {
-    instanceId: testInstanceId
-  }
+  const testData = {}
   let testInstance
 
   beforeEach(function (done) {
@@ -35,10 +33,17 @@ describe('Workers: Instance Started', function () {
         inspect: {
           State: {
             Status: 'running'
+          },
+          Config: {
+            Labels: {
+              sessionUserGithubId: '1111',
+              sessionUserBigPoppaId: '2222'
+            }
           }
         }
       }
     })
+    testData.instance = testInstance.toJSON()
     sinon.stub(Instance, 'findByIdAsync').resolves(testInstance)
     sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
     done()
@@ -100,11 +105,21 @@ describe('Workers: Instance Started', function () {
     })
   })
 
+  it('should call findByIdAsync', function (done) {
+    Worker.task(testData).asCallback(function (err) {
+      expect(err).to.not.exist()
+      sinon.assert.calledOnce(Instance.findByIdAsync)
+      sinon.assert.calledWith(Instance.findByIdAsync, testData.instance._id)
+      done()
+    })
+  })
+
   it('should call emitInstanceUpdate', function (done) {
     Worker.task(testData).asCallback(function (err) {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
-      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, null, 'start')
+      const sessionUserGithubId = testData.instance.container.inspect.Config.Labels.sessionUserGithubId
+      sinon.assert.calledWith(InstanceService.emitInstanceUpdate, testInstance, sessionUserGithubId, 'start')
       done()
     })
   })

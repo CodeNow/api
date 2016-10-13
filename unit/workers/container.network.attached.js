@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/isolation.kill
+ * @module unit/workers/container.network.attached
  */
 'use strict'
 
@@ -10,6 +10,7 @@ const Code = require('code')
 const sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
+const objectId = require('objectid')
 const Worker = require('workers/container.network.attached').task
 const Instance = require('models/mongo/instance')
 const InstanceService = require('models/services/instance-service')
@@ -53,21 +54,21 @@ describe('Workers: Container Network Attach', function () {
       }
     }
   }
-  const mockInstance = {
-    _id: '1234',
+  const mockInstance = new Instance({
+    _id: objectId('507f191e810c19729de860ea'),
     name: 'mockInstance',
     owner: {
       github: 999
     }
-  }
-  const mockModifiedInstance = {
-    _id: '1234',
+  })
+  const mockModifiedInstance = new Instance({
+    _id: objectId('507f191e810c19729de860ea'),
     modified: true,
-    isolated: 'isolatedId',
+    isolated: objectId('507f191e810c19729de860ea'),
     owner: {
       github: 999
     }
-  }
+  })
 
   const mockIsolation = {
     state: 'killing'
@@ -238,28 +239,7 @@ describe('Workers: Container Network Attach', function () {
       sinon.assert.calledOnce(rabbitMQ.publishInstanceStarted)
       sinon.assert.calledWith(rabbitMQ.publishInstanceStarted,
         {
-          instanceId: mockModifiedInstance._id.toString(),
-          githubOrgId: mockModifiedInstance.owner.github
-        }
-      )
-      done()
-    })
-  })
-
-  it('should call publishInstanceStarted with parsed optional labels', function (done) {
-    Isolation.findOneAsync.resolves({})
-    const jobData = Object.assign({}, testData)
-    jobData.inspectData.Config.Labels.sessionUserBigPoppaId = '777'
-    jobData.inspectData.Config.Labels.sessionUserGithubId = '888'
-    Worker(jobData).asCallback(function (err) {
-      expect(err).to.not.exist()
-      sinon.assert.calledOnce(rabbitMQ.publishInstanceStarted)
-      sinon.assert.calledWith(rabbitMQ.publishInstanceStarted,
-        {
-          instanceId: mockModifiedInstance._id.toString(),
-          githubOrgId: mockModifiedInstance.owner.github,
-          githubUserId: 888,
-          bigPoppaUserId: 777
+          instance: mockModifiedInstance.toJSON()
         }
       )
       done()
