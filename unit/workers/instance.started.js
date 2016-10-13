@@ -7,7 +7,6 @@ require('sinon-as-promised')(require('bluebird'))
 const Code = require('code')
 const Lab = require('lab')
 const sinon = require('sinon')
-const WorkerError = require('error-cat/errors/worker-error')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const Instance = require('models/mongo/instance')
