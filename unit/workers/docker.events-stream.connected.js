@@ -1,35 +1,33 @@
-/**
- * @module unit/workers/docker.events-stream.connected
- */
 'use strict'
+const clone = require('101/clone')
+const expect = require('code').expect
+const Lab = require('lab')
+const Promise = require('bluebird')
+const sinon = require('sinon')
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var clone = require('101/clone')
-var expect = require('code').expect
-var Lab = require('lab')
-var Promise = require('bluebird')
-var sinon = require('sinon')
+const messenger = require('socket/messenger')
+const OrganizationService = require('models/services/organization-service')
+const rabbitMQ = require('models/rabbitmq')
+const Worker = require('workers/docker.events-stream.connected')
+
 require('sinon-as-promised')(Promise)
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
+const lab = exports.lab = Lab.script()
 
-var Worker = require('workers/docker.events-stream.connected')
-var messenger = require('socket/messenger')
-var rabbitMQ = require('models/rabbitmq')
-var OrganizationService = require('models/services/organization-service')
-
-var lab = exports.lab = Lab.script()
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const it = lab.it
 
 describe('docker.events-stream.connected unit test', function () {
-  var testHost = 'http://host:4242'
-  var testOrg = '12345'
-  var baseJob = {
+  const testDockerHostIP = '10.0.0.2'
+  const testHost = `http://${testDockerHostIP}:4242`
+  const testOrg = '12345'
+  const baseJob = {
     host: testHost,
     org: testOrg
   }
-  var testJob
+  let testJob
 
   beforeEach(function (done) {
     testJob = clone(baseJob)
@@ -141,7 +139,8 @@ describe('docker.events-stream.connected unit test', function () {
         sinon.assert.calledOnce(rabbitMQ.firstDockCreated)
         sinon.assert.calledWith(rabbitMQ.firstDockCreated,
           {
-            githubId: parseInt(testOrg, 10)
+            githubId: parseInt(testOrg, 10),
+            dockerHostIp: testDockerHostIP
           }
         )
       })

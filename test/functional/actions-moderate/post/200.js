@@ -53,14 +53,6 @@ describe('Moderate - /actions/moderate', function () {
       }, done)
     })
 
-    it('should only return our user object by default', function (done) {
-      ctx.mod.fetch(function (err, info) {
-        if (err) { return done(err) }
-        expect(info._id).to.equal(ctx.mod.attrs._id)
-        expect(info._beingModerated).to.not.exist()
-        done()
-      })
-    })
     it('should allow us to change users', function (done) {
       require('../../fixtures/mocks/github/users-username')(
         ctx.user.attrs.accounts.github.id,

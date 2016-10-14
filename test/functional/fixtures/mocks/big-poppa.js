@@ -1,61 +1,57 @@
 'use strict'
-var nock = require('nock')
+// var nock = require('nock')
+var MockAPI = require('mehpi')
+const Promise = require('bluebird')
+const port = process.env.BIG_POPPA_HOST.split(':')[1]
+const bigPoppaAPI = new MockAPI(port)
+
+const serverStart = Promise.fromCallback(function (cb) {
+  bigPoppaAPI.start(cb)
+})
 
 module.exports.whitelistUserOrgs = function (user, orgs) {
-  const bigPoppaNock = nock('http://' + process.env.BIG_POPPA_HOST)
   var userId = user.attrs.accounts.github.id
-  bigPoppaNock
-    .get('/user')
-    .query(true)
-    .times(1000)
-    .reply(
-      200,
-      [{
+  return serverStart.then(function () {
+    bigPoppaAPI.stub('GET', /user.*/i).returns({
+      status: 200,
+      body: [{
         organizations: orgs,
         githubId: userId
       }]
-    )
+    })
+  })
 }
 module.exports.whitelistOrgs = function (orgs) {
-  const bigPoppaNock = nock('http://' + process.env.BIG_POPPA_HOST)
-  orgs.forEach(function (org) {
-    bigPoppaNock
-      .get('/organization/?lowerName=' + org.name.toLowerCase())
-      .times(1000)
-      .reply(
-        200,
-        [{
+  return serverStart.then(function () {
+    orgs.forEach(function (org) {
+      bigPoppaAPI.stub('GET', '/organization/?lowerName=' + org.name.toLowerCase()).returns({
+        status: 200,
+        body: [{
           name: org.name,
           lowerName: org.name.toLowerCase(),
           githubId: org.githubId,
           allowed: true
         }]
-      )
-    bigPoppaNock
-      .get('/organization/?githubId=' + org.githubId)
-      .times(1000)
-      .reply(
-        200,
-        [{
+      })
+      bigPoppaAPI.stub('GET', '/organization/?githubId=' + org.name.toLowerCase()).returns({
+        status: 200,
+        body: [{
           name: org.name,
           lowerName: org.name.toLowerCase(),
           githubId: org.githubId,
           allowed: true
         }]
-      )
-    bigPoppaNock
-      .post('/organization/:orgId/add')
-      .times(1000)
-      .filteringPath(/organization\/[0-9A-z]*\/add/, '')
-      .reply(
-        404, {
+      })
+      bigPoppaAPI.stub('POST', /organization\/[0-9A-z]*\/add/i).returns({
+        status: 404,
+        body: {
           err: 'NO!'
         }
-      )
+      })
+    })
   })
 }
 module.exports.sessionUser = function (orgs) {
-  const bigPoppaNock = nock('http://' + process.env.BIG_POPPA_HOST)
   if (!orgs) {
     orgs = [{
       name: 'super-org',
@@ -63,21 +59,20 @@ module.exports.sessionUser = function (orgs) {
       allowed: true
     }]
   }
-  bigPoppaNock
-    .filteringPath(function (path) {
-      if (path.match(/.*user.*github/i)) {
-        return '/user'
-      }
+  const userObj = {
+    id: 1,
+    githubId: 198198,
+    isActive: true,
+    organizations: orgs
+  }
+  return serverStart.then(function () {
+    bigPoppaAPI.stub('GET', /user/, 50).returns({
+      status: 200,
+      body: [userObj]
     })
-    .get('/user')
-    .times(1000)
-    .reply(
-      200,
-      [{
-        id: 1,
-        githubId: 198198,
-        isActive: true,
-        organizations: orgs
-      }]
-    )
+    bigPoppaAPI.stub('POST', /user/).returns({
+      status: 201,
+      body: userObj
+    })
+  })
 }

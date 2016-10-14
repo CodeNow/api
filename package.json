@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "11.5.13",
+  "version": "11.8.1",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -15,7 +15,7 @@
   "dependencies": {
     "101": "^1.5.0",
     "@runnable/api-client": "^9.1.0",
-    "@runnable/big-poppa-client": "^0.4.0",
+    "@runnable/big-poppa-client": "^0.5.1",
     "@runnable/hostname": "^3.0.0",
     "@runnable/orion": "^1.0.4",
     "JSONStream": "0.10.x",
@@ -82,7 +82,7 @@
     "passport": "~0.2.0",
     "passport-github": "1.1.0",
     "passport-strategy": "^1.0.0",
-    "ponos": "^5.3.0",
+    "ponos": "^5.6.1",
     "primus": "3.2.1",
     "primus-redis-rooms": "^0.3.1",
     "redis": "0.9.2",
@@ -116,6 +116,7 @@
     "jsdoc": "^3.2.2",
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
     "lab": "5.8.0",
+    "mehpi": "git+ssh://git@github.com:Runnable/mehpi.git#v2.0.1",
     "multiline": "^1.0.2",
     "nock": "^5.2.1",
     "nodemon": "^1.2.1",
