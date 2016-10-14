@@ -6,7 +6,7 @@ matrix:
   fast_finish: true
 env:
   global:
-  - LOG_LEVEL=info
+  - LOG_LEVEL=fatal
   - CIRCLE_NODE_TOTAL=3
   matrix:
   - CIRCLE_NODE_INDEX=0
@@ -27,6 +27,7 @@ before_install:
 before_script:
 - npm run lint
 script:
+- timeout 3m ./scripts/run-command-conditionally.sh npm run unit
 - timeout 15m ./scripts/npm-bdd-split-files.sh
 notifications:
   email: false
