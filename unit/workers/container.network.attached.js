@@ -236,10 +236,12 @@ describe('Workers: Container Network Attach', function () {
     Isolation.findOneAsync.resolves({})
     Worker(testData).asCallback(function (err) {
       expect(err).to.not.exist()
+      const inst = mockModifiedInstance.toJSON()
+      inst._id = mockModifiedInstance._id.toString()
       sinon.assert.calledOnce(rabbitMQ.publishInstanceStarted)
       sinon.assert.calledWith(rabbitMQ.publishInstanceStarted,
         {
-          instance: mockModifiedInstance.toJSON()
+          instance: inst
         }
       )
       done()
