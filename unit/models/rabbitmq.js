@@ -2,64 +2,39 @@
  * @module unit/models/rabbitmq
  */
 'use strict'
-var clone = require('101/clone')
-var Code = require('code')
-var createCount = require('callback-count')
-var Lab = require('lab')
-var path = require('path')
-var Promise = require('bluebird')
-var sinon = require('sinon')
+const clone = require('101/clone')
+const Code = require('code')
+const createCount = require('callback-count')
+const Lab = require('lab')
+const Promise = require('bluebird')
+const sinon = require('sinon')
 
-var rabbitMQ = require('models/rabbitmq')
-var Publisher = require('ponos/lib/rabbitmq')
+const rabbitMQ = require('models/rabbitmq')
+const Publisher = require('ponos/lib/rabbitmq')
 
-var lab = exports.lab = Lab.script()
+const lab = exports.lab = Lab.script()
 
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('RabbitMQ Model: ' + moduleName, function () {
+describe('RabbitMQ Model Unit Test', function () {
   beforeEach(function (done) {
-    rabbitMQ._publisher = {
-      connect: sinon.stub(),
-      disconnect: sinon.stub(),
-      publishEvent: sinon.stub(),
-      publishTask: sinon.stub()
-    }
     sinon.stub(Publisher.prototype, 'connect')
+    sinon.stub(Publisher.prototype, 'disconnect')
+    sinon.stub(Publisher.prototype, 'publishEvent')
+    sinon.stub(Publisher.prototype, 'publishTask')
     done()
   })
 
   afterEach(function (done) {
     Publisher.prototype.connect.restore()
+    Publisher.prototype.disconnect.restore()
+    Publisher.prototype.publishEvent.restore()
+    Publisher.prototype.publishTask.restore()
     done()
-  })
-
-  describe('connect', function () {
-    it('should call connect', function (done) {
-      Publisher.prototype.connect.returns(Promise.resolve())
-      var out = rabbitMQ.connect().asCallback(function (err) {
-        if (err) { return done(err) }
-        expect(out).to.be.an.instanceof(Promise)
-        sinon.assert.calledOnce(rabbitMQ._publisher.connect)
-        done()
-      })
-    })
-  })
-
-  describe('disconnect', function () {
-    it('should call disconnect', function (done) {
-      rabbitMQ._publisher.disconnect.returns('foo')
-      var out = rabbitMQ.disconnect()
-      expect(out).to.equal('foo')
-      sinon.assert.calledOnce(rabbitMQ._publisher.disconnect)
-      done()
-    })
   })
 
   describe('CreateImageBuilderContainer', function () {
@@ -84,8 +59,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should publish a job with required data', function (done) {
         rabbitMQ.createImageBuilderContainer(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'container.image-builder.create',
           validJobData)
         done()
@@ -126,8 +101,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should publish a job with required data', function (done) {
         rabbitMQ.startInstanceContainer(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'instance.start',
           validJobData)
         done()
@@ -168,8 +143,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.createInstanceContainer(opts)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'instance.container.create',
           opts)
         done()
@@ -208,8 +183,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.redeployInstanceContainer(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'instance.container.redeploy',
           validJobData)
         done()
@@ -247,8 +222,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.deleteInstance(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'instance.delete',
           validJobData)
         done()
@@ -295,8 +270,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.deleteInstanceContainer(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'instance.container.delete',
           validJobData)
         done()
@@ -334,8 +309,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.publishInstanceRebuild(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'instance.rebuild',
           validJobData)
         done()
@@ -373,8 +348,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.instanceUpdated(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+        sinon.assert.calledOnce(Publisher.prototype.publishEvent)
+        sinon.assert.calledWith(Publisher.prototype.publishEvent,
           'instance.updated',
           validJobData)
         done()
@@ -412,8 +387,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.instanceCreated(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+        sinon.assert.calledOnce(Publisher.prototype.publishEvent)
+        sinon.assert.calledWith(Publisher.prototype.publishEvent,
           'instance.created',
           validJobData)
         done()
@@ -451,8 +426,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.instanceDeleted(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+        sinon.assert.calledOnce(Publisher.prototype.publishEvent)
+        sinon.assert.calledWith(Publisher.prototype.publishEvent,
           'instance.deleted',
           validJobData)
         done()
@@ -491,8 +466,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.instanceDeployed(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+        sinon.assert.calledOnce(Publisher.prototype.publishEvent)
+        sinon.assert.calledWith(Publisher.prototype.publishEvent,
           'instance.deployed',
           validJobData)
         done()
@@ -530,8 +505,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.firstDockCreated(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+        sinon.assert.calledOnce(Publisher.prototype.publishEvent)
+        sinon.assert.calledWith(Publisher.prototype.publishEvent,
           'first.dock.created',
           validJobData)
         done()
@@ -569,8 +544,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.deleteContextVersion(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'context-version.delete',
           validJobData)
         done()
@@ -608,8 +583,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.contextVersionDeleted(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+        sinon.assert.calledOnce(Publisher.prototype.publishEvent)
+        sinon.assert.calledWith(Publisher.prototype.publishEvent,
           'context-version.deleted',
           validJobData)
         done()
@@ -647,8 +622,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.publishContainerImageBuilderStarted(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+        sinon.assert.calledOnce(Publisher.prototype.publishEvent)
+        sinon.assert.calledWith(Publisher.prototype.publishEvent,
           'container.image-builder.started',
           validJobData)
         done()
@@ -687,8 +662,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.publishDockRemoved(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+        sinon.assert.calledOnce(Publisher.prototype.publishEvent)
+        sinon.assert.calledWith(Publisher.prototype.publishEvent,
           'dock.removed',
           validJobData)
         done()
@@ -726,8 +701,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.clearContainerMemory(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'container.resource.clear',
           validJobData)
         done()
@@ -766,8 +741,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.killInstanceContainer(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'instance.kill',
           validJobData)
         done()
@@ -806,8 +781,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.killIsolation(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'isolation.kill',
           validJobData)
         done()
@@ -845,8 +820,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.redeployIsolation(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
+        sinon.assert.calledOnce(Publisher.prototype.publishTask)
+        sinon.assert.calledWith(Publisher.prototype.publishTask,
           'isolation.redeploy',
           validJobData)
         done()
@@ -886,8 +861,8 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     describe('success', function () {
       it('should create a job', function (done) {
         rabbitMQ.instanceContainerErrored(validJobData)
-        sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
-        sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
+        sinon.assert.calledOnce(Publisher.prototype.publishEvent)
+        sinon.assert.calledWith(Publisher.prototype.publishEvent,
           'instance.container.errored',
           validJobData)
         done()
