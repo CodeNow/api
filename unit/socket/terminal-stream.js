@@ -311,6 +311,16 @@ describe('terminal stream: ' + moduleName, function () {
               .asCallback(done)
           })
         })
+        describe('when the saved stream is no longer readable', function () {
+          it('should create a whole new connection', function (done) {
+            existingConnection.execStream.readable = false
+            terminalStream._setupStream(mockSocket, mockData)
+              .then(function () {
+                sinon.assert.calledOnce(Docker.prototype.execContainerAndRetryOnTimeoutAsync)
+              })
+              .asCallback(done)
+          })
+        })
       })
       describe('if that stream does not exist', function () {
         it('should create a new stream connection', function (done) {
