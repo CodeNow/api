@@ -91,10 +91,6 @@ Commit the new `npm-shrinkwrap.json` along with your changes. You _may_ want to 
   - `brew install redis`
   - default configuration (listening on `127.0.0.1:6379`)
   - `redis-server`
-- neo4j
-  - `brew install neo4j`
-  - disable auth: `sed -ie 's/.*auth_enabled.*/dbms.security.auth_enabled=false/g' /usr/local/Cellar/neo4j/2.2.5/libexec/conf/neo4j-server.properties`
-  - `neo4j start`
 - ulimit
   - `ulimit -n 10240` (at minimum)
 
