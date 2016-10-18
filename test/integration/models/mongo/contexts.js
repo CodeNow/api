@@ -64,6 +64,6 @@ describe('Context Model Integration Tests', function () {
   })
 
   describe('Contexts Description Validation', function () {
-    validation.stringLengthValidationChecking(createNewContext, 'description', 500)
+    validation.stringLengthValidationChecking(createNewContext, 'description', 1000)
   })
 })
