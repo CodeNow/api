@@ -122,10 +122,9 @@
       "1.8.6-p420"
     ],
     "defaultVersion": "2.3",
-    "ports": "4567, 9292",
+    "ports": "3000",
     "startCommand": [
-      "ruby app.rb",
-      "bundle exec rackup"
+      "ruby app.rb"
     ],
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']",
@@ -162,7 +161,7 @@
     "dependencies": [
       "ruby"
     ],
-    "ports": "3000, 9292",
+    "ports": "3000",
     "startCommand": [
       "rails server -b 0.0.0.0"
     ],
