@@ -105,10 +105,12 @@ var createdBy
 main()
 
 function main () {
-  rabbitMQ.connect()
-  return Promise.fromCallback(cb => {
-    mongoose.connect(process.env.MONGO, cb)
-  })
+  return Promise.all([
+    rabbitMQ.connect(),
+    Promise.fromCallback(cb => {
+      mongoose.connect(process.env.MONGO, cb)
+    })
+  ])
     .then(() => {
       return User.findOneAsync({ 'accounts.github.username': 'HelloRunnable' }, null)
     })
@@ -138,8 +140,16 @@ function main () {
       console.error('hello runnable error', err)
       throw err
     })
-    .asCallback(err => {
-      return process.exit(err ? 1 : 0)
+    .finally(() => {
+      return Promise.all([
+        rabbitMQ.disconnect(),
+        Promise.fromCallback(cb => {
+          mongoose.disconnect(cb)
+        })
+      ])
+      .asCallback(err => {
+        return process.exit(err ? 1 : 0)
+      })
     })
 }
 
