@@ -453,7 +453,7 @@ describe('BuildService', function () {
         if (err) { return done(err) }
         sinon.assert.calledOnce(publisher.publishBuildRequested)
         sinon.assert.calledWith(publisher.publishBuildRequested, {
-          buildId: testBuildId,
+          buildObjectId: testBuildId,
           reasonTriggered: testMessage
         })
         done()
