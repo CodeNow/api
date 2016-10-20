@@ -27,7 +27,7 @@ const rabbitMQ = require('models/rabbitmq/index')
 const sinon = require('sinon')
 const User = require('models/mongo/user')
 
-var sources = [{
+const sources = [{
   name: 'PHP',
   isTemplate: true,
   isSource: true,
