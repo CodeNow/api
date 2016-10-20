@@ -238,5 +238,5 @@ function createOrUpdateInstance (user, data, build) {
         masterPod: true,
         owner: createdBy
       }, user)
-  })
+    })
 }
