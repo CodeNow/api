@@ -207,8 +207,9 @@ describe('User Service', function () {
   describe('getUsersOrganizationsWithGithubModel', function () {
     var orgGithubId = '232323'
     var orgGithubName = 'bigPoppa'
+    const userGithubId = '191198'
+    const userGithubName = 'thejsj'
     var user = {}
-    var userGithubId = '1111'
     keypather.set(user, 'accounts.github.id', userGithubId)
     var bigPoppaUser = {
       organizations: []
@@ -220,19 +221,26 @@ describe('User Service', function () {
       id: orgGithubId,
       login: orgGithubName
     }
-    describe('success', function () {
-      beforeEach(function (done) {
-        sinon.stub(Github.prototype, 'getUserAuthorizedOrgsAsync')
-        sinon.stub(UserService, 'getUser').resolves(bigPoppaUser)
-        done()
-      })
+    var githubUser = {
+      id: userGithubId,
+      login: userGithubName
+    }
 
-      afterEach(function (done) {
-        UserService.getUser.restore()
-        Github.prototype.getUserAuthorizedOrgsAsync.restore()
-        done()
-      })
+    beforeEach(function (done) {
+      sinon.stub(Github.prototype, 'getUserAuthorizedOrgsAsync').resolves([ githubOrg ])
+      sinon.stub(Github.prototype, 'getAuthorizedUserAsync').resolves(githubUser)
+      sinon.stub(UserService, 'getUser').resolves(bigPoppaUser)
+      done()
+    })
 
+    afterEach(function (done) {
+      UserService.getUser.restore()
+      Github.prototype.getUserAuthorizedOrgsAsync.restore()
+      Github.prototype.getAuthorizedUserAsync.restore()
+      done()
+    })
+
+    describe('Success', function () {
       it('should resolve when the user has no orgs', function (done) {
         Github.prototype.getUserAuthorizedOrgsAsync.resolves([])
         UserService.getUsersOrganizationsWithGithubModel(user)
@@ -244,7 +252,6 @@ describe('User Service', function () {
       })
 
       it('should resolve when the user has the org', function (done) {
-        Github.prototype.getUserAuthorizedOrgsAsync.resolves([ githubOrg ])
         bigPoppaUser.organizations.push(bigPoppaOrg)
         UserService.getUsersOrganizationsWithGithubModel(user)
           .then(function (orgs) {
@@ -272,20 +279,23 @@ describe('User Service', function () {
           .asCallback(done)
       })
     })
-    describe('fail', function () {
+
+    describe('Fail', function () {
       var error = new Error('This is an error')
-      beforeEach(function (done) {
-        sinon.stub(Github.prototype, 'getUserAuthorizedOrgsAsync').rejects(error)
-        sinon.stub(UserService, 'getUser').resolves(bigPoppaUser)
-        done()
+      it('should reject if `getUserAuthorizedOrgsAsync` fails', function (done) {
+        Github.prototype.getUserAuthorizedOrgsAsync.rejects(error)
+
+        bigPoppaUser.organizations.push(bigPoppaOrg)
+        UserService.getUsersOrganizationsWithGithubModel(user)
+          .asCallback(function (err) {
+            expect(err).to.equal(error)
+            done()
+          })
       })
 
-      afterEach(function (done) {
-        UserService.getUser.restore()
-        Github.prototype.getUserAuthorizedOrgsAsync.restore()
-        done()
-      })
-      it('should reject if github fails', function (done) {
+      it('should reject if `getAuthorizedUserAsync` fails', function (done) {
+        Github.prototype.getAuthorizedUserAsync.rejects(error)
+
         bigPoppaUser.organizations.push(bigPoppaOrg)
         UserService.getUsersOrganizationsWithGithubModel(user)
           .asCallback(function (err) {
