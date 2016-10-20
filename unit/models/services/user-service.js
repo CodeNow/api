@@ -205,11 +205,11 @@ describe('User Service', function () {
   })
 
   describe('getUsersOrganizationsWithGithubModel', function () {
-    var orgGithubId = '232323'
-    var orgGithubName = 'bigPoppa'
+    const orgGithubId = '232323'
+    const orgGithubName = 'bigPoppa'
     const userGithubId = '191198'
     const userGithubName = 'thejsj'
-    var user = {}
+    const user = {}
     keypather.set(user, 'accounts.github.id', userGithubId)
     let bigPoppaUser
     let bigPoppaOrg
@@ -292,7 +292,7 @@ describe('User Service', function () {
       })
 
       it('should resolve when the user has more github orgs than bigPoppaOrgs', function (done) {
-        var fakeOrg = {
+        const fakeOrg = {
           id: 1,
           login: 'fakeOrg'
         }
@@ -309,7 +309,7 @@ describe('User Service', function () {
     })
 
     describe('Faillure', function () {
-      var error = new Error('This is an error')
+      const error = new Error('This is an error')
       it('should reject if `getUserAuthorizedOrgsAsync` fails', function (done) {
         Github.prototype.getUserAuthorizedOrgsAsync.rejects(error)
 
