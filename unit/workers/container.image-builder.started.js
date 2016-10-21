@@ -12,7 +12,7 @@ var noop = require('101/noop')
 var sinon = require('sinon')
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var ContainerImageBuilderCreated = require('workers/container.image-builder.started')
+var ContainerImageBuilderCreated = require('workers/container.image-builder.started').task
 var ContextVersion = require('models/mongo/context-version')
 var InstanceService = require('models/services/instance-service')
 var messenger = require('socket/messenger')
@@ -40,18 +40,6 @@ describe('container.image-builder.started unit test', function () {
     testJob = clone(testJobData)
     done()
   })
-
-  describe('job validation', function () {
-    it('should throw if missing contextVersion.build._id', function (done) {
-      delete testJob.inspectData.Config.Labels['contextVersion.build._id']
-
-      ContainerImageBuilderCreated(testJob).asCallback(function (err) {
-        expect(err).to.be.an.instanceof(WorkerStopError)
-        expect(err.data.err.message).to.match(/contextVersion.build._id.*required/)
-        done()
-      })
-    })
-  }) // end job validation
 
   describe('valid job', function () {
     beforeEach(function (done) {
