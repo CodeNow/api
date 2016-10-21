@@ -1,29 +1,30 @@
 'use strict'
-var clone = require('101/clone')
-var Code = require('code')
-var Lab = require('lab')
-var omit = require('101/omit')
-var pick = require('101/pick')
-var Promise = require('bluebird')
-var sinon = require('sinon')
+const clone = require('101/clone')
+const Code = require('code')
+const Lab = require('lab')
+const omit = require('101/omit')
+const pick = require('101/pick')
+const Promise = require('bluebird')
+const sinon = require('sinon')
 
-var Build = require('models/mongo/build')
-var BuildService = require('models/services/build-service')
-var Context = require('models/mongo/context')
-var Instance = require('models/mongo/instance')
-var ContextService = require('models/services/context-service')
-var ContextVersion = require('models/mongo/context-version')
-var PermissionService = require('models/services/permission-service')
-var User = require('models/mongo/user')
+const Build = require('models/mongo/build')
+const BuildService = require('models/services/build-service')
+const Context = require('models/mongo/context')
+const ContextService = require('models/services/context-service')
+const ContextVersion = require('models/mongo/context-version')
+const Instance = require('models/mongo/instance')
+const PermissionService = require('models/services/permission-service')
+const publisher = require('models/rabbitmq/index.js')
+const User = require('models/mongo/user')
 
 require('sinon-as-promised')(Promise)
-var lab = exports.lab = Lab.script()
+const lab = exports.lab = Lab.script()
 
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
 describe('BuildService', function () {
   var ctx = {}
@@ -365,6 +366,7 @@ describe('BuildService', function () {
       .asCallback(done)
     })
   })
+
   describe('#buildBuild', function () {
     beforeEach(function (done) {
       ctx.cv = new ContextVersion({
@@ -386,11 +388,13 @@ describe('BuildService', function () {
       sinon.stub(ctx.build, 'modifyCompletedIfFinishedAsync').resolves(ctx.build)
       sinon.stub(ctx.build, 'replaceContextVersionAsync').resolves(ctx.build)
       sinon.stub(ctx.build, 'modifyErroredAsync').resolves(ctx.build)
+      sinon.stub(publisher, 'publishBuildRequested')
       done()
     })
 
     afterEach(function (done) {
       ctx = {}
+      publisher.publishBuildRequested.restore()
       Build.findByIdAsync.restore()
       BuildService.findBuild.restore()
       ContextVersion.buildSelf.restore()
@@ -436,6 +440,22 @@ describe('BuildService', function () {
         expect(err.isBoom).to.equal(true)
         expect(err.output.statusCode).to.equal(409)
         expect(err.output.payload.message).to.equal('Build is already in progress')
+        done()
+      })
+    })
+
+    it('should publishBuildRequested job', (done) => {
+      const testBuildId = '507f1f77bcf86cd799439011'
+      const testMessage = 'autodeploy'
+
+      BuildService.findBuild.resolves(ctx.build)
+      BuildService.buildBuild(testBuildId, { message: testMessage }, ctx.sessionUser).asCallback((err) => {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(publisher.publishBuildRequested)
+        sinon.assert.calledWith(publisher.publishBuildRequested, {
+          buildObjectId: testBuildId,
+          reasonTriggered: testMessage
+        })
         done()
       })
     })
