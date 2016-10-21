@@ -75,26 +75,6 @@ describe('Workers: Instance Started', function () {
     })
   })
 
-  it('should worker stop if instance is not running', function (done) {
-    const startingInstance = new Instance({
-      _id: testInstanceId,
-      container: {
-        inspect: {
-          State: {
-            Status: 'starting'
-          }
-        }
-      }
-    })
-    Instance.findByIdAsync.resolves(startingInstance)
-    Worker.task(testData).asCallback(function (err) {
-      expect(err).to.exist()
-      expect(err).to.be.instanceOf(WorkerStopError)
-      expect(err.message).to.equal('Instance is not running')
-      done()
-    })
-  })
-
   it('should fail if sending events failed', function (done) {
     const error = new Error('Primus error')
     InstanceService.emitInstanceUpdate.rejects(error)
