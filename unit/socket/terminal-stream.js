@@ -358,18 +358,6 @@ describe('terminal stream: ' + moduleName, function () {
             })
             .asCallback(done)
         })
-        describe('when the stream does not exist', function () {
-          it('should end the stream', function (done) {
-            terminalStream._setupStream(mockSocket, mockData)
-              .then(function () {
-                delete terminalStream._terminalConnections[mockData.terminalId]
-                mockSubstream.on.lastCall.args[1]('Custom data')
-
-                sinon.assert.calledOnce(mockSubstream.end)
-              })
-              .asCallback(done)
-          })
-        })
       })
     })
   })
