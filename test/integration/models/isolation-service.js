@@ -142,7 +142,7 @@ describe('Isolation Services Integration Tests', function () {
   }
 
   /**
-   * This function creates connections in Neo4J to simulate what our API does
+   * This function creates connections to simulate what our API does
    * @param {Instance} master
    * @param {[Instance]} dependents
    * @returns {Promise}
@@ -155,7 +155,7 @@ describe('Isolation Services Integration Tests', function () {
   }
 
   /**
-   * This function checks Neo4J to see if all of the given instances are actually connected
+   * This function checks to see if all of the given instances are actually connected
    * @param {Instance} master
    * @param {[Instance]} dependents
    * @returns {Promise}
