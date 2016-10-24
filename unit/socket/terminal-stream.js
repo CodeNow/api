@@ -39,16 +39,13 @@ describe('terminal stream: ' + moduleName, function () {
   describe('terminal caching', function () {
     describe('cache cleanup loop', function () {
       it('should find all terminals that have not interacted in a while and kill them', function (done) {
-        var connectionResults = {
+        var connection = {
+          id: 'ID' + Math.random(),
+          lastInteracted: moment().subtract(2, 'days').toDate(),
           execStream: {
             end: sinon.stub(),
             once: sinon.stub()
           }
-        }
-        var connection = {
-          id: 'ID' + Math.random(),
-          lastInteracted: moment().subtract(2, 'days').toDate(),
-          connection: Promise.resolve(connectionResults)
         }
         var connection1 = {
           id: 'ID' + Math.random(),
@@ -62,7 +59,7 @@ describe('terminal stream: ' + moduleName, function () {
         terminalStream._terminalConnections[connection1.id] = connection1
         terminalStream._handleCleanup()
           .then(function () {
-            sinon.assert.calledOnce(connectionResults.execStream.end)
+            sinon.assert.calledOnce(connection.execStream.end)
             expect(Object.keys(terminalStream._terminalConnections).length).to.equal(1)
             done()
           })
