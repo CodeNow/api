@@ -40,7 +40,7 @@
       "3.6.0b2",
       "3.6"
     ],
-    "defaultVersion": "3.4",
+    "defaultVersion": "2.7",
     "ports": "80",
     "startCommand": [
       "python main.py"
