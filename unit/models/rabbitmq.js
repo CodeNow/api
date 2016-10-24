@@ -86,7 +86,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.createImageBuilderContainer(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'container.image-builder.create',
+          'image-builder.container.create',
           validJobData)
         done()
       })
@@ -649,7 +649,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.publishContainerImageBuilderStarted(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
         sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
-          'container.image-builder.started',
+          'image-builder.container.started',
           validJobData)
         done()
       })
