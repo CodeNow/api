@@ -69,5 +69,5 @@
 ./test/integration/models/mongo/user.js
 ./test/integration/models/services/build-service.js
 ./test/integration/models/services/instance-service.js
-./test/integration/workers/container.image-builder.created.js
-./test/integration/workers/container.image-builder.died.js
+./test/integration/workers/image-builder.container.created.js
+./test/integration/workers/image-builder.container.died.js
