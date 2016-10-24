@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/container.image-builder.started
+ * @module unit/workers/image-builder.container.started
  */
 'use strict'
 
@@ -135,4 +135,4 @@ describe('ImageBuilderContainerStarted unit test', function () {
       })
     })
   }) // end valid job
-}) // end container.image-builder.started unit test
+}) // end image-builder.container.started unit test

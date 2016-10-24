@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/container.image-builder.created
+ * @module unit/workers/image-builder.container.created
  */
 'use strict'
 require('sinon-as-promised')(require('bluebird'))
