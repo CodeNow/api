@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/image-builder.container.created
+ * @module unit/workers/build.container.created
  */
 'use strict'
 require('sinon-as-promised')(require('bluebird'))
@@ -17,7 +17,7 @@ var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var InstanceService = require('models/services/instance-service')
 var messenger = require('socket/messenger')
-var Worker = require('workers/image-builder.container.created')
+var Worker = require('workers/build.container.created')
 
 var lab = exports.lab = Lab.script()
 

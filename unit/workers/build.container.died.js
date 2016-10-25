@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/image-builder.container.died
+ * @module unit/workers/build.container.died
  */
 'use strict'
 var Code = require('code')
@@ -8,12 +8,12 @@ var sinon = require('sinon')
 
 var InstanceService = require('models/services/instance-service')
 var Isolation = require('models/mongo/isolation')
-var ContainerImageBuilderDied = require('workers/image-builder.container.died')
+var BuildContainerDied = require('workers/build.container.died')
 var rabbitMQ = require('models/rabbitmq')
 
 require('sinon-as-promised')(require('bluebird'))
 var lab = exports.lab = Lab.script()
-var Worker = ContainerImageBuilderDied._Worker
+var Worker = BuildContainerDied._Worker
 
 var afterEach = lab.afterEach
 var beforeEach = lab.beforeEach

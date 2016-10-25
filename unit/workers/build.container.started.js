@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/image-builder.container.started
+ * @module unit/workers/build.container.started
  */
 'use strict'
 
@@ -12,7 +12,7 @@ var noop = require('101/noop')
 var sinon = require('sinon')
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var ContainerImageBuilderCreated = require('workers/image-builder.container.started').task
+var BuildContainerCreated = require('workers/build.container.started').task
 var ContextVersion = require('models/mongo/context-version')
 var InstanceService = require('models/services/instance-service')
 var messenger = require('socket/messenger')
@@ -62,7 +62,7 @@ describe('ImageBuilderContainerStarted unit test', function () {
       ContextVersion.updateAsync.returns(1)
       ContextVersion.findAsync.returns([])
 
-      ContainerImageBuilderCreated(testJob).asCallback(function (err) {
+      BuildContainerCreated(testJob).asCallback(function (err) {
         if (err) { return done(err) }
         sinon.assert.calledOnce(ContextVersion.updateAsync)
         sinon.assert.calledWith(ContextVersion.updateAsync, {
@@ -82,7 +82,7 @@ describe('ImageBuilderContainerStarted unit test', function () {
       ContextVersion.updateAsync.returns(0)
       ContextVersion.findAsync.returns([])
 
-      ContainerImageBuilderCreated(testJob).asCallback(function (err) {
+      BuildContainerCreated(testJob).asCallback(function (err) {
         expect(err).to.be.an.instanceof(WorkerStopError)
         expect(err.message).to.contain('ContextVersion was not updated')
 
@@ -97,7 +97,7 @@ describe('ImageBuilderContainerStarted unit test', function () {
       messenger.emitContextVersionUpdate.returns()
       ContextVersion.findAsync.returns([testCv1, testCv2])
 
-      ContainerImageBuilderCreated(testJob).asCallback(function (err) {
+      BuildContainerCreated(testJob).asCallback(function (err) {
         if (err) { return done(err) }
 
         sinon.assert.calledOnce(ContextVersion.findAsync)
@@ -121,7 +121,7 @@ describe('ImageBuilderContainerStarted unit test', function () {
       messenger.emitContextVersionUpdate.returns()
       ContextVersion.findAsync.returns([])
 
-      ContainerImageBuilderCreated(testJob).asCallback(function (err) {
+      BuildContainerCreated(testJob).asCallback(function (err) {
         if (err) { return done(err) }
 
         sinon.assert.calledOnce(ContextVersion.findAsync)
@@ -135,4 +135,4 @@ describe('ImageBuilderContainerStarted unit test', function () {
       })
     })
   }) // end valid job
-}) // end image-builder.container.started unit test
+}) // end build.container.started unit test

@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/instance.container.created
+ * @module unit/workers/application.container.created
  */
 'use strict'
 const Code = require('code')
@@ -11,11 +11,11 @@ const Instance = require('models/mongo/instance')
 const InstanceService = require('models/services/instance-service')
 const Docker = require('models/apis/docker')
 const User = require('models/mongo/user')
-const InstanceContainerCreated = require('workers/instance.container.created')
+const ApplicationContainerCreated = require('workers/application.container.created')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const lab = exports.lab = Lab.script()
-const Worker = InstanceContainerCreated._Worker
+const Worker = ApplicationContainerCreated._Worker
 require('sinon-as-promised')(require('bluebird'))
 
 const afterEach = lab.afterEach
@@ -24,7 +24,7 @@ const describe = lab.describe
 const expect = Code.expect
 const it = lab.it
 
-describe('InstanceContainerCreatedWorker Unit tests', function () {
+describe('ApplicationContainerCreatedWorker Unit tests', function () {
   let testJob
   const testId = '123123123'
   const testHost = 'http://10.2.2.2:4242'
@@ -66,7 +66,7 @@ describe('InstanceContainerCreatedWorker Unit tests', function () {
     })
 
     it('should call run', (done) => {
-      InstanceContainerCreated.task(testJob).then(() => {
+      ApplicationContainerCreated.task(testJob).then(() => {
         sinon.assert.calledOnce(Worker.prototype.run)
         done()
       })
