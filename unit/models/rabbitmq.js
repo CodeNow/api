@@ -86,7 +86,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.createImageBuilderContainer(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'container.image-builder.create',
+          'build.container.create',
           validJobData)
         done()
       })
