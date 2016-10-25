@@ -15,7 +15,7 @@ const Instance = require('models/mongo/instance')
 const InstanceService = require('models/services/instance-service')
 const PermissionService = require('models/services/permission-service')
 const rabbitmq = require('models/rabbitmq')
-const Worker = require('workers/instance.container.create')
+const Worker = require('workers/application.container.create')
 
 const lab = exports.lab = Lab.script()
 
@@ -25,7 +25,7 @@ const describe = lab.describe
 const expect = Code.expect
 const it = lab.it
 
-describe('createInstanceContainer', function () {
+describe('ApplicationCOntainerCreate', function () {
   describe('finalRetryFn', function () {
     beforeEach(function (done) {
       sinon.stub(Instance, 'setContainerCreateError').returns(Promise.resolve())
@@ -273,4 +273,4 @@ describe('createInstanceContainer', function () {
       }) // end 'image not found error'
     }) // end 'error'
   }) // end task
-}) // end 'createInstanceContainer'
+}) // end 'ApplicationCOntainerCreate'
