@@ -170,7 +170,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.createInstanceContainer(opts)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'instance.container.create',
+          'application.container.create',
           opts)
         done()
       })
@@ -210,7 +210,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.redeployInstanceContainer(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'instance.container.redeploy',
+          'application.container.redeploy',
           validJobData)
         done()
       })
@@ -297,7 +297,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.deleteInstanceContainer(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'instance.container.delete',
+          'application.container.delete',
           validJobData)
         done()
       })
