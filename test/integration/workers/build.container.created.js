@@ -22,14 +22,14 @@ var mockFactory = require('../fixtures/factory')
 var mockOnBuilderCreateMessage = require('../fixtures/dockerListenerEvents/on-image-builder-container-create')
 
 var expect = Code.expect
-var Worker = require('workers/container.image-builder.created')
+var Worker = require('workers/build.container.created')
 var InstanceService = require('models/services/instance-service.js')
 var Promise = require('bluebird')
 var mongoose = require('mongoose')
 
 var ObjectId = mongoose.Types.ObjectId
 
-describe('OnImageBuilderContainerCreate Integration Tests', function () {
+describe('ImageBuilderContainerCreated Integration Tests', function () {
   before(mongooseControl.start)
   var ctx = {}
   beforeEach(function (done) {

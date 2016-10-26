@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/instance.container.errored
+ * @module unit/workers/application.container.errored
  */
 'use strict'
 
@@ -12,7 +12,7 @@ var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
-var Worker = require('workers/instance.container.errored').task
+var Worker = require('workers/application.container.errored').task
 
 var lab = exports.lab = Lab.script()
 

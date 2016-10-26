@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/instance.container.redeploy
+ * @module unit/workers/application.container.redeploy
  */
 'use strict'
 
@@ -13,7 +13,7 @@ var omit = require('101/omit')
 var Promise = require('bluebird')
 
 var rabbitMQ = require('models/rabbitmq')
-var Worker = require('workers/instance.container.redeploy').task
+var Worker = require('workers/application.container.redeploy').task
 var Instance = require('models/mongo/instance')
 var InstanceService = require('models/services/instance-service')
 var ContextVersion = require('models/mongo/context-version')
@@ -27,7 +27,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-describe('InstanceContainerRedeploy unit test ', function () {
+describe('ApplicationContainerRedeploy unit test', function () {
   var ctx = {}
   ctx.mockInstance = {
     _id: '5633e9273e2b5b0c0077fd41',

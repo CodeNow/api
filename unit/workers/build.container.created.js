@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/container.image-builder.created
+ * @module unit/workers/build.container.created
  */
 'use strict'
 require('sinon-as-promised')(require('bluebird'))
@@ -9,7 +9,6 @@ var Code = require('code')
 var Lab = require('lab')
 var moment = require('moment')
 var noop = require('101/noop')
-var path = require('path')
 var sinon = require('sinon')
 var WorkerError = require('error-cat/errors/worker-error')
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
@@ -18,7 +17,7 @@ var ContextVersion = require('models/mongo/context-version')
 var Docker = require('models/apis/docker')
 var InstanceService = require('models/services/instance-service')
 var messenger = require('socket/messenger')
-var Worker = require('workers/container.image-builder.created')
+var Worker = require('workers/build.container.created')
 
 var lab = exports.lab = Lab.script()
 
@@ -28,9 +27,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-var moduleName = path.relative(process.cwd(), __filename)
-
-describe('OnImageBuilderContainerCreate: ' + moduleName, function () {
+describe('ImageBuilderContainerCreated', function () {
   describe('task', function () {
     var testCvBuildId = 'dat_cv_id'
     var testContainerId = 'someContainerId'
