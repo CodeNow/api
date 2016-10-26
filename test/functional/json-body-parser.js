@@ -36,7 +36,7 @@ describe('JSON body parser', function () {
       protocol: 'http:',
       slashes: true,
       host: process.env.ROOT_DOMAIN,
-      pathname: 'actions/github'
+      pathname: 'actions/analyze'
     })
     var headers = {
       host: process.env.ROOT_DOMAIN,
