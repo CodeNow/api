@@ -7,11 +7,9 @@ const it = lab.it
 const beforeEach = lab.beforeEach
 const afterEach = lab.afterEach
 
-const Boom = require('dat-middleware').Boom
 const Code = require('code')
 const errors = require('errors')
 const expect = Code.expect
-const NotImplementedException = require('errors/not-implemented-exception.js')
 const ObjectId = require('mongoose').Types.ObjectId
 const Promise = require('bluebird')
 const sinon = require('sinon')
@@ -25,6 +23,7 @@ const WebhookService = require('models/services/webhook-service')
 const OrganizationService = require('models/services/organization-service')
 const User = require('models/mongo/user')
 const rabbitMQ = require('models/rabbitmq')
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 require('sinon-as-promised')(Promise)
 
@@ -677,12 +676,12 @@ describe('Webhook Service Unit Tests', function () {
         WebhookService.reportMixpanelUserPush.resolves()
         WebhookService.processGithookEvent(payload)
           .asCallback(function (err) {
-            expect(err).to.be.an.instanceof(NotImplementedException)
+            expect(err).to.be.an.instanceof(WorkerStopError)
             done()
           })
       })
       it('should reject when parseGitHubPushData fails with error', function (done) {
-        var error = Boom.badRequest('dfasdfdsaf')
+        var error = new Error('dfasdfdsaf')
         WebhookService.parseGitHubPushData.rejects(error)
         WebhookService.checkRepoOrganizationAgainstWhitelist.resolves()
         WebhookService.processGithookEvent(payload)
@@ -692,7 +691,7 @@ describe('Webhook Service Unit Tests', function () {
           })
       })
       it('should reject when checkRepoOrganizationAgainstWhitelist fails with error', function (done) {
-        var error = Boom.forbidden('dfasdfdsaf')
+        var error = new Error('dfasdfdsaf')
         WebhookService.parseGitHubPushData.resolves(githubPushInfo)
         WebhookService.checkRepoOrganizationAgainstWhitelist.rejects(error)
         WebhookService.processGithookEvent(payload)
