@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/container.image-builder.create
+ * @module unit/workers/build.container.create
  */
 'use strict'
 var Code = require('code')
@@ -15,7 +15,7 @@ var Docker = require('models/apis/docker')
 var errors = require('errors')
 var PermissionService = require('models/services/permission-service')
 var User = require('models/mongo/user')
-var Worker = require('workers/container.image-builder.create')
+var Worker = require('workers/build.container.create')
 
 require('sinon-as-promised')(Promise)
 var lab = exports.lab = Lab.script()
