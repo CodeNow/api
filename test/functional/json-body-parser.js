@@ -46,7 +46,7 @@ describe('JSON body parser', function () {
     }
     request.post({url: uri, headers: headers, json: normalJsonPaylod}, function (err, res) {
       if (err) { return done(err) }
-      expect(res.statusCode).to.equal(202)
+      expect(res.statusCode).to.equal(401)
       done()
     })
   })
