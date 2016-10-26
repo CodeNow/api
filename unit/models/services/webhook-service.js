@@ -364,8 +364,7 @@ describe('Webhook Service Unit Tests', function () {
         User.findOneAsync.resolves()
         WebhookService.checkCommitPusherIsRunnableUser(githubPushInfo)
           .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(403)
-            expect(err.output.payload.message).to.match(/committer.*not.*runnable.*user/i)
+            expect(err.message).to.match(/committer.*not.*runnable.*user/i)
             sinon.assert.calledOnce(User.findOneAsync)
             sinon.assert.calledWith(User.findOneAsync, { 'accounts.github.username': 'thejsj' })
             done()
@@ -374,8 +373,7 @@ describe('Webhook Service Unit Tests', function () {
       it('should respond with 403 if username was not specified', function (done) {
         WebhookService.checkCommitPusherIsRunnableUser({})
           .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(403)
-            expect(err.output.payload.message).to.match(/committer.*username is empty/i)
+            expect(err.message).to.match(/committer.*username is empty/i)
             sinon.assert.notCalled(User.findOneAsync)
             done()
           })
@@ -424,8 +422,7 @@ describe('Webhook Service Unit Tests', function () {
         OrganizationService.getByGithubUsername.rejects(error)
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(403)
-            expect(err.output.payload.message).to.match(/not registered/)
+            expect(err.message).to.match(/not registered/)
             sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
             sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
             done()
@@ -435,8 +432,7 @@ describe('Webhook Service Unit Tests', function () {
         OrganizationService.getByGithubUsername.resolves({ allowed: false })
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(403)
-            expect(err.output.payload.message).to.match(/suspended/)
+            expect(err.message).to.match(/suspended/)
             sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
             sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
             done()
