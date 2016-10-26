@@ -1,36 +1,34 @@
 'use strict'
 
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
-var it = lab.it
-var beforeEach = lab.beforeEach
-var afterEach = lab.afterEach
+const Lab = require('lab')
+const lab = exports.lab = Lab.script()
+const describe = lab.describe
+const it = lab.it
+const beforeEach = lab.beforeEach
+const afterEach = lab.afterEach
 
-var Boom = require('dat-middleware').Boom
-var Code = require('code')
+const Boom = require('dat-middleware').Boom
+const Code = require('code')
 const errors = require('errors')
-var expect = Code.expect
-var NotImplementedException = require('errors/not-implemented-exception.js')
-var ObjectId = require('mongoose').Types.ObjectId
-var Promise = require('bluebird')
-var sinon = require('sinon')
+const expect = Code.expect
+const NotImplementedException = require('errors/not-implemented-exception.js')
+const ObjectId = require('mongoose').Types.ObjectId
+const Promise = require('bluebird')
+const sinon = require('sinon')
 
-var BuildService = require('models/services/build-service')
-var Instance = require('models/mongo/instance')
-var InstanceForkService = require('models/services/instance-fork-service')
-var IsolationService = require('models/services/isolation-service')
-var MixPanelModel = require('models/apis/mixpanel')
-var WebhookService = require('models/services/webhook-service')
-var OrganizationService = require('models/services/organization-service')
-var User = require('models/mongo/user')
-var rabbitMQ = require('models/rabbitmq')
+const BuildService = require('models/services/build-service')
+const Instance = require('models/mongo/instance')
+const InstanceForkService = require('models/services/instance-fork-service')
+const IsolationService = require('models/services/isolation-service')
+const MixPanelModel = require('models/apis/mixpanel')
+const WebhookService = require('models/services/webhook-service')
+const OrganizationService = require('models/services/organization-service')
+const User = require('models/mongo/user')
+const rabbitMQ = require('models/rabbitmq')
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
 require('sinon-as-promised')(Promise)
 
-describe('Webhook Service Unit Tests: ' + moduleName, function () {
+describe('Webhook Service Unit Tests', function () {
   describe('autoDelete', function () {
     var githubPushInfo = {
       repo: 'theRepo',
@@ -627,25 +625,6 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         }
       }
       done()
-    })
-    describe('validating errors', function () {
-      it('should return error if body.repository not found', function (done) {
-        WebhookService.parseGitHubPushData({})
-          .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(400)
-            expect(err.output.payload.message).to.match(/"repository" is required/)
-            done()
-          })
-      })
-      it('should return error if body.ref is not found', function (done) {
-        delete body.ref
-        WebhookService.parseGitHubPushData(body)
-          .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(400)
-            expect(err.output.payload.message).to.match(/"ref" is required/)
-            done()
-          })
-      })
     })
     it('should parse branch and default to [] for commmitLog', function (done) {
       WebhookService.parseGitHubPushData(body)
