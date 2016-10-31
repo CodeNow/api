@@ -163,18 +163,21 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
       const testError = new Error('bad')
 
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'removeContainerAsync')
+        sinon.stub(Docker.prototype, 'removeContainerAsync').resolves()
+        sinon.stub(Docker.prototype, 'stopContainerAsync').resolves()
         done()
       })
 
       afterEach(function (done) {
         Docker.prototype.removeContainerAsync.restore()
+        Docker.prototype.stopContainerAsync.restore()
         done()
       })
 
       it('should publish container.remove', (done) => {
-        Docker.prototype.removeContainerAsync.resolves()
         worker._removeContainerAndStopWorker(testError).asCallback(() => {
+          sinon.assert.calledOnce(Docker.prototype.stopContainerAsync)
+          sinon.assert.calledWith(Docker.prototype.stopContainerAsync, testId)
           sinon.assert.calledOnce(Docker.prototype.removeContainerAsync)
           sinon.assert.calledWith(Docker.prototype.removeContainerAsync, testId)
           done()
@@ -182,7 +185,6 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
       })
 
       it('should throw worker stop error', (done) => {
-        Docker.prototype.removeContainerAsync.resolves()
         worker._removeContainerAndStopWorker(testError).asCallback((err) => {
           expect(err).to.be.an.instanceOf(WorkerStopError)
           expect(err.message).to.contain(testError.message)
