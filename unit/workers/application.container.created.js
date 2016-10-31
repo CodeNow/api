@@ -175,7 +175,6 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
       })
 
       it('should publish container.remove', (done) => {
-        Docker.prototype.removeCstopContainerAsyncontainerAsync.resolves()
         worker._removeContainerAndStopWorker(testError).asCallback(() => {
           sinon.assert.calledOnce(Docker.prototype.stopContainerAsync)
           sinon.assert.calledWith(Docker.prototype.stopContainerAsync, testId)
