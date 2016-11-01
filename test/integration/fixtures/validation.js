@@ -233,14 +233,14 @@ Validator.prototype.alphaNumNameValidationChecking = function (createModelFuncti
       })
     })
 
-    self.stringLengthValidationChecking(createModelFunction, property, 100)
+    self.stringLengthValidationChecking(createModelFunction, property, 355)
   })
 }
 
 Validator.prototype.nameValidationChecking = function (createModelFunction, property) {
   var self = this
   self.lab.describe('Name Validation', function () {
-    self.stringLengthValidationChecking(createModelFunction, property, 100)
+    self.stringLengthValidationChecking(createModelFunction, property, 355)
   })
 }
 

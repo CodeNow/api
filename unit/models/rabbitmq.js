@@ -86,7 +86,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.createImageBuilderContainer(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'container.image-builder.create',
+          'build.container.create',
           validJobData)
         done()
       })
@@ -170,7 +170,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.createInstanceContainer(opts)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'instance.container.create',
+          'application.container.create',
           opts)
         done()
       })
@@ -210,7 +210,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.redeployInstanceContainer(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'instance.container.redeploy',
+          'application.container.redeploy',
           validJobData)
         done()
       })
@@ -297,7 +297,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.deleteInstanceContainer(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'instance.container.delete',
+          'application.container.delete',
           validJobData)
         done()
       })
@@ -649,7 +649,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.publishContainerImageBuilderStarted(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
         sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
-          'container.image-builder.started',
+          'build.container.started',
           validJobData)
         done()
       })
@@ -888,7 +888,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.instanceContainerErrored(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishEvent)
         sinon.assert.calledWith(rabbitMQ._publisher.publishEvent,
-          'instance.container.errored',
+          'application.container.errored',
           validJobData)
         done()
       })

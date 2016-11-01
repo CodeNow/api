@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/instance.container.delete
+ * @module unit/workers/application.container.delete
  */
 'use strict'
 
@@ -11,7 +11,7 @@ var Code = require('code')
 var sinon = require('sinon')
 var WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var InstanceContainerDelete = require('workers/instance.container.delete')
+var InstanceContainerDelete = require('workers/application.container.delete')
 var Docker = require('models/apis/docker')
 var Hosts = require('models/redis/hosts')
 
@@ -21,7 +21,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-describe('instance.container.delete unit test', function () {
+describe('application.container.delete unit test', function () {
   var testJob
   var testJobData = {
     container: {
@@ -192,4 +192,4 @@ describe('instance.container.delete unit test', function () {
       })
     })
   }) // end valid job
-}) // end instance.container.delete unit test
+}) // end application.container.delete unit test

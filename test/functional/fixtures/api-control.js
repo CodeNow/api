@@ -50,7 +50,9 @@ var publishedEvents = [
   'dock.removed',
   'docker.events-stream.connected',
   'docker.events-stream.disconnected',
-  'instance.expired'
+  'github.pushed',
+  'instance.expired',
+  'instance.started'
 ]
 
 var opts = {

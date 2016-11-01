@@ -15,7 +15,7 @@ var messenger = require('socket/messenger')
 var mockFactory = require('../fixtures/factory')
 var mockOnBuilderDieMessage = require('../fixtures/dockerListenerEvents/on-image-builder-container-die')
 var mongooseControl = require('models/mongo/mongoose-control.js')
-var Worker = require('workers/container.image-builder.died')
+var Worker = require('workers/build.container.died')
 
 var rabbitMQ = require('models/rabbitmq')
 var User = require('models/mongo/user.js')
@@ -29,7 +29,7 @@ var beforeEach = lab.beforeEach
 var describe = lab.describe
 var it = lab.it
 
-describe('OnImageBuilderContainerDie Integration Tests', function () {
+describe('ImageBuilderContainerDied Integration Tests', function () {
   var ctx = {}
   before(mongooseControl.start)
 

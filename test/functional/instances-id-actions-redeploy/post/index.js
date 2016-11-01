@@ -136,11 +136,11 @@ describe('POST /instances/:id/actions/redeploy', function () {
     })
   })
 
-  it('should place a task in the "instance.container.redeploy" queue', function (done) {
+  it('should place a task in the "application.container.redeploy" queue', function (done) {
     ctx.instance.redeploy(function (err) {
       expect(err).to.be.null()
       sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
-      expect(rabbitMQ._publisher.publishTask.args[0][0]).to.equal('instance.container.redeploy')
+      expect(rabbitMQ._publisher.publishTask.args[0][0]).to.equal('application.container.redeploy')
       var job = rabbitMQ._publisher.publishTask.args[0][1]
       expect(job.instanceId.toString()).to.equal(ctx.instance.attrs._id.toString())
       expect(job.sessionUserGithubId).to.equal(ctx.instance.user.attrs.accounts.github.id)

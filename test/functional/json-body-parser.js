@@ -1,27 +1,27 @@
 'use strict'
 
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
-var it = lab.it
-var before = lab.before
-var beforeEach = lab.beforeEach
-var after = lab.after
-var afterEach = lab.afterEach
-var Code = require('code')
-var expect = Code.expect
+const Lab = require('lab')
+const lab = exports.lab = Lab.script()
+const describe = lab.describe
+const it = lab.it
+const before = lab.before
+const beforeEach = lab.beforeEach
+const after = lab.after
+const afterEach = lab.afterEach
+const Code = require('code')
+const expect = Code.expect
 
-var request = require('request')
-var api = require('./fixtures/api-control')
-var normalJsonPaylod = require('./fixtures/json-515kb')
-var bigJsonPaylod = require('./fixtures/json-645kb')
-var url = require('url')
-var noop = require('101/noop')
-var generateKey = require('./fixtures/key-factory')
-var error = require('error')
+const request = require('request')
+const api = require('./fixtures/api-control')
+const normalJsonPaylod = require('./fixtures/json-515kb')
+const bigJsonPaylod = require('./fixtures/json-645kb')
+const url = require('url')
+const noop = require('101/noop')
+const generateKey = require('./fixtures/key-factory')
+const error = require('error')
 
 describe('JSON body parser', function () {
-  var ctx = {}
+  const ctx = {}
   before(api.start.bind(ctx))
   after(api.stop.bind(ctx))
   before(require('./fixtures/mocks/api-client').setup)
@@ -32,23 +32,21 @@ describe('JSON body parser', function () {
   afterEach(require('./fixtures/clean-nock'))
 
   it('should be able to parse json less than ' + process.env.BODY_PARSER_SIZE_LIMIT, function (done) {
-    var uri = url.format({
+    const uri = url.format({
       protocol: 'http:',
       slashes: true,
       host: process.env.ROOT_DOMAIN,
-      pathname: 'actions/github'
+      pathname: '/auth/whitelist'
     })
-    var headers = {
+    const headers = {
       host: process.env.ROOT_DOMAIN,
       accept: '*/*',
-      'user-agent': 'GitHub Hookshot 3e70583',
-      'x-github-event': 'ping',
-      'x-github-delivery': 'e05eb1f2-fbc7-11e3-8e1d-423f213c5718',
+      'user-agent': 'runnable client',
       'content-type': 'application/json'
     }
     request.post({url: uri, headers: headers, json: normalJsonPaylod}, function (err, res) {
       if (err) { return done(err) }
-      expect(res.statusCode).to.equal(202)
+      expect(res.statusCode).to.equal(401)
       done()
     })
   })
@@ -67,18 +65,16 @@ describe('JSON body parser', function () {
       done()
     })
     it('should fail to parse json more than ' + process.env.BODY_PARSER_SIZE_LIMIT, function (done) {
-      var uri = url.format({
+      const uri = url.format({
         protocol: 'http:',
         slashes: true,
         host: process.env.ROOT_DOMAIN,
-        pathname: 'actions/github'
+        pathname: '/auth/whitelist'
       })
-      var headers = {
+      const headers = {
         host: process.env.ROOT_DOMAIN,
         accept: '*/*',
-        'user-agent': 'GitHub Hookshot 3e70583',
-        'x-github-event': 'ping',
-        'x-github-delivery': 'e05eb1f2-fbc7-11e3-8e1d-423f213c5718',
+        'user-agent': 'runnable client',
         'content-type': 'application/json'
       }
       request.post({url: uri, headers: headers, json: bigJsonPaylod}, function (err, res, body) {
