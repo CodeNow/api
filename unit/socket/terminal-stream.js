@@ -346,8 +346,7 @@ describe('terminal stream: ' + moduleName, function () {
         it('should pass through the data to the raw stream', function (done) {
           terminalStream._setupStream(mockSocket, mockData)
             .then(function () {
-              sinon.assert.calledTwice(mockSubstream.on)
-              sinon.assert.calledWith(mockSubstream.on, 'exit', sinon.match.func)
+              sinon.assert.calledOnce(mockSubstream.on)
               sinon.assert.calledWith(mockSubstream.on, 'data', sinon.match.func)
               mockSubstream.on.lastCall.args[1]('Custom data')
 
