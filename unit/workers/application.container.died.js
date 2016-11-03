@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/instance.container.died
+ * @module unit/workers/application.container.died
  */
 'use strict'
 var clone = require('101/clone')
@@ -11,7 +11,7 @@ var Code = require('code')
 var sinon = require('sinon')
 require('sinon-as-promised')(require('bluebird'))
 
-var InstanceContainerDied = require('workers/instance.container.died').task
+var ApplicationContainerDied = require('workers/application.container.died').task
 var InstanceService = require('models/services/instance-service')
 var IsolationService = require('models/services/isolation-service')
 var Promise = require('bluebird')
@@ -24,7 +24,7 @@ var describe = lab.describe
 var expect = Code.expect
 var it = lab.it
 
-describe('InstanceContainerDiedWorker', function () {
+describe('ApplicationContainerDiedWorker', function () {
   var ctx
 
   beforeEach(function (done) {
@@ -105,7 +105,7 @@ describe('InstanceContainerDiedWorker', function () {
   })
   describe('success', function () {
     it('should call functions in order', function (done) {
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
+      ApplicationContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.notCalled(rabbitMQ.clearContainerMemory)
@@ -127,7 +127,7 @@ describe('InstanceContainerDiedWorker', function () {
       var instance = clone(ctx.mockInstance)
       instance.isTesting = false
       InstanceService.modifyExistingContainerInspect.resolves(instance)
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
+      ApplicationContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.notCalled(rabbitMQ.clearContainerMemory)
@@ -148,7 +148,7 @@ describe('InstanceContainerDiedWorker', function () {
       var instance = clone(ctx.mockInstance)
       instance.isolated = null
       InstanceService.modifyExistingContainerInspect.resolves(instance)
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
+      ApplicationContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.notCalled(rabbitMQ.clearContainerMemory)
@@ -165,7 +165,7 @@ describe('InstanceContainerDiedWorker', function () {
 
     it('should kill isolation if isTesting isolationMaster', function (done) {
       IsolationService.isTestingIsolation.resolves(true)
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
+      ApplicationContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
         sinon.assert.calledOnce(rabbitMQ.clearContainerMemory)
@@ -186,7 +186,7 @@ describe('InstanceContainerDiedWorker', function () {
 
     it('should publish rabbit jobs', function (done) {
       IsolationService.isTestingIsolation.resolves(true)
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
+      ApplicationContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(rabbitMQ.clearContainerMemory)
         sinon.assert.calledWith(rabbitMQ.clearContainerMemory, {
@@ -205,7 +205,7 @@ describe('InstanceContainerDiedWorker', function () {
     it('should fail if modifyExistingContainerInspect failed', function (done) {
       var mongoError = new Error('Mongo error')
       InstanceService.modifyExistingContainerInspect.rejects(mongoError)
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
+      ApplicationContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
         sinon.assert.calledOnce(InstanceService.modifyExistingContainerInspect)
@@ -218,7 +218,7 @@ describe('InstanceContainerDiedWorker', function () {
     it('should fail if modifyExistingContainerInspect returned 409', function (done) {
       var conflictErr = Boom.conflict('Instance not found')
       InstanceService.modifyExistingContainerInspect.rejects(conflictErr)
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
+      ApplicationContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(WorkerStopError)
         expect(err.message).to.equal('Instance not found')
@@ -234,7 +234,7 @@ describe('InstanceContainerDiedWorker', function () {
       var rejectionPromise = Promise.reject(mongoError)
       rejectionPromise.suppressUnhandledRejections()
       InstanceService.emitInstanceUpdate.returns(rejectionPromise)
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
+      ApplicationContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
         sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
@@ -247,7 +247,7 @@ describe('InstanceContainerDiedWorker', function () {
     it('should fail if isTestingIsolation failed', function (done) {
       var mongoError = new Error('Mongo error')
       IsolationService.isTestingIsolation.rejects(mongoError)
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
+      ApplicationContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
         sinon.assert.calledOnce(IsolationService.isTestingIsolation)
@@ -258,7 +258,7 @@ describe('InstanceContainerDiedWorker', function () {
     it('should fail if IsolationService.redeployIfAllKilled failed', function (done) {
       var error = new Error('Mongo error')
       IsolationService.redeployIfAllKilled.rejects(error)
-      InstanceContainerDied(ctx.data).asCallback(function (err) {
+      ApplicationContainerDied(ctx.data).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(error.message)
         sinon.assert.calledOnce(IsolationService.redeployIfAllKilled)

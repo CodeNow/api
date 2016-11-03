@@ -191,10 +191,13 @@ function findOrCreateContext (data) {
 
 function createNewIcv (data, context, parentIcv) {
   console.log('createICV "' + data.name + '"')
-  var icv = new InfraCodeVersion({
-    context: context._id,
-    parent: parentIcv ? parentIcv._id : null
-  })
+  const opts = {
+    context: context._id
+  }
+  if (parentIcv) {
+    opts.parent = parentIcv._id
+  }
+  var icv = new InfraCodeVersion(opts)
   return icv.initWithDefaultsAsync()
     .then(icv => {
       return icv.saveAsync()
