@@ -10,6 +10,7 @@ var after = lab.after
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 
+var moment = require('moment')
 var isObject = require('101/is-object')
 var keypather = require('keypather')()
 var assign = require('101/assign')
@@ -102,8 +103,8 @@ describe('ContextVersion ModelIntegration Tests', function () {
       beforeEach(function (done) {
         function createCv (i, cb) {
           var props = put(ctx.props, {
-            'build.started': new Date('Mon Jan 1 2015 ' + i + ':00:00 GMT-0700 (PDT)'),
-            'build.completed': new Date('Mon Jan 1 2015 ' + i + ':00:30 GMT-0700 (PDT)')
+            'build.started': moment().subtract('minutes', 10).add('minutes', i).toDate(),
+            'build.completed': moment().subtract('minutes', 10).add('minutes', i).toDate()
           })
           createCompletedCv(props, cb)
         }
@@ -125,7 +126,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       beforeEach(function (done) {
         function createCv (i, cb) {
           var props = put(ctx.props, {
-            'build.started': new Date('Mon Jan 1 2015 12:00:0' + i + ' GMT-0700 (PDT)')
+            'build.started': moment().subtract('minutes', 10).add('minutes', i).toDate()
           })
           createStartedCv(props, cb)
         }
@@ -166,8 +167,8 @@ describe('ContextVersion ModelIntegration Tests', function () {
       beforeEach(function (done) {
         function createCv (i, cb) {
           var props = put(ctx.props, {
-            'build.started': new Date('Mon Jan 1 2015 ' + i + ':00:00 GMT-0700 (PDT)'),
-            'build.completed': new Date('Mon Jan 1 2015 ' + i + ':00:30 GMT-0700 (PDT)')
+            'build.started': moment().subtract('minutes', 10).add('minutes', i).toDate(),
+            'build.completed': moment().subtract('minutes', 10).add('minutes', i).toDate()
           })
           createCompletedCv(props, cb)
         }
@@ -189,7 +190,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       beforeEach(function (done) {
         function createCv (i, cb) {
           var props = put(ctx.props, {
-            'build.started': new Date('Mon Jan 1 2015 12:00:0' + i + ' GMT-0700 (PDT)')
+            'build.started': moment().subtract('minutes', 10).add('minutes', i).toDate()
           })
           createStartedCv(props, cb)
         }
