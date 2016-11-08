@@ -1056,7 +1056,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       ]
 
       beforeEach(function (done) {
-        query = {infraCodeVersion: infraCodeVersion}
+        query = {infraCodeVersion: infraCodeVersion, $and: [{hello: 'bar'}]}
         cv = new ContextVersion({appCodeVersions: appCodeVersions, context: contextId})
         cvNoAppCodeVersions = new ContextVersion({appCodeVersions: [], context: contextId})
         done()
@@ -1078,6 +1078,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       it('should preserve original query conditions', function (done) {
         var result = ContextVersion.addAppCodeVersionQuery(cv, query)
         expect(result.infraCodeVersion).to.equal(infraCodeVersion)
+        expect(result.$and[0]).to.equal({hello: 'bar'})
         done()
       })
 
@@ -1085,13 +1086,13 @@ describe('ContextVersion ModelIntegration Tests', function () {
         var result = ContextVersion.addAppCodeVersionQuery(cv, query)
         expect(result.$and).to.be.an.array()
         expect(result.$and.every(isObject)).to.be.true()
-        expect(result.$and.length).to.equal(appCodeVersions.length + 1)
+        expect(result.$and.length).to.equal(appCodeVersions.length + 2)
         done()
       })
 
       it('should add the correct clause for each app code version', function (done) {
         var result = ContextVersion.addAppCodeVersionQuery(cv, query)
-        for (var i = 0; i < 2; i++) {
+        for (var i = 1; i < 3; i++) {
           expect(result.$and[i].appCodeVersions).to.be.an.object()
           expect(result.$and[i].appCodeVersions.$elemMatch).to.be.an.object()
           var $elemMatch = result.$and[i].appCodeVersions.$elemMatch
