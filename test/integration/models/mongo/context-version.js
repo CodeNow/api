@@ -1209,9 +1209,25 @@ describe('ContextVersion ModelIntegration Tests', function () {
           'build.hash': cv.build.hash,
           'build._id': {$ne: cv.build._id},
           advanced: false,
-          $or: [
-            { 'buildDockerfilePath': { $exists: false } },
-            { 'buildDockerfilePath': null }
+          $and: [
+            {
+              $or: [
+                { 'buildDockerfilePath': { $exists: false } },
+                { 'buildDockerfilePath': null }
+              ]
+            },
+            {
+              $or: [
+                {
+                  'build.dockerContainer': { $exists: false },
+                  'build.started': { $lte: sinon.match.date }
+                },
+                {
+                  'build.dockerContainer': { $exists: true },
+                  'build.started': { $gte: sinon.match.date }
+                }
+              ]
+            }
           ]
         })
 
@@ -1220,8 +1236,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
             return done(err)
           }
           expect(ContextVersion.find.calledOnce).to.be.true()
-          expect(ContextVersion.find.firstCall.args[0])
-            .to.equal(expectedQuery)
+          ContextVersion.find.firstCall.calledWith(expectedQuery)
           done()
         })
       })
