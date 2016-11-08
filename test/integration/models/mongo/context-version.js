@@ -1095,8 +1095,9 @@ describe('ContextVersion ModelIntegration Tests', function () {
         for (var i = 1; i < 3; i++) {
           expect(result.$and[i].appCodeVersions).to.be.an.object()
           expect(result.$and[i].appCodeVersions.$elemMatch).to.be.an.object()
-          var $elemMatch = result.$and[i].appCodeVersions.$elemMatch
-          expect($elemMatch).to.equal(appCodeVersions[i])
+          expect(result.$and).to.include({
+            $elemMatch: appCodeVersions[i]
+          })
         }
         done()
       })
