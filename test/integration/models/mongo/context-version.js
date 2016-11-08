@@ -1096,7 +1096,9 @@ describe('ContextVersion ModelIntegration Tests', function () {
           expect(result.$and[i].appCodeVersions).to.be.an.object()
           expect(result.$and[i].appCodeVersions.$elemMatch).to.be.an.object()
           expect(result.$and).to.include({
-            $elemMatch: appCodeVersions[i]
+            appCodeVersions: {
+              $elemMatch: appCodeVersions[i]
+            }
           })
         }
         done()
