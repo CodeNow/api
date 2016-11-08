@@ -34,6 +34,7 @@ describe('/auth/whitelist', function () {
         status: sinon.stub().returns({ json: mockSend })
       }
       mockBody = {
+        prBotEnabled: true,
         metadata: {
           hasConfirmedSetup: true
         }
