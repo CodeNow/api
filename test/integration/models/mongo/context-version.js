@@ -1220,7 +1220,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
               $or: [
                 {
                   'build.dockerContainer': { $exists: false },
-                  'build.started': { $lte: sinon.match.date }
+                  'build.started': { $gte: sinon.match.date }
                 },
                 {
                   'build.dockerContainer': { $exists: true }
