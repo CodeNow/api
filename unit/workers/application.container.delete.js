@@ -84,7 +84,7 @@ describe('application.container.delete unit test', function () {
         sinon.assert.calledOnce(Docker.prototype.stopContainer)
         sinon.assert.calledWithExactly(
           Docker.prototype.stopContainer,
-          testJobData.container.dockerContainer,
+          testJobData.containerId,
           true,
           sinon.match.func
         )
@@ -99,7 +99,7 @@ describe('application.container.delete unit test', function () {
         sinon.assert.calledOnce(Docker.prototype.removeContainer)
         sinon.assert.calledWithExactly(
           Docker.prototype.removeContainer,
-          testJobData.container.dockerContainer,
+          testJobData.containerId,
           sinon.match.func
         )
         done()

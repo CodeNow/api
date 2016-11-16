@@ -111,13 +111,13 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
     describe('_findAndSetCreatingInstance', function () {
       beforeEach(function (done) {
         sinon.stub(Instance, 'markAsCreating')
-        sinon.stub(Worker.prototype, '_removeContainerAndStopWorker')
+        sinon.stub(Worker.prototype, '_cleanupContainer')
         done()
       })
 
       afterEach(function (done) {
         Instance.markAsCreating.restore()
-        Worker.prototype._removeContainerAndStopWorker.restore()
+        Worker.prototype._cleanupContainer.restore()
         done()
       })
 
@@ -138,20 +138,11 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
           done()
         })
 
-        it('should _removeContainerAndStopWorker on NotFound', (done) => {
+        it('should _cleanupContainer on NotFound', (done) => {
           Instance.markAsCreating.rejects(new Instance.NotFoundError({}))
           worker._findAndSetCreatingInstance().asCallback((err) => {
             if (err) { return done(err) }
-            sinon.assert.calledOnce(Instance.markAsCreating)
-            sinon.assert.calledWith(Instance.markAsCreating,
-              testInstanceId,
-              testContextVersionId,
-              testId, {
-                dockerContainer: testId,
-                dockerHost: testHost,
-                inspect: testInspect,
-                ports: testInspect.NetworkSettings.Ports
-              })
+            sinon.assert.calledOnce(Worker.prototype._cleanupContainer)
             done()
           })
         })
@@ -180,7 +171,7 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
           done()
         })
       })
-    }) // end _removeContainerAndStopWorker
+    }) // end _cleanupContainer
 
     describe('_startInstance', function () {
       let testInstance

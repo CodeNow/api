@@ -75,7 +75,7 @@ describe('Instance Delete Worker', function () {
 
     afterEach(function (done) {
       Instance.findByIdAsync.restore()
-      InstanceService.rabbitMQ.restore()
+      rabbitMQ.deleteInstanceContainer.restore()
       Instance.prototype.removeSelfFromGraph.restore()
       Instance.prototype.removeAsync.restore()
       InstanceService.deleteAllInstanceForks.restore()
