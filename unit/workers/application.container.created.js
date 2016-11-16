@@ -9,10 +9,9 @@ const sinon = require('sinon')
 const ContextVersion = require('models/mongo/context-version')
 const Instance = require('models/mongo/instance')
 const InstanceService = require('models/services/instance-service')
-const Docker = require('models/apis/docker')
+const rabbitMQ = require('models/rabbitmq')
 const User = require('models/mongo/user')
 const ApplicationContainerCreated = require('workers/application.container.created')
-const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const lab = exports.lab = Lab.script()
 const Worker = ApplicationContainerCreated._Worker
@@ -159,33 +158,25 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
       })
     }) // end _findAndSetCreatingInstance
 
-    describe('_removeContainerAndStopWorker', function () {
+    describe('_cleanupContainer', function () {
       const testError = new Error('bad')
 
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'removeContainerAsync')
+        sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
         done()
       })
 
       afterEach(function (done) {
-        Docker.prototype.removeContainerAsync.restore()
+        rabbitMQ.deleteInstanceContainer.restore()
         done()
       })
 
-      it('should publish container.remove', (done) => {
-        Docker.prototype.removeContainerAsync.resolves()
-        worker._removeContainerAndStopWorker(testError).asCallback(() => {
-          sinon.assert.calledOnce(Docker.prototype.removeContainerAsync)
-          sinon.assert.calledWith(Docker.prototype.removeContainerAsync, testId)
-          done()
-        })
-      })
-
-      it('should throw worker stop error', (done) => {
-        Docker.prototype.removeContainerAsync.resolves()
-        worker._removeContainerAndStopWorker(testError).asCallback((err) => {
-          expect(err).to.be.an.instanceOf(WorkerStopError)
-          expect(err.message).to.contain(testError.message)
+      it('should publish application.container.delete', (done) => {
+        worker._cleanupContainer(testError).asCallback(() => {
+          sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
+          sinon.assert.calledWithExactly(rabbitMQ.deleteInstanceContainer, {
+            containerId: testId
+          })
           done()
         })
       })
