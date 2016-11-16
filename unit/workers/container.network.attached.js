@@ -15,7 +15,6 @@ const Worker = require('workers/container.network.attached').task
 const Instance = require('models/mongo/instance')
 const InstanceService = require('models/services/instance-service')
 const Isolation = require('models/mongo/isolation')
-const Hosts = require('models/redis/hosts')
 const rabbitMQ = require('models/rabbitmq')
 
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
@@ -26,7 +25,7 @@ const expect = Code.expect
 const it = lab.it
 
 describe('Workers: Container Network Attach', function () {
-  var testData = {
+  const testData = {
     id: 'dockerContainerId',
     containerIp: '127.0.0.1',
     inspectData: {
@@ -75,7 +74,6 @@ describe('Workers: Container Network Attach', function () {
   }
   beforeEach(function (done) {
     sinon.stub(Instance, 'findOneByContainerIdAsync').resolves(mockInstance)
-    sinon.stub(Hosts.prototype, 'upsertHostsForInstanceAsync').resolves(mockInstance)
     sinon.stub(InstanceService, 'modifyExistingContainerInspect').resolves(mockModifiedInstance)
     sinon.stub(rabbitMQ, 'publishInstanceStarted').returns()
     sinon.stub(InstanceService, 'killInstance').resolves({})
@@ -85,7 +83,6 @@ describe('Workers: Container Network Attach', function () {
 
   afterEach(function (done) {
     Instance.findOneByContainerIdAsync.restore()
-    Hosts.prototype.upsertHostsForInstanceAsync.restore()
     InstanceService.modifyExistingContainerInspect.restore()
     rabbitMQ.publishInstanceStarted.restore()
     InstanceService.killInstance.restore()
@@ -94,7 +91,7 @@ describe('Workers: Container Network Attach', function () {
   })
 
   it('should fail if findOneByContainerIdAsync failed', function (done) {
-    var error = new Error('Mongo error')
+    const error = new Error('Mongo error')
     Instance.findOneByContainerIdAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
@@ -113,18 +110,8 @@ describe('Workers: Container Network Attach', function () {
     })
   })
 
-  it('should fail if upsertHostsForInstanceAsync fails', function (done) {
-    var error = new Error('Redis error')
-    Hosts.prototype.upsertHostsForInstanceAsync.rejects(error)
-    Worker(testData).asCallback(function (err) {
-      expect(err).to.exist()
-      expect(err.message).to.equal(error.message)
-      done()
-    })
-  })
-
   it('should fail if modifyExistingContainerInspect fails', function (done) {
-    var error = new Error('Mongodb error')
+    const error = new Error('Mongodb error')
     InstanceService.modifyExistingContainerInspect.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
@@ -134,7 +121,7 @@ describe('Workers: Container Network Attach', function () {
   })
 
   it('should task fatal if modifyExistingContainerInspect returns conflict', function (done) {
-    var error = new Error('Conflict')
+    const error = new Error('Conflict')
     error.output = {
       statusCode: 409
     }
@@ -148,7 +135,7 @@ describe('Workers: Container Network Attach', function () {
   })
 
   it('should fail if Isolation.findOneAsync fails', function (done) {
-    var error = new Error('Mongodb error')
+    const error = new Error('Mongodb error')
     Isolation.findOneAsync.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
@@ -158,7 +145,7 @@ describe('Workers: Container Network Attach', function () {
   })
 
   it('should fail if InstanceService.killInstance fails', function (done) {
-    var error = new Error('Mongodb error')
+    const error = new Error('Mongodb error')
     InstanceService.killInstance.rejects(error)
     Worker(testData).asCallback(function (err) {
       expect(err).to.exist()
@@ -172,22 +159,6 @@ describe('Workers: Container Network Attach', function () {
       expect(err).to.not.exist()
       sinon.assert.calledOnce(Instance.findOneByContainerIdAsync)
       sinon.assert.calledWith(Instance.findOneByContainerIdAsync, testData.id)
-      done()
-    })
-  })
-
-  it('should call upsertHostsForInstanceAsync', function (done) {
-    Worker(testData).asCallback(function (err) {
-      expect(err).to.not.exist()
-      sinon.assert.calledOnce(Hosts.prototype.upsertHostsForInstanceAsync)
-      sinon.assert.calledWith(Hosts.prototype.upsertHostsForInstanceAsync,
-        'myztiq',
-        mockInstance,
-        mockInstance.name,
-        {
-          ports: testData.inspectData.NetworkSettings.Ports
-        }
-      )
       done()
     })
   })
