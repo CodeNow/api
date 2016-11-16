@@ -125,26 +125,5 @@ describe('application.container.delete unit test', function () {
         done()
       })
     })
-
-    it('should resolve if instanceMasterBranch is null', function (done) {
-      testJob.instanceMasterBranch = null
-      InstanceContainerDelete.task(testJob).asCallback(function (err) {
-        expect(err).to.not.exist()
-        done()
-      })
-    })
-
-    it('should resolve if missing instanceMasterBranch', function (done) {
-      delete testJob.instanceMasterBranch
-      InstanceContainerDelete.task(testJob).asCallback(function (err) {
-        expect(err).to.not.exist()
-
-        sinon.assert.callOrder(
-          Docker.prototype.stopContainer,
-          Docker.prototype.removeContainer
-        )
-        done()
-      })
-    })
   }) // end valid job
 }) // end application.container.delete unit test
