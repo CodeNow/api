@@ -3,27 +3,26 @@
  */
 'use strict'
 
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
+const Lab = require('lab')
+const lab = exports.lab = Lab.script()
 
-var clone = require('101/clone')
-var Code = require('code')
-var sinon = require('sinon')
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
+const clone = require('101/clone')
+const Code = require('code')
+const sinon = require('sinon')
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var InstanceContainerDelete = require('workers/application.container.delete')
-var Docker = require('models/apis/docker')
-var Hosts = require('models/redis/hosts')
+const InstanceContainerDelete = require('workers/application.container.delete')
+const Docker = require('models/apis/docker')
 
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
 describe('application.container.delete unit test', function () {
-  var testJob
-  var testJobData = {
+  let testJob
+  const testJobData = {
     container: {
       dockerContainer: 'dockerContainerTest'
     },
@@ -41,32 +40,22 @@ describe('application.container.delete unit test', function () {
     testJob = clone(testJobData)
     sinon.stub(Docker.prototype, 'stopContainer').yieldsAsync()
     sinon.stub(Docker.prototype, 'removeContainer').yieldsAsync()
-    sinon.stub(Hosts.prototype, 'removeHostsForInstance').yieldsAsync()
     done()
   })
 
   afterEach(function (done) {
     Docker.prototype.stopContainer.restore()
     Docker.prototype.removeContainer.restore()
-    Hosts.prototype.removeHostsForInstance.restore()
     done()
   })
 
   describe('errors', function () {
     describe('behavior errors', function () {
-      var testErr
+      let testErr
 
       beforeEach(function (done) {
         testErr = new Error('zed')
         done()
-      })
-
-      it('should throw error if removeHostsForInstance failed', function (done) {
-        Hosts.prototype.removeHostsForInstance.yieldsAsync(testErr)
-        InstanceContainerDelete.task(testJob).asCallback(function (err) {
-          expect(err.cause).to.equal(testErr)
-          done()
-        })
       })
 
       it('should throw error if stopContainer failed', function (done) {
@@ -98,30 +87,6 @@ describe('application.container.delete unit test', function () {
   })
 
   describe('valid job', function () {
-    it('should call removeHostsForInstance', function (done) {
-      InstanceContainerDelete.task(testJob).asCallback(function (err) {
-        expect(err).to.not.exist()
-
-        sinon.assert.calledOnce(Hosts.prototype.removeHostsForInstance)
-        sinon.assert.calledWithExactly(
-          Hosts.prototype.removeHostsForInstance,
-          {
-            ownerUsername: testJobData.ownerGithubUsername,
-            ownerGithub: testJobData.ownerGithubId,
-            branch: testJobData.instanceMasterBranch,
-            masterPod: testJobData.instanceMasterPod,
-            instanceName: testJobData.instanceName,
-            shortHash: testJobData.instanceShortHash,
-            isolated: testJobData.isolated,
-            isIsolationGroupMaster: testJobData.isIsolationGroupMaster
-          },
-          testJob.container,
-          sinon.match.func
-        )
-        done()
-      })
-    })
-
     it('should call stopContainer', function (done) {
       InstanceContainerDelete.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
