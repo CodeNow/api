@@ -23,17 +23,7 @@ const it = lab.it
 describe('application.container.delete unit test', function () {
   let testJob
   const testJobData = {
-    container: {
-      dockerContainer: 'dockerContainerTest'
-    },
-    instanceMasterBranch: 'instanceMasterBranchTest',
-    instanceMasterPod: true,
-    instanceName: 'instanceNameTest',
-    instanceShortHash: 'instanceShortHashTest',
-    ownerGithubId: 12345,
-    ownerGithubUsername: 'ownerGithubUsernameTest',
-    isolation: 1234,
-    isIsolationGroupMaster: false
+    containerId: 'dockerContainerTest'
   }
 
   beforeEach(function (done) {
