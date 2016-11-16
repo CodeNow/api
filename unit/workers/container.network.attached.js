@@ -110,15 +110,6 @@ describe('Workers: Container Network Attach', function () {
     })
   })
 
-  it('should fail if upsertHostsForInstanceAsync fails', function (done) {
-    const error = new Error('Redis error')
-    Worker(testData).asCallback(function (err) {
-      expect(err).to.exist()
-      expect(err.message).to.equal(error.message)
-      done()
-    })
-  })
-
   it('should fail if modifyExistingContainerInspect fails', function (done) {
     const error = new Error('Mongodb error')
     InstanceService.modifyExistingContainerInspect.rejects(error)
