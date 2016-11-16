@@ -278,16 +278,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     var validJobData
     beforeEach(function (done) {
       validJobData = {
-        instanceShortHash: 'd1as5f',
-        instanceName: 'api',
-        instanceMasterPod: true,
-        ownerGithubId: 429706,
-        ownerGithubUsername: 'runnable',
-        hostIp: '10.0.1.1',
-        container: {
-          dockerHost: 'https://localhost:4242',
-          dockerContainer: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
-        }
+        containerId: '6249c3a24d48fbeee444de321ee005a02c388cbaec6b900ac6693bbc7753ccd8'
       }
       done()
     })
@@ -300,24 +291,6 @@ describe('RabbitMQ Model: ' + moduleName, function () {
           'application.container.delete',
           validJobData)
         done()
-      })
-    })
-
-    describe('validation errors', function () {
-      it('should throw the validation error', function (done) {
-        var requiredKeys = Object.keys(validJobData)
-        var count = createCount(requiredKeys.length, done)
-        requiredKeys.forEach(function (key) {
-          var options = clone(validJobData)
-          delete options[key]
-          try {
-            rabbitMQ.deleteInstanceContainer(options)
-          } catch (e) {
-            expect(e).to.exist()
-            expect(e.message).match(new RegExp(key))
-          }
-          count.next()
-        })
       })
     })
   })
