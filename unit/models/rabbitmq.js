@@ -288,7 +288,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
         rabbitMQ.deleteInstanceContainer(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
-          'application.container.delete',
+          'container.delete',
           validJobData)
         done()
       })
