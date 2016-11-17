@@ -177,7 +177,7 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
       let testInstance
 
       beforeEach(function (done) {
-        sinon.stub(InstanceService, 'startInstance')
+        sinon.stub(InstanceService, 'startInstanceById')
         sinon.stub(User, 'findByGithubIdAsync')
         testInstance = {
           _id: testInstanceId,
@@ -187,7 +187,7 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
       })
 
       afterEach(function (done) {
-        InstanceService.startInstance.restore()
+        InstanceService.startInstanceById.restore()
         User.findByGithubIdAsync.restore()
         done()
       })
@@ -206,14 +206,14 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
           id: 'user'
         }
         User.findByGithubIdAsync.resolves(testUser)
-        InstanceService.startInstance.resolves(testUser)
+        InstanceService.startInstanceById.resolves(testUser)
         worker._startInstance(testInstance).asCallback((err) => {
           if (err) { return done(err) }
           sinon.assert.calledOnce(User.findByGithubIdAsync)
           sinon.assert.calledWith(User.findByGithubIdAsync, testSessionUserGithubId)
 
-          sinon.assert.calledOnce(InstanceService.startInstance)
-          sinon.assert.calledWith(InstanceService.startInstance, testInstance.shortHash, testUser)
+          sinon.assert.calledOnce(InstanceService.startInstanceById)
+          sinon.assert.calledWith(InstanceService.startInstanceById, testInstanceId, testUser)
           done()
         })
       })
