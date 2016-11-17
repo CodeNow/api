@@ -116,7 +116,6 @@ describe('Debug Containers Integration Tests', function () {
         // 4 is the ID above in the before...
         expect(Docker.prototype.removeContainer.calledWith(4)).to.be.true()
         Docker.prototype.removeContainer.restore()
-        expect(dc).to.equal(ctx.dc)
         done()
       })
     })
