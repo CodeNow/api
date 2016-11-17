@@ -274,7 +274,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
     })
   })
 
-  describe('deleteInstanceContainer', function () {
+  describe('deleteContainer', function () {
     var validJobData
     beforeEach(function (done) {
       validJobData = {
@@ -285,7 +285,7 @@ describe('RabbitMQ Model: ' + moduleName, function () {
 
     describe('success', function () {
       it('should create a job', function (done) {
-        rabbitMQ.deleteInstanceContainer(validJobData)
+        rabbitMQ.deleteContainer(validJobData)
         sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
         sinon.assert.calledWith(rabbitMQ._publisher.publishTask,
           'container.delete',
