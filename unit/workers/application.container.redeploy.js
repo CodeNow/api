@@ -74,7 +74,7 @@ describe('ApplicationContainerRedeploy unit test', function () {
       sinon.stub(Instance.prototype, 'update')
       sinon.stub(User.prototype, 'findGithubUsernameByGithubId')
       sinon.stub(InstanceService, 'emitInstanceUpdate')
-      sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
+      sinon.stub(rabbitMQ, 'deleteContainer').returns()
       sinon.stub(Worker, '_createNewContainer').returns()
       done()
     })
@@ -87,7 +87,7 @@ describe('ApplicationContainerRedeploy unit test', function () {
       Instance.prototype.update.restore()
       User.prototype.findGithubUsernameByGithubId.restore()
       InstanceService.emitInstanceUpdate.restore()
-      rabbitMQ.deleteInstanceContainer.restore()
+      rabbitMQ.deleteContainer.restore()
       Worker._createNewContainer.restore()
       done()
     })
@@ -372,7 +372,7 @@ describe('ApplicationContainerRedeploy unit test', function () {
             sinon.assert.calledOnce(ContextVersion.findById)
             sinon.assert.calledOnce(Instance.prototype.update)
             sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
-            sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
+            sinon.assert.calledOnce(rabbitMQ.deleteContainer)
             sinon.assert.calledOnce(Worker._createNewContainer)
             sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
             done()
@@ -423,8 +423,8 @@ describe('ApplicationContainerRedeploy unit test', function () {
             sinon.assert.calledOnce(User.prototype.findGithubUsernameByGithubId)
             sinon.assert.calledWith(User.prototype.findGithubUsernameByGithubId, instance.owner.github)
 
-            sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
-            sinon.assert.calledWith(rabbitMQ.deleteInstanceContainer, { containerId: instance.container.dockerContainer })
+            sinon.assert.calledOnce(rabbitMQ.deleteContainer)
+            sinon.assert.calledWith(rabbitMQ.deleteContainer, { containerId: instance.container.dockerContainer })
             sinon.assert.calledOnce(Worker._createNewContainer)
             sinon.assert.calledWith(Worker._createNewContainer, testData)
             sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
@@ -440,11 +440,11 @@ describe('ApplicationContainerRedeploy unit test', function () {
           done()
         })
 
-        it('should resolve without calling deleteInstanceContainer', function (done) {
+        it('should resolve without calling deleteContainer', function (done) {
           Worker(testData)
             .asCallback(function (err) {
               expect(err).to.not.exist()
-              sinon.assert.notCalled(rabbitMQ.deleteInstanceContainer)
+              sinon.assert.notCalled(rabbitMQ.deleteContainer)
               done()
             })
         })

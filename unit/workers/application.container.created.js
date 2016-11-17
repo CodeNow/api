@@ -153,19 +153,19 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
       const testError = new Error('bad')
 
       beforeEach(function (done) {
-        sinon.stub(rabbitMQ, 'deleteInstanceContainer').returns()
+        sinon.stub(rabbitMQ, 'deleteContainer').returns()
         done()
       })
 
       afterEach(function (done) {
-        rabbitMQ.deleteInstanceContainer.restore()
+        rabbitMQ.deleteContainer.restore()
         done()
       })
 
       it('should publish application.container.delete', (done) => {
         worker._cleanupContainer(testError).asCallback(() => {
-          sinon.assert.calledOnce(rabbitMQ.deleteInstanceContainer)
-          sinon.assert.calledWithExactly(rabbitMQ.deleteInstanceContainer, {
+          sinon.assert.calledOnce(rabbitMQ.deleteContainer)
+          sinon.assert.calledWithExactly(rabbitMQ.deleteContainer, {
             containerId: testId
           })
           done()
