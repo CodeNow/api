@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/application.container.delete
+ * @module unit/workers/container.delete
  */
 'use strict'
 
@@ -11,7 +11,7 @@ const Code = require('code')
 const sinon = require('sinon')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-const InstanceContainerDelete = require('workers/application.container.delete')
+const ContainerDelete = require('workers/container.delete')
 const Docker = require('models/apis/docker')
 
 const afterEach = lab.afterEach
@@ -20,20 +20,10 @@ const describe = lab.describe
 const expect = Code.expect
 const it = lab.it
 
-describe('application.container.delete unit test', function () {
+describe('container.delete unit test', function () {
   let testJob
   const testJobData = {
-    container: {
-      dockerContainer: 'dockerContainerTest'
-    },
-    instanceMasterBranch: 'instanceMasterBranchTest',
-    instanceMasterPod: true,
-    instanceName: 'instanceNameTest',
-    instanceShortHash: 'instanceShortHashTest',
-    ownerGithubId: 12345,
-    ownerGithubUsername: 'ownerGithubUsernameTest',
-    isolation: 1234,
-    isIsolationGroupMaster: false
+    containerId: 'dockerContainerTest'
   }
 
   beforeEach(function (done) {
@@ -60,7 +50,7 @@ describe('application.container.delete unit test', function () {
 
       it('should throw error if stopContainer failed', function (done) {
         Docker.prototype.stopContainer.yieldsAsync(testErr)
-        InstanceContainerDelete.task(testJob).asCallback(function (err) {
+        ContainerDelete.task(testJob).asCallback(function (err) {
           expect(err.cause).to.equal(testErr)
           done()
         })
@@ -68,7 +58,7 @@ describe('application.container.delete unit test', function () {
 
       it('should throw error if stopContainer failed', function (done) {
         Docker.prototype.removeContainer.yieldsAsync(testErr)
-        InstanceContainerDelete.task(testJob).asCallback(function (err) {
+        ContainerDelete.task(testJob).asCallback(function (err) {
           expect(err.cause).to.equal(testErr)
           done()
         })
@@ -77,7 +67,7 @@ describe('application.container.delete unit test', function () {
       it('should throw task fatal if 404', function (done) {
         testErr.output = { statusCode: 404 }
         Docker.prototype.removeContainer.yieldsAsync(testErr)
-        InstanceContainerDelete.task(testJob).asCallback(function (err) {
+        ContainerDelete.task(testJob).asCallback(function (err) {
           expect(err).to.be.an.instanceof(WorkerStopError)
           expect(err.message).to.match(/container not found/)
           done()
@@ -88,13 +78,13 @@ describe('application.container.delete unit test', function () {
 
   describe('valid job', function () {
     it('should call stopContainer', function (done) {
-      InstanceContainerDelete.task(testJob).asCallback(function (err) {
+      ContainerDelete.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
 
         sinon.assert.calledOnce(Docker.prototype.stopContainer)
         sinon.assert.calledWithExactly(
           Docker.prototype.stopContainer,
-          testJobData.container.dockerContainer,
+          testJobData.containerId,
           true,
           sinon.match.func
         )
@@ -103,13 +93,13 @@ describe('application.container.delete unit test', function () {
     })
 
     it('should call removeContainer', function (done) {
-      InstanceContainerDelete.task(testJob).asCallback(function (err) {
+      ContainerDelete.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
 
         sinon.assert.calledOnce(Docker.prototype.removeContainer)
         sinon.assert.calledWithExactly(
           Docker.prototype.removeContainer,
-          testJobData.container.dockerContainer,
+          testJobData.containerId,
           sinon.match.func
         )
         done()
@@ -118,14 +108,14 @@ describe('application.container.delete unit test', function () {
 
     it('should resolve', function (done) {
       Docker.prototype.removeContainer.yieldsAsync(null)
-      InstanceContainerDelete.task(testJob).asCallback(function (err) {
+      ContainerDelete.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
         done()
       })
     })
 
     it('should call all these things in order', function (done) {
-      InstanceContainerDelete.task(testJob).asCallback(function (err) {
+      ContainerDelete.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
 
         sinon.assert.callOrder(
@@ -138,7 +128,7 @@ describe('application.container.delete unit test', function () {
 
     it('should resolve if instanceMasterBranch is null', function (done) {
       testJob.instanceMasterBranch = null
-      InstanceContainerDelete.task(testJob).asCallback(function (err) {
+      ContainerDelete.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
         done()
       })
@@ -146,7 +136,7 @@ describe('application.container.delete unit test', function () {
 
     it('should resolve if missing instanceMasterBranch', function (done) {
       delete testJob.instanceMasterBranch
-      InstanceContainerDelete.task(testJob).asCallback(function (err) {
+      ContainerDelete.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
 
         sinon.assert.callOrder(
@@ -157,4 +147,4 @@ describe('application.container.delete unit test', function () {
       })
     })
   }) // end valid job
-}) // end application.container.delete unit test
+}) // end container.delete unit test
