@@ -162,7 +162,7 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
         done()
       })
 
-      it('should publish application.container.delete', (done) => {
+      it('should call deleteContainer', (done) => {
         worker._cleanupContainer(testError).asCallback(() => {
           sinon.assert.calledOnce(rabbitMQ.deleteContainer)
           sinon.assert.calledWithExactly(rabbitMQ.deleteContainer, {
