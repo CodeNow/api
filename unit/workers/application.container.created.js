@@ -9,10 +9,9 @@ const sinon = require('sinon')
 const ContextVersion = require('models/mongo/context-version')
 const Instance = require('models/mongo/instance')
 const InstanceService = require('models/services/instance-service')
-const Docker = require('models/apis/docker')
+const rabbitMQ = require('models/rabbitmq')
 const User = require('models/mongo/user')
 const ApplicationContainerCreated = require('workers/application.container.created')
-const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const lab = exports.lab = Lab.script()
 const Worker = ApplicationContainerCreated._Worker
@@ -112,13 +111,13 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
     describe('_findAndSetCreatingInstance', function () {
       beforeEach(function (done) {
         sinon.stub(Instance, 'markAsCreating')
-        sinon.stub(Worker.prototype, '_removeContainerAndStopWorker')
+        sinon.stub(Worker.prototype, '_cleanupContainer')
         done()
       })
 
       afterEach(function (done) {
         Instance.markAsCreating.restore()
-        Worker.prototype._removeContainerAndStopWorker.restore()
+        Worker.prototype._cleanupContainer.restore()
         done()
       })
 
@@ -139,72 +138,56 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
           done()
         })
 
-        it('should _removeContainerAndStopWorker on NotFound', (done) => {
+        it('should _cleanupContainer on NotFound', (done) => {
           Instance.markAsCreating.rejects(new Instance.NotFoundError({}))
           worker._findAndSetCreatingInstance().asCallback((err) => {
             if (err) { return done(err) }
-            sinon.assert.calledOnce(Instance.markAsCreating)
-            sinon.assert.calledWith(Instance.markAsCreating,
-              testInstanceId,
-              testContextVersionId,
-              testId, {
-                dockerContainer: testId,
-                dockerHost: testHost,
-                inspect: testInspect,
-                ports: testInspect.NetworkSettings.Ports
-              })
+            sinon.assert.calledOnce(Worker.prototype._cleanupContainer)
             done()
           })
         })
       })
     }) // end _findAndSetCreatingInstance
 
-    describe('_removeContainerAndStopWorker', function () {
+    describe('_cleanupContainer', function () {
       const testError = new Error('bad')
 
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'removeContainerAsync')
+        sinon.stub(rabbitMQ, 'deleteContainer').returns()
         done()
       })
 
       afterEach(function (done) {
-        Docker.prototype.removeContainerAsync.restore()
+        rabbitMQ.deleteContainer.restore()
         done()
       })
 
-      it('should publish container.remove', (done) => {
-        Docker.prototype.removeContainerAsync.resolves()
-        worker._removeContainerAndStopWorker(testError).asCallback(() => {
-          sinon.assert.calledOnce(Docker.prototype.removeContainerAsync)
-          sinon.assert.calledWith(Docker.prototype.removeContainerAsync, testId)
+      it('should call deleteContainer', (done) => {
+        worker._cleanupContainer(testError).asCallback(() => {
+          sinon.assert.calledOnce(rabbitMQ.deleteContainer)
+          sinon.assert.calledWithExactly(rabbitMQ.deleteContainer, {
+            containerId: testId
+          })
           done()
         })
       })
-
-      it('should throw worker stop error', (done) => {
-        Docker.prototype.removeContainerAsync.resolves()
-        worker._removeContainerAndStopWorker(testError).asCallback((err) => {
-          expect(err).to.be.an.instanceOf(WorkerStopError)
-          expect(err.message).to.contain(testError.message)
-          done()
-        })
-      })
-    }) // end _removeContainerAndStopWorker
+    }) // end _cleanupContainer
 
     describe('_startInstance', function () {
       let testInstance
 
       beforeEach(function (done) {
-        sinon.stub(InstanceService, 'startInstance')
+        sinon.stub(InstanceService, 'startInstanceById')
         sinon.stub(User, 'findByGithubIdAsync')
         testInstance = {
-          shsortHash: '12323'
+          _id: testInstanceId,
+          shortHash: 'ab6zj5'
         }
         done()
       })
 
       afterEach(function (done) {
-        InstanceService.startInstance.restore()
+        InstanceService.startInstanceById.restore()
         User.findByGithubIdAsync.restore()
         done()
       })
@@ -223,14 +206,14 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
           id: 'user'
         }
         User.findByGithubIdAsync.resolves(testUser)
-        InstanceService.startInstance.resolves(testUser)
+        InstanceService.startInstanceById.resolves(testUser)
         worker._startInstance(testInstance).asCallback((err) => {
           if (err) { return done(err) }
           sinon.assert.calledOnce(User.findByGithubIdAsync)
           sinon.assert.calledWith(User.findByGithubIdAsync, testSessionUserGithubId)
 
-          sinon.assert.calledOnce(InstanceService.startInstance)
-          sinon.assert.calledWith(InstanceService.startInstance, testInspect.shsortHash, testUser)
+          sinon.assert.calledOnce(InstanceService.startInstanceById)
+          sinon.assert.calledWith(InstanceService.startInstanceById, testInstanceId, testUser)
           done()
         })
       })
