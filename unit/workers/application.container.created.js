@@ -229,7 +229,6 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
           sinon.assert.calledWith(User.findByGithubIdAsync, testSessionUserGithubId)
 
           sinon.assert.calledOnce(InstanceService.startInstance)
-          // console.log('aaaaaa', InstanceService.startInstance.getCall(0).args)
           sinon.assert.calledWithExactly(InstanceService.startInstance, testInstance.shortHash, testUser)
           done()
         })
