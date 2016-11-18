@@ -1018,7 +1018,7 @@ describe('docker: ' + moduleName, function () {
         if (err) { return done(err) }
         expect(resp).to.equal(ctx.resp)
         sinon.assert.calledOnce(model._containerAction)
-        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'remove', {})
+        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'remove', { force: true })
         done()
       })
     })

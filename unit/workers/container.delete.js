@@ -28,13 +28,11 @@ describe('container.delete unit test', function () {
 
   beforeEach(function (done) {
     testJob = clone(testJobData)
-    sinon.stub(Docker.prototype, 'stopContainer').yieldsAsync()
     sinon.stub(Docker.prototype, 'removeContainer').yieldsAsync()
     done()
   })
 
   afterEach(function (done) {
-    Docker.prototype.stopContainer.restore()
     Docker.prototype.removeContainer.restore()
     done()
   })
@@ -48,15 +46,7 @@ describe('container.delete unit test', function () {
         done()
       })
 
-      it('should throw error if stopContainer failed', function (done) {
-        Docker.prototype.stopContainer.yieldsAsync(testErr)
-        ContainerDelete.task(testJob).asCallback(function (err) {
-          expect(err.cause).to.equal(testErr)
-          done()
-        })
-      })
-
-      it('should throw error if stopContainer failed', function (done) {
+      it('should throw error if removeContainer failed', function (done) {
         Docker.prototype.removeContainer.yieldsAsync(testErr)
         ContainerDelete.task(testJob).asCallback(function (err) {
           expect(err.cause).to.equal(testErr)
@@ -77,21 +67,6 @@ describe('container.delete unit test', function () {
   })
 
   describe('valid job', function () {
-    it('should call stopContainer', function (done) {
-      ContainerDelete.task(testJob).asCallback(function (err) {
-        expect(err).to.not.exist()
-
-        sinon.assert.calledOnce(Docker.prototype.stopContainer)
-        sinon.assert.calledWithExactly(
-          Docker.prototype.stopContainer,
-          testJobData.containerId,
-          true,
-          sinon.match.func
-        )
-        done()
-      })
-    })
-
     it('should call removeContainer', function (done) {
       ContainerDelete.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
@@ -110,39 +85,6 @@ describe('container.delete unit test', function () {
       Docker.prototype.removeContainer.yieldsAsync(null)
       ContainerDelete.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
-        done()
-      })
-    })
-
-    it('should call all these things in order', function (done) {
-      ContainerDelete.task(testJob).asCallback(function (err) {
-        expect(err).to.not.exist()
-
-        sinon.assert.callOrder(
-          Docker.prototype.stopContainer,
-          Docker.prototype.removeContainer
-        )
-        done()
-      })
-    })
-
-    it('should resolve if instanceMasterBranch is null', function (done) {
-      testJob.instanceMasterBranch = null
-      ContainerDelete.task(testJob).asCallback(function (err) {
-        expect(err).to.not.exist()
-        done()
-      })
-    })
-
-    it('should resolve if missing instanceMasterBranch', function (done) {
-      delete testJob.instanceMasterBranch
-      ContainerDelete.task(testJob).asCallback(function (err) {
-        expect(err).to.not.exist()
-
-        sinon.assert.callOrder(
-          Docker.prototype.stopContainer,
-          Docker.prototype.removeContainer
-        )
         done()
       })
     })
