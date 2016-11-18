@@ -15,6 +15,7 @@ const ApplicationContainerCreated = require('workers/application.container.creat
 
 const lab = exports.lab = Lab.script()
 const Worker = ApplicationContainerCreated._Worker
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 require('sinon-as-promised')(require('bluebird'))
 
 const afterEach = lab.afterEach
@@ -176,6 +177,14 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
         worker._removeContainerAndStopWorker(testError).asCallback(() => {
           sinon.assert.calledOnce(rabbitMQ.deleteContainer)
           sinon.assert.calledWith(rabbitMQ.deleteContainer, { containerId: testId })
+          done()
+        })
+      })
+      it('should throw worker stop error', (done) => {
+        rabbitMQ.deleteContainer.returns()
+        worker._removeContainerAndStopWorker(testError).asCallback((err) => {
+          expect(err).to.be.an.instanceOf(WorkerStopError)
+          expect(err.message).to.contain(testError.message)
           done()
         })
       })
