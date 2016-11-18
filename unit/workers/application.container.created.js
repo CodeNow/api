@@ -197,7 +197,7 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
         sinon.stub(InstanceService, 'startInstance')
         sinon.stub(User, 'findByGithubIdAsync')
         testInstance = {
-          shsortHash: '12323'
+          shortHash: '12323'
         }
         done()
       })
@@ -229,7 +229,8 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
           sinon.assert.calledWith(User.findByGithubIdAsync, testSessionUserGithubId)
 
           sinon.assert.calledOnce(InstanceService.startInstance)
-          sinon.assert.calledWith(InstanceService.startInstance, testInspect.shsortHash, testUser)
+          // console.log('aaaaaa', InstanceService.startInstance.getCall(0).args)
+          sinon.assert.calledWithExactly(InstanceService.startInstance, testInstance.shortHash, testUser)
           done()
         })
       })
