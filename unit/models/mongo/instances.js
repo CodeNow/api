@@ -2172,7 +2172,7 @@ describe('Instance Model Tests', function () {
           _id: testInstanceId,
           'contextVersion.id': testContextVersionId,
           $or: [{
-            container: testContainerId
+            'container.dockerContainer': testContainerId
           }, {
             container: {
               $exists: false
