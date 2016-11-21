@@ -17,8 +17,8 @@ const mongooseControl = require('models/mongo/mongoose-control')
 describe('DockerComposeCluster Model Integration Tests', function () {
   const data = {
     dockerComposeFilePath: '/config/compose.yml',
-    parent: objectId('507f191e810c19729de860ea'),
-    siblings: [
+    parentId: objectId('507f191e810c19729de860ea'),
+    siblingsInstanceIds: [
       objectId('607f191e810c19729de860eb'),
       objectId('707f191e810c19729de860ec')
     ]
@@ -37,22 +37,22 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       composeCluster.saveAsync()
       .tap(function (saved) {
         expect(saved.dockerComposeFilePath).to.equal(data.dockerComposeFilePath)
-        expect(saved.parent.toString()).to.equal(data.parent.toString())
-        expect(saved.siblings.length).to.equal(data.siblings.length)
-        expect(saved.siblings[0].toString()).to.equal(data.siblings[0].toString())
-        expect(saved.siblings[1].toString()).to.equal(data.siblings[1].toString())
+        expect(saved.parentId.toString()).to.equal(data.parentId.toString())
+        expect(saved.siblingsInstanceIds.length).to.equal(data.siblingsInstanceIds.length)
+        expect(saved.siblingsInstanceIds[0].toString()).to.equal(data.siblingsInstanceIds[0].toString())
+        expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
         expect(saved.created).to.exist()
         savedDockerComposeCluster = saved
       }).asCallback(done)
     })
 
     it('should be possible to find compose cluster by parent id', function (done) {
-      DockerComposeCluster.findOneAsync({ 'parent': objectId('507f191e810c19729de860ea') })
+      DockerComposeCluster.findOneAsync({ 'parentId': objectId('507f191e810c19729de860ea') })
       .tap(function (composeCluster) {
         expect(String(composeCluster._id)).to.equal(String(savedDockerComposeCluster._id))
         expect(composeCluster.dockerComposeFilePath).to.equal(savedDockerComposeCluster.dockerComposeFilePath)
-        expect(composeCluster.parent.toString()).to.equal(savedDockerComposeCluster.parent.toString())
-        expect(composeCluster.siblings.length).to.equal(savedDockerComposeCluster.siblings.length)
+        expect(composeCluster.parentId.toString()).to.equal(savedDockerComposeCluster.parentId.toString())
+        expect(composeCluster.siblingsInstanceIds.length).to.equal(savedDockerComposeCluster.siblingsInstanceIds.length)
         expect(composeCluster.created).to.equal(savedDockerComposeCluster.created)
       })
       .asCallback(done)
@@ -63,8 +63,8 @@ describe('DockerComposeCluster Model Integration Tests', function () {
     it('should be possible to save compose cluster', function (done) {
       const data = {
         dockerComposeFilePath: '/config/compose.yml',
-        parent: objectId('507f191e810c19729de860ea'),
-        siblings: [
+        parentId: objectId('507f191e810c19729de860ea'),
+        siblingsInstanceIds: [
           objectId('607f191e810c19729de860eb'),
           objectId('707f191e810c19729de860ec')
         ]
@@ -73,10 +73,10 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       composeCluster.saveAsync()
       .tap(function (saved) {
         expect(saved.dockerComposeFilePath).to.equal(data.dockerComposeFilePath)
-        expect(saved.parent.toString()).to.equal(data.parent.toString())
-        expect(saved.siblings.length).to.equal(data.siblings.length)
-        expect(saved.siblings[0].toString()).to.equal(data.siblings[0].toString())
-        expect(saved.siblings[1].toString()).to.equal(data.siblings[1].toString())
+        expect(saved.parentId.toString()).to.equal(data.parentId.toString())
+        expect(saved.siblingsInstanceIds.length).to.equal(data.siblingsInstanceIds.length)
+        expect(saved.siblingsInstanceIds[0].toString()).to.equal(data.siblingsInstanceIds[0].toString())
+        expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
         expect(saved.created).to.exist()
       })
       .asCallback(done)
@@ -88,11 +88,8 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       const invalidData = Object.assign({}, data)
       invalidData.dockerComposeFilePath = null
       const composeCluster = new DockerComposeCluster(invalidData)
-      composeCluster.saveAsync()
-      .then(function () {
-        done(new Error('Should fail'))
-      })
-      .catch(function (err) {
+      composeCluster.saveAsync().asCallback(function (err) {
+        expect(err).to.exist()
         expect(err.errors.dockerComposeFilePath.message).to.equal('Docker Compose Cluser requires compose file path')
         done()
       })
@@ -100,42 +97,35 @@ describe('DockerComposeCluster Model Integration Tests', function () {
 
     it('should fail if parent id is not provided', function (done) {
       const invalidData = Object.assign({}, data)
-      invalidData.parent = null
+      invalidData.parentId = null
       const composeCluster = new DockerComposeCluster(invalidData)
-      composeCluster.saveAsync()
-      .then(function () {
-        done(new Error('Should fail'))
-      })
-      .catch(function (err) {
-        expect(err.errors.parent.message).to.equal('Docker Compose Cluser requires parent instance')
+      composeCluster.saveAsync().asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.errors.parentId.message).to.equal('Docker Compose Cluser requires parent instance id')
         done()
       })
     })
 
     it('should fail if parent id is not valid object id', function (done) {
+      const invalidId = 'some-invalid-id'
       const invalidData = Object.assign({}, data)
-      invalidData.parent = 'some-invalid-id'
+      invalidData.parentId = invalidId
       const composeCluster = new DockerComposeCluster(invalidData)
-      composeCluster.saveAsync()
-      .then(function () {
-        done(new Error('Should fail'))
-      })
-      .catch(function (err) {
-        expect(err.message).to.equal(`Cast to ObjectId failed for value "${invalidData.parent}" at path "parent"`)
+      composeCluster.saveAsync().asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.message).to.equal(`Cast to ObjectId failed for value "${invalidId}" at path "parentId"`)
         done()
       })
     })
 
-    it('should fail if siblings are not valid objectid', function (done) {
+    it('should fail if siblingsInstanceIds are not valid objectid', function (done) {
+      const invalidId = 'some-invalid-id'
       const invalidData = Object.assign({}, data)
-      invalidData.siblings = ['some-invalid-id']
+      invalidData.siblingsInstanceIds = [ invalidId ]
       const composeCluster = new DockerComposeCluster(invalidData)
-      composeCluster.saveAsync()
-      .then(function () {
-        done(new Error('Should fail'))
-      })
-      .catch(function (err) {
-        expect(err.message).to.equal(`Cast to ObjectId failed for value "${invalidData.siblings[0]}" at path "siblings"`)
+      composeCluster.saveAsync().asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.message).to.equal(`Cast to ObjectId failed for value "${invalidId}" at path "siblingsInstanceIds"`)
         done()
       })
     })
