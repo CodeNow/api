@@ -19,7 +19,7 @@
     "ports": "3000",
     "startCommand": [
       "npm start",
-      "node app.js"
+      "node index.js"
     ],
     "preEnvMarker": "process.env",
     "postEnvMarker": "",
@@ -43,7 +43,8 @@
     "defaultVersion": "2.7",
     "ports": "80",
     "startCommand": [
-      "python main.py"
+      "python main.py",
+      "python manage.py runserver -b 0.0.0.0"
     ],
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']",
@@ -88,7 +89,8 @@
     "defaultVersion": "2.3",
     "ports": "3000",
     "startCommand": [
-      "ruby app.rb"
+      "ruby app.rb",
+      "rails server -b 0.0.0.0"
     ],
     "preEnvMarker": "os.environ['",
     "postEnvMarker": "']",
@@ -172,7 +174,7 @@
       "5.3-apache",
       "5-apache"
     ],
-    "defaultVersion": "5.6-apache",
+    "defaultVersion": "7.0-apache",
     "ports": "80",
     "startCommand": [
       "apache2-foreground"
