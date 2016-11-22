@@ -98,6 +98,7 @@
     "sendgrid": "^1.9.2",
     "shimmer": "^1.0.0",
     "strim": "^0.2.2",
+    "string-argv": "0.0.2",
     "substream": "0.2.0",
     "sync-exec": "^0.6.1",
     "tailable-capped-array": "^0.1.0",
