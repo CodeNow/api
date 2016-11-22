@@ -79,7 +79,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       .asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal('DockerComposeCluster not found')
-        expect(err).to.be.an.instaceOf(DockerComposeCluster.NotFound)
+        expect(err).to.be.an.instanceOf(DockerComposeCluster.NotFoundError)
         done()
       })
     })
@@ -106,6 +106,43 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(saved.created).to.exist()
       })
       .asCallback(done)
+    })
+  })
+
+  describe('markAsDeleted', function () {
+    let savedDockerComposeCluster = null
+    beforeEach(function (done) {
+      const composeCluster = new DockerComposeCluster(data)
+      composeCluster.saveAsync()
+      .tap(function (saved) {
+        expect(saved.dockerComposeFilePath).to.equal(data.dockerComposeFilePath)
+        expect(saved.parentInstanceId.toString()).to.equal(data.parentInstanceId.toString())
+        expect(saved.siblingsInstanceIds.length).to.equal(data.siblingsInstanceIds.length)
+        expect(saved.siblingsInstanceIds[0].toString()).to.equal(data.siblingsInstanceIds[0].toString())
+        expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
+        expect(saved.created).to.exist()
+        expect(saved.deleted).to.not.exist()
+        savedDockerComposeCluster = saved
+      }).asCallback(done)
+    })
+
+    it('should be able to mark instance as deleted', function (done) {
+      DockerComposeCluster.markAsDeleted(savedDockerComposeCluster._id)
+      .then(function () {
+        return DockerComposeCluster.findOneAsync({ 'parentInstanceId': objectId(savedDockerComposeCluster.parentInstanceId) })
+      })
+      .tap(function (clusterModel) {
+        expect(clusterModel).to.exist()
+      })
+      .then(function () {
+        return DockerComposeCluster.findActiveByParentId(savedDockerComposeCluster.parentInstanceId)
+      })
+      .asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.message).to.equal('DockerComposeCluster not found')
+        expect(err).to.be.an.instanceOf(DockerComposeCluster.NotFoundError)
+        done()
+      })
     })
   })
 
