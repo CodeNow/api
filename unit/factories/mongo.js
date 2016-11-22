@@ -105,8 +105,7 @@ var factory = module.exports = {
       elasticHostname: opts.hostname || 'asdasdasdasdasdsdw',
       env: opts.env || [],
       isolated: opts.isolated,
-      isIsolationGroupMaster: opts.isIsolationGroupMaster,
-      imagePull: opts.imagePull || null
+      isIsolationGroupMaster: opts.isIsolationGroupMaster
     })
   }
 
