@@ -410,8 +410,7 @@ var factory = module.exports = {
       },
       env: opts.env || [],
       isolated: opts.isolated,
-      isIsolationGroupMaster: opts.isIsolationGroupMaster,
-      imagePull: opts.imagePull || null
+      isIsolationGroupMaster: opts.isIsolationGroupMaster
     })
   }
 }
