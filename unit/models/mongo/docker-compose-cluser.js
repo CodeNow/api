@@ -88,7 +88,7 @@ describe('Docker Compose Cluster Model Tests', function () {
       .tap(function (cluster) {
         expect(cluster).to.equal(mockCluster)
         const query = {
-          'parentInstanceId': objectId(parentInstanceId),
+          parentInstanceId: objectId(parentInstanceId),
           deleted: {
             $exists: false
           }
