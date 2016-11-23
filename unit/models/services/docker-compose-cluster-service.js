@@ -128,7 +128,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         DockerComposeClusterService.delete(parentInstanceId)
         .tap(function () {
           sinon.assert.calledOnce(rabbitMQ.clusterDeleted)
-          sinon.assert.calledWithExactly(rabbitMQ.clusterDeleted, { clusterId: clusterId.toString() })
+          sinon.assert.calledWithExactly(rabbitMQ.clusterDeleted, { id: clusterId.toString() })
         })
         .asCallback(done)
       })
