@@ -5,7 +5,7 @@
   "defaultMainCommands": [
     "composer install"
   ],
-  "defaultWorkDir": "/var/www/",
+  "defaultWorkDir": "/var/www/html/",
   "cmd": "apache2-foreground",
   "entryPoint": ""
 }
