@@ -262,4 +262,47 @@ describe('Instance Deleted Worker', function () {
       })
     })
   })
+
+  describe('_deleteForks', function () {
+    const testJob = {
+      instance: {
+        _id: 'some-id'
+      }
+    }
+    beforeEach(function (done) {
+      sinon.stub(InstanceService, 'deleteAllInstanceForks').resolves()
+      done()
+    })
+
+    afterEach(function (done) {
+      InstanceService.deleteAllInstanceForks.restore()
+      done()
+    })
+    describe('errors', function () {
+      it('should reject if deleteIsolatedChildren failed', function (done) {
+        const error = new Error('Error')
+        InstanceService.deleteAllInstanceForks.rejects(error)
+        Worker._deleteForks(testJob)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+    })
+    describe('success', function () {
+      it('should work without error', function (done) {
+        Worker._deleteForks(testJob).asCallback(done)
+      })
+
+      it('should call deleteAllInstanceForks with correct args', function (done) {
+        Worker._deleteForks(testJob)
+        .tap(function () {
+          sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
+          sinon.assert.calledWithExactly(InstanceService.deleteAllInstanceForks, testJob.instance)
+        })
+        .asCallback(done)
+      })
+    })
+  })
 })
