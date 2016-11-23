@@ -36,14 +36,14 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       sinon.stub(DockerComposeCluster, 'findActiveByParentId').resolves(new DockerComposeCluster(clusterData))
       sinon.stub(DockerComposeCluster, 'markAsDeleted').resolves()
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
-      sinon.stub(rabbitMQ, 'composeClusterDeleted').returns()
+      sinon.stub(rabbitMQ, 'clusterDeleted').returns()
       done()
     })
     afterEach(function (done) {
       DockerComposeCluster.findActiveByParentId.restore()
       DockerComposeCluster.markAsDeleted.restore()
       rabbitMQ.deleteInstance.restore()
-      rabbitMQ.composeClusterDeleted.restore()
+      rabbitMQ.clusterDeleted.restore()
       done()
     })
     describe('errors', function () {
@@ -80,9 +80,9 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         })
       })
 
-      it('should return error if composeClusterDeleted failed', function (done) {
+      it('should return error if clusterDeleted failed', function (done) {
         const error = new Error('Some error')
-        rabbitMQ.composeClusterDeleted.throws(error)
+        rabbitMQ.clusterDeleted.throws(error)
         DockerComposeClusterService.delete(parentInstanceId)
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -124,11 +124,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         .asCallback(done)
       })
 
-      it('should call composeClusterDeleted with correct args', function (done) {
+      it('should call clusterDeleted with correct args', function (done) {
         DockerComposeClusterService.delete(parentInstanceId)
         .tap(function () {
-          sinon.assert.calledOnce(rabbitMQ.composeClusterDeleted)
-          sinon.assert.calledWithExactly(rabbitMQ.composeClusterDeleted, { clusterId: clusterId.toString() })
+          sinon.assert.calledOnce(rabbitMQ.clusterDeleted)
+          sinon.assert.calledWithExactly(rabbitMQ.clusterDeleted, { clusterId: clusterId.toString() })
         })
         .asCallback(done)
       })
@@ -140,7 +140,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             DockerComposeCluster.findActiveByParentId,
             rabbitMQ.deleteInstance,
             DockerComposeCluster.markAsDeleted,
-            rabbitMQ.composeClusterDeleted)
+            rabbitMQ.clusterDeleted)
         })
         .asCallback(done)
       })
