@@ -63,7 +63,7 @@ describe('docker.events-stream.connected unit test', function () {
         .asCallback(function (err) {
           expect(err).to.be.instanceof(WorkerStopError)
           expect(err.message).to.include('Failed to create job or send websocket event')
-          expect(err.data.err.message).to.equal('Primus error')
+          expect(err.data.originalError.message).to.equal('Primus error')
           done()
         })
     })
@@ -85,7 +85,7 @@ describe('docker.events-stream.connected unit test', function () {
           expect(err).to.exist()
           expect(err).to.be.instanceof(WorkerStopError)
           expect(err.message).to.include('Failed to create job or send websocket event')
-          expect(err.data.err.message).to.equal('Rabbit error')
+          expect(err.data.originalError.message).to.equal('Rabbit error')
           done()
         })
     })
