@@ -246,6 +246,24 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end _handleCreateContainerError
 
+  describe('_addCmdToDataFromInstance', () => {
+    it('should not add Cmd if command does not exist', (done) => {
+      let output = {}
+      Docker._addCmdToDataFromInstance(output, {})
+      expect(output.Cmd).to.be.undefined()
+      done()
+    })
+
+    it('should return command in array form', (done) => {
+      let output = {}
+      Docker._addCmdToDataFromInstance(output, {
+        containerRunCommand: 'this command runs'
+      })
+      expect(output.Cmd).to.equal(['this', 'command', 'runs'])
+      done()
+    })
+  }) // end _addCmdToDataFromInstance
+
   describe('_isImageNotFoundErr', function () {
     it('should return true if error matches', function (done) {
       var result = Docker._isImageNotFoundErr({
@@ -719,6 +737,7 @@ describe('docker: ' + moduleName, function () {
       sinon.stub(model, 'getLogs').yieldsAsync(null, { stream: true })
       done()
     })
+
     afterEach(function (done) {
       model.getLogs.restore()
       done()
@@ -743,7 +762,8 @@ describe('docker: ' + moduleName, function () {
         done()
       })
     })
-    it('should retry ETIMEDOUT error', { timeout: 4000 }, function (done) {
+
+    it('should retry ETIMEDOUT error', function (done) {
       var timeoutError = new Error('Docker error')
       timeoutError.data = {
         err: {
@@ -1018,7 +1038,7 @@ describe('docker: ' + moduleName, function () {
         if (err) { return done(err) }
         expect(resp).to.equal(ctx.resp)
         sinon.assert.calledOnce(model._containerAction)
-        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'remove', {})
+        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'remove', { force: true })
         done()
       })
     })
@@ -1063,7 +1083,7 @@ describe('docker: ' + moduleName, function () {
         done()
       })
     })
-    it('should retry ETIMEDOUT error', { timeout: 4000 }, function (done) {
+    it('should retry ETIMEDOUT error', function (done) {
       var timeoutError = new Error('Docker error')
       timeoutError.data = {
         err: {
@@ -1167,6 +1187,7 @@ describe('docker: ' + moduleName, function () {
         ],
         getUserContainerMemoryLimit: sinon.stub().returns(testMemory)
       }
+
       ctx.opts = {
         instance: ctx.mockInstance,
         contextVersion: ctx.mockContextVersion,
@@ -1178,6 +1199,7 @@ describe('docker: ' + moduleName, function () {
       sinon.stub(Docker.prototype, 'createContainer')
       done()
     })
+
     afterEach(function (done) {
       Docker.prototype._createUserContainerLabels.restore()
       Docker.prototype.createContainer.restore()
@@ -1257,6 +1279,22 @@ describe('docker: ' + moduleName, function () {
           sinon.assert.calledOnce(ctx.mockContextVersion.getUserContainerMemoryLimit)
           sinon.assert.calledWith(
             Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
+          )
+
+          expect(container).to.equal(ctx.mockContainer)
+          done()
+        })
+      })
+
+      it('should create a container with run cmd', function (done) {
+        ctx.opts.instance.containerRunCommand = 'keep calm and code on'
+
+        model.createUserContainer(ctx.opts, function (err, container) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Docker.prototype.createContainer, sinon.match({
+              Cmd: ['keep', 'calm', 'and', 'code', 'on']
+            }), sinon.match.func
           )
 
           expect(container).to.equal(ctx.mockContainer)

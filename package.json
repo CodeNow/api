@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "11.12.5",
+  "version": "11.15.1",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -98,10 +98,12 @@
     "sendgrid": "^1.9.2",
     "shimmer": "^1.0.0",
     "strim": "^0.2.2",
+    "string-argv": "0.0.2",
     "substream": "0.2.0",
     "sync-exec": "^0.6.1",
     "tailable-capped-array": "^0.1.0",
     "through2": "^2.0.0",
+    "traverse": "^0.6.6",
     "uuid": "~1.4.1",
     "ws": "^1.0.1",
     "xtend": "3.0.0"
