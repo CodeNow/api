@@ -17,6 +17,7 @@ var createCount = require('callback-count')
 var mongoFactory = require('../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 var IsolationService = require('models/services/isolation-service.js')
+var ObjectId = require('mongoose').Types.ObjectId
 require('sinon-as-promised')(require('bluebird'))
 
 describe('Isolation Services Integration Tests', function () {
@@ -61,7 +62,7 @@ describe('Isolation Services Integration Tests', function () {
         if (err) {
           return done(err)
         }
-        mongoFactory.createInstanceWithProps(ctx.mockSessionUser._id, opts, function (err, instance) {
+        mongoFactory.createInstanceWithProps(ctx.mockSessionUser, opts, function (err, instance) {
           if (err) {
             return done(err)
           }
@@ -141,7 +142,7 @@ describe('Isolation Services Integration Tests', function () {
   }
 
   /**
-   * This function creates connections in Neo4J to simulate what our API does
+   * This function creates connections to simulate what our API does
    * @param {Instance} master
    * @param {[Instance]} dependents
    * @returns {Promise}
@@ -149,15 +150,12 @@ describe('Isolation Services Integration Tests', function () {
   function makeDependecies (master, dependents) {
     if (!dependents) { return null }
     return Promise.each(dependents, function (dependentInstance) {
-      return master.addDependencyAsync(
-        dependentInstance,
-        dependentInstance.getElasticHostname(ctx.mockUsername)
-      )
+      return master.addDependency(dependentInstance)
     })
   }
 
   /**
-   * This function checks Neo4J to see if all of the given instances are actually connected
+   * This function checks to see if all of the given instances are actually connected
    * @param {Instance} master
    * @param {[Instance]} dependents
    * @returns {Promise}
@@ -185,16 +183,20 @@ describe('Isolation Services Integration Tests', function () {
   }
 
   function createForks (masterName, childNameArray) {
+    var isolationId = new ObjectId()
     function createInstance (instanceName, isMaster) {
       var dashes = isMaster ? '-' : '--'
       var isolationOpts = {}
+      var name = instanceName
+      isolationOpts.branch = 'branch1'
       if (isMaster) {
         isolationOpts.isIsolationGroupMaster = true
+        isolationOpts.isolated = isolationId
+        name = 'branch1-' + instanceName
       } else {
-        isolationOpts.isolated = forked[masterName]._id
+        isolationOpts.isolated = isolationId
+        name = forked[masterName].shortHash + dashes + instanceName
       }
-      isolationOpts.branch = 'branch1'
-      var name = ctx[masterName].shortHash + dashes + instanceName
       return createNewInstanceAsync(name, isolationOpts, ctx[instanceName].contextVersion.context)
         .then(function (instanceModel) {
           forked[instanceName] = instanceModel

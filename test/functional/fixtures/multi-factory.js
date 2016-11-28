@@ -4,7 +4,7 @@
 'use strict'
 
 var async = require('async')
-var ContextVersionService = require('models/services/context-version-service')
+var PermissionService = require('models/services/permission-service')
 var createCount = require('callback-count')
 var defaults = require('101/defaults')
 var dockerMockEvents = require('./docker-mock-events')
@@ -19,6 +19,7 @@ var Promise = require('bluebird')
 var randStr = require('randomstring').generate
 var sinon = require('sinon')
 var uuid = require('uuid')
+const sessionUser = require('./mocks/big-poppa').sessionUser
 
 var log = logger.log
 
@@ -67,20 +68,23 @@ module.exports = {
     var User = require('@runnable/api-client')
     opts.userContentDomain = process.env.USER_CONTENT_DOMAIN
     var user = new User(host, opts)
-    user.githubLogin(token, function (err) {
-      if (err) {
-        return cb(err)
-      } else {
-        user.attrs.accounts.github.accessToken = token
-        user.attrs.accounts.github.username = name
-        user.attrs.accounts._json = {}
-        log.trace({
-          token: token,
-          name: name,
-          userId: user.attrs.accounts.github.id
-        }, 'createdUser')
-        cb(null, user)
-      }
+    sessionUser(opts.orgs)
+    .then(function () {
+      user.githubLogin(token, function (err) {
+        if (err) {
+          return cb(err)
+        } else {
+          user.attrs.accounts.github.accessToken = token
+          user.attrs.accounts.github.username = name
+          user.attrs.accounts._json = {}
+          log.trace({
+            token: token,
+            name: name,
+            userId: user.attrs.accounts.github.id
+          }, 'createdUser')
+          cb(null, user)
+        }
+      })
     })
     return user
   },
@@ -141,12 +145,21 @@ module.exports = {
         if (user) {
           return cb(null, user)
         }
-        self.createUser(cb)
+        let opts = { orgs: [{ githubId: ownerId, name: 'Runnable', allowed: true }] }
+        self.createUser(opts, cb)
       },
       function createContext (user, cb) {
         var body = { name: randStr(5) }
         if (ownerId) { body.owner = { github: ownerId } }
+        var stub
+        if (!PermissionService.isOwnerOf.isSinonProxy) {
+          // Duck it, we never need to restore this stub anyways right?
+          stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+        }
         var context = user.createContext(body, function (err) {
+          if (stub) {
+            stub.restore()
+          }
           cb(err, context, user)
         })
       }
@@ -160,7 +173,15 @@ module.exports = {
         name: randStr(5),
         isSource: true
       }
+      var stub
+      if (!PermissionService.isOwnerOf.isSinonProxy) {
+        // Duck it, we never need to restore this stub anyways right?
+        stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+      }
       var context = moderator.createContext(body, function (err) {
+        if (stub) {
+          stub.restore()
+        }
         if (err) { return cb(err) }
         cb(err, context, moderator)
       })
@@ -168,11 +189,22 @@ module.exports = {
   },
   createSourceContextVersion: function (cb) {
     log.trace({}, 'createSourceContextVersion')
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
+    function realCb () {
+      if (stub) {
+        stub.restore()
+      }
+      cb.apply(null, arguments)
+    }
     this.createSourceContext(function (err, context, moderator) {
-      if (err) { return cb(err) }
+      if (err) { return realCb(err) }
       require('./mocks/s3/put-object')(context.id(), '/')
       var version = context.createVersion(function (err) {
-        if (err) { return cb(err) }
+        if (err) { return realCb(err) }
         require('./mocks/s3/get-object')(context.id(), '/')
         require('./mocks/s3/get-object')(context.id(), '/Dockerfile')
         require('./mocks/s3/put-object')(context.id(), '/Dockerfile')
@@ -180,7 +212,10 @@ module.exports = {
           name: 'Dockerfile',
           body: 'FROM dockerfile/nodejs\nCMD tail -f /var/log/dpkg.log\n'
         }, function (err) {
-          cb(err, version, context, moderator)
+          if (stub) {
+            stub.restore()
+          }
+          realCb(err, version, context, moderator)
         })
       })
     })
@@ -196,20 +231,31 @@ module.exports = {
       require('./mocks/github/user-orgs')(ownerId, 'Runnable')
     }
     var self = this
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
+    function realCb () {
+      if (stub) {
+        stub.restore()
+      }
+      cb.apply(null, arguments)
+    }
     this.createSourceContextVersion(function (err, srcContextVersion, srcContext, moderator) {
-      if (err) { return cb(err) }
+      if (err) { return realCb(err) }
       self.createContext(ownerId, function (err, context, user) {
-        if (err) { return cb(err) }
+        if (err) { return realCb(err) }
         var body = { name: randStr(5) }
-        if (ownerId) { body.owner = { github: ownerId } }
-
-        if (!ContextVersionService.checkOwnerAllowed.isSinonProxy) {
-          // Duck it, we never need to restore this stub anyways right?
-          sinon.stub(ContextVersionService, 'checkOwnerAllowed').returns(Promise.resolve())
+        body.owner = {
+          github: ownerId || user.json().accounts.github.id
         }
-
+        if (!PermissionService.checkOwnerAllowed.isSinonProxy) {
+          // Duck it, we never need to restore this stub anyways right?
+          sinon.stub(PermissionService, 'checkOwnerAllowed').returns(Promise.resolve())
+        }
         var build = user.createBuild(body, function (err) {
-          cb(err, build, context, user, [srcContextVersion, srcContext, moderator])
+          realCb(err, build, context, user, [srcContextVersion, srcContext, moderator])
         })
       })
     })
@@ -233,8 +279,19 @@ module.exports = {
       // fetch context-version
       require('./mocks/github/user-orgs')(ownerId, 'Runnable')
     }
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
+    function realCb () {
+      if (stub) {
+        stub.restore()
+      }
+      cb.apply(null, arguments)
+    }
     this.createBuild(ownerId, function (err, build, context, user, others) {
-      if (err) { return cb(err) }
+      if (err) { return realCb(err) }
       var srcContextVersion = others[0]
       var srcContext = others[1]
       var moderator = others[2]
@@ -244,13 +301,13 @@ module.exports = {
         toBuild: build.id()
       }
       var contextVersion = context.createVersion(opts, function (err) {
-        if (err) { return cb(err) }
+        if (err) { return realCb(err) }
         require('./mocks/s3/get-object')(srcContext.id(), '/')
         require('./mocks/s3/get-object')(srcContext.id(), '/Dockerfile')
         require('./mocks/s3/put-object')(context.id(), '/')
         require('./mocks/s3/put-object')(context.id(), '/Dockerfile')
         contextVersion.copyFilesFromSource(srcContextVersion.json().infraCodeVersion, function (err) {
-          if (err) { return cb(err) }
+          if (err) { return realCb(err) }
           generateKey(function (err) {
             if (err) { return cb(err) }
             var ghUser = user.json().accounts.github.username
@@ -269,11 +326,11 @@ module.exports = {
               commit: '065470f6949b0b6f0f0f78f4ee2b0e7a3dc715ac'
             }
             contextVersion.addGithubRepo(repoData, function (err) {
-              if (err) { return cb(err) }
+              if (err) { return realCb(err) }
               build.fetch(function (err) {
-                if (err) { return cb(err) }
+                if (err) { return realCb(err) }
                 contextVersion.fetch(function (err) {
-                  cb(err, contextVersion, context, build, user,
+                  realCb(err, contextVersion, context, build, user,
                     [srcContextVersion, srcContext, moderator])
                 })
               })
@@ -294,17 +351,28 @@ module.exports = {
     }
     var self = this
     log.trace({}, 'this.createContextVersion', ownerId)
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
+    function realCb () {
+      if (stub) {
+        stub.restore()
+      }
+      cb.apply(null, arguments)
+    }
     this.createContextVersion(ownerId, function (err, contextVersion, context, build, user, srcArray) {
-      if (err) { return cb(err) }
+      if (err) { return realCb(err) }
       log.trace({}, 'self.buildTheBuild', user.id(), build.id(), ownerId)
       self.buildTheBuild(user, build, ownerId, function (err) {
-        if (err) { return cb(err) }
+        if (err) { return realCb(err) }
         require('./mocks/github/user')(user)
         require('./mocks/github/user-orgs')(ownerId, 'Runnable')
         log.trace({}, 'contextVersion.fetch', contextVersion.id())
         contextVersion.fetch(function (err) {
           delete contextVersion.build.log
-          cb(err, build, user,
+          realCb(err, build, user,
             [contextVersion, context, build, user],
             srcArray)
         })
@@ -347,8 +415,19 @@ module.exports = {
     }
     log.trace({}, 'createAndTailInstance args', buildOwnerId, buildOwnerName, createBody, typeof cb)
     var ctx = {}
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
+    function realCb () {
+      if (stub) {
+        stub.restore()
+      }
+      cb.apply(null, arguments)
+    }
     this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
-      if (err) { return cb(err) }
+      if (err) { return realCb(err) }
       ctx.build = build
       ctx.user = user
       ctx.modelsArr = modelsArr
@@ -388,11 +467,11 @@ module.exports = {
         })
       })
       function done (err) {
-        if (err) { return done(err) }
+        if (err) { return realCb(err) }
         log.trace({}, 'createAndTailInstance', 'done')
         ctx.instance.fetch(function (err) {
-          if (err) { return cb(err) }
-          cb(null, ctx.instance, ctx.build, ctx.user, ctx.modelsArr, ctx.srcArr)
+          if (err) { return realCb(err) }
+          realCb(null, ctx.instance, ctx.build, ctx.user, ctx.modelsArr, ctx.srcArr)
         })
       }
     })
@@ -407,8 +486,19 @@ module.exports = {
       cb = buildOwnerName
       buildOwnerName = 'Runnable'
     }
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
+    function realCb () {
+      if (stub) {
+        stub.restore()
+      }
+      cb.apply(null, arguments)
+    }
     this.createBuiltBuild(buildOwnerId, function (err, build, user, modelsArr, srcArr) {
-      if (err) { return cb(err) }
+      if (err) { return realCb(err) }
       var body = {
         name: randStr(5),
         build: build.id(),
@@ -430,9 +520,9 @@ module.exports = {
       }
       require('./mocks/github/user')(user)
       var instance = user.createInstance(body, function (err) {
-        if (err) { return cb(err) }
+        if (err) { return realCb(err) }
         // hold until instance worker completes
-        cb(err, instance, build, user, modelsArr, srcArr)
+        realCb(err, instance, build, user, modelsArr, srcArr)
       /*
       module.exports.tailInstance(user, instance, function (err, instance) {
         console.log('tail instancep', arguments)
@@ -444,22 +534,45 @@ module.exports = {
 
   createAndTailContainer: function (primus, cb) {
     log.trace({}, 'createAndTailContainer')
+
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
+    function realCb () {
+      if (stub) {
+        stub.restore()
+      }
+      cb.apply(null, arguments)
+    }
     this.createAndTailInstance(primus, function (err, instance, build, user, modelsArray, srcArr) {
       if (err) { return cb(err) }
       var container = instance.newContainer(instance.json().containers[0])
-      cb(err, container, instance, build, user, modelsArray, srcArr)
+      realCb(err, container, instance, build, user, modelsArray, srcArr)
     })
   },
 
   createContainer: function (cb) {
     log.trace({}, 'createContainer')
     var _this = this
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
+    function realCb () {
+      if (stub) {
+        stub.restore()
+      }
+      cb.apply(null, arguments)
+    }
     this.createAndTailInstance(function (err, instance, build, user, modelsArray, srcArr) {
-      if (err) { return cb(err) }
+      if (err) { return realCb(err) }
       _this.tailInstance(user, instance, function (err) {
-        if (err) { return cb(err) }
+        if (err) { return realCb(err) }
         var container = instance.newContainer(instance.json().containers[0])
-        cb(err, container, instance, build, user, modelsArray, srcArr)
+        realCb(err, container, instance, build, user, modelsArray, srcArr)
       })
     })
   },
@@ -484,30 +597,41 @@ module.exports = {
       require('./mocks/github/user-orgs')(ownerId, 'Runnable')
     }
     log.trace({}, 'build.fetch', build.id())
+    var stub
+    if (!PermissionService.isOwnerOf.isSinonProxy) {
+      // Duck it, we never need to restore this stub anyways right?
+      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
+    }
+    function realCb () {
+      if (stub) {
+        stub.restore()
+      }
+      cb.apply(null, arguments)
+    }
     build.fetch(function (err) {
-      if (err) { return cb(err) }
+      if (err) { return realCb(err) }
       log.trace({}, 'build.contextVersions.models[0].fetch')
       build.contextVersions.models[0].fetch(function (err, cv) {
-        if (err) { return cb(err) }
+        if (err) { return realCb(err) }
         require('./mocks/github/repos-username-repo-branches-branch')(cv)
         log.trace({}, 'build.build', build.id())
         require('./mocks/github/user')(user)
         build.build({ message: uuid() }, function (err) {
           dispatch.emit('started', err)
-          if (err) { return cb(err) }
+          if (err) { return realCb(err) }
           cv = build.contextVersions.models[0] // cv may have been deduped
           log.trace({}, 'cv.fetch', cv.id())
           cv.fetch(function (err) {
-            if (err) { return cb(err) }
+            if (err) { return realCb(err) }
             cv = cv.toJSON()
-            if (cv.build.completed) { return cb() }
+            if (cv.build.completed) { return realCb() }
             log.trace({}, 'primus.joinOrgRoom', ownerId || user.json().accounts.github.id)
             primus.joinOrgRoom(ownerId || user.json().accounts.github.id, function () {
               log.trace({}, 'primus.onceVersionComplete', cv._id)
               primus.onceVersionComplete(cv._id, function () {
                 log.trace({}, 'version complete', cv._id)
                 require('./mocks/github/user')(user)
-                var count = createCount(2, cb)
+                var count = createCount(2, realCb)
                 build.contextVersions.models[0].fetch(count.next)
                 require('./mocks/github/user')(user)
                 build.fetch(count.next)

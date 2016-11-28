@@ -47,7 +47,7 @@ describe('Instance Schema Integration Tests', function () {
         validation.successCheck(instance, done, 'name')
       })
     })
-    validation.stringLengthValidationChecking(mongoFactory.createNewInstance, 'name', 100)
+    validation.stringLengthValidationChecking(mongoFactory.createNewInstance, 'name', 355)
     validation.requiredValidationChecking(mongoFactory.createNewInstance, 'name')
   })
 

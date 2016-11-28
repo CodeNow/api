@@ -2,8 +2,8 @@
 var async = require('async')
 var createCount = require('callback-count')
 var docker = require('./docker')
+var keypather = require('keypather')()
 var redis = require('models/redis')
-var dockerModuleMock = require('./mocks/docker-model')
 
 process.env.AUTO_RECONNECT = false // needed for test
 process.env.HOST_TAGS = 'default' // needed for test
@@ -54,7 +54,9 @@ var sauronMock = {
       function (stepCb) {
         rabbitSubscriber.subscribe('container.life-cycle.started', function (data, jobCb) {
           data.containerIp = '10.12.10.121'
-          rabbitPublisher.publish('container.network.attached', data)
+          if (keypather.get(data, 'inspectData.Config.Labels.type') !== 'image-builder-container') {
+            rabbitPublisher.publish('container.network.attached', data)
+          }
           jobCb()
         })
         stepCb()
@@ -80,8 +82,7 @@ var started = false
 function startDock (done) {
   if (started) { return done() }
   started = true
-  var count = createCount(3, done)
-  dockerModuleMock.setup(count.next)
+  var count = createCount(2, done)
   sauronMock.start(count.next)
 
   ctx.docker = docker.start(function (err) {
@@ -95,10 +96,9 @@ function startDock (done) {
 function stopDock (done) {
   if (!started) { return done() }
   started = false
-  var count = createCount(4, done)
+  var count = createCount(3, done)
   sauronMock.stop(count.next)
   redis.del(process.env.REDIS_HOST_KEYS, count.next)
-  dockerModuleMock.clean(count.next)
   dockerListener.stop(function (err) {
     if (err) { return count.next(err) }
     docker.stop(count.next)

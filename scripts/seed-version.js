@@ -13,17 +13,21 @@
 
 require('loadenv')()
 
-var fs = require('fs')
-var Context = require('models/mongo/context')
-var ContextVersion = require('models/mongo/context-version')
-var InfraCodeVersion = require('models/mongo/infra-code-version')
-var Instance = require('models/mongo/instance')
-var User = require('models/mongo/user')
-var async = require('async')
-var Runnable = require('@runnable/api-client')
-var user = new Runnable(process.env.FULL_API_DOMAIN)
-var mongoose = require('mongoose')
-var sources = [{
+const BuildService = require('models/services/build-service')
+const Context = require('models/mongo/context')
+const ContextVersion = require('models/mongo/context-version')
+const fs = require('fs')
+const InfraCodeVersion = require('models/mongo/infra-code-version')
+const Instance = require('models/mongo/instance')
+const InstanceService = require('models/services/instance-service')
+const messenger = require('socket/messenger')
+const mongoose = require('mongoose')
+const Promise = require('bluebird')
+const rabbitMQ = require('models/rabbitmq/index')
+const sinon = require('sinon')
+const User = require('models/mongo/user')
+
+const sources = [{
   name: 'PHP',
   isTemplate: true,
   isSource: true,
@@ -90,9 +94,10 @@ var sources = [{
   name: 'RethinkDB',
   body: fs.readFileSync('./scripts/sourceDockerfiles/rethinkdb').toString()
 }]
-var createdBy = { github: process.env.HELLO_RUNNABLE_GITHUB_ID }
+sinon.stub(messenger)
 
 var ctx = {}
+var createdBy
 
 /*
  * START SCRIPT
@@ -100,169 +105,114 @@ var ctx = {}
 main()
 
 function main () {
-  connectAndLoginAsHelloRunnable(function (err) {
-    if (err) {
+  return Promise.all([
+    rabbitMQ.connect(),
+    Promise.fromCallback(cb => {
+      mongoose.connect(process.env.MONGO, cb)
+    })
+  ])
+    .then(() => {
+      return User.findOneAsync({ 'accounts.github.username': 'HelloRunnable' }, null)
+    })
+    .then(user => {
+      createdBy = { github: user.accounts.github.id }
+      return findOrCreateBlankContext()
+        .tap(function (blankIcv) {
+          ctx.blankIcv = blankIcv
+          return Promise.each(sources, function (source) {
+            return findOrCreateContext(source)
+              .then(context => {
+                return createNewIcv(source, context, blankIcv)
+                  .then(icv => {
+                    return createContextVersion(source, context, icv)
+                  })
+                  .then(cv => {
+                    return createAndBuildBuild(user, source, cv)
+                  })
+                  .then(build => {
+                    return createOrUpdateInstance(user, source, build)
+                  })
+              })
+          })
+        })
+    })
+    .catch(err => {
       console.error('hello runnable error', err)
-      return process.exit(err ? 1 : 0)
-    }
-    createAllSources()
-  })
+      throw err
+    })
+    .finally(() => {
+      return Promise.all([
+        rabbitMQ.disconnect(),
+        Promise.fromCallback(cb => {
+          mongoose.disconnect(cb)
+        })
+      ])
+      .asCallback(err => {
+        return process.exit(err ? 1 : 0)
+      })
+    })
 }
 
-/*
- * CONNECT AND LOGIN
- */
-function connectAndLoginAsHelloRunnable (cb) {
-  mongoose.connect(process.env.MONGO)
-  async.series([
-    ensureMongooseIsConnected,
-    makeHelloRunnableAdmin,
-    loginAsHelloRunnable
-  ], cb)
-}
-function ensureMongooseIsConnected (cb) {
-  console.log('ensureMongooseIsConnected')
-  if (mongoose.connection.readyState === 1) {
-    cb()
-  } else {
-    mongoose.connection.once('connected', cb)
-  }
-}
-function makeHelloRunnableAdmin (cb) {
-  console.log('makeHelloRunnableAdmin')
-  var $set = { permissionLevel: 5 }
-  User.updateByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, { $set: $set }, cb)
-}
-function loginAsHelloRunnable (cb) {
-  console.log('loginAsHelloRunnable')
-  User.findByGithubId(process.env.HELLO_RUNNABLE_GITHUB_ID, function (err, userData) {
-    if (err) { return cb(err) }
-    ctx.user = user.githubLogin(userData.accounts.github.accessToken, cb)
-  })
-}
-
-/*
- * CREATE SEED DATA
- */
-function createAllSources () {
-  async.series([
-    createBlankSource,
-    createOtherSources
-  ], function (err) {
-    if (err) {
-      console.error('create sources error', err)
-    } else {
-      console.log('done')
-      process.exit(0)
-    }
-  })
-}
-function createBlankSource (done) {
-  console.log('createBlankSourceContext')
-  var blankData = {
+function findOrCreateBlankContext () {
+  const blankData = {
     name: 'Blank',
     isSource: true,
     body: '# Empty Dockerfile!\n'
   }
-  async.waterfall([
-    doneIfExistingContextFound(blankData, done),
-    createContext(blankData),
-    createICV,
-    function (blankData, context, icv, cb) {
-      ctx.blankIcvId = icv._id
-      cb(null, blankData, context, icv)
-    },
-    createCV
-  ], done)
+  return findOrCreateContext(blankData)
+    .then(blankContext => {
+      return InfraCodeVersion.findOneAsync({ context: blankContext.id })
+        .then(blankIcv => {
+          if (!blankIcv) {
+            return createNewIcv(blankData, blankContext)
+          }
+          return blankIcv
+        })
+    })
 }
-function createOtherSources (cb) {
-  async.forEach(sources, createSource, cb)
-}
-function createSource (source, done) {
-  async.waterfall([
-    doneIfExistingInstanceFound(source, done),
-    doneIfExistingContextFound(source, done),
-    createContext(source),
-    createICV,
-    createCV,
-    createBuild,
-    buildBuild,
-    createInstance
-  ], done)
-}
-function doneIfExistingInstanceFound (data, done) {
-  return function (cb) {
-    Instance.find({
-      'lowerName': (((data.isTemplate) ? 'TEMPLATE_' : '') + data.name).toLowerCase(),
-      'owner': createdBy
-    }, function (err, docs) {
-      if (err) { return cb(err) }
-      if (docs && docs.length) {
-        console.log('Existing "' + data.name + '" instance found')
-        return done() // if exists.. done. don't continue
+
+function findOrCreateContext (data) {
+  return Context.findOneAsync({ 'name': data.name, 'isSource': data.isSource })
+    .then(context => {
+      if (context) {
+        console.log('Found Context "' + data.name + '"')
+        return context
       }
-      cb()
+      console.log('Create Context "' + data.name + '"')
+      context = new Context({
+        owner: createdBy,
+        name: data.name,
+        description: data.name,
+        isSource: data.isSource
+      })
+      return context.saveAsync()
     })
-  }
 }
-function doneIfExistingContextFound (data, done) {
-  return function (cb) {
-    console.log('findOrCreateContext')
-    Context.findOne({ 'name': data.name, 'isSource': data.isSource }, function (err, context) {
-      if (err) { return cb(err) }
-      if (!context) {
-        return cb()
-      } else {
-        console.log('Existing "' + data.name + '" context found')
-        // Source already exists. Just call done.
-        if (data.name.toLowerCase() === 'blank') {
-          InfraCodeVersion.findOne({ context: context.id }, function (err, icv) {
-            if (err || !icv) {
-              // throw!!! bc rest of script cannot run w/out this.
-              throw new Error('Blank Icv not found! err:' + err)
-            }
-            console.log('Blank icv found (to be parent of others): ' + icv._id)
-            ctx.blankIcvId = icv._id
-            done()
-          })
-        } else {
-          done()
-        }
-      }
-    })
-  }
-}
-function createContext (data) {
-  return function (cb) {
-    console.log('Create Context "' + data.name + '"')
-    var context = new Context({
-      owner: createdBy,
-      name: data.name,
-      description: data.name,
-      isSource: data.isSource
-    })
-    context.save(function (err, context) {
-      cb(err, data, context)
-    })
-  }
-}
-function createICV (data, context, cb) {
+
+function createNewIcv (data, context, parentIcv) {
   console.log('createICV "' + data.name + '"')
-  var icv = new InfraCodeVersion({
-    context: context._id,
-    parent: ctx.blankIcvId
-  })
-  async.series([
-    icv.initWithDefaults.bind(icv),
-    icv.save.bind(icv),
-    icv.createFs.bind(icv, { name: 'Dockerfile', path: '/', body: data.body })
-  ], function (err) {
-    cb(err, data, context, icv)
-  })
+  const opts = {
+    context: context._id
+  }
+  if (parentIcv) {
+    opts.parent = parentIcv._id
+  }
+  var icv = new InfraCodeVersion(opts)
+  return icv.initWithDefaultsAsync()
+    .then(icv => {
+      return icv.saveAsync()
+    })
+    .then(icv => {
+      return icv.createFsAsync({ name: 'Dockerfile', path: '/', body: data.body })
+    })
+    .return(icv)
 }
-function createCV (data, context, icv, cb) {
-  console.log('createCV')
-  var cv = new ContextVersion({
+
+function createContextVersion (data, context, icv) {
+  console.log('createCV "' + data.name + '"')
+  // if this is brand newle
+
+  let cv = new ContextVersion({
     createdBy: createdBy,
     context: context._id,
     advanced: true,
@@ -270,37 +220,36 @@ function createCV (data, context, icv, cb) {
     owner: createdBy,
     infraCodeVersion: icv._id
   })
-  cv.save(function (err, version) {
-    cb(err, data, version)
-  })
+  return cv.saveAsync()
 }
-function createBuild (data, version, cb) {
+
+function createAndBuildBuild (user, data, version) {
   console.log('createBuild (', data.name, ')')
-  var build = ctx.user.createBuild({
-    contextVersions: [version._id],
-    createdBy: createdBy,
+  return BuildService.createBuild({
+    contextVersion: version._id,
     owner: createdBy // same on purpose
-  }, function (err) {
-    cb(err, data, build, version)
-  })
+  }, user)
+    .then(build => {
+      console.log('buildBuild (', data.name, ')')
+      return BuildService.buildBuild(build._id, { message: 'seed instance script', noCache: true }, user)
+    })
 }
-function buildBuild (data, build, version, cb) {
-  console.log('buildBuild (', data.name, ')')
-  build.build({message: 'seed instance script', noCache: true}, function (err) {
-    setTimeout(function () {
-      cb(err, data, build)
-    }, 1000)
-  })
-}
-function createInstance (data, build, cb) {
-  console.log('createInstance (', data.name, ')')
-  ctx.user.createInstance({
-    build: build.id(),
-    name: ((data.isTemplate) ? 'TEMPLATE-' : '') + data.name,
-    masterPod: true,
-    owner: createdBy
-  }, function (err) {
-    console.log('Created Instance (done) (', data.name, ')', err)
-    cb(err)
-  })
+
+function createOrUpdateInstance (user, data, build) {
+  console.log('createOrUpdateInstance (', data.name, ')')
+  const name = ((data.isTemplate) ? 'TEMPLATE-' : '') + data.name
+  return Instance.findOneAsync({ lowerName: name.toLowerCase(), 'owner.github': createdBy.github })
+    .then(instance => {
+      if (instance) {
+        console.log('Found Instance "' + name + '"')
+        return InstanceService.updateInstance(instance, { build: build._id.toString() }, user)
+      }
+      console.log('Create New Instance "' + name + '"')
+      return InstanceService.createInstance({
+        build: build._id.toString(),
+        name: name,
+        masterPod: true,
+        owner: createdBy
+      }, user)
+    })
 }

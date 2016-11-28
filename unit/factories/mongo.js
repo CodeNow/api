@@ -34,7 +34,6 @@ var factory = module.exports = {
         VersionId: VALID_OBJECT_ID
       }],
       build: {
-        dockerImage: 'testing',
         dockerTag: 'adsgasdfgasdf'
       },
       appCodeVersions: [
@@ -102,11 +101,11 @@ var factory = module.exports = {
       network: {
         hostIp: '1.1.1.100'
       },
-      hostname: 'asdasdasdasdasdsdw',
+      hostname: opts.hostname || 'asdasdasdasdasdsdw',
+      elasticHostname: opts.hostname || 'asdasdasdasdasdsdw',
       env: opts.env || [],
       isolated: opts.isolated,
-      isIsolationGroupMaster: opts.isIsolationGroupMaster,
-      imagePull: opts.imagePull || null
+      isIsolationGroupMaster: opts.isIsolationGroupMaster
     })
   }
 

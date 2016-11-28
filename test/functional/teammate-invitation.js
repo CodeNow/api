@@ -18,6 +18,8 @@ var githubUserOrgsMock = require('./fixtures/mocks/github/user-orgs.js')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var nock = require('nock')
 var sinon = require('sinon')
+const whitelistOrgs = require('./fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('./fixtures/mocks/big-poppa').whitelistUserOrgs
 
 var Boom = require('dat-middleware').Boom
 var Promise = require('bluebird')
@@ -25,13 +27,24 @@ var SendGrid = require('models/apis/sendgrid')
 
 var api = require('./fixtures/api-control')
 var ctx = {
-  githubUserId: 1,
-  orgGithubId: 999
+  githubUserId: 1
 }
+
+var thatOtherOrg = {
+  name: 'hello',
+  githubId: 777,
+  allowed: true
+}
+var superOrg = {
+  name: 'super-org',
+  githubId: 123123,
+  allowed: true
+}
+
 var createInvitation = function (done) {
   var opts = {
     organization: {
-      github: ctx.orgGithubId
+      github: superOrg.githubId
     },
     recipient: {
       email: ctx.user.attrs.email,
@@ -43,11 +56,11 @@ var createInvitation = function (done) {
 beforeEach(
   mockGetUserById.stubBefore(function () {
     return [{
-      id: ctx.orgGithubId,
-      username: 'super-org'
+      id: superOrg.githubId,
+      username: superOrg.name
     }, {
-      id: 777,
-      username: 'hello'
+      id: thatOtherOrg.githubId,
+      username: thatOtherOrg.name
     }]
   })
 )
@@ -55,26 +68,33 @@ afterEach(mockGetUserById.stubAfter)
 
 describe('TeammateInvitation', function () {
   before(api.start.bind(ctx))
+
+  beforeEach(function (done) {
+    whitelistOrgs([thatOtherOrg, superOrg])
+    done()
+  })
+
   beforeEach(function (done) {
     ctx.name = randStr(5)
     ctx.j = request.jar()
+    sinon.stub(SendGrid.prototype, 'inviteAdmin').returns(Promise.resolve(true))
+    sinon.stub(SendGrid.prototype, 'inviteUser').returns(Promise.resolve(true))
     require('./fixtures/multi-factory').createUser({
       requestDefaults: { jar: ctx.j }
     }, function (err, user) {
       if (err) {
-        done(err)
+        return done(err)
       }
       ctx.user = user
-      githubUserOrgsMock(ctx.user, ctx.orgGithubId, 'super-org')
-      done()
+      whitelistUserOrgs(user, [superOrg])
+      githubUserOrgsMock(ctx.user, superOrg.githubId, superOrg.name)
+      return done()
     })
-    sinon.stub(SendGrid.prototype, 'inviteAdmin').returns(Promise.resolve(true))
-    sinon.stub(SendGrid.prototype, 'inviteUser').returns(Promise.resolve(true))
   })
   afterEach(function (done) {
-    nock.cleanAll()
     SendGrid.prototype.inviteAdmin.restore()
     SendGrid.prototype.inviteUser.restore()
+    nock.cleanAll()
     done()
   })
   after(api.stop.bind(ctx))
@@ -87,7 +107,7 @@ describe('TeammateInvitation', function () {
     it('should not create a new invitation if the user is not part of the original org', function (done) {
       var opts = {
         organization: {
-          github: 777
+          github: thatOtherOrg.githubId
         },
         recipient: {
           email: ctx.user.attrs.email,
@@ -108,7 +128,7 @@ describe('TeammateInvitation', function () {
     it('should create a new invitation', function (done) {
       var opts = {
         organization: {
-          github: ctx.orgGithubId
+          github: superOrg.githubId
         },
         recipient: {
           email: ctx.user.attrs.email,
@@ -123,15 +143,15 @@ describe('TeammateInvitation', function () {
         sinon.assert.calledOnce(SendGrid.prototype.inviteUser)
         sinon.assert.notCalled(SendGrid.prototype.inviteAdmin)
         var inviteUserArgs = SendGrid.prototype.inviteUser.args[0]
-        expect(inviteUserArgs[0], 'recipient').deep.to.equal(opts.recipient)
+        expect(inviteUserArgs[0], 'recipient').to.equal(opts.recipient)
         expect(inviteUserArgs[1]._id.toString(), 'sessionUser').to.equal(ctx.user.id())
-        expect(inviteUserArgs[2], 'organizationId').to.equal(ctx.orgGithubId)
+        expect(inviteUserArgs[2], 'organizationId').to.equal(superOrg.githubId)
         expect(res).to.be.an.object()
         expect(res.recipient).to.be.an.object()
         expect(res.organization).to.be.an.object()
         expect(res.recipient.github).to.equal(ctx.githubUserId)
         expect(res.recipient.email).to.equal(ctx.user.attrs.email)
-        expect(res.organization.github).to.equal(ctx.orgGithubId)
+        expect(res.organization.github).to.equal(superOrg.githubId)
         expect(res.owner).to.be.an.object()
         expect(res.owner.github).to.be.a.number()
         expect(res.owner.github).to.equal(ctx.user.attrs.accounts.github.id)
@@ -141,7 +161,7 @@ describe('TeammateInvitation', function () {
     it('should create a new invitation, and send an admin email', function (done) {
       var opts = {
         organization: {
-          github: ctx.orgGithubId
+          github: superOrg.githubId
         },
         recipient: {
           email: ctx.user.attrs.email,
@@ -158,7 +178,7 @@ describe('TeammateInvitation', function () {
         sinon.assert.calledOnce(SendGrid.prototype.inviteAdmin)
         sinon.assert.notCalled(SendGrid.prototype.inviteUser)
         var inviteAdminArgs = SendGrid.prototype.inviteAdmin.args[0]
-        expect(inviteAdminArgs[0], 'recipient').to.deep.equal(opts.recipient)
+        expect(inviteAdminArgs[0], 'recipient').to.equal(opts.recipient)
         expect(inviteAdminArgs[1]._id.toString(), 'sessionUser').to.equal(ctx.user.id())
         expect(inviteAdminArgs[2], 'emailMessage').to.equal('asdasdasd')
         expect(res).to.be.an.object()
@@ -166,7 +186,7 @@ describe('TeammateInvitation', function () {
         expect(res.organization).to.be.an.object()
         expect(res.recipient.github).to.equal(ctx.githubUserId)
         expect(res.recipient.email).to.equal(ctx.user.attrs.email)
-        expect(res.organization.github).to.equal(ctx.orgGithubId)
+        expect(res.organization.github).to.equal(superOrg.githubId)
         expect(res.owner).to.be.an.object()
         expect(res.owner.github).to.be.a.number()
         expect(res.owner.github).to.equal(ctx.user.attrs.accounts.github.id)
@@ -176,7 +196,7 @@ describe('TeammateInvitation', function () {
     it('should attempt to create an admin email, but get an error', function (done) {
       var opts = {
         organization: {
-          github: ctx.orgGithubId
+          github: superOrg.githubId
         },
         recipient: {
           email: ctx.user.attrs.email,
@@ -203,7 +223,7 @@ describe('TeammateInvitation', function () {
 
   describe('GET /teammate-invitation/', function () {
     it('should deny a user querying an org it doesnt belong to', function (done) {
-      ctx.user.fetchTeammateInvitations({ orgGithubId: 2 }, function (err, res, statusCode) {
+      ctx.user.fetchTeammateInvitations({ orgGithubId: thatOtherOrg.githubId }, function (err, res, statusCode) {
         if (err) {
           expect(err).to.be.an.object()
           expect(err.message).to.match(/access denied/ig)
@@ -213,7 +233,7 @@ describe('TeammateInvitation', function () {
     })
 
     it('should return an empty array if there are no invitations', function (done) {
-      ctx.user.fetchTeammateInvitations({ orgGithubId: ctx.orgGithubId }, function (err, res, statusCode) {
+      ctx.user.fetchTeammateInvitations({ orgGithubId: superOrg.githubId }, function (err, res, statusCode) {
         if (err) {
           return done(err)
         }
@@ -228,7 +248,7 @@ describe('TeammateInvitation', function () {
       beforeEach(createInvitation)
 
       it('should get the results for an org that has invitations', function (done) {
-        ctx.user.fetchTeammateInvitations({ orgGithubId: ctx.orgGithubId }, function (err, res, statusCode) {
+        ctx.user.fetchTeammateInvitations({ orgGithubId: superOrg.githubId }, function (err, res, statusCode) {
           if (err) {
             return done(err)
           }
@@ -238,7 +258,7 @@ describe('TeammateInvitation', function () {
           expect(res[0]).to.be.an.object()
           expect(res[0].recipient.github).to.equal(ctx.githubUserId)
           expect(res[0].recipient.email).to.equal(ctx.user.attrs.email)
-          expect(res[0].organization.github).to.equal(ctx.orgGithubId)
+          expect(res[0].organization.github).to.equal(superOrg.githubId)
           expect(res[0].owner).to.be.an.object()
           expect(res[0].owner.github).to.be.a.number()
           expect(res[0].owner.github).to.equal(ctx.user.attrs.accounts.github.id)
@@ -253,7 +273,7 @@ describe('TeammateInvitation', function () {
 
     it('should delete invitations from the database', function (done) {
       async.waterfall([ function (cb) {
-        ctx.user.fetchTeammateInvitations({ orgGithubId: ctx.orgGithubId }, cb)
+        ctx.user.fetchTeammateInvitations({ orgGithubId: superOrg.githubId }, cb)
       }, function (collection, statusCode, res, cb) {
         expect(collection).to.be.an.array()
         expect(collection.length).to.equal(1) // Invitation created by POST
@@ -261,7 +281,7 @@ describe('TeammateInvitation', function () {
         ctx.user.destroyTeammateInvitation(collection[0]._id, {}, cb)
       }, function (collection, statusCode, res, cb) {
         expect(statusCode).to.equal(204)
-        ctx.user.fetchTeammateInvitations({ orgGithubId: ctx.orgGithubId }, cb)
+        ctx.user.fetchTeammateInvitations({ orgGithubId: superOrg.githubId }, cb)
       }, function (collection, statusCode, res, cb) {
         expect(collection).to.be.an.array()
         expect(collection.length).to.equal(0)
@@ -281,12 +301,13 @@ describe('TeammateInvitation', function () {
             done(err)
           }
           unauthorizedUser = user
+          whitelistUserOrgs(user, [])
           done()
         })
       })
 
       it('should delete invitations from the database', function (done) {
-        ctx.user.fetchTeammateInvitations({ orgGithubId: ctx.orgGithubId }, function (err, collection) {
+        ctx.user.fetchTeammateInvitations({ orgGithubId: superOrg.githubId }, function (err, collection) {
           if (err) {
             done(err)
           }

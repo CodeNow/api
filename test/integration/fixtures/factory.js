@@ -70,7 +70,7 @@ var factory = module.exports = {
           return cb(err)
         }
         if (props.branch) {
-          sinon.stub(instance, 'getMainBranchName').returns('branch1')
+          sinon.stub(instance, 'getMainBranchName').returns(props.branch)
         }
         var hostname = instance.getElasticHostname(username).toLowerCase()
         instance.set({
@@ -249,7 +249,6 @@ var factory = module.exports = {
     if (buildExtend && buildExtend.completed) {
       assign(cv.build, {
         dockerTag: 'registry.runnable.com/544628/123456789012345678901234:12345678902345678901234',
-        dockerImage: 'bbbd03498dab',
         completed: buildExtend.completed
       })
     }
@@ -282,29 +281,31 @@ var factory = module.exports = {
       props.isolated = VALID_OBJECT_ID
     }
     return {
-      shortHash: shortHash.slice(0, shortHash.indexOf('-')),
-      name: name,
-      lowerName: name.toLowerCase(),
-      owner: {
-        github: ownerGithubId,
-        username: props.username || ownerGithubId.toString()
-      },
+      build: props.build._id,
+      contextVersion: props.cv,
+      created: new Date(),
       createdBy: {
         github: ownerGithubId,
         username: props.username || ownerGithubId.toString()
       },
-      isolated: props.isolated,
-      isIsolationGroupMaster: props.isIsolationGroupMaster,
-      parent: 'sdf',
-      build: props.build._id,
-      contextVersion: props.cv,
-      locked: props.locked,
-      created: new Date(),
-      masterPod: props.masterPod || false,
+      dependencies: props.dependencies || [],
       env: props.env || [],
+      isIsolationGroupMaster: props.isIsolationGroupMaster,
+      isolated: props.isolated,
+      locked: props.locked,
+      lowerName: name.toLowerCase(),
+      masterPod: props.masterPod || false,
+      name: name,
       network: {
         hostIp: '127.0.0.1'
-      }
+      },
+      owner: {
+        github: ownerGithubId,
+        username: props.username || ownerGithubId.toString()
+      },
+      parent: props.parent || 'sdf',
+      shortHash: shortHash.slice(0, 6),
+      shouldNotAutofork: props.shouldNotAutofork
     }
   },
   getNextId: function () {
@@ -340,7 +341,6 @@ var factory = module.exports = {
         VersionId: VALID_OBJECT_ID
       }],
       build: {
-        dockerImage: 'testing',
         dockerTag: 'adsgasdfgasdf'
       },
       appCodeVersions: [
@@ -410,8 +410,7 @@ var factory = module.exports = {
       },
       env: opts.env || [],
       isolated: opts.isolated,
-      isIsolationGroupMaster: opts.isIsolationGroupMaster,
-      imagePull: opts.imagePull || null
+      isIsolationGroupMaster: opts.isIsolationGroupMaster
     })
   }
 }

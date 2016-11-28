@@ -74,7 +74,6 @@ describe('User Schema Integration Tests', function () {
         VersionId: validation.VALID_OBJECT_ID
       }],
       build: {
-        dockerImage: 'testing',
         dockerTag: 'adsgasdfgasdf'
       }
     })

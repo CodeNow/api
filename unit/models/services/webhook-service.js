@@ -1,35 +1,33 @@
 'use strict'
 
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
-var it = lab.it
-var beforeEach = lab.beforeEach
-var afterEach = lab.afterEach
+const Lab = require('lab')
+const lab = exports.lab = Lab.script()
+const describe = lab.describe
+const it = lab.it
+const beforeEach = lab.beforeEach
+const afterEach = lab.afterEach
 
-var Boom = require('dat-middleware').Boom
-var Code = require('code')
-var expect = Code.expect
-var NotImplementedException = require('errors/not-implemented-exception.js')
-var ObjectId = require('mongoose').Types.ObjectId
-var Promise = require('bluebird')
-var sinon = require('sinon')
+const Code = require('code')
+const errors = require('errors')
+const expect = Code.expect
+const ObjectId = require('mongoose').Types.ObjectId
+const Promise = require('bluebird')
+const sinon = require('sinon')
 
-var BuildService = require('models/services/build-service')
-var Instance = require('models/mongo/instance')
-var InstanceForkService = require('models/services/instance-fork-service')
-var IsolationService = require('models/services/isolation-service')
-var MixPanelModel = require('models/apis/mixpanel')
-var WebhookService = require('models/services/webhook-service')
-var UserWhitelist = require('models/mongo/user-whitelist')
-var User = require('models/mongo/user')
-var rabbitMQ = require('models/rabbitmq')
+const BuildService = require('models/services/build-service')
+const Instance = require('models/mongo/instance')
+const InstanceForkService = require('models/services/instance-fork-service')
+const IsolationService = require('models/services/isolation-service')
+const MixPanelModel = require('models/apis/mixpanel')
+const WebhookService = require('models/services/webhook-service')
+const OrganizationService = require('models/services/organization-service')
+const User = require('models/mongo/user')
+const rabbitMQ = require('models/rabbitmq')
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-var path = require('path')
-var moduleName = path.relative(process.cwd(), __filename)
 require('sinon-as-promised')(Promise)
 
-describe('Webhook Service Unit Tests: ' + moduleName, function () {
+describe('Webhook Service Unit Tests', function () {
   describe('autoDelete', function () {
     var githubPushInfo = {
       repo: 'theRepo',
@@ -37,19 +35,19 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
     }
 
     beforeEach(function (done) {
-      sinon.stub(Instance, 'findNonIsolatedForkedInstancesAsync')
+      sinon.stub(Instance, 'findNonIsolatedForkedInstances')
       sinon.stub(rabbitMQ, 'deleteInstance')
       done()
     })
     afterEach(function (done) {
-      Instance.findNonIsolatedForkedInstancesAsync.restore()
+      Instance.findNonIsolatedForkedInstances.restore()
       rabbitMQ.deleteInstance.restore()
       done()
     })
     describe('validating errors', function () {
       it('should reject when Mongo returns an error', function (done) {
         var mongoErr = new Error('Mongo error')
-        Instance.findNonIsolatedForkedInstancesAsync.rejects(mongoErr)
+        Instance.findNonIsolatedForkedInstances.rejects(mongoErr)
         WebhookService.autoDelete(githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.equal(mongoErr)
@@ -60,10 +58,10 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
     })
     describe('Successful runs', function () {
       it('should return empty array, and not delete anything, when fetch returns empty', function (done) {
-        Instance.findNonIsolatedForkedInstancesAsync.resolves([])
+        Instance.findNonIsolatedForkedInstances.resolves([])
         WebhookService.autoDelete(githubPushInfo)
           .then(function (instances) {
-            expect(instances).to.deep.equal([])
+            expect(instances).to.equal([])
             sinon.assert.notCalled(rabbitMQ.deleteInstance)
           })
           .asCallback(done)
@@ -74,10 +72,10 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         }, {
           _id: 'erfvsdfsavxscvsacfvserw'
         }]
-        Instance.findNonIsolatedForkedInstancesAsync.resolves(instances)
+        Instance.findNonIsolatedForkedInstances.resolves(instances)
         WebhookService.autoDelete(githubPushInfo)
           .then(function (instances) {
-            expect(instances).to.deep.equal(['sdasdsaddgfasdfgasdfasdf', 'erfvsdfsavxscvsacfvserw'])
+            expect(instances).to.equal(['sdasdsaddgfasdfgasdfasdf', 'erfvsdfsavxscvsacfvserw'])
             sinon.assert.calledTwice(rabbitMQ.deleteInstance)
             sinon.assert.calledWith(rabbitMQ.deleteInstance, {
               instanceId: 'sdasdsaddgfasdfgasdfasdf'
@@ -128,7 +126,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         })
         WebhookService.autoDeploy([], githubPushInfo)
           .then(function (results) {
-            expect(results).to.deep.equal([])
+            expect(results).to.equal([])
             sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
           })
           .asCallback(done)
@@ -141,7 +139,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         })
         WebhookService.autoDeploy(instances, githubPushInfo)
           .then(function (results) {
-            expect(results).to.deep.equal([])
+            expect(results).to.equal([])
             sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
           })
           .asCallback(done)
@@ -153,7 +151,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         })
         WebhookService.autoDeploy(instances, githubPushInfo)
           .then(function (results) {
-            expect(results).to.deep.equal([{
+            expect(results).to.equal([{
               hello: 'asdfasdfdsa'
             }])
             sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)
@@ -366,8 +364,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         User.findOneAsync.resolves()
         WebhookService.checkCommitPusherIsRunnableUser(githubPushInfo)
           .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(403)
-            expect(err.output.payload.message).to.match(/committer.*not.*runnable.*user/i)
+            expect(err.message).to.match(/committer.*not.*runnable.*user/i)
             sinon.assert.calledOnce(User.findOneAsync)
             sinon.assert.calledWith(User.findOneAsync, { 'accounts.github.username': 'thejsj' })
             done()
@@ -376,8 +373,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
       it('should respond with 403 if username was not specified', function (done) {
         WebhookService.checkCommitPusherIsRunnableUser({})
           .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(403)
-            expect(err.output.payload.message).to.match(/committer.*username is empty/i)
+            expect(err.message).to.match(/committer.*username is empty/i)
             sinon.assert.notCalled(User.findOneAsync)
             done()
           })
@@ -396,50 +392,49 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
 
   describe('checkRepoOrganizationAgainstWhitelist', function () {
     var githubPushInfo = {
-      repoOwnerOrgName: 'CodeNow'
+      repoOwnerOrgName: 'Runnable'
     }
 
     beforeEach(function (done) {
-      sinon.stub(UserWhitelist, 'findOneAsync').resolves({ _id: 'some-id', allowed: true })
+      sinon.stub(OrganizationService, 'getByGithubUsername').resolves({ id: 23423, allowed: true })
       done()
     })
     afterEach(function (done) {
-      UserWhitelist.findOneAsync.restore()
+      OrganizationService.getByGithubUsername.restore()
       done()
     })
 
     describe('validating errors', function () {
-      it('should next with error if db call failed', function (done) {
-        var mongoErr = new Error('Mongo error')
-        UserWhitelist.findOneAsync.rejects(mongoErr)
+      it('should next with error if big-poppa call failed', function (done) {
+        var superErr = new Error('Something happened!')
+        OrganizationService.getByGithubUsername.rejects(superErr)
 
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
-            expect(err).to.equal(mongoErr)
-            sinon.assert.calledOnce(UserWhitelist.findOneAsync)
-            sinon.assert.calledWith(UserWhitelist.findOneAsync, { lowerName: 'codenow' })
+            expect(err).to.equal(superErr)
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
             done()
           })
       })
       it('should respond with 403 if no whitelist found', function (done) {
-        UserWhitelist.findOneAsync.resolves()
+        var error = new errors.OrganizationNotFoundError()
+        OrganizationService.getByGithubUsername.rejects(error)
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(403)
-            expect(err.output.payload.message).to.match(/not registered/)
-            sinon.assert.calledOnce(UserWhitelist.findOneAsync)
-            sinon.assert.calledWith(UserWhitelist.findOneAsync, { lowerName: 'codenow' })
+            expect(err.message).to.match(/not registered/)
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
             done()
           })
       })
       it('should respond with 403 if not allowed', function (done) {
-        UserWhitelist.findOneAsync.resolves({ allowed: false })
+        OrganizationService.getByGithubUsername.resolves({ allowed: false })
         WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
           .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(403)
-            expect(err.output.payload.message).to.match(/suspended/)
-            sinon.assert.calledOnce(UserWhitelist.findOneAsync)
-            sinon.assert.calledWith(UserWhitelist.findOneAsync, { lowerName: 'codenow' })
+            expect(err.message).to.match(/suspended/)
+            sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+            sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
             done()
           })
       })
@@ -447,8 +442,8 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
     it('should continue without error if everything worked', function (done) {
       WebhookService.checkRepoOrganizationAgainstWhitelist(githubPushInfo)
         .then(function () {
-          sinon.assert.calledOnce(UserWhitelist.findOneAsync)
-          sinon.assert.calledWith(UserWhitelist.findOneAsync, { lowerName: 'codenow' })
+          sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+          sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
         })
         .asCallback(done)
     })
@@ -617,6 +612,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
           name: 'api',
           full_name: 'CodeNow/api',
           owner: {
+            id: 890,
             name: 'CodeNow',
             email: 'live@codenow.com'
           },
@@ -624,25 +620,6 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         }
       }
       done()
-    })
-    describe('validating errors', function () {
-      it('should return error if body.repository not found', function (done) {
-        WebhookService.parseGitHubPushData({})
-          .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(400)
-            expect(err.output.payload.message).to.match(/"repository" is required/)
-            done()
-          })
-      })
-      it('should return error if body.ref is not found', function (done) {
-        delete body.ref
-        WebhookService.parseGitHubPushData(body)
-          .asCallback(function (err) {
-            expect(err.output.statusCode).to.equal(400)
-            expect(err.output.payload.message).to.match(/"ref" is required/)
-            done()
-          })
-      })
     })
     it('should parse branch and default to [] for commmitLog', function (done) {
       WebhookService.parseGitHubPushData(body)
@@ -695,14 +672,12 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
         WebhookService.reportMixpanelUserPush.resolves()
         WebhookService.processGithookEvent(payload)
           .asCallback(function (err) {
-            expect(err).to.deep.equal(
-              new NotImplementedException('processGithookEvent', 'Cannot handle tags\' related events')
-            )
+            expect(err).to.be.an.instanceof(WorkerStopError)
             done()
           })
       })
       it('should reject when parseGitHubPushData fails with error', function (done) {
-        var error = Boom.badRequest('dfasdfdsaf')
+        var error = new Error('dfasdfdsaf')
         WebhookService.parseGitHubPushData.rejects(error)
         WebhookService.checkRepoOrganizationAgainstWhitelist.resolves()
         WebhookService.processGithookEvent(payload)
@@ -712,7 +687,7 @@ describe('Webhook Service Unit Tests: ' + moduleName, function () {
           })
       })
       it('should reject when checkRepoOrganizationAgainstWhitelist fails with error', function (done) {
-        var error = Boom.forbidden('dfasdfdsaf')
+        var error = new Error('dfasdfdsaf')
         WebhookService.parseGitHubPushData.resolves(githubPushInfo)
         WebhookService.checkRepoOrganizationAgainstWhitelist.rejects(error)
         WebhookService.processGithookEvent(payload)

@@ -49,7 +49,6 @@ module.exports = function (contextVersion) {
           sessionUserGithubId: '10',
           sessionUserUsername: '4c0df1c9-7881-4604-aac3-c8608c029a3e',
           ownerUsername: '4c0df1c9-7881-4604-aac3-c8608c029a3e',
-          tid: '1',
           'com.docker.swarm.constraints': '[\'org==10\']',
           type: 'image-builder-container'
         },
@@ -98,8 +97,7 @@ module.exports = function (contextVersion) {
         'RUNNABLE_WAIT_FOR_WEAVE=for i in {1..10}; do grep -q ethwe /proc/net/dev && break; sleep 1; test ' +
         '\'$i\' = \'10\' && echo Runnable: network failed && exit 55; done;',
         'NODE_ENV=test',
-        'RUNNABLE_BUILD_FLAGS={\'Memory\:512000000,\'forcerm\:true}',
-        'RUNNABLE_PUSH_IMAGE=true'
+        'RUNNABLE_BUILD_FLAGS={\'Memory\:512000000,\'forcerm\:true}'
       ],
       '_events': {}
     }

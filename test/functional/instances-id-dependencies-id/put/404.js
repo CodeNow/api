@@ -82,7 +82,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
           }, function (err) {
             expect(err).to.exist()
             expect(err.output.statusCode).to.equal(404)
-            expect(err.message).to.match(/instance/i)
+            expect(err.message).to.match(/Instance not found/i)
             ctx.instanceWithDep.fetchDependencies(function (err, data) {
               if (err) { return done(err) }
               expectInstanceDep(data, ctx.instance)
@@ -118,7 +118,7 @@ describe('Dependencies - /instances/:id/dependencies', function () {
 function expectInstanceDep (data, expectedInstance) {
   expect(data).to.be.an.array()
   expect(data).to.have.a.length(1)
-  expect(data[0]).to.deep.contain({
+  expect(data[0]).to.contain({
     id: expectedInstance.attrs._id.toString(),
     shortHash: expectedInstance.attrs.shortHash.toString(),
     lowerName: expectedInstance.attrs.lowerName,

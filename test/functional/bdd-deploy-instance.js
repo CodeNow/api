@@ -32,6 +32,9 @@ var sinon = require('sinon')
 var rabbitMQ = require('models/rabbitmq')
 var uuid = require('uuid')
 
+const whitelistOrgs = require('./fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('./fixtures/mocks/big-poppa').whitelistUserOrgs
+
 describe('BDD - Create Build and Deploy Instance', function () {
   var ctx = {}
   before(api.start.bind(ctx))
@@ -45,6 +48,12 @@ describe('BDD - Create Build and Deploy Instance', function () {
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
+
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 11111,
+    allowed: true
+  }
 
   before(function (done) {
     // prevent worker to be created
@@ -63,6 +72,11 @@ describe('BDD - Create Build and Deploy Instance', function () {
       }]
     })
   )
+  beforeEach(function (done) {
+    whitelistOrgs([runnableOrg])
+    done()
+  })
+
   afterEach(mockGetUserById.stubAfter)
   describe('create a cv to test dudupe logic with', function () {
     beforeEach(function (done) {
@@ -71,6 +85,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
         ctx.instance = instance
         ctx.build = build
         ctx.user = user
+        whitelistUserOrgs(ctx.user, [runnableOrg])
         ctx.contextVersion = modelsArr[0]
         ctx.context = modelsArr[1]
         ctx.oldDockerContainer = ctx.instance.attrs.containers[0].dockerContainer
@@ -118,7 +133,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
         }
         function createBuild (newVersion, cb) {
           var newBuild = ctx.user.createBuild({
-            contextVersions: [ newVersion.id() ]
+            contextVersions: [ newVersion.id() ],
+            owner: {
+              github: ctx.user.json().accounts.github.id
+            }
           }, function (err) {
             cb(err, newBuild)
           })
@@ -130,8 +148,8 @@ describe('BDD - Create Build and Deploy Instance', function () {
           var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next)
           dispatch.on('started', function () {
             // expect dedupe to work
-            expect(newBuild.attrs.contexts).to.deep.equal(ctx.build.attrs.contexts)
-            expect(newBuild.attrs.contextVersions).to.deep.equal(ctx.build.attrs.contextVersions)
+            expect(newBuild.attrs.contexts).to.equal(ctx.build.attrs.contexts)
+            expect(newBuild.attrs.contextVersions).to.equal(ctx.build.attrs.contextVersions)
             updateInstanceWithBuild(newBuild, function (err) {
               count2.next(err)
             })
@@ -189,7 +207,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
             }
             function createBuild (newVersion, cb) {
               var newBuild = ctx.user.createBuild({
-                contextVersions: [ newVersion.id() ]
+                contextVersions: [ newVersion.id() ],
+                owner: {
+                  github: ctx.user.json().accounts.github.id
+                }
               }, function (err) {
                 cb(err, newBuild)
               })
@@ -200,8 +221,8 @@ describe('BDD - Create Build and Deploy Instance', function () {
               })
               var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next)
               dispatch.on('started', function () {
-                expect(newBuild.attrs.contexts).to.deep.equal(ctx.build.attrs.contexts)
-                expect(newBuild.attrs.contextVersions).to.not.deep.equal(ctx.build.attrs.contextVersions)
+                expect(newBuild.attrs.contexts).to.equal(ctx.build.attrs.contexts)
+                expect(newBuild.attrs.contextVersions).to.not.equal(ctx.build.attrs.contextVersions)
                 updateInstanceWithBuild(newBuild, function (err) {
                   count2.next(err)
                 })
@@ -256,7 +277,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
             }
             function createBuild (newVersion, cb) {
               var newBuild = ctx.user.createBuild({
-                contextVersions: [ newVersion.id() ]
+                contextVersions: [ newVersion.id() ],
+                owner: {
+                  github: ctx.user.json().accounts.github.id
+                }
               }, function (err) {
                 cb(err, newBuild)
               })
@@ -267,8 +291,8 @@ describe('BDD - Create Build and Deploy Instance', function () {
               })
               var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next)
               dispatch.on('started', function () {
-                expect(newBuild.attrs.contexts).to.deep.equal(ctx.build.attrs.contexts)
-                expect(newBuild.attrs.contextVersions).to.not.deep.equal(ctx.build.attrs.contextVersions)
+                expect(newBuild.attrs.contexts).to.equal(ctx.build.attrs.contexts)
+                expect(newBuild.attrs.contextVersions).to.not.equal(ctx.build.attrs.contextVersions)
                 expectVersionBuildsToBeEql(ctx.user, newBuild, ctx.build, function (err) {
                   if (err) { return count2.next(err) }
                   updateInstanceWithBuild(newBuild, function (err) {
@@ -294,7 +318,7 @@ describe('BDD - Create Build and Deploy Instance', function () {
           var cV2 = build2.contextVersions.models[0]
           var count = createCount(2, function (err) {
             if (err) { return cb(err) }
-            expect(cV1.attrs.build).to.deep.equal(cV2.attrs.build)
+            expect(cV1.attrs.build).to.equal(cV2.attrs.build)
             cb()
           })
           require('./fixtures/mocks/github/user')(user)
@@ -354,7 +378,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
           }
           function createBuild (newVersion, cb) {
             var newBuild = ctx.user.createBuild({
-              contextVersions: [ newVersion.id() ]
+              contextVersions: [ newVersion.id() ],
+              owner: {
+                github: ctx.user.json().accounts.github.id
+              }
             }, function (err) {
               cb(err, newBuild)
             })
@@ -365,8 +392,8 @@ describe('BDD - Create Build and Deploy Instance', function () {
             })
             var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next)
             dispatch.on('started', function () {
-              expect(newBuild.attrs.contexts).to.deep.equal(ctx.build.attrs.contexts)
-              expect(newBuild.attrs.contextVersions).to.not.deep.equal(ctx.build.attrs.contextVersions)
+              expect(newBuild.attrs.contexts).to.equal(ctx.build.attrs.contexts)
+              expect(newBuild.attrs.contextVersions).to.not.equal(ctx.build.attrs.contextVersions)
               updateInstanceWithBuild(newBuild, function (err) {
                 count2.next(err)
               })
@@ -449,7 +476,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
         }
         function createBuild (newVersion, cb) {
           var newBuild = ctx.user.createBuild({
-            contextVersions: [ newVersion.id() ]
+            contextVersions: [ newVersion.id() ],
+            owner: {
+              github: ctx.user.json().accounts.github.id
+            }
           }, function (err) {
             cb(err, newVersion, newBuild)
           })
@@ -461,8 +491,8 @@ describe('BDD - Create Build and Deploy Instance', function () {
           var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next)
           dispatch.on('started', function () {
             // expect dedupe to work
-            expect(newBuild.attrs.contexts).to.deep.equal(ctx.build.attrs.contexts)
-            expect(newBuild.attrs.contextVersions).to.deep.equal([ newVersion.id() ])
+            expect(newBuild.attrs.contexts).to.equal(ctx.build.attrs.contexts)
+            expect(newBuild.attrs.contextVersions).to.equal([ newVersion.id() ])
             updateInstanceWithBuild(newBuild, function (err) {
               count2.next(err)
             })
@@ -534,7 +564,10 @@ describe('BDD - Create Build and Deploy Instance', function () {
         }
         function createBuild (newVersion, cb) {
           var newBuild = ctx.user.createBuild({
-            contextVersions: [ newVersion.id() ]
+            contextVersions: [ newVersion.id() ],
+            owner: {
+              github: ctx.user.json().accounts.github.id
+            }
           }, function (err) {
             cb(err, newVersion, newBuild)
           })
@@ -546,8 +579,8 @@ describe('BDD - Create Build and Deploy Instance', function () {
           var dispatch = multi.buildTheBuild(ctx.user, newBuild, count2.next)
           dispatch.on('started', function () {
             // expect dedupe to work
-            expect(newBuild.attrs.contexts).to.deep.equal(ctx.build.attrs.contexts)
-            expect(newBuild.attrs.contextVersions).to.deep.equal([ newVersion.id() ])
+            expect(newBuild.attrs.contexts).to.equal(ctx.build.attrs.contexts)
+            expect(newBuild.attrs.contextVersions).to.equal([ newVersion.id() ])
             updateInstanceWithBuild(newBuild, function (err) {
               count2.next(err)
             })

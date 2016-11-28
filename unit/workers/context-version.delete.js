@@ -13,7 +13,7 @@ var expect = require('code').expect
 var it = lab.it
 
 var Promise = require('bluebird')
-var TaskFatalError = require('ponos').TaskFatalError
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
 var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
@@ -93,36 +93,12 @@ describe('Context Version Delete Worker', function () {
     })
 
     describe('errors', function () {
-      describe('invalid Job', function () {
-        it('should require the context version id', function (done) {
-          Worker().asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
-            expect(err.data.validationError).to.exist()
-            expect(err.data.validationError.message)
-              .to.match(/job.+required/)
-            done()
-          })
-        })
-
-        it('should require the context version id to be a string', function (done) {
-          Worker({ contextVersionId: [1, 2, 3] }).asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
-            expect(err.data.validationError).to.exist()
-            expect(err.data.validationError.message)
-              .to.match(/must.+be.+string/)
-            done()
-          })
-        })
-      })
-
       describe('context version not found', function () {
         it('should throw a task fatal error if the context-version was not found', function (done) {
           ContextVersion.findByIdAsync.resolves(null)
-          Worker(testJob).asCallback(function (err) {
+          Worker.task(testJob).asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.message)
               .to.match(/contextversion.+not.+found/i)
             done()
@@ -133,9 +109,9 @@ describe('Context Version Delete Worker', function () {
       describe('context version being used', function () {
         it('should throw a fatal task error if another instance is already using the context version', function (done) {
           Instance.findByContextVersionIdsAsync.resolves([{ _id: '123' }])
-          Worker(testJob).asCallback(function (err) {
+          Worker.task(testJob).asCallback(function (err) {
             expect(err).to.exist()
-            expect(err).to.be.instanceOf(TaskFatalError)
+            expect(err).to.be.instanceOf(WorkerStopError)
             expect(err.message)
               .to.match(/used.+by.+instances/i)
             done()
@@ -145,14 +121,14 @@ describe('Context Version Delete Worker', function () {
     })
 
     it('should return no error', function (done) {
-      Worker(testJob).asCallback(function (err) {
+      Worker.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
         done()
       })
     })
 
     it('should find a context version by id', function (done) {
-      Worker(testJob).asCallback(function (err) {
+      Worker.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(ContextVersion.findByIdAsync)
         sinon.assert.calledWithExactly(ContextVersion.findByIdAsync, testContextVersion._id.toString())
@@ -161,11 +137,11 @@ describe('Context Version Delete Worker', function () {
     })
 
     it('should publish an event that the context version was deleted', function (done) {
-      Worker(testJob).asCallback(function (err) {
+      Worker.task(testJob).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(rabbitMQ.contextVersionDeleted)
         sinon.assert.calledWith(rabbitMQ.contextVersionDeleted, {
-          contextVersion: testContextVersion
+          contextVersion: testContextVersion.toJSON()
         })
         done()
       })

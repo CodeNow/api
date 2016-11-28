@@ -18,6 +18,8 @@ var multi = require('../fixtures/multi-factory')
 var primus = require('../fixtures/primus')
 
 var InfraCodeVersion = require('../../../lib/models/mongo/infra-code-version')
+const whitelistOrgs = require('../fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTransformRules', function () {
   var ctx = {}
@@ -31,6 +33,15 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
   afterEach(require('../fixtures/clean-mongo').removeEverything)
   afterEach(require('../fixtures/clean-ctx')(ctx))
   afterEach(require('../fixtures/clean-nock'))
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 2828361,
+    allowed: true
+  }
+  beforeEach(function (done) {
+    whitelistOrgs([runnableOrg])
+    done()
+  })
 
   beforeEach(function (done) {
     ctx.optimusResponse = {
@@ -69,6 +80,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
       ctx.contextVersion = contextVersion
       ctx.context = context
       ctx.user = user
+      whitelistUserOrgs(ctx.user, [runnableOrg])
       ctx.repoName = 'Dat-middleware'
       ctx.fullRepoName = ctx.user.json().accounts.github.login + '/' + ctx.repoName
       require('../fixtures/mocks/github/repos-username-repo')(ctx.user, ctx.repoName)
@@ -98,7 +110,7 @@ describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/applyTrans
       var optimusRules = optimus.transform.firstCall.args[0].rules
       ctx.expectedRuleSet.forEach(function (rule, index) {
         Object.keys(rule).forEach(function (key) {
-          expect(rule[key]).to.deep.equal(optimusRules[index][key])
+          expect(rule[key]).to.equal(optimusRules[index][key])
         })
       })
       done()

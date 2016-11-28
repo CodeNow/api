@@ -42,7 +42,7 @@ function createFile (ctx, fileName, filePath, fileContent, done) {
       return done(err)
     }
     expect(code).to.equal(201)
-    expect(body).to.deep.contain({
+    expect(body).to.contain({
       name: fileName,
       path: filePath,
       isDir: false,
@@ -69,7 +69,7 @@ function createDir (ctx, dirName, dirPath, done) {
       return done(err)
     }
     expect(code).to.equal(201)
-    expect(body).to.deep.contain({
+    expect(body).to.contain({
       name: dirName,
       path: dirPath,
       isDir: true
@@ -168,7 +168,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           if (err) { return done(err) }
 
           expect(code).to.equal(200)
-          expect(body).to.deep.contain({
+          expect(body).to.contain({
             name: fileName,
             path: filePath,
             isDir: false,
@@ -201,7 +201,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
 
             expect(code).to.equal(200)
 
-            expect(body).to.deep.contain({
+            expect(body).to.contain({
               name: fileName,
               path: filePath,
               isDir: false,
@@ -230,7 +230,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
 
             expect(code).to.equal(200)
 
-            expect(body).to.deep.contain({
+            expect(body).to.contain({
               name: newName,
               path: filePath,
               isDir: false
@@ -292,7 +292,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
             }
 
             expect(code).to.equal(200)
-            expect(body).to.deep.contain({
+            expect(body).to.contain({
               name: fileName,
               path: filePath,
               isDir: false,
@@ -327,7 +327,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           }
 
           expect(code).to.equal(201)
-          expect(body).to.deep.contain({
+          expect(body).to.contain({
             name: fileName,
             path: filePath,
             isDir: false,
@@ -375,7 +375,7 @@ describe('File System - /instances/:id/containers/:id/files/*path*', function ()
           }
 
           expect(code).to.equal(201)
-          expect(body).to.deep.contain({
+          expect(body).to.contain({
             name: fileName,
             path: filePath,
             isDir: false,

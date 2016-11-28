@@ -79,12 +79,12 @@ describe('POST /instances/:id/actions/redeploy', function () {
   })
 
   beforeEach(function (done) {
-    sinon.stub(rabbitMQ.hermesClient, 'publish', function () {})
+    sinon.stub(rabbitMQ._publisher, 'publishTask')
     done()
   })
 
   afterEach(function (done) {
-    rabbitMQ.hermesClient.publish.restore()
+    rabbitMQ._publisher.publishTask.restore()
     done()
   })
 
@@ -130,20 +130,21 @@ describe('POST /instances/:id/actions/redeploy', function () {
       ctx.instance.redeploy(function (err) {
         expect(err.message).to.equal('Cannot redeploy an instance with an unsuccessful build')
         expect(err.output.statusCode).to.equal(400)
-        expect(rabbitMQ.hermesClient.publish.callCount).to.equal(0)
+        sinon.assert.notCalled(rabbitMQ._publisher.publishTask)
         done()
       })
     })
   })
 
-  it('should place a task in the "instance.container.redeploy" queue', function (done) {
+  it('should place a task in the "application.container.redeploy" queue', function (done) {
     ctx.instance.redeploy(function (err) {
       expect(err).to.be.null()
-      expect(rabbitMQ.hermesClient.publish.callCount).to.equal(1)
-      expect(rabbitMQ.hermesClient.publish.args[0][0]).to.equal('instance.container.redeploy')
-      var job = rabbitMQ.hermesClient.publish.args[0][1]
+      sinon.assert.calledOnce(rabbitMQ._publisher.publishTask)
+      expect(rabbitMQ._publisher.publishTask.args[0][0]).to.equal('application.container.redeploy')
+      var job = rabbitMQ._publisher.publishTask.args[0][1]
       expect(job.instanceId.toString()).to.equal(ctx.instance.attrs._id.toString())
       expect(job.sessionUserGithubId).to.equal(ctx.instance.user.attrs.accounts.github.id)
+
       done()
     })
   })

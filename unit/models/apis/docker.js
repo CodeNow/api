@@ -7,7 +7,6 @@ require('loadenv')()
 var clone = require('101/clone')
 var Code = require('code')
 var createCount = require('callback-count')
-var dockerFrame = require('docker-frame')
 var Dockerode = require('dockerode')
 var error = require('error')
 var indexBy = require('101/index-by')
@@ -15,11 +14,9 @@ var joi = require('utils/joi')
 var keypather = require('keypather')()
 var Lab = require('lab')
 var monitor = require('monitor-dog')
-var multiline = require('multiline')
 var path = require('path')
 var pluck = require('101/pluck')
 var sinon = require('sinon')
-var through2 = require('through2')
 var url = require('url')
 
 var Docker = require('models/apis/docker')
@@ -37,30 +34,6 @@ var expectErr = function (expectedErr, done) {
     expect(err).to.equal(expectedErr)
     done()
   }
-}
-
-var dockerLogs = {
-  success: multiline.stripIndent(function () { /*
-    {"type":"docker","content":"Step 1 : ADD ./ca.pem /ca.pem","timestamp":"2015-10-09T20:11:42.000Z"}
-    {"type":"docker","content":" ---> bf20e0312c8c","timestamp":"2015-10-09T20:11:42.319Z"}
-    {"type":"docker","content":"Step 2 : ADD ./cert.pem /cert.pem","timestamp":"2015-10-09T20:11:42.332Z"}
-    {"type":"docker","content":" ---> e1969cb6ba66","timestamp":"2015-10-09T20:11:42.556Z"}
-    {"type":"docker","content":"Successfully built 6853db027fad","timestamp":"2015-10-09T20:11:43.262Z"}
-    {"type":"log","content":"Runnable: Build completed successfully!","timestamp":"2015-10-09T20:11:43.657Z"}
-  */}),
-  successDockerImage: '6853db027fad', // must match id in log
-  failure: multiline.stripIndent(function () { /*
-    {"type":"docker","content":"Step 1 : ADD ./ca.pem /ca.pem","timestamp":"2015-10-09T20:11:42.000Z"}
-    {"type":"docker","content":" ---> bf20e0312c8c","timestamp":"2015-10-09T20:11:42.319Z"}
-    {"type":"docker","content":"Step 2 : RUN vim ./cert.pem","timestamp":"2015-10-09T20:11:42.332Z"}
-    {"type":"docker","content":" ---> e1969cb6ba66","timestamp":"2015-10-09T20:11:42.556Z"}
-    {"type":"docker","content":"\u001b[91m/bin/sh: 1: \u001b[0m"}
-    {"type":"docker","content":"\u001b[91mvim: not found\n\u001b[0m"}
-    {"type":"docker","content":"Runnable: The command [vim what] returned a non-zero code: 127\r\n","type":"error"}
-  */}),
-  jsonParseError: multiline.stripIndent(function () { /*
-    {"type":"docker",[]
-  */})
 }
 
 describe('docker: ' + moduleName, function () {
@@ -273,6 +246,24 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end _handleCreateContainerError
 
+  describe('_addCmdToDataFromInstance', () => {
+    it('should not add Cmd if command does not exist', (done) => {
+      let output = {}
+      Docker._addCmdToDataFromInstance(output, {})
+      expect(output.Cmd).to.be.undefined()
+      done()
+    })
+
+    it('should return command in array form', (done) => {
+      let output = {}
+      Docker._addCmdToDataFromInstance(output, {
+        containerRunCommand: 'this command runs'
+      })
+      expect(output.Cmd).to.equal(['this', 'command', 'runs'])
+      done()
+    })
+  }) // end _addCmdToDataFromInstance
+
   describe('_isImageNotFoundErr', function () {
     it('should return true if error matches', function (done) {
       var result = Docker._isImageNotFoundErr({
@@ -354,8 +345,9 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
+          ownerUsername: 'runnable',
           noCache: false,
-          tid: '000-0000-0000-0000'
+          tid: 'mediocre-tid'
         }
         model.createImageBuilder(opts, function (err) {
           if (err) { return done(err) }
@@ -367,16 +359,17 @@ describe('docker: ' + moduleName, function () {
             Docker.getDockerTag,
             opts.contextVersion
           )
-          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.deep.equal({
+
+          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
             contextVersion: opts.contextVersion,
-            dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
             ownerUsername: opts.ownerUsername,
-            tid: opts.tid
+            tid: opts.tid,
+            dockerTag: ctx.mockDockerTag
           })
-          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.deep.equal({
+          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
             noCache: opts.noCache,
             contextVersion: opts.contextVersion
@@ -407,8 +400,7 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false,
-          tid: '000-0000-0000-0000'
+          noCache: false
         }
         model.createImageBuilder(opts, function (err) {
           if (err) { return done(err) }
@@ -437,8 +429,9 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
+          ownerUsername: 'runnable',
           noCache: false,
-          tid: '000-0000-0000-0000'
+          tid: 'mediocre-tid'
         }
         model.createImageBuilder(opts, function (err) {
           expect(err).to.exist()
@@ -450,16 +443,16 @@ describe('docker: ' + moduleName, function () {
             Docker.getDockerTag,
             opts.contextVersion
           )
-          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.deep.equal({
+          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
+            tid: opts.tid,
             contextVersion: opts.contextVersion,
             dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername,
-            tid: opts.tid
+            ownerUsername: opts.ownerUsername
           })
-          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.deep.equal({
+          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
             noCache: opts.noCache,
             contextVersion: opts.contextVersion
@@ -506,8 +499,7 @@ describe('docker: ' + moduleName, function () {
             sessionUser: ctx.mockSessionUser,
             contextVersion: ctx.mockContextVersion,
             network: ctx.mockNetwork,
-            noCache: false,
-            tid: '000-0000-0000-0000'
+            noCache: false
           }
           model.createImageBuilder(opts, function (err) {
             if (err) { return done(err) }
@@ -589,12 +581,15 @@ describe('docker: ' + moduleName, function () {
         noCache: 'noCache',
         sessionUser: ctx.mockSessionUser,
         ownerUsername: 'ownerUsername',
-        tid: 'tid'
+        tid: 'mediocre-tid'
       }
       var labels = model._createImageBuilderLabels(opts)
       var expectedLabels = {
+        tid: opts.tid,
+        githubOrgId: 'owner',
         'contextVersion.build._id': ctx.mockContextVersion.build._id,
         'contextVersion._id': ctx.mockContextVersion._id,
+        contextVersionId: ctx.mockContextVersion._id,
         'contextVersion.context': ctx.mockContextVersion.context,
         dockerTag: opts.dockerTag,
         manualBuild: opts.manualBuild,
@@ -603,11 +598,10 @@ describe('docker: ' + moduleName, function () {
         sessionUserGithubId: opts.sessionUser.accounts.github.id.toString(),
         sessionUserUsername: opts.sessionUser.accounts.github.username,
         ownerUsername: opts.ownerUsername,
-        tid: opts.tid,
         'com.docker.swarm.constraints': '["org==owner"]',
         type: 'image-builder-container'
       }
-      expect(labels).to.deep.equal(expectedLabels)
+      expect(labels).to.equal(expectedLabels)
       // assert type casting to string for known value originally of type Number
       expect(labels.sessionUserGithubId).to.be.a.string()
       done()
@@ -618,12 +612,10 @@ describe('docker: ' + moduleName, function () {
         noCache: false,
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser,
-        tid: 123
+        sessionUser: ctx.mockSessionUser
       })
       expect(imageBuilderContainerLabels['contextVersion._id']).to.equal(ctx.mockContextVersion._id)
       expect(imageBuilderContainerLabels.noCache).to.equal('false')
-      expect(imageBuilderContainerLabels.tid).to.equal('123')
       done()
     })
 
@@ -705,10 +697,9 @@ describe('docker: ' + moduleName, function () {
           // network envs
           'RUNNABLE_WAIT_FOR_WEAVE=' + process.env.RUNNABLE_WAIT_FOR_WEAVE,
           'NODE_ENV=' + process.env.NODE_ENV,
-          'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
-          'RUNNABLE_PUSH_IMAGE=true'
+          'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts)
         ]
-        expect(envs).to.deep.equal(expectedEnvs)
+        expect(envs).to.equal(expectedEnvs)
         done()
       })
     })
@@ -741,106 +732,12 @@ describe('docker: ' + moduleName, function () {
     })
   })
 
-  describe('getBuildInfo', function () {
-    beforeEach(function (done) {
-      sinon.stub(model, '_containerAction')
-      done()
-    })
-    afterEach(function (done) {
-      model._containerAction.restore()
-      done()
-    })
-
-    it('should cleanse and parse logs', function (done) {
-      var stream = through2()
-      model._containerAction.yieldsAsync(null, stream)
-      var exitCode = 0
-      model.getBuildInfo('containerId', exitCode, function (err, buildInfo) {
-        if (err) { return done(err) }
-        expect(buildInfo.dockerImage).to.equal(dockerLogs.successDockerImage)
-        expect(buildInfo.failed).to.equal(false)
-        expect(buildInfo.log).to.deep.equal(
-          dockerLogs.success
-            .split('\n')
-            .map(JSON.parse.bind(JSON))
-        )
-        done()
-      })
-      stream.write(dockerFrame(1, dockerLogs.success))
-      stream.end()
-    })
-
-    describe('errors', function () {
-      it('should callback with error if logs faild', function (done) {
-        var dockerErr = new Error('Docker error')
-        model._containerAction.yieldsAsync(dockerErr)
-        model.getBuildInfo('containerId', 0, function (err) {
-          expect(err).to.exist()
-          expect(err).to.equal(dockerErr)
-          done()
-        })
-      })
-
-      it('should handle docker log stream err', function (done) {
-        var stream = through2()
-        model._containerAction.yieldsAsync(null, stream)
-        var streamOn = stream.on
-        var emitErr = new Error('boom')
-        sinon.stub(stream, 'on', streamErrHandlerAttached)
-        model.getBuildInfo('containerId', 0, function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/docker logs/)
-          expect(err.message).to.match(new RegExp(emitErr.message))
-          done()
-        })
-        function streamErrHandlerAttached () {
-          var ret = streamOn.apply(stream, arguments)
-          stream.on.restore()
-          stream.emit('error', emitErr)
-          return ret
-        }
-      })
-      it('should handle parse err', function (done) {
-        var stream = through2()
-        model._containerAction.yieldsAsync(null, stream)
-        model.getBuildInfo('containerId', 1, function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/json parse/)
-          done()
-        })
-        stream.write(dockerFrame(1, dockerLogs.jsonParseError))
-        stream.end()
-      })
-      it('should handle streamCleanser err', function (done) {
-        var stream = through2()
-        model._containerAction.yieldsAsync(null, stream)
-        var emitErr = new Error('boom')
-        var streamPipe = stream.pipe
-        sinon.stub(stream, 'pipe', handlePipe)
-        model.getBuildInfo('containerId', 1, function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/cleanser/)
-          expect(err.message).to.match(new RegExp(emitErr.message))
-          done()
-        })
-        function handlePipe (streamCleanser) {
-          var ret = streamPipe.apply(stream, arguments)
-          stream.pipe.restore()
-          // emit error on stream cleanser on next tick
-          process.nextTick(
-            streamCleanser.emit.bind(streamCleanser, 'error', emitErr)
-          )
-          return ret
-        }
-      })
-    })
-  })
-
   describe('getLogsAndRetryOnTimeout', function () {
     beforeEach(function (done) {
       sinon.stub(model, 'getLogs').yieldsAsync(null, { stream: true })
       done()
     })
+
     afterEach(function (done) {
       model.getLogs.restore()
       done()
@@ -865,7 +762,8 @@ describe('docker: ' + moduleName, function () {
         done()
       })
     })
-    it('should retry ETIMEDOUT error', { timeout: 4000 }, function (done) {
+
+    it('should retry ETIMEDOUT error', function (done) {
       var timeoutError = new Error('Docker error')
       timeoutError.data = {
         err: {
@@ -1108,7 +1006,7 @@ describe('docker: ' + moduleName, function () {
         sinon.assert.calledOnce(model._containerAction)
         sinon.assert.calledWith(model._containerAction, testId, 'update', {
           Memory: 4194304,
-          MemoryReservation: 1
+          MemoryReservation: 4194304
         })
         done()
       })
@@ -1140,7 +1038,7 @@ describe('docker: ' + moduleName, function () {
         if (err) { return done(err) }
         expect(resp).to.equal(ctx.resp)
         sinon.assert.calledOnce(model._containerAction)
-        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'remove', {})
+        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'remove', { force: true })
         done()
       })
     })
@@ -1185,7 +1083,7 @@ describe('docker: ' + moduleName, function () {
         done()
       })
     })
-    it('should retry ETIMEDOUT error', { timeout: 4000 }, function (done) {
+    it('should retry ETIMEDOUT error', function (done) {
       var timeoutError = new Error('Docker error')
       timeoutError.data = {
         err: {
@@ -1259,6 +1157,7 @@ describe('docker: ' + moduleName, function () {
       ctx.mockInstance = {
         _id: '123456789012345678901234',
         shortHash: 'abcdef',
+        elasticHostname: 'google.com',
         env: [
           'FOO=1',
           'URL=${RUNNABLE_CONTAINER_ID}-$FOO.runnableapp.com',
@@ -1288,16 +1187,19 @@ describe('docker: ' + moduleName, function () {
         ],
         getUserContainerMemoryLimit: sinon.stub().returns(testMemory)
       }
+
       ctx.opts = {
         instance: ctx.mockInstance,
         contextVersion: ctx.mockContextVersion,
         ownerUsername: 'runnable',
-        sessionUserGithubId: 10
+        sessionUserGithubId: 10,
+        tid: 'mediocre-tid'
       }
       sinon.stub(Docker.prototype, '_createUserContainerLabels')
       sinon.stub(Docker.prototype, 'createContainer')
       done()
     })
+
     afterEach(function (done) {
       Docker.prototype._createUserContainerLabels.restore()
       Docker.prototype.createContainer.restore()
@@ -1323,6 +1225,7 @@ describe('docker: ' + moduleName, function () {
             Labels: ctx.mockLabels,
             Env: [
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash,
+              'RUNNABLE_CONTAINER_URL=' + ctx.mockInstance.elasticHostname,
               'FOO=1',
               'URL=' + ctx.mockInstance.shortHash + '-1.runnableapp.com',
               'BAR=' + ctx.mockInstance.shortHash + '-1.runnableapp.com'
@@ -1359,6 +1262,7 @@ describe('docker: ' + moduleName, function () {
             Labels: ctx.mockLabels,
             Env: [
               'RUNNABLE_CONTAINER_ID=' + ctx.mockInstance.shortHash,
+              'RUNNABLE_CONTAINER_URL=' + ctx.mockInstance.elasticHostname,
               'FOO=1',
               'URL=' + ctx.mockInstance.shortHash + '-1.runnableapp.com',
               'BAR=' + ctx.mockInstance.shortHash + '-1.runnableapp.com'
@@ -1375,6 +1279,22 @@ describe('docker: ' + moduleName, function () {
           sinon.assert.calledOnce(ctx.mockContextVersion.getUserContainerMemoryLimit)
           sinon.assert.calledWith(
             Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
+          )
+
+          expect(container).to.equal(ctx.mockContainer)
+          done()
+        })
+      })
+
+      it('should create a container with run cmd', function (done) {
+        ctx.opts.instance.containerRunCommand = 'keep calm and code on'
+
+        model.createUserContainer(ctx.opts, function (err, container) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Docker.prototype.createContainer, sinon.match({
+              Cmd: ['keep', 'calm', 'and', 'code', 'on']
+            }), sinon.match.func
           )
 
           expect(container).to.equal(ctx.mockContainer)
@@ -1468,7 +1388,7 @@ describe('docker: ' + moduleName, function () {
           'BASE_URL=https://app.runnable-gamma.com/CodeNow/test-ws-client/'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal(originalEnvs)
+        expect(envs).to.equal(originalEnvs)
         done()
       })
 
@@ -1478,7 +1398,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=$EXAMPLE'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'EXAMPLE=37',
           'HELLO=37'
         ])
@@ -1491,7 +1411,7 @@ describe('docker: ' + moduleName, function () {
           'H=$E'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'E=37',
           'H=37'
         ])
@@ -1504,7 +1424,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=$EXAMPLE-$EXAMPLE'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'EXAMPLE=37',
           'HELLO=37-37'
         ])
@@ -1519,7 +1439,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=_YO$_YO-YOO$YOO-YOOO$YOOO'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'YOOO=3',
           'YOO=2',
           '_YO=1',
@@ -1534,7 +1454,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=YO$23'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           '23=3',
           'HELLO=YO$23'
         ])
@@ -1549,7 +1469,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=_YO${_YO}-YOO${YOO}-YOOO${YOOO}'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'YOOO=3',
           'YOO=2',
           '_YO=1',
@@ -1568,7 +1488,7 @@ describe('docker: ' + moduleName, function () {
           'HELLO=_YO${_YO}-YOO${YOO}-YOOO${YOOO}'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'START=_YO${_YO}-YOO${YOO}-YOOO${YOOO}',
           'YOOO=3',
           'YOO=2',
@@ -1587,7 +1507,7 @@ describe('docker: ' + moduleName, function () {
           'YO="432${YO}"'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'YO=3',
           'YO=2',
           'YO=1',
@@ -1606,7 +1526,7 @@ describe('docker: ' + moduleName, function () {
           'FOO=$BAZ'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'FOO=1',
           'BAR=1',
           'FOO=1',
@@ -1623,7 +1543,7 @@ describe('docker: ' + moduleName, function () {
           'A=$B'
         ]
         var envs = Docker._evalEnvVars(originalEnvs)
-        expect(envs).to.deep.equal([
+        expect(envs).to.equal([
           'B=/HI/',
           'A=/HI/'
         ])
@@ -1740,25 +1660,26 @@ describe('docker: ' + moduleName, function () {
           }
         },
         ownerUsername: 'runnable',
-        sessionUserGithubId: 10
+        sessionUserGithubId: 10,
+        tid: 'mediocre-tid'
       }
       done()
     })
 
     describe('success', function () {
       it('should callback labels with node constraints', function (done) {
-        keypather.set(process, 'domain.runnableData.tid', 'abcdef-abcdef-abcdef')
         model._createUserContainerLabels(ctx.opts, function (err, labels) {
           if (err) { return done(err) }
           var opts = ctx.opts
-          expect(labels).to.deep.equal({
+          expect(labels).to.equal({
+            tid: ctx.opts.tid,
+            githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
             instanceShortHash: opts.instance.shortHash,
             contextVersionId: opts.contextVersion._id.toString(),
             ownerUsername: opts.ownerUsername,
             sessionUserGithubId: opts.sessionUserGithubId.toString(),
-            tid: process.domain.runnableData.tid,
             'com.docker.swarm.constraints': '["org==132456","node==~ip-10-0-0-1.132456"]',
             type: 'user-container'
           })
@@ -1767,19 +1688,19 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should callback labels no node constraints', function (done) {
-        keypather.set(process, 'domain.runnableData.tid', 'abcdef-abcdef-abcdef')
         delete ctx.opts.contextVersion.dockerHost
         model._createUserContainerLabels(ctx.opts, function (err, labels) {
           if (err) { return done(err) }
           var opts = ctx.opts
-          expect(labels).to.deep.equal({
+          expect(labels).to.equal({
+            tid: ctx.opts.tid,
+            githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
             instanceShortHash: opts.instance.shortHash,
             contextVersionId: opts.contextVersion._id.toString(),
             ownerUsername: opts.ownerUsername,
             sessionUserGithubId: opts.sessionUserGithubId.toString(),
-            tid: process.domain.runnableData.tid,
             'com.docker.swarm.constraints': '["org==132456"]',
             type: 'user-container'
           })
@@ -1807,5 +1728,52 @@ describe('docker: ' + moduleName, function () {
         })
       })
     })
-  })
+  }) // end _createUserContainerLabels
+
+  describe('pushImage', function () {
+    let pushStub
+    let docker
+    const testImage = 'chill/fire'
+    const testTag = 'ice'
+    const testImageTag = `${testImage}:${testTag}`
+    beforeEach(function (done) {
+      docker = new Docker()
+      pushStub = {
+        push: sinon.stub()
+      }
+      sinon.stub(docker.docker, 'getImage').returns(pushStub)
+      sinon.stub(docker.docker.modem, 'followProgress')
+      done()
+    })
+
+    afterEach(function (done) {
+      docker.docker.getImage.restore()
+      docker.docker.modem.followProgress.restore()
+      done()
+    })
+
+    it('should call push', function (done) {
+      const testStream = 'thisisatest'
+      pushStub.push.yieldsAsync(null, testStream)
+      docker.docker.modem.followProgress.yieldsAsync(null)
+
+      docker.pushImage(testImageTag).asCallback(function (err) {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(docker.docker.getImage)
+        sinon.assert.calledWith(docker.docker.getImage, testImage)
+        sinon.assert.calledOnce(pushStub.push)
+        sinon.assert.calledWith(pushStub.push, { tag: testTag }, sinon.match.func)
+        done()
+      })
+    })
+
+    it('should resolve error', function (done) {
+      const testError = 'someerror'
+      pushStub.push.yieldsAsync(testError)
+      docker.pushImage(testImage).asCallback(function (err) {
+        expect(err.message).to.equal(testError)
+        done()
+      })
+    })
+  }) // end pushImage
 })

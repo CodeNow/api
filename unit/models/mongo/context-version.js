@@ -1,20 +1,189 @@
 'use strict'
-
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
-var it = lab.it
-var beforeEach = lab.beforeEach
-var afterEach = lab.afterEach
 var Code = require('code')
-var expect = Code.expect
+var Lab = require('lab')
+var Promise = require('bluebird')
 var sinon = require('sinon')
 
 var ContextVersion = require('models/mongo/context-version')
-var Promise = require('bluebird')
+var messenger = require('socket/messenger')
+
 require('sinon-as-promised')(Promise)
+var lab = exports.lab = Lab.script()
+
+var afterEach = lab.afterEach
+var beforeEach = lab.beforeEach
+var describe = lab.describe
+var expect = Code.expect
+var it = lab.it
 
 describe('Context Version Unit Test', function () {
+  describe('updateAndGetFailedBuild', function () {
+    var mockContextVersion
+    beforeEach(function (done) {
+      mockContextVersion = {
+        _id: '55d3ef733e1b620e00eb6292',
+        state: 'starting',
+        name: 'name1',
+        owner: {
+          github: '2335750'
+        },
+        createdBy: {
+          github: '146592'
+        },
+        build: {
+          _id: '23412312h3nk1lj2h3l1k2',
+          completed: true
+        }
+      }
+      sinon.stub(ContextVersion, 'updateByAsync').resolves()
+      sinon.stub(ContextVersion, 'findByAsync').resolves([mockContextVersion])
+      sinon.stub(messenger, 'emitContextVersionUpdate').returns()
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.updateByAsync.restore()
+      ContextVersion.findByAsync.restore()
+      messenger.emitContextVersionUpdate.restore()
+      done()
+    })
+
+    it('should save a failed build', function (done) {
+      const testErrorMessage = 'jksdhfalskdjfhadsf'
+      const buildId = 12341
+
+      ContextVersion.updateAndGetFailedBuild(buildId, testErrorMessage).asCallback(() => {
+        sinon.assert.calledOnce(ContextVersion.findByAsync)
+        sinon.assert.calledOnce(ContextVersion.updateByAsync)
+        sinon.assert.calledWith(ContextVersion.updateByAsync,
+          'build._id',
+          buildId, {
+            $set: {
+              'build.failed': true,
+              'build.error.message': testErrorMessage,
+              'build.completed': sinon.match.number,
+              'state': ContextVersion.states.buildErrored
+            }
+          }, { multi: true })
+        done()
+      })
+    })
+  }) // end updateAndGetFailedBuild
+
+  describe('updateAndGetSuccessfulBuild', () => {
+    var mockContextVersion
+    beforeEach((done) => {
+      mockContextVersion = {
+        _id: '55d3ef733e1b620e00eb6292',
+        state: 'starting',
+        name: 'name1',
+        owner: {
+          github: '2335750'
+        },
+        createdBy: {
+          github: '146592'
+        },
+        build: {
+          _id: '23412312h3nk1lj2h3l1k2',
+          completed: true
+        }
+      }
+      sinon.stub(ContextVersion, 'updateByAsync').resolves()
+      sinon.stub(ContextVersion, 'findByAsync').resolves([mockContextVersion])
+      sinon.stub(messenger, 'emitContextVersionUpdate').returns()
+      done()
+    })
+
+    afterEach((done) => {
+      ContextVersion.updateByAsync.restore()
+      ContextVersion.findByAsync.restore()
+      messenger.emitContextVersionUpdate.restore()
+      done()
+    })
+
+    it('should save a successful build', (done) => {
+      const buildId = 12341
+
+      ContextVersion.updateAndGetSuccessfulBuild(buildId).asCallback(() => {
+        sinon.assert.calledOnce(ContextVersion.updateByAsync)
+        sinon.assert.calledWith(ContextVersion.updateByAsync,
+          'build._id',
+          buildId, {
+            $set: {
+              'build.failed': false,
+              'build.completed': sinon.match.number,
+              'state': ContextVersion.states.buildSucceeded
+            }
+          })
+
+        sinon.assert.calledOnce(ContextVersion.findByAsync)
+        sinon.assert.calledWith(ContextVersion.findByAsync, 'build._id', buildId)
+        done()
+      })
+    })
+  }) // end updateAndGetSuccessfulBuild
+
+  describe('findOneCreating', function () {
+    var mockContextVersionId = '507f1f77bcf86cd799439011'
+
+    beforeEach(function (done) {
+      sinon.stub(ContextVersion, 'findOneAsync')
+      done()
+    })
+
+    afterEach(function (done) {
+      ContextVersion.findOneAsync.restore()
+      done()
+    })
+
+    it('should throw not found if not exist', function (done) {
+      ContextVersion.findOneAsync.resolves()
+      ContextVersion.findOneCreating(mockContextVersionId).asCallback(function (err, instance) {
+        expect(err).to.be.an.instanceOf(ContextVersion.NotFoundError)
+        done()
+      })
+    })
+
+    it('should throw IncorrectStateError if not in the right state', function (done) {
+      var invalidStateCV = {
+        _id: '507f1f77bcf86cd799439011',
+        state: 'sitting'
+      }
+      ContextVersion.findOneAsync.resolves(invalidStateCV)
+      ContextVersion.findOneCreating(mockContextVersionId).asCallback(function (err, instance) {
+        expect(err).to.be.an.instanceOf(ContextVersion.IncorrectStateError)
+        done()
+      })
+    })
+
+    it('should find creating instance', function (done) {
+      const mockContextVersion = {
+        _id: mockContextVersionId
+      }
+      ContextVersion.findOneAsync.resolves(mockContextVersion)
+      ContextVersion.findOneCreating(mockContextVersionId).asCallback(function (err, instance) {
+        if (err) { return done(err) }
+        expect(instance).to.equal(mockContextVersion)
+        sinon.assert.calledOnce(ContextVersion.findOneAsync)
+        var query = {
+          _id: mockContextVersionId
+        }
+        sinon.assert.calledWith(ContextVersion.findOneAsync, query)
+        done()
+      })
+    })
+
+    it('should return an error if mongo call failed', function (done) {
+      var mongoError = new Error('Mongo error')
+      ContextVersion.findOneAsync.rejects(mongoError)
+      ContextVersion.findOneCreating(mockContextVersionId).asCallback(function (err, instance) {
+        expect(err).to.equal(mongoError)
+        sinon.assert.calledOnce(ContextVersion.findOneAsync)
+        done()
+      })
+    })
+  })
+
   describe('recover', function () {
     var updatedCv
     var contextVersion
@@ -175,44 +344,34 @@ describe('Context Version Unit Test', function () {
   describe('#markDockRemovedByDockerHost', function () {
     var dockerHost = '1234'
     beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'update').yieldsAsync()
+      sinon.stub(ContextVersion, 'updateAsync').resolves()
       done()
     })
     afterEach(function (done) {
-      ContextVersion.update.restore()
+      ContextVersion.updateAsync.restore()
       done()
     })
 
     it('should call update with the right parameters', function (done) {
-      ContextVersion.markDockRemovedByDockerHost(dockerHost, function (err) {
+      ContextVersion.markDockRemovedByDockerHost(dockerHost).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(ContextVersion.update)
-        sinon.assert.calledWith(ContextVersion.update,
+        sinon.assert.calledOnce(ContextVersion.updateAsync)
+        sinon.assert.calledWith(ContextVersion.updateAsync,
           {dockerHost: dockerHost},
           {$set: {dockRemoved: true}},
-          {multi: true},
-          sinon.match.func
-        )
+          {multi: true})
         done()
       })
     })
 
     it('should pass the database error through to the callback', function (done) {
-      var error = 'Mongo Error'
-      ContextVersion.update.yieldsAsync(error)
-      ContextVersion.markDockRemovedByDockerHost(dockerHost, function (err) {
-        expect(err).to.equal(error)
-        sinon.assert.calledOnce(ContextVersion.update)
+      var error = new Error('Mongo Error')
+      ContextVersion.updateAsync.rejects(error)
+      ContextVersion.markDockRemovedByDockerHost(dockerHost).asCallback(function (err) {
+        expect(err.message).to.equal(error.message)
+        sinon.assert.calledOnce(ContextVersion.updateAsync)
         done()
       })
-    })
-
-    it('should be asyncified properly!', function (done) {
-      ContextVersion.markDockRemovedByDockerHostAsync.bind(ContextVersion, dockerHost)()
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          done()
-        })
     })
   })
 })

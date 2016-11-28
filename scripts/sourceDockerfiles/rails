@@ -1,17 +1,48 @@
 FROM ruby:<ruby-version>
 
 # Install Rails (and its dependencies)
-RUN apt-get update && apt-get install -y nodejs --no-install-recommends && rm -rf /var/lib/apt/lists/*
-
-# see http://guides.rubyonrails.org/command_line.html#rails-dbconsole
-RUN apt-get update && apt-get install -y mysql-client postgresql-client sqlite3 --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  libgmp3-dev \
+  libbz2-dev \
+  libc6-dev \
+  libcurl4-openssl-dev \
+  libdb-dev \
+  libevent-dev \
+  libffi-dev \
+  libgeoip-dev \
+  libglib2.0-dev \
+  libjpeg-dev \
+  liblzma-dev \
+  libmagickcore-dev \
+  libmagickwand-dev \
+  libmysqlclient-dev \
+  libncurses-dev \
+  libpng-dev \
+  libpq-dev \
+  libreadline-dev \
+  libsqlite3-dev \
+  libssl-dev \
+  libtool \
+  libwebp-dev \
+  libxml2-dev \
+  libxslt-dev \
+  libyaml-dev \
+  libxslt1-dev \
+  libqt4-webkit \
+  libqt4-dev \
+  xvfb \
+  nodejs \
+  mysql-client \
+  postgresql-client \
+  sqlite3 \
+  && rm -rf /var/lib/apt/lists/*
 
 # Specify the version of Rails to install
 ENV RAILS_VERSION <rails-version>
 RUN gem install rails --version "$RAILS_VERSION"
 
 <before-main-repo>
-#default run:bundle install # runnable-cache
+#default run:bundle install
 <after-main-repo>
 
 # Open up ports on the server

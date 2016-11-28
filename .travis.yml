@@ -1,12 +1,12 @@
 language: node_js
 sudo: false
 node_js:
-- 0.10.38
+- 4.2.2
 matrix:
   fast_finish: true
 env:
   global:
-  - LOG_LEVEL_STDOUT=fatal
+  - LOG_LEVEL=fatal
   - CIRCLE_NODE_TOTAL=3
   matrix:
   - CIRCLE_NODE_INDEX=0
@@ -21,18 +21,14 @@ services:
 - redis-server
 - rabbitmq
 before_install:
+- echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > .npmrc
 - ulimit -n
 - npm install -g npm@2.8.3
-- ./scripts/download-neo4j.sh
-- /tmp/neo4j-community-2.1.8/bin/neo4j start
-- timeout 1m ./scripts/set-neo4j-constraint.sh
 before_script:
 - npm run lint
 script:
 - timeout 3m ./scripts/run-command-conditionally.sh npm run unit
-- timeout 10m ./scripts/npm-bdd-split-files.sh
-after_script:
-- /tmp/neo4j-community-2.1.8/bin/neo4j stop
+- timeout 15m ./scripts/npm-bdd-split-files.sh
 notifications:
   email: false
   slack:

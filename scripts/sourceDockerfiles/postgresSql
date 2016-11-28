@@ -1,4 +1,4 @@
-# Change version number to desired (i.e. 9.3, 9.4, 9.5)
+# Change desired version below (Available: 9.3, 9.4, 9.5)
 FROM runnable/postgres:9.4
 
 ENV POSTGRES_USER postgres

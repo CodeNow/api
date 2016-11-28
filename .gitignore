@@ -9,6 +9,7 @@
 *.pid
 *.gz
 *.sublime-workspace
+*.sublime-project
 *.vimrc
 
 pids
@@ -23,10 +24,6 @@ old-test
 docs
 
 !test/lib/fixtures/master.tar.gz
-test/fixtures/graphs/neo4j/conf/ssl/
-test/fixtures/graphs/neo4j/data/graph.db/
-test/fixtures/graphs/neo4j/data/keystore
-test/fixtures/graphs/neo4j/data/rrd
 dump.rdb
 
 .idea

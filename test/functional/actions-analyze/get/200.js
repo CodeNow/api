@@ -24,6 +24,8 @@ var repoContentsMock = require('../../fixtures/mocks/github/repos-contents')
 var pythonSetupPyFile = require('../../fixtures/mocks/github/repos-contents/python-setup.py-repo-module-file')
 var pythonSetupPyFileMatching =
 require('../../fixtures/mocks/github/repos-contents/python-setup.py-matching-repo-module-file')
+const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
 
 var javascriptNodeJS = 'nodejs'
 var python = 'python'
@@ -33,9 +35,29 @@ var php = 'php'
 describe('Analyze - /actions/analyze', function () {
   var ctx = {}
 
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 11111,
+    allowed: true
+  }
   before(api.start.bind(ctx))
-  after(api.stop.bind(ctx))
   before(require('../../fixtures/mocks/api-client').setup)
+  beforeEach(generateKey)
+  beforeEach(function (done) {
+    whitelistOrgs([runnableOrg])
+    done()
+  })
+  beforeEach(function (done) {
+    multi.createUser(function (err, user) {
+      if (err) { return done(err) }
+      ctx.user = user
+      whitelistUserOrgs(ctx.user, [runnableOrg])
+      ctx.request = user.client.request
+      done()
+    })
+  })
+
+  after(api.stop.bind(ctx))
   after(require('../../fixtures/mocks/api-client').clean)
   afterEach(function (done) {
     // these tests hit redis a lot, so clear out the cache when they are run.
@@ -43,15 +65,6 @@ describe('Analyze - /actions/analyze', function () {
     redis.keys(process.env.REDIS_NAMESPACE + 'github-model-cache:*', function (err, keys) {
       if (err) { return done(err) }
       async.map(keys, function (key, cb) { redis.del(key, cb) }, done)
-    })
-  })
-  beforeEach(generateKey)
-  beforeEach(function (done) {
-    multi.createUser(function (err, user) {
-      if (err) { return done(err) }
-      ctx.user = user
-      ctx.request = user.client.request
-      done()
     })
   })
   afterEach(require('../../fixtures/clean-ctx')(ctx))

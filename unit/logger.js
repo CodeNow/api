@@ -3,76 +3,115 @@
  */
 'use strict'
 
-var Lab = require('lab')
+var clone = require('101/clone')
+var cls = require('continuation-local-storage')
 var Code = require('code')
 var domain = require('domain')
+var keypath = require('keypather')()
+var Lab = require('lab')
 var sinon = require('sinon')
+
+var _removeExtraKeys = require('logger/serializer-extra-keys')._removeExtraKeys
+var logger = require('logger')
 
 var lab = exports.lab = Lab.script()
 
+var afterEach = lab.afterEach
+var beforeEach = lab.beforeEach
 var describe = lab.describe
 var expect = Code.expect
 var it = lab.test
 
-var clone = require('101/clone')
-var keypath = require('keypather')()
-
-var logger = require('logger')
-var _removeExtraKeys = require('logger/serializer-extra-keys')._removeExtraKeys
-var removeEnvsAtPropertyPath = require('logger/serializer-env').removeEnvsAtPropertyPath
-
 describe('lib/logger.js unit test', function () {
   describe('serializers', function () {
     describe('tx', function () {
-      it('should use data from domain', function (done) {
-        var d = domain.create()
-        d.runnableData = {
-          foo: 'bar'
-        }
-        d.run(function () {
-          var serialized = logger._serializers.tx()
-          expect(serialized.txTimestamp).to.be.an.instanceOf(Date)
-          expect(serialized.foo).to.equal('bar')
+      describe('domain', function () {
+        it('should use data from domain', function (done) {
+          var d = domain.create()
+          d.runnableData = {
+            foo: 'bar'
+          }
+          d.run(function () {
+            var serialized = logger._serializers.tx()
+            expect(serialized.txTimestamp).to.be.an.instanceOf(Date)
+            expect(serialized.foo).to.equal('bar')
+            done()
+          })
+        })
+
+        it('should use existing domain.reqStart', function (done) {
+          var d = domain.create()
+          d.runnableData = {
+            reqStart: new Date()
+          }
+          d.run(function () {
+            var serialized = logger._serializers.tx()
+            expect(serialized.txTimestamp).to.be.an.instanceOf(Date)
+            expect(serialized.txMSFromReqStart).to.be.a.number()
+            done()
+          })
+        })
+
+        // log delta -- milliseconds since previous log message
+        it('should use previous txTimestamp to derrive log time delta', function (done) {
+          var d = domain.create()
+          d.runnableData = {
+            reqStart: new Date(),
+            txTimestamp: new Date(new Date() - 1000000)
+          }
+          d.run(function () {
+            var serialized = logger._serializers.tx()
+            expect(serialized.txTimestamp).to.be.an.instanceOf(Date)
+            expect(serialized.txMSFromReqStart).to.be.a.number()
+            // note(tj): js cannot be relied on to calculate timestamp differences w/ ms accuracy
+            // gave it a second offset in case the ci service is going slow:
+            expect(serialized.txMSDelta).to.about(1000000, 200)
+            done()
+          })
+        })
+      }) // end domain
+
+      describe('cls', function () {
+        var ns
+        beforeEach(function (done) {
+          ns = cls.createNamespace('ponos')
+
           done()
         })
-      })
 
-      it('should use existing domain.reqStart', function (done) {
-        var d = domain.create()
-        d.runnableData = {
-          reqStart: new Date()
-        }
-        d.run(function () {
-          var serialized = logger._serializers.tx()
-          expect(serialized.txTimestamp).to.be.an.instanceOf(Date)
-          expect(serialized.txMSFromReqStart).to.be.a.number()
+        afterEach(function (done) {
+          cls.destroyNamespace('ponos')
           done()
         })
-      })
 
-      // log delta -- milliseconds since previous log message
-      it('should use previous txTimestamp to derrive log time delta', function (done) {
-        var d = domain.create()
-        d.runnableData = {
-          reqStart: new Date(),
-          txTimestamp: new Date(new Date() - 1000000)
-        }
-        d.run(function () {
+        it('should return tid', function (done) {
+          var testTid = '123-123-123'
+          ns.run(function () {
+            ns.set('tid', testTid)
+            var serialized = logger._serializers.tx()
+            expect(serialized).to.equal({
+              tid: testTid
+            })
+            done()
+          })
+        })
+
+        it('should return undefined if no tid', function (done) {
+          ns.run(function () {
+            var serialized = logger._serializers.tx()
+            expect(serialized).to.be.undefined()
+            done()
+          })
+        })
+      }) // end cls
+
+      describe('undefined', function () {
+        it('should work when domain.runnableData not defined', function (done) {
           var serialized = logger._serializers.tx()
-          expect(serialized.txTimestamp).to.be.an.instanceOf(Date)
-          expect(serialized.txMSFromReqStart).to.be.a.number()
-          // note(tj): js cannot be relied on to calculate timestamp differences w/ ms accuracy
-          // gave it a second offset in case the ci service is going slow:
-          expect(serialized.txMSDelta).to.about(1000000, 200)
+          expect(serialized).to.be.undefined()
           done()
         })
-      })
-
-      it('should work when domain.runnableData not defined', function (done) {
-        var serialized = logger._serializers.tx()
-        expect(serialized.txTimestamp).to.be.an.instanceOf(Date)
-        done()
-      })
+      }) // end undefined
     })
 
     describe('req', function () {
@@ -139,7 +178,7 @@ describe('lib/logger.js unit test', function () {
         cat: 'key'
       }
       var out = _removeExtraKeys(testObj)
-      expect(out).to.deep.equal(testObj)
+      expect(out).to.equal(testObj)
       done()
     })
 
@@ -154,7 +193,7 @@ describe('lib/logger.js unit test', function () {
       keypath.set(inputData, 'cert', 'bad')
       keypath.set(inputData, 'key', 'bad')
       var out = _removeExtraKeys(inputData)
-      expect(out).to.deep.equal(testObj)
+      expect(out).to.equal(testObj)
       done()
     })
 
@@ -173,7 +212,7 @@ describe('lib/logger.js unit test', function () {
       keypath.set(inputData, 'cert', 'bad')
       keypath.set(inputData, 'key', 'bad')
       var out = _removeExtraKeys(inputData)
-      expect(out).to.deep.equal(testObj)
+      expect(out).to.equal(testObj)
       done()
     })
 
@@ -212,7 +251,7 @@ describe('lib/logger.js unit test', function () {
         }
       }
       var out = _removeExtraKeys(inputData)
-      expect(out).to.deep.equal({
+      expect(out).to.equal({
         data: {
           data: {
             owner: {
@@ -229,7 +268,7 @@ describe('lib/logger.js unit test', function () {
         }
       })
       // Make sure the original object wasn't modified
-      expect(inputData).to.deep.equal({
+      expect(inputData).to.equal({
         data: {
           owner: {
             github: 234234234,
@@ -248,45 +287,4 @@ describe('lib/logger.js unit test', function () {
       done()
     })
   }) // end _removeExtraKeys
-  describe('removeEnvsAtPropertyPath', function () {
-    it('should remove envs in a property', function (done) {
-      var originalObj = {
-        instance: {
-          env: [
-            'RUNNABLE_ID=1',
-            'SECRET_KEY=2'
-          ]
-        }
-      }
-      var obj = removeEnvsAtPropertyPath(['instance'])(originalObj)
-      expect(obj.instance.env).to.deep.equal([ 'RUNNABLE_ID=1' ])
-      done()
-    })
-
-    it('should remove envs in a property when uppercase', function (done) {
-      var originalObj = {
-        instance: {
-          ENV: [
-            'RUNNABLE_ID=1',
-            'SECRET_KEY=2'
-          ]
-        }
-      }
-      var obj = removeEnvsAtPropertyPath(['instance'])(originalObj)
-      expect(obj.instance.ENV).to.deep.equal([ 'RUNNABLE_ID=1' ])
-      done()
-    })
-
-    it('should remove envs at the top level', function (done) {
-      var originalObj = {
-        Env: [
-          'RUNNABLE_ID=1',
-          'SECRET_KEY=2'
-        ]
-      }
-      var obj = removeEnvsAtPropertyPath([''])(originalObj)
-      expect(obj.Env).to.deep.equal([ 'RUNNABLE_ID=1' ])
-      done()
-    })
-  })
 })

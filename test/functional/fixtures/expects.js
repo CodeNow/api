@@ -133,7 +133,7 @@ function expectKeypaths (body, expectedKeypaths) {
       // bc chai is not asserting eql for nested objects if the key order is diff...
       extracted = sortKeys(extracted)
       expected = sortKeys(expected)
-      expect(extracted).to.deep.contain(expected)
+      expect(extracted).to.contain(expected)
     }
   }
 }
@@ -184,7 +184,7 @@ expects.updatedNaviEntries = function (username, instance, container, cb) {
     }
     new NaviEntry(opts).lrange(0, -1, function (err, backends) {
       if (err) { retErr = err }
-      expect(JSON.parse(backends[0])).to.deep.contains(opts)
+      expect(JSON.parse(backends[0])).to.contains(opts)
       expect(backends[1]).to.equal(process.env.NAVI_HOST)
     })
   })

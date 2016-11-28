@@ -96,7 +96,7 @@ describe('GET /settings', function () {
           expect(returnedSettings.notifications.slack.apiToken).to.equal(
             settings.notifications.slack.apiToken
           )
-          expect(returnedSettings.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
+          expect(returnedSettings.notifications.slack.githubUsernameToSlackIdMap).to.equal(
             settings.notifications.slack.githubUsernameToSlackIdMap
           )
           done()
@@ -118,7 +118,7 @@ describe('GET /settings', function () {
           expect(settings.notifications.slack.apiToken).to.equal(
             settings.notifications.slack.apiToken
           )
-          expect(settings.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
+          expect(settings.notifications.slack.githubUsernameToSlackIdMap).to.equal(
             settings.notifications.slack.githubUsernameToSlackIdMap
           )
           done()
@@ -155,7 +155,7 @@ describe('GET /settings', function () {
           if (err) { return done(err) }
           expect(body._id).to.exist()
           expect(body.owner.github).to.equal(settings.owner.github)
-          expect(body.notifications.slack.githubUsernameToSlackIdMap).to.deep.equal(
+          expect(body.notifications.slack.githubUsernameToSlackIdMap).to.equal(
             settings.notifications.slack.githubUsernameToSlackIdMap
           )
           expect(body.notifications.slack.authToken).to.equal(

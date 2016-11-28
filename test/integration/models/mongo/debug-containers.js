@@ -84,7 +84,7 @@ describe('Debug Containers Integration Tests', function () {
         if (err) { return done(err) }
         expect(Docker.prototype.createContainer.calledOnce).to.be.true()
         var createArgs = Docker.prototype.createContainer.getCall(0).args[0]
-        expect(createArgs).to.deep.equal({
+        expect(createArgs).to.equal({
           Cmd: [ 'sleep', '28800' ],
           Image: dc.layerId,
           Labels: {
@@ -107,20 +107,15 @@ describe('Debug Containers Integration Tests', function () {
     })
 
     it('should destroy the docker container and remove the model', function (done) {
-      sinon.stub(Docker.prototype, 'stopContainer').yieldsAsync()
       sinon.stub(Docker.prototype, 'removeContainer').yieldsAsync()
 
       ctx.dc.destroyContainer(function (err, dc) {
         if (err) { return done(err) }
-        expect(Docker.prototype.stopContainer.calledOnce).to.be.true()
         // 4 is the ID above in the before...
-        expect(Docker.prototype.stopContainer.calledWith(4)).to.be.true()
         expect(Docker.prototype.removeContainer.calledOnce).to.be.true()
         // 4 is the ID above in the before...
         expect(Docker.prototype.removeContainer.calledWith(4)).to.be.true()
-        Docker.prototype.stopContainer.restore()
         Docker.prototype.removeContainer.restore()
-        expect(dc).to.deep.equal(ctx.dc)
         done()
       })
     })

@@ -1,2 +1,2 @@
-# Full details of this base image can be found here: https://hub.docker.com/_/elasticsearch/
-FROM elasticsearch:2.3
+# Change desired version below (Available: 2.0, 2.1, 2.2, 2.3, 5.0)
+FROM runnable/elasticsearch:2.3

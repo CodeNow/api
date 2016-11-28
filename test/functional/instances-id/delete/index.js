@@ -19,6 +19,9 @@ var expects = require('../../fixtures/expects')
 var primus = require('../../fixtures/primus')
 var rabbitMQ = require('models/rabbitmq')
 
+const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
+const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
+
 describe('DELETE /instances/:id', function () {
   var ctx = {}
 
@@ -31,7 +34,15 @@ describe('DELETE /instances/:id', function () {
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))
-
+  var runnableOrg = {
+    name: 'Runnable',
+    githubId: 11111,
+    allowed: true
+  }
+  beforeEach(function (done) {
+    whitelistOrgs([runnableOrg])
+    done()
+  })
   before(function (done) {
     // prevent worker to be created
     sinon.stub(rabbitMQ, 'deleteInstance', function () {})
@@ -67,6 +78,7 @@ describe('DELETE /instances/:id', function () {
       ctx.user = user
       require('../../fixtures/mocks/github/user')(ctx.user)
       require('../../fixtures/mocks/github/user')(ctx.user)
+      whitelistUserOrgs(ctx.user, [runnableOrg])
       done()
     })
   })
@@ -84,22 +96,18 @@ describe('DELETE /instances/:id', function () {
         beforeEach(function (done) {
           // TODO: remove when I merge in the github permissions stuff
           require('../../fixtures/mocks/github/user-orgs')(100, 'otherOrg')
-          ctx.nonOwner = multi.createUser(done)
+          ctx.nonOwner = multi.createUser(function (err, user) {
+            whitelistUserOrgs(user, [{
+              githubId: 100,
+              name: 'otherOrg',
+              allowed: true
+            }])
+            done(err)
+          })
         })
         it('should not delete the instance (403 forbidden)', function (done) {
           ctx.instance.client = ctx.nonOwner.client // swap auth to nonOwner's
           ctx.instance.destroy(expects.errorStatus(403, done))
-        })
-      })
-      describe('moderator', function () {
-        beforeEach(function (done) {
-          ctx.moderator = multi.createModerator(done)
-        })
-        it('should delete the instance', function (done) {
-          ctx.instance.client = ctx.moderator.client // swap auth to moderator's
-          require('../../fixtures/mocks/github/user-id')(ctx.moderator.attrs.accounts.github.id,
-            ctx.moderator.attrs.accounts.github.login)
-          ctx.instance.destroy(expects.success(204, done))
         })
       })
     })
