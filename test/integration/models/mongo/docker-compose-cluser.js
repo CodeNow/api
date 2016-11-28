@@ -5,6 +5,7 @@ const lab = exports.lab = Lab.script()
 const describe = lab.describe
 const it = lab.it
 const before = lab.before
+const beforeEach = lab.beforeEach
 const after = lab.after
 const afterEach = lab.afterEach
 const Code = require('code')
@@ -15,9 +16,10 @@ const DockerComposeCluster = require('models/mongo/docker-compose-cluster')
 const mongooseControl = require('models/mongo/mongoose-control')
 
 describe('DockerComposeCluster Model Integration Tests', function () {
+  const parentInstanceId = '507f191e810c19729de860ea'
   const data = {
     dockerComposeFilePath: '/config/compose.yml',
-    parentInstanceId: objectId('507f191e810c19729de860ea'),
+    parentInstanceId: objectId(parentInstanceId),
     siblingsInstanceIds: [
       objectId('607f191e810c19729de860eb'),
       objectId('707f191e810c19729de860ec')
@@ -32,7 +34,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
 
   describe('find by parent instance', function () {
     let savedDockerComposeCluster = null
-    before(function (done) {
+    beforeEach(function (done) {
       const composeCluster = new DockerComposeCluster(data)
       composeCluster.saveAsync()
       .tap(function (saved) {
@@ -42,20 +44,45 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(saved.siblingsInstanceIds[0].toString()).to.equal(data.siblingsInstanceIds[0].toString())
         expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
         expect(saved.created).to.exist()
+        expect(saved.deleted).to.not.exist()
         savedDockerComposeCluster = saved
       }).asCallback(done)
     })
 
     it('should be possible to find compose cluster by parent id', function (done) {
-      DockerComposeCluster.findOneAsync({ 'parentInstanceId': objectId('507f191e810c19729de860ea') })
+      DockerComposeCluster.findOneAsync({ parentInstanceId: objectId(parentInstanceId) })
       .tap(function (composeCluster) {
         expect(String(composeCluster._id)).to.equal(String(savedDockerComposeCluster._id))
         expect(composeCluster.dockerComposeFilePath).to.equal(savedDockerComposeCluster.dockerComposeFilePath)
         expect(composeCluster.parentInstanceId.toString()).to.equal(savedDockerComposeCluster.parentInstanceId.toString())
         expect(composeCluster.siblingsInstanceIds.length).to.equal(savedDockerComposeCluster.siblingsInstanceIds.length)
         expect(composeCluster.created).to.equal(savedDockerComposeCluster.created)
+        expect(composeCluster.deleted).to.not.exist()
       })
       .asCallback(done)
+    })
+
+    it('should be possible to find compose cluster by calling findActiveByParentId', function (done) {
+      DockerComposeCluster.findActiveByParentId(parentInstanceId)
+      .tap(function (composeCluster) {
+        expect(String(composeCluster._id)).to.equal(String(savedDockerComposeCluster._id))
+        expect(composeCluster.dockerComposeFilePath).to.equal(savedDockerComposeCluster.dockerComposeFilePath)
+        expect(composeCluster.parentInstanceId.toString()).to.equal(savedDockerComposeCluster.parentInstanceId.toString())
+        expect(composeCluster.siblingsInstanceIds.length).to.equal(savedDockerComposeCluster.siblingsInstanceIds.length)
+        expect(composeCluster.created).to.equal(savedDockerComposeCluster.created)
+        expect(composeCluster.deleted).to.not.exist()
+      })
+      .asCallback(done)
+    })
+
+    it('should return NotFound if findActiveByParentId was called with cluster that doesn\'t exist', function (done) {
+      DockerComposeCluster.findActiveByParentId('107f191e810c19729de860ea')
+      .asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.message).to.equal('DockerComposeCluster not found')
+        expect(err).to.be.an.instanceOf(DockerComposeCluster.NotFoundError)
+        done()
+      })
     })
   })
 
@@ -63,7 +90,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
     it('should be possible to save compose cluster', function (done) {
       const data = {
         dockerComposeFilePath: '/config/compose.yml',
-        parentInstanceId: objectId('507f191e810c19729de860ea'),
+        parentInstanceId: objectId(parentInstanceId),
         siblingsInstanceIds: [
           objectId('607f191e810c19729de860eb'),
           objectId('707f191e810c19729de860ec')
@@ -80,6 +107,43 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(saved.created).to.exist()
       })
       .asCallback(done)
+    })
+  })
+
+  describe('markAsDeleted', function () {
+    let savedDockerComposeCluster = null
+    beforeEach(function (done) {
+      const composeCluster = new DockerComposeCluster(data)
+      composeCluster.saveAsync()
+      .tap(function (saved) {
+        expect(saved.dockerComposeFilePath).to.equal(data.dockerComposeFilePath)
+        expect(saved.parentInstanceId.toString()).to.equal(data.parentInstanceId.toString())
+        expect(saved.siblingsInstanceIds.length).to.equal(data.siblingsInstanceIds.length)
+        expect(saved.siblingsInstanceIds[0].toString()).to.equal(data.siblingsInstanceIds[0].toString())
+        expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
+        expect(saved.created).to.exist()
+        expect(saved.deleted).to.not.exist()
+        savedDockerComposeCluster = saved
+      }).asCallback(done)
+    })
+
+    it('should be able to mark instance as deleted', function (done) {
+      DockerComposeCluster.markAsDeleted(savedDockerComposeCluster._id)
+      .then(function () {
+        return DockerComposeCluster.findOneAsync({ parentInstanceId: objectId(savedDockerComposeCluster.parentInstanceId) })
+      })
+      .tap(function (clusterModel) {
+        expect(clusterModel).to.exist()
+      })
+      .then(function () {
+        return DockerComposeCluster.findActiveByParentId(savedDockerComposeCluster.parentInstanceId)
+      })
+      .asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.message).to.equal('DockerComposeCluster not found')
+        expect(err).to.be.an.instanceOf(DockerComposeCluster.NotFoundError)
+        done()
+      })
     })
   })
 

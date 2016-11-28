@@ -59,7 +59,7 @@ RUN pecl install mongodb && echo "extension=mongodb.so" > /usr/local/etc/php/con
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 <before-main-repo>
-#default dst:/var/www/html/
+#default dst:/var/www/
 #default run:composer install
 <after-main-repo>
 
