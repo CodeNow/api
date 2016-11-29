@@ -375,17 +375,12 @@ describe('Organization Service', function () {
     })
   })
 
-  describe('updateFlagsOnOrg', function () {
+  describe.only('updateFlagsOnOrg', function () {
     const goodOpts = {
-      metadata: {
-        hasConfirmedSetup: true
-      }
+      metadata: {}
     }
-    const badOpts = {
-      metadata: {
-        hasConfirmedSetup: 'evenBetterName'
-      }
-    }
+    const badOpts = {}
+
     beforeEach(function (done) {
       sinon.stub(UserService, 'validateSessionUserPartOfOrg').resolves(bigPoppaUser)
       sinon.stub(OrganizationService, 'updateById').resolves(bigPoppaOrg)
@@ -398,18 +393,19 @@ describe('Organization Service', function () {
       done()
     })
 
-    describe('failures', function () {
+    describe.only('failures', function () {
       it('should validate and fail because of Joi (bad values)', function (done) {
         OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, badOpts)
           .catch(function (err) {
-            expect(err.message).to.match(/hasConfirmedSetup/)
+            expect(err.message).to.match(/[prBotEnabled, metadata]/)
             done()
           })
       })
       it('should validate and fail because of Joi (missing values)', function (done) {
-        OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, { metadata: {} })
+        OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, { fact: 'Donald Trump is president' })
           .catch(function (err) {
-            expect(err.message).to.match(/hasConfirmedSetup/)
+            console.log(err);
+            expect(err.message).to.match(/[prBotEnabled, metadata]/)
             done()
           })
       })
