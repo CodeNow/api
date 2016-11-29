@@ -53,7 +53,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           name: 'api',
           containerStartCommand: 'npm start',
           ports: [80],
-          env: ['HELLO=WOLRD']
+          env: ['HELLO=WORLD']
         }
       }]
     }
