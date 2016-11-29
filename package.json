@@ -17,6 +17,7 @@
     "@runnable/api-client": "^9.1.0",
     "@runnable/big-poppa-client": "^0.5.1",
     "@runnable/hostname": "^3.0.0",
+    "@runnable/octobear" : "git+ssh://git@github.com/runnable/octobear.git",
     "@runnable/orion": "^1.0.4",
     "JSONStream": "0.10.x",
     "array-subtract": "^2.0.0",
