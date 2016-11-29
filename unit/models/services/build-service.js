@@ -1202,7 +1202,7 @@ describe('BuildService', function () {
       }
       sinon.stub(BuildService, 'validateOpts').resolves()
       sinon.stub(PermissionService, 'isOwnerOf').resolves()
-      sinon.stub(ContextVersion, 'findByIdAsync').resolves(mockContextVersion)
+      sinon.stub(ContextVersion, 'findContextVersionById').resolves(mockContextVersion)
       sinon.stub(Build, 'createAsync').resolves(mockBuild)
       done()
     })
@@ -1210,7 +1210,7 @@ describe('BuildService', function () {
     afterEach(function (done) {
       BuildService.validateOpts.restore()
       PermissionService.isOwnerOf.restore()
-      ContextVersion.findByIdAsync.restore()
+      ContextVersion.findContextVersionById.restore()
       Build.createAsync.restore()
       done()
     })
@@ -1237,23 +1237,13 @@ describe('BuildService', function () {
           })
       })
 
-      it('should reject when ContextVersion.findByIdAsync fails', function (done) {
+      it('should reject when ContextVersion.findContextVersionById fails', function (done) {
         var error = new Error('Validator Fail')
-        ContextVersion.findByIdAsync.rejects(error)
+        ContextVersion.findContextVersionById.rejects(error)
         BuildService.createBuild(opts, mockUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err).to.equal(error)
-            done()
-          })
-      })
-
-      it('should reject when ContextVersion.findByIdAsync doesn\'t return anything', function (done) {
-        ContextVersion.findByIdAsync.resolves()
-        BuildService.createBuild(opts, mockUser)
-          .asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.equal('contextVersion not found')
             done()
           })
       })
@@ -1285,7 +1275,7 @@ describe('BuildService', function () {
             .asCallback(function (err) {
               expect(err).to.not.exist()
               sinon.assert.calledWithExactly(
-                ContextVersion.findByIdAsync,
+                ContextVersion.findContextVersionById,
                 mockContextVersion._id
               )
               done()
@@ -1301,7 +1291,7 @@ describe('BuildService', function () {
             .asCallback(function (err) {
               expect(err).to.not.exist()
               sinon.assert.calledWithExactly(
-                ContextVersion.findByIdAsync,
+                ContextVersion.findContextVersionById,
                 mockContextVersion._id
               )
               done()
@@ -1315,7 +1305,7 @@ describe('BuildService', function () {
           }, mockUser)
             .asCallback(function (err) {
               expect(err).to.not.exist()
-              sinon.assert.notCalled(ContextVersion.findByIdAsync)
+              sinon.assert.notCalled(ContextVersion.findContextVersionById)
               done()
             })
         })
