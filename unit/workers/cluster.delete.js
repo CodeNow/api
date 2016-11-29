@@ -48,16 +48,18 @@ describe('Cluster Delete Worker', function () {
       })
     })
 
-    it('should return no error', function (done) {
-      Worker.task(testData).asCallback(done)
-    })
+    describe('success', function () {
+      it('should return no error', function (done) {
+        Worker.task(testData).asCallback(done)
+      })
 
-    it('should find an instance by id', function (done) {
-      Worker.task(testData).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(DockerComposeClusterService.delete)
-        sinon.assert.calledWithExactly(DockerComposeClusterService.delete, testData.cluster.id)
-        done()
+      it('should call DockerComposeClusterService.delete', function (done) {
+        Worker.task(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(DockerComposeClusterService.delete)
+          sinon.assert.calledWithExactly(DockerComposeClusterService.delete, testData.cluster.id)
+          done()
+        })
       })
     })
   })
