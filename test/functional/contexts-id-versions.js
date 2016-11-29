@@ -60,31 +60,6 @@ describe('Versions - /contexts/:contextid/versions', function () {
       require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/')
       ctx.context.createVersion({}, expects.success(201, expected, done))
     })
-    describe('toBuild query', function () {
-      it('should create a new version', function (done) {
-        var expected = {
-          owner: exists,
-          infraCodeVersion: exists
-        }
-        var body = {}
-        var opts = {
-          json: body,
-          qs: {
-            toBuild: ctx.build.id()
-          }
-        }
-        require('./fixtures/mocks/s3/put-object')(ctx.context.id(), '/')
-        var contextVersion =
-        ctx.context.createVersion(opts, expects.success(201, expected, function (err) {
-          if (err) { return done(err) }
-          var buildExpected = {
-            contexts: [ctx.context.id()],
-            contextVersions: [contextVersion.id()]
-          }
-          ctx.build.fetch(expects.success(200, buildExpected, done))
-        }))
-      })
-    })
     describe('with body', function () {
       beforeEach(function (done) {
         multi.createBuiltBuild(function (err, build, user, modelArr) {

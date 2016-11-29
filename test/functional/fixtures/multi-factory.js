@@ -296,11 +296,7 @@ module.exports = {
       var srcContext = others[1]
       var moderator = others[2]
       require('./mocks/s3/put-object')(context.id(), '/')
-      var opts = {}
-      opts.qs = {
-        toBuild: build.id()
-      }
-      var contextVersion = context.createVersion(opts, function (err) {
+      var contextVersion = context.createVersion({}, function (err) {
         if (err) { return realCb(err) }
         require('./mocks/s3/get-object')(srcContext.id(), '/')
         require('./mocks/s3/get-object')(srcContext.id(), '/Dockerfile')
