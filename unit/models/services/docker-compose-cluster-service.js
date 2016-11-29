@@ -73,7 +73,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     const newInstanceName = 'api-unit'
     beforeEach(function (done) {
       sinon.stub(DockerComposeCluster, 'createAsync').resolves(new DockerComposeCluster(clusterData))
-      sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves('')
+      sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves(dockerComposeFileString)
       sinon.stub(octobear, 'parse').returns(testParsedContent)
       sinon.stub(rabbitMQ, 'clusterCreated').returns()
       done()
@@ -147,8 +147,14 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       it('should call octobear.parse with correct args', function (done) {
         DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .tap(function () {
-          sinon.assert.calledTwice(octobear.parse)
-          sinon.assert.calledWithExactly(octobear.parse, dockerComposeFileString)
+          sinon.assert.calledOnce(octobear.parse)
+          const parserPayload = {
+            dockerComposeFileString,
+            repositoryName: newInstanceName,
+            ownerUsername: sessionUser.accounts.github.username,
+            userContentDomain: process.env.USER_CONTENT_DOMAIN
+          }
+          sinon.assert.calledWithExactly(octobear.parse, parserPayload)
         })
         .asCallback(done)
       })
@@ -183,7 +189,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             GitHub.prototype.getRepoContentAsync,
             octobear.parse,
             DockerComposeCluster.createAsync,
-            rabbitMQ.clusterDeleted)
+            rabbitMQ.clusterCreated)
         })
         .asCallback(done)
       })
