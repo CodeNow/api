@@ -375,7 +375,7 @@ describe('Organization Service', function () {
     })
   })
 
-  describe.only('updateFlagsOnOrg', function () {
+  describe('updateFlagsOnOrg', function () {
     const goodOpts = {
       metadata: {}
     }
@@ -393,7 +393,7 @@ describe('Organization Service', function () {
       done()
     })
 
-    describe.only('failures', function () {
+    describe('failures', function () {
       it('should validate and fail because of Joi (bad values)', function (done) {
         OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, badOpts)
           .catch(function (err) {
