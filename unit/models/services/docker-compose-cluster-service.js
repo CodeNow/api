@@ -166,7 +166,12 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .tap(function () {
           sinon.assert.calledOnce(rabbitMQ.clusterCreated)
-          sinon.assert.calledWithExactly(rabbitMQ.clusterCreated, { id: clusterId.toString(), parsedCompose: testParsedContent })
+          const cluster = { id: clusterId.toString() }
+          const payload = {
+            cluster,
+            parsedCompose: testParsedContent
+          }
+          sinon.assert.calledWithExactly(rabbitMQ.clusterCreated, payload)
         })
         .asCallback(done)
       })
