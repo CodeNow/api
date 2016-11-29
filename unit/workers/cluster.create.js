@@ -85,7 +85,9 @@ describe('Cluster Create Worker', function () {
         sinon.assert.calledOnce(DockerComposeClusterService.create)
         sinon.assert.calledWithExactly(DockerComposeClusterService.create,
           sessionUser,
-          testData.repoName, testData.branchName, testData.dockerComposeFilePath, testData.newInstanceName)
+          testData.triggeredAction,
+          testData.repoName,
+          testData.branchName, testData.dockerComposeFilePath, testData.newInstanceName)
         done()
       })
     })

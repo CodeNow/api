@@ -61,11 +61,13 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       _id: objectId('107f191e810c19729de860ee'),
       accounts: {
         github: {
+          id: 123,
           username: 'runnabot',
           accessToken: 'some-token'
         }
       }
     }
+    const triggeredAction = 'webhook'
     const dockerComposeFileString = 'some-compose-file-string'
     const repoName = 'Runnable/api'
     const branchName = 'feature-1'
@@ -89,7 +91,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       it('should return error if getRepoContentAsync failed', function (done) {
         const error = new Error('Some error')
         GitHub.prototype.getRepoContentAsync.rejects(error)
-        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -100,7 +102,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       it('should return error if octobear.parse failed', function (done) {
         const error = new Error('Some error')
         octobear.parse.throws(error)
-        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -111,7 +113,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       it('should return error if createAsync failed', function (done) {
         const error = new Error('Some error')
         DockerComposeCluster.createAsync.rejects(error)
-        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -122,7 +124,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       it('should return error if clusterCreared failed', function (done) {
         const error = new Error('Some error')
         rabbitMQ.clusterCreated.throws(error)
-        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -132,11 +134,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
     describe('success', function () {
       it('should run successfully', function (done) {
-        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName).asCallback(done)
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoName, branchName, dockerComposeFilePath, newInstanceName).asCallback(done)
       })
 
       it('should call getRepoContentAsync with correct args', function (done) {
-        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .tap(function () {
           sinon.assert.calledOnce(GitHub.prototype.getRepoContentAsync)
           sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoName, dockerComposeFilePath)
@@ -145,7 +147,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       })
 
       it('should call octobear.parse with correct args', function (done) {
-        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .tap(function () {
           sinon.assert.calledOnce(octobear.parse)
           const parserPayload = {
@@ -160,16 +162,19 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       })
 
       it('should call createAsync with correct args', function (done) {
-        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .tap(function () {
           sinon.assert.calledOnce(DockerComposeCluster.createAsync)
-          sinon.assert.calledWithExactly(DockerComposeCluster.createAsync, { dockerComposeFilePath })
+          sinon.assert.calledWithExactly(DockerComposeCluster.createAsync, {
+            dockerComposeFilePath,
+            createdBy: sessionUser.accounts.github.id,
+            triggeredAction })
         })
         .asCallback(done)
       })
 
       it('should call clusterCreated with correct args', function (done) {
-        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .tap(function () {
           sinon.assert.calledOnce(rabbitMQ.clusterCreated)
           const cluster = { id: clusterId.toString() }
@@ -183,7 +188,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       })
 
       it('should call all the functions in the order', function (done) {
-        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .tap(function () {
           sinon.assert.callOrder(
             GitHub.prototype.getRepoContentAsync,
