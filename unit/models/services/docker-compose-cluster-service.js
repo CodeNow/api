@@ -66,19 +66,20 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         }
       }
     }
+    const dockerComposeFileString = 'some-compose-file-string'
     const repoName = 'Runnable/api'
     const branchName = 'feature-1'
     const dockerComposeFilePath = './compose.yml'
     const newInstanceName = 'api-unit'
     beforeEach(function (done) {
-      sinon.stub(DockerComposeCluster, 'saveAsync').resolves(new DockerComposeCluster(clusterData))
-      sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves()
+      sinon.stub(DockerComposeCluster, 'createAsync').resolves(new DockerComposeCluster(clusterData))
+      sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves('')
       sinon.stub(octobear, 'parse').returns(testParsedContent)
       sinon.stub(rabbitMQ, 'clusterCreated').returns()
       done()
     })
     afterEach(function (done) {
-      DockerComposeCluster.saveAsync.restore()
+      DockerComposeCluster.createAsync.restore()
       GitHub.prototype.getRepoContentAsync.restore()
       octobear.parse.restore()
       rabbitMQ.clusterCreated.restore()
@@ -107,9 +108,9 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         })
       })
 
-      it('should return error if saveAsync failed', function (done) {
+      it('should return error if createAsync failed', function (done) {
         const error = new Error('Some error')
-        DockerComposeCluster.saveAsync.rejects(error)
+        DockerComposeCluster.createAsync.rejects(error)
         DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -129,60 +130,59 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         })
       })
     })
-    // describe('success', function () {
-    //   it('should run successfully', function (done) {
-    //     DockerComposeClusterService.delete(parentInstanceId).asCallback(done)
-    //   })
-    //
-    //   it('should call findActiveByParentId with correct args', function (done) {
-    //     DockerComposeClusterService.delete(parentInstanceId)
-    //     .tap(function () {
-    //       sinon.assert.calledOnce(DockerComposeCluster.findActiveByParentId)
-    //       sinon.assert.calledWithExactly(DockerComposeCluster.findActiveByParentId, parentInstanceId)
-    //     })
-    //     .asCallback(done)
-    //   })
-    //
-    //   it('should call deleteInstance with correct args', function (done) {
-    //     DockerComposeClusterService.delete(parentInstanceId)
-    //     .tap(function () {
-    //       sinon.assert.calledTwice(rabbitMQ.deleteInstance)
-    //       sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, { instanceId: clusterData.siblingsInstanceIds[0] })
-    //       sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, { instanceId: clusterData.siblingsInstanceIds[1] })
-    //     })
-    //     .asCallback(done)
-    //   })
-    //
-    //   it('should call markAsDeleted with correct args', function (done) {
-    //     DockerComposeClusterService.delete(parentInstanceId)
-    //     .tap(function () {
-    //       sinon.assert.calledOnce(DockerComposeCluster.markAsDeleted)
-    //       sinon.assert.calledWithExactly(DockerComposeCluster.markAsDeleted, clusterId)
-    //     })
-    //     .asCallback(done)
-    //   })
-    //
-    //   it('should call clusterDeleted with correct args', function (done) {
-    //     DockerComposeClusterService.delete(parentInstanceId)
-    //     .tap(function () {
-    //       sinon.assert.calledOnce(rabbitMQ.clusterDeleted)
-    //       sinon.assert.calledWithExactly(rabbitMQ.clusterDeleted, { id: clusterId.toString() })
-    //     })
-    //     .asCallback(done)
-    //   })
-    //
-    //   it('should call all the functions in the order', function (done) {
-    //     DockerComposeClusterService.delete(parentInstanceId)
-    //     .tap(function () {
-    //       sinon.assert.callOrder(
-    //         DockerComposeCluster.findActiveByParentId,
-    //         rabbitMQ.deleteInstance,
-    //         DockerComposeCluster.markAsDeleted,
-    //         rabbitMQ.clusterDeleted)
-    //     })
-    //     .asCallback(done)
-    //   })
-    // })
+    describe('success', function () {
+      it('should run successfully', function (done) {
+        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName).asCallback(done)
+      })
+
+      it('should call getRepoContentAsync with correct args', function (done) {
+        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        .tap(function () {
+          sinon.assert.calledOnce(GitHub.prototype.getRepoContentAsync)
+          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoName, dockerComposeFilePath)
+        })
+        .asCallback(done)
+      })
+
+      it('should call octobear.parse with correct args', function (done) {
+        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        .tap(function () {
+          sinon.assert.calledTwice(octobear.parse)
+          sinon.assert.calledWithExactly(octobear.parse, dockerComposeFileString)
+        })
+        .asCallback(done)
+      })
+
+      it('should call createAsync with correct args', function (done) {
+        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        .tap(function () {
+          sinon.assert.calledOnce(DockerComposeCluster.createAsync)
+          sinon.assert.calledWithExactly(DockerComposeCluster.createAsync, { dockerComposeFilePath })
+        })
+        .asCallback(done)
+      })
+
+      it('should call clusterCreated with correct args', function (done) {
+        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        .tap(function () {
+          sinon.assert.calledOnce(rabbitMQ.clusterCreated)
+          sinon.assert.calledWithExactly(rabbitMQ.clusterCreated, { id: clusterId.toString(), parsedCompose: testParsedContent })
+        })
+        .asCallback(done)
+      })
+
+      it('should call all the functions in the order', function (done) {
+        DockerComposeClusterService.create(sessionUser, repoName, branchName, dockerComposeFilePath, newInstanceName)
+        .tap(function () {
+          sinon.assert.callOrder(
+            GitHub.prototype.getRepoContentAsync,
+            octobear.parse,
+            DockerComposeCluster.createAsync,
+            rabbitMQ.clusterDeleted)
+        })
+        .asCallback(done)
+      })
+    })
   })
   describe('delete', function () {
     const clusterId = objectId('407f191e810c19729de860ef')
