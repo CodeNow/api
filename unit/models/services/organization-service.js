@@ -402,9 +402,8 @@ describe('Organization Service', function () {
           })
       })
       it('should validate and fail because of Joi (missing values)', function (done) {
-        OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, { fact: 'Donald Trump is president' })
+        OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, { fact: 'Donald Trump will be president' })
           .catch(function (err) {
-            console.log(err);
             expect(err.message).to.match(/[prBotEnabled, metadata]/)
             done()
           })
