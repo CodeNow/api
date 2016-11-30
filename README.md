@@ -185,13 +185,6 @@ This may be because you're getting access denied from npm. Which is trying to cl
 - Build List Page - /project/anandkumar/filibuster/master
  - has a listing of builds for an environment
 
-- Build Page - /project/anandkumar/filibuster/master/build/:id
- - is the most complex page
- - you can edit build files and create new builds
- - you can rebuild - create a new build from a build
- - shows logs if in progress, shows all logs if complete
- - [launch instance button]
-
 - Instance Page - /project/anandkumar/filibuster/master/build/:id (just like our current container pages except supports multiple containers (full instance))
  - create an instance from a build (create containers for all build images (versions))
 ```
