@@ -22,7 +22,9 @@ const Worker = require('workers/cluster.delete')
 describe('Cluster Delete Worker', function () {
   describe('worker', function () {
     const testData = {
-      parentInstanceId: 'some-id'
+      cluster: {
+        id: 'some-id'
+      }
     }
     beforeEach(function (done) {
       sinon.stub(DockerComposeClusterService, 'delete').resolves()
@@ -50,11 +52,11 @@ describe('Cluster Delete Worker', function () {
       Worker.task(testData).asCallback(done)
     })
 
-    it('should find an instance by id', function (done) {
+    it('should call service.delete function', function (done) {
       Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(DockerComposeClusterService.delete)
-        sinon.assert.calledWithExactly(DockerComposeClusterService.delete, testData.parentInstanceId)
+        sinon.assert.calledWithExactly(DockerComposeClusterService.delete, testData.cluster.id)
         done()
       })
     })
