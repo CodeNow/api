@@ -12,6 +12,7 @@ var Code = require('code')
 var expect = Code.expect
 var sinon = require('sinon')
 
+var async = require('async')
 var createCount = require('callback-count')
 var pluck = require('101/pluck')
 
@@ -298,6 +299,32 @@ describe('BDD - Isolation', function () {
             ctx.webInstance.attrs.lowerName
           )
           done()
+        })
+      })
+
+      it('should delete the children when we delete the master', function (done) {
+        ctx.webInstance.destroy(function (err) {
+          if (err) { return done(err) }
+          var opts = {
+            owner: { github: ctx.user.attrs.accounts.github.id },
+            isolated: ctx.isolation.attrs._id.toString()
+          }
+          async.retry(
+            10,
+            function (callback) {
+              if (err) { return done(err) }
+              ctx.user.fetchInstances(opts, function (err, instances) {
+                if (err) { return done(err) }
+                try {
+                  expect(instances).to.have.length(0)
+                } catch (e) {
+                  return setTimeout(function () { callback(e) }, 25)
+                }
+                callback()
+              })
+            },
+            done
+          )
         })
       })
     })
