@@ -3,32 +3,34 @@
  */
 'use strict'
 
-const Lab = require('lab')
-const lab = exports.lab = Lab.script()
+var Lab = require('lab')
+var lab = exports.lab = Lab.script()
 
-const afterEach = lab.afterEach
-const beforeEach = lab.beforeEach
-const describe = lab.describe
-const expect = require('code').expect
-const it = lab.it
+var afterEach = lab.afterEach
+var beforeEach = lab.beforeEach
+var describe = lab.describe
+var expect = require('code').expect
+var it = lab.it
 
-const Promise = require('bluebird')
-const WorkerStopError = require('error-cat/errors/worker-stop-error')
-const sinon = require('sinon')
+var Promise = require('bluebird')
+var WorkerStopError = require('error-cat/errors/worker-stop-error')
+var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
-const Instance = require('models/mongo/instance')
-const Worker = require('workers/instance.delete')
-const messenger = require('socket/messenger')
+var Instance = require('models/mongo/instance')
+var InstanceService = require('models/services/instance-service')
+var IsolationService = require('models/services/isolation-service')
+var Worker = require('workers/instance.delete')
+var messenger = require('socket/messenger')
 const rabbitMQ = require('models/rabbitmq')
 
 describe('Instance Delete Worker', function () {
   describe('worker', function () {
-    const testInstanceId = '5633e9273e2b5b0c0077fd41'
-    const testData = {
+    var testInstanceId = '5633e9273e2b5b0c0077fd41'
+    var testData = {
       instanceId: testInstanceId
     }
-    const testInstance = new Instance({
+    var testInstance = new Instance({
       _id: testInstanceId,
       name: 'name1',
       shortHash: 'asd51a1',
@@ -65,6 +67,8 @@ describe('Instance Delete Worker', function () {
       sinon.stub(rabbitMQ, 'deleteContainer').returns()
       sinon.stub(Instance.prototype, 'removeSelfFromGraph').resolves()
       sinon.stub(Instance.prototype, 'removeAsync').resolves()
+      sinon.stub(InstanceService, 'deleteAllInstanceForks').resolves()
+      sinon.stub(IsolationService, 'deleteIsolation').resolves()
       sinon.stub(messenger, 'emitInstanceDelete').returns()
       done()
     })
@@ -74,13 +78,15 @@ describe('Instance Delete Worker', function () {
       rabbitMQ.deleteContainer.restore()
       Instance.prototype.removeSelfFromGraph.restore()
       Instance.prototype.removeAsync.restore()
+      InstanceService.deleteAllInstanceForks.restore()
+      IsolationService.deleteIsolation.restore()
       messenger.emitInstanceDelete.restore()
       done()
     })
 
     describe('errors', function () {
       it('should reject with any findById error', function (done) {
-        const mongoError = new Error('Mongo failed')
+        var mongoError = new Error('Mongo failed')
         Instance.findByIdAsync.rejects(mongoError)
 
         Worker.task(testData).asCallback(function (err) {
@@ -102,7 +108,7 @@ describe('Instance Delete Worker', function () {
       })
 
       it('should reject with any removeSelfFromGraph error', function (done) {
-        const neoError = new Error('Neo failed')
+        var neoError = new Error('Neo failed')
         Instance.prototype.removeSelfFromGraph.rejects(neoError)
 
         Worker.task(testData).asCallback(function (err) {
@@ -112,9 +118,33 @@ describe('Instance Delete Worker', function () {
         })
       })
 
+      it('should reject with any delete isolation error', function (done) {
+        testInstance.isolated = 'deadbeefdeadbeefdeadbeef'
+        testInstance.isIsolationGroupMaster = true
+        var error = new Error('pugsly')
+        IsolationService.deleteIsolation.rejects(error)
+
+        Worker.task(testData).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.equal(error)
+          done()
+        })
+      })
+
       it('should reject with any remove error', function (done) {
-        const mongoError = new Error('Mongo failed')
+        var mongoError = new Error('Mongo failed')
         Instance.prototype.removeAsync.rejects(mongoError)
+
+        Worker.task(testData).asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err).to.equal(mongoError)
+          done()
+        })
+      })
+
+      it('should reject with any deleteAllInstanceForks error', function (done) {
+        var mongoError = new Error('Mongo failed')
+        InstanceService.deleteAllInstanceForks.rejects(mongoError)
 
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
@@ -148,6 +178,21 @@ describe('Instance Delete Worker', function () {
       })
     })
 
+    it('should delete the isolation if it is the master', function (done) {
+      testInstance.isolated = 'deadbeefdeadbeefdeadbeef'
+      testInstance.isIsolationGroupMaster = true
+
+      Worker.task(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(IsolationService.deleteIsolation)
+        sinon.assert.calledWithExactly(
+          IsolationService.deleteIsolation,
+          testInstance.isolated
+        )
+        done()
+      })
+    })
+
     it('should remove the mongo model', function (done) {
       Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
@@ -163,6 +208,15 @@ describe('Instance Delete Worker', function () {
         sinon.assert.calledWithExactly(rabbitMQ.deleteContainer, {
           containerId: testInstance.container.dockerContainer
         })
+        done()
+      })
+    })
+
+    it('should delete all instance forks', function (done) {
+      Worker.task(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        sinon.assert.calledOnce(InstanceService.deleteAllInstanceForks)
+        sinon.assert.calledWithExactly(InstanceService.deleteAllInstanceForks, testInstance)
         done()
       })
     })
@@ -208,6 +262,7 @@ describe('Instance Delete Worker', function () {
           Instance.prototype.removeSelfFromGraph,
           Instance.prototype.removeAsync,
           rabbitMQ.deleteContainer,
+          InstanceService.deleteAllInstanceForks,
           messenger.emitInstanceDelete
         )
         done()
