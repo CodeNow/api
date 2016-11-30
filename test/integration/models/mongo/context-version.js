@@ -769,7 +769,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
         sinon.stub(Github.prototype, 'addDeployKeyIfNotAlready', function (repo, cb) {
           cb(null, {privateKey: 'private', publicKey: 'public'})
         })
-        ContextVersion.addGithubRepoToVersion(user, ctx.cv.id, repoInfo, function (err) {
+        ContextVersion.addGithubRepoToVersion(user, ctx.cv.id, repoInfo).asCallback(function (err) {
           if (err) {
             return done(err)
           }
