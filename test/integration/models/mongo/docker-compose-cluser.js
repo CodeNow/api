@@ -23,7 +23,9 @@ describe('DockerComposeCluster Model Integration Tests', function () {
     siblingsInstanceIds: [
       objectId('607f191e810c19729de860eb'),
       objectId('707f191e810c19729de860ec')
-    ]
+    ],
+    createdBy: 123123,
+    triggeredAction: 'user'
   }
   before(mongooseControl.start)
   afterEach(function (done) {
@@ -94,7 +96,9 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         siblingsInstanceIds: [
           objectId('607f191e810c19729de860eb'),
           objectId('707f191e810c19729de860ec')
-        ]
+        ],
+        createdBy: 123123,
+        triggeredAction: 'user'
       }
       const composeCluster = new DockerComposeCluster(data)
       composeCluster.saveAsync()
@@ -105,6 +109,8 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(saved.siblingsInstanceIds[0].toString()).to.equal(data.siblingsInstanceIds[0].toString())
         expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
         expect(saved.created).to.exist()
+        expect(saved.createdBy).to.equal(data.createdBy)
+        expect(saved.triggeredAction).to.equal(data.triggeredAction)
       })
       .asCallback(done)
     })
