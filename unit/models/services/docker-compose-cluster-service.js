@@ -231,23 +231,23 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       ]
     }
     beforeEach(function (done) {
-      sinon.stub(DockerComposeCluster, 'findByIdAsync').resolves(new DockerComposeCluster(clusterData))
+      sinon.stub(DockerComposeCluster, 'findByIdAndAssert').resolves(new DockerComposeCluster(clusterData))
       sinon.stub(DockerComposeCluster, 'markAsDeleted').resolves()
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       sinon.stub(rabbitMQ, 'clusterDeleted').returns()
       done()
     })
     afterEach(function (done) {
-      DockerComposeCluster.findByIdAsync.restore()
+      DockerComposeCluster.findByIdAndAssert.restore()
       DockerComposeCluster.markAsDeleted.restore()
       rabbitMQ.deleteInstance.restore()
       rabbitMQ.clusterDeleted.restore()
       done()
     })
     describe('errors', function () {
-      it('should return error if findByIdAsync failed', function (done) {
+      it('should return error if findByIdAndAssert failed', function (done) {
         const error = new Error('Some error')
-        DockerComposeCluster.findByIdAsync.rejects(error)
+        DockerComposeCluster.findByIdAndAssert.rejects(error)
         DockerComposeClusterService.delete(clusterId.toString())
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -267,7 +267,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         })
       })
 
-      it('should return error if findActiveByParentId failed', function (done) {
+      it('should return error if findByIdAndAssert failed', function (done) {
         const error = new Error('Some error')
         DockerComposeCluster.markAsDeleted.rejects(error)
         DockerComposeClusterService.delete(clusterId.toString())
@@ -294,11 +294,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         DockerComposeClusterService.delete(clusterId.toString()).asCallback(done)
       })
 
-      it('should call findByIdAsync with correct args', function (done) {
+      it('should call findByIdAndAssert with correct args', function (done) {
         DockerComposeClusterService.delete(clusterId.toString())
         .tap(function () {
-          sinon.assert.calledOnce(DockerComposeCluster.findByIdAsync)
-          sinon.assert.calledWithExactly(DockerComposeCluster.findByIdAsync, clusterId.toString())
+          sinon.assert.calledOnce(DockerComposeCluster.findByIdAndAssert)
+          sinon.assert.calledWithExactly(DockerComposeCluster.findByIdAndAssert, clusterId.toString())
         })
         .asCallback(done)
       })
@@ -336,7 +336,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         DockerComposeClusterService.delete(clusterId.toString())
         .tap(function () {
           sinon.assert.callOrder(
-            DockerComposeCluster.findByIdAsync,
+            DockerComposeCluster.findByIdAndAssert,
             rabbitMQ.deleteInstance,
             DockerComposeCluster.markAsDeleted,
             rabbitMQ.clusterDeleted)
