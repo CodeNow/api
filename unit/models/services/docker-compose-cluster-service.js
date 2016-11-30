@@ -67,15 +67,33 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         }
       }
     }
+    const dockerComposeContent = {
+      name: 'docker-compose.yml',
+      path: 'docker-compose.yml',
+      sha: '13ec49b1014891c7b494126226f95e318e1d3e82',
+      size: 193,
+      url: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/contents/docker-compose.yml?ref=master',
+      html_url: 'https://github.com/Runnable/compose-test-repo-1.2/blob/master/docker-compose.yml',
+      git_url: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/git/blobs/13ec49b1014891c7b494126226f95e318e1d3e82',
+      download_url: 'https://raw.githubusercontent.com/Runnable/compose-test-repo-1.2/master/docker-compose.yml',
+      type: 'file',
+      content: 'dmVyc2lvbjogJzInCnNlcnZpY2VzOgogIHdlYjoKICAgIGJ1aWxkOiAnLi9z\ncmMvJwogICAgY29tbWFuZDogW25vZGUsIGluZGV4LmpzXQogICAgcG9ydHM6\nCiAgICAgIC0gIjUwMDA6NTAwMCIKICAgIGVudmlyb25tZW50OgogICAgICAt\nIE5PREVfRU5WPWRldmVsb3BtZW50CiAgICAgIC0gU0hPVz10cnVlCiAgICAg\nIC0gSEVMTE89Njc4Cg==\n',
+      encoding: 'base64',
+      _links:
+       { self: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/contents/docker-compose.yml?ref=master',
+         git: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/git/blobs/13ec49b1014891c7b494126226f95e318e1d3e82',
+         html: 'https://github.com/Runnable/compose-test-repo-1.2/blob/master/docker-compose.yml'
+       }
+    }
     const triggeredAction = 'webhook'
-    const dockerComposeFileString = 'some-compose-file-string'
+    const dockerComposeFileString = 'version: \'2\'\nservices:\n  web:\n    build: \'./src/\'\n    command: [node, index.js]\n    ports:\n      - "5000:5000"\n    environment:\n      - NODE_ENV=development\n      - SHOW=true\n      - HELLO=678\n'
     const repoName = 'Runnable/api'
     const branchName = 'feature-1'
     const dockerComposeFilePath = './compose.yml'
     const newInstanceName = 'api-unit'
     beforeEach(function (done) {
       sinon.stub(DockerComposeCluster, 'createAsync').resolves(new DockerComposeCluster(clusterData))
-      sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves(dockerComposeFileString)
+      sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves(dockerComposeContent)
       sinon.stub(octobear, 'parse').returns(testParsedContent)
       sinon.stub(rabbitMQ, 'clusterCreated').returns()
       done()
