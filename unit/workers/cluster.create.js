@@ -25,9 +25,9 @@ describe('Cluster Create Worker', function () {
     const testData = {
       sessionUserGithubId: 123,
       triggeredAction: 'user',
-      repoName: 'Runnable/api',
+      repoFullName: 'Runnable/api',
       branchName: 'feature-1',
-      dockerComposeFilePath: './compose.yml',
+      dockerComposeFilePath: 'compose.yml',
       newInstanceName: 'api'
     }
     const sessionUser = {
@@ -86,7 +86,7 @@ describe('Cluster Create Worker', function () {
         sinon.assert.calledWithExactly(DockerComposeClusterService.create,
           sessionUser,
           testData.triggeredAction,
-          testData.repoName,
+          testData.repoFullName,
           testData.branchName, testData.dockerComposeFilePath, testData.newInstanceName)
         done()
       })
