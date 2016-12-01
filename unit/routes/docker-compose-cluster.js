@@ -25,10 +25,13 @@ const it = lab.it
 describe('/docker-compose-cluster', function () {
   let resMock
   let validateOrBoomStub
+  let nextStub
   const sessionUserGithubId = 1981198
   beforeEach(function (done) {
+    nextStub = sinon.stub()
     resMock = {
       status: sinon.stub().returnsThis(),
+      end: sinon.stub().returnsThis(),
       json: sinon.stub().returnsThis()
     }
     done()
@@ -60,7 +63,7 @@ describe('/docker-compose-cluster', function () {
 
     describe('Errors', function () {
       it('should throw a Boom error if the schema is not correct', function (done) {
-        postRoute({ body: {} }, resMock)
+        postRoute({ body: {} }, resMock, nextStub)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.isBoom).to.equal(true)
@@ -73,7 +76,7 @@ describe('/docker-compose-cluster', function () {
 
     describe('Success', function () {
       it('should validate the body', function (done) {
-        postRoute(reqMock, resMock)
+        postRoute(reqMock, resMock, nextStub)
           .then(function () {
             sinon.assert.calledOnce(validateOrBoomStub)
           })
@@ -81,7 +84,7 @@ describe('/docker-compose-cluster', function () {
       })
 
       it('should enqueue a job', function (done) {
-        postRoute(reqMock, resMock)
+        postRoute(reqMock, resMock, nextStub)
           .then(function () {
             sinon.assert.calledOnce(createClusterStub)
             sinon.assert.calledWith(createClusterStub, {
@@ -96,8 +99,8 @@ describe('/docker-compose-cluster', function () {
           .asCallback(done)
       })
 
-      it('should return a 202', function (done) {
-        postRoute(reqMock, resMock)
+      it('should call the response handler with a 202', function (done) {
+        postRoute(reqMock, resMock, nextStub)
           .then(function () {
             sinon.assert.calledOnce(resMock.status)
             sinon.assert.calledWith(resMock.status, 202)
@@ -131,7 +134,7 @@ describe('/docker-compose-cluster', function () {
     })
     describe('Errors', function () {
       it('should throw a Boom error if the schema is not correct', function (done) {
-        deleteRoute({ body: {} }, resMock)
+        deleteRoute({ body: {} }, resMock, nextStub)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.isBoom).to.equal(true)
@@ -144,7 +147,7 @@ describe('/docker-compose-cluster', function () {
 
     describe('Success', function () {
       it('should validate the body', function (done) {
-        deleteRoute(reqMock, resMock)
+        deleteRoute(reqMock, resMock, nextStub)
           .then(function () {
             sinon.assert.calledOnce(validateOrBoomStub)
           })
@@ -152,7 +155,7 @@ describe('/docker-compose-cluster', function () {
       })
 
       it('should enqueue a job', function (done) {
-        deleteRoute(reqMock, resMock)
+        deleteRoute(reqMock, resMock, nextStub)
           .then(function () {
             sinon.assert.calledOnce(deleteClusterStub)
             sinon.assert.calledWith(deleteClusterStub, {
@@ -163,7 +166,7 @@ describe('/docker-compose-cluster', function () {
       })
 
       it('should return a 202', function (done) {
-        deleteRoute(reqMock, resMock)
+        deleteRoute(reqMock, resMock, nextStub)
           .then(function () {
             sinon.assert.calledOnce(resMock.status)
             sinon.assert.calledWith(resMock.status, 202)
