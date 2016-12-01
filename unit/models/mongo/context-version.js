@@ -41,22 +41,22 @@ describe('Context Version Unit Test', function () {
 
   describe('findContextVersionById', () => {
     beforeEach((done) => {
-      sinon.stub(ContextVersion, 'findContextVersion')
+      sinon.stub(ContextVersion, 'findAndAssert')
       done()
     })
 
     afterEach((done) => {
-      ContextVersion.findContextVersion.restore()
+      ContextVersion.findAndAssert.restore()
       done()
     })
 
     it('should pass correct query', (done) => {
-      ContextVersion.findContextVersion.resolves(testContextVersion)
+      ContextVersion.findAndAssert.resolves(testContextVersion)
       ContextVersion.findContextVersionById(testContextVersionId).asCallback((err, build) => {
         if (err) { return done(err) }
         expect(build).to.equal(testContextVersion)
-        sinon.assert.calledOnce(ContextVersion.findContextVersion)
-        sinon.assert.calledWith(ContextVersion.findContextVersion, {
+        sinon.assert.calledOnce(ContextVersion.findAndAssert)
+        sinon.assert.calledWith(ContextVersion.findAndAssert, {
           _id: testContextVersionId
         })
         done()
@@ -64,7 +64,7 @@ describe('Context Version Unit Test', function () {
     })
   }) // end findContextVersionById
 
-  describe('findContextVersion', () => {
+  describe('findAndAssert', () => {
     beforeEach((done) => {
       sinon.stub(ContextVersion, 'findOneAsync')
       done()
@@ -81,7 +81,7 @@ describe('Context Version Unit Test', function () {
       }
       ContextVersion.findOneAsync.resolves(testContextVersion)
 
-      ContextVersion.findContextVersion(testQuery).asCallback((err, build) => {
+      ContextVersion.findAndAssert(testQuery).asCallback((err, build) => {
         if (err) { return done(err) }
         expect(build).to.equal(testContextVersion)
         sinon.assert.calledOnce(ContextVersion.findOneAsync)
@@ -93,12 +93,12 @@ describe('Context Version Unit Test', function () {
     it('should return ContextVersion.NotFoundError if not found', (done) => {
       ContextVersion.findOneAsync.resolves()
 
-      ContextVersion.findContextVersion({}).asCallback((err) => {
+      ContextVersion.findAndAssert({}).asCallback((err) => {
         expect(err).to.be.instanceof(ContextVersion.NotFoundError)
         done()
       })
     })
-  }) // end findContextVersion
+  }) // end findAndAssert
 
   describe('createAppcodeVersion', () => {
     beforeEach((done) => {
