@@ -20,6 +20,54 @@ const rabbitMQ = require('models/rabbitmq')
 require('sinon-as-promised')(Promise)
 
 describe('Docker Compose Cluster Service Unit Tests', function () {
+  describe('createClusterParent', () => {
+    beforeEach((done) => {
+      sinon.stub(DockerComposeClusterService, '_createParentContext')
+      sinon.stub(DockerComposeClusterService, '_createParentContextVersion')
+      sinon.stub(DockerComposeClusterService, '_createParentBuild')
+      sinon.stub(DockerComposeClusterService, '_createParentInstance')
+      done()
+    })
+
+    afterEach((done) => {
+      DockerComposeClusterService._createParentInstance.restore()
+      DockerComposeClusterService._createParentBuild.restore()
+      DockerComposeClusterService._createParentContextVersion.restore()
+      DockerComposeClusterService._createParentContext.restore()
+      done()
+    })
+
+    it('should create cluster parent', (done) => {
+      const testSessionUser = '1321'
+      const testParentComposeData = { data: 'base' }
+      const testOrgGithubId = '123'
+      const testRepoName = 'runnable/boo'
+      const testInstance = { _id: 'instance' }
+      const testBuild = { _id: 'build' }
+      const testContext = { _id: 'context' }
+      const testContextVersion = { _id: 'contextVersion' }
+
+      DockerComposeClusterService._createParentInstance.resolves(testInstance)
+      DockerComposeClusterService._createParentBuild.resolves(testBuild)
+      DockerComposeClusterService._createParentContextVersion.resolves(testContextVersion)
+      DockerComposeClusterService._createParentContext.resolves(testContext)
+
+      DockerComposeClusterService.createClusterParent(testSessionUser, testParentComposeData, testOrgGithubId, testRepoName).asCallback((err, instance) => {
+        if (err) { return done(err) }
+        expect(instance).to.equal(testInstance)
+        sinon.assert.calledOnce(DockerComposeClusterService._createParentContext)
+        sinon.assert.calledWith(DockerComposeClusterService._createParentContext, testSessionUser, testOrgGithubId)
+        sinon.assert.calledOnce(DockerComposeClusterService._createParentContextVersion)
+        sinon.assert.calledWith(DockerComposeClusterService._createParentContextVersion, testSessionUser, testContext._id, testOrgGithubId, testRepoName)
+        sinon.assert.calledOnce(DockerComposeClusterService._createParentBuild)
+        sinon.assert.calledWith(DockerComposeClusterService._createParentBuild, testSessionUser, testContextVersion._id)
+        sinon.assert.calledOnce(DockerComposeClusterService._createParentInstance)
+        sinon.assert.calledWith(DockerComposeClusterService._createParentInstance, testSessionUser, testParentComposeData, testBuild._id)
+        done()
+      })
+    })
+  }) // end createClusterParent
+
   describe('delete', function () {
     const clusterId = objectId('407f191e810c19729de860ef')
     const parentInstanceId = objectId('507f191e810c19729de860ea')
