@@ -59,9 +59,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     }
     const sessionUser = {
       _id: objectId('107f191e810c19729de860ee'),
+      bigPoppaUser: {
+        id: 123
+      },
       accounts: {
         github: {
-          id: 123,
           username: 'runnabot',
           accessToken: 'some-token'
         }
@@ -185,7 +187,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           sinon.assert.calledOnce(DockerComposeCluster.createAsync)
           sinon.assert.calledWithExactly(DockerComposeCluster.createAsync, {
             dockerComposeFilePath,
-            createdBy: sessionUser.accounts.github.id,
+            createdBy: sessionUser.bigPoppaUser.id,
             triggeredAction })
         })
         .asCallback(done)
