@@ -16,10 +16,30 @@ const sinon = require('sinon')
 const DockerComposeCluster = require('models/mongo/docker-compose-cluster')
 const DockerComposeClusterService = require('models/services/docker-compose-cluster-service')
 const rabbitMQ = require('models/rabbitmq')
+const BuildService = require('models/services/build-service')
+const ContextService = require('models/services/context-service')
+const ContextVersion = require('models/mongo/context-version')
+const InstanceService = require('models/services/instance-service')
 
 require('sinon-as-promised')(Promise)
 
 describe('Docker Compose Cluster Service Unit Tests', function () {
+  let testSessionUser
+  const testOrgGithubId = 123
+
+  beforeEach((done) => {
+    testSessionUser = {
+      _id: 'id',
+      accounts: {
+        github: {
+          id: testOrgGithubId
+        },
+        login: 'login',
+        username: 'best'
+      }
+    }
+    done()
+  })
   describe('createClusterParent', () => {
     beforeEach((done) => {
       sinon.stub(DockerComposeClusterService, '_createParentContext')
@@ -38,9 +58,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
 
     it('should create cluster parent', (done) => {
-      const testSessionUser = '1321'
       const testParentComposeData = { data: 'base' }
-      const testOrgGithubId = '123'
       const testRepoName = 'runnable/boo'
       const testInstance = { _id: 'instance' }
       const testBuild = { _id: 'build' }
@@ -67,6 +85,151 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       })
     })
   }) // end createClusterParent
+
+  describe('_createParentContext', () => {
+    beforeEach((done) => {
+      sinon.stub(ContextService, 'createNew')
+      done()
+    })
+
+    afterEach((done) => {
+      ContextService.createNew.restore()
+      done()
+    })
+
+    it('should create context', (done) => {
+      const testContext = 'context'
+      ContextService.createNew.resolves(testContext)
+
+      DockerComposeClusterService._createParentContext(testSessionUser, testOrgGithubId).asCallback((err, context) => {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(ContextService.createNew)
+        sinon.assert.calledWith(ContextService.createNew, testSessionUser, sinon.match({
+          name: sinon.match.string,
+          owner: testOrgGithubId
+        }))
+
+        expect(context).to.equal(testContext)
+        done()
+      })
+    })
+  }) // end _createParentContext
+
+  describe('_createParentContextVersion', () => {
+    beforeEach((done) => {
+      sinon.stub(ContextVersion, 'createAppcodeVersion')
+      sinon.stub(ContextVersion, 'createWithNewInfraCode')
+      done()
+    })
+
+    afterEach((done) => {
+      ContextVersion.createAppcodeVersion.restore()
+      ContextVersion.createWithNewInfraCode.restore()
+      done()
+    })
+
+    it('should create contextVersion', (done) => {
+      const testRepoName = 'runnable/boo'
+      const testContextId = objectId('407f191e810c19729de860ef')
+      const testContextVersion = { _id: 'contextVersion' }
+      const testAppCodeVersion = { _id: 'testAppCodeVersion' }
+
+      ContextVersion.createAppcodeVersion.resolves(testAppCodeVersion)
+      ContextVersion.createWithNewInfraCode.resolves(testContextVersion)
+
+      DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgGithubId, testRepoName).asCallback((err, contextVersion) => {
+        if (err) { return done(err) }
+        expect(contextVersion).to.equal(testContextVersion)
+        sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
+        sinon.assert.calledWith(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
+        sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
+        sinon.assert.calledWith(ContextVersion.createWithNewInfraCode, {
+          context: testContextId,
+          createdBy: {
+            github: testOrgGithubId
+          },
+          owner: {
+            github: testOrgGithubId
+          },
+          appCodeVersions: [testAppCodeVersion]
+        })
+        done()
+      })
+    })
+  }) // end _createParentContextVersion
+
+  describe('_createParentBuild', () => {
+    beforeEach((done) => {
+      sinon.stub(BuildService, 'createBuild')
+      done()
+    })
+
+    afterEach((done) => {
+      BuildService.createBuild.restore()
+      done()
+    })
+
+    it('should create build', (done) => {
+      const testContextVersionId = objectId('407f191e810c19729de860ef')
+      const testBuild = 'build'
+      BuildService.createBuild.resolves(testBuild)
+
+      DockerComposeClusterService._createParentBuild(testSessionUser, testContextVersionId).asCallback((err, build) => {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(BuildService.createBuild)
+        sinon.assert.calledWith(BuildService.createBuild, {
+          contextVersion: testContextVersionId
+        }, testSessionUser)
+
+        expect(build).to.equal(testBuild)
+        done()
+      })
+    })
+  }) // end _createParentBuild
+
+  describe('_createParentInstance', () => {
+    beforeEach((done) => {
+      sinon.stub(InstanceService, 'createInstance')
+      done()
+    })
+
+    afterEach((done) => {
+      InstanceService.createInstance.restore()
+      done()
+    })
+
+    it('should create context', (done) => {
+      const testParentBuildId = objectId('407f191e810c19729de860ef')
+      const testParentComposeData = {
+        env: 'env',
+        ports: 'ports',
+        containerStartCommand: 'containerStartCommand',
+        name: 'name'
+      }
+      const testInstance = 'build'
+      InstanceService.createInstance.resolves(testInstance)
+
+      DockerComposeClusterService._createParentInstance(testSessionUser, testParentComposeData, testParentBuildId).asCallback((err, instance) => {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(InstanceService.createInstance)
+        sinon.assert.calledWith(InstanceService.createInstance, {
+          build: testParentBuildId,
+          env: testParentComposeData.env,
+          ports: testParentComposeData.ports,
+          containerStartCommand: testParentComposeData.containerStartCommand,
+          name: testParentComposeData.name,
+          isTesting: false,
+          masterPod: true,
+          ipWhitelist: {
+            enabled: false
+          }
+        })
+
+        expect(instance).to.equal(testInstance)
+        done()
+      })
+    })
+  }) // end _createParentInstance
 
   describe('delete', function () {
     const clusterId = objectId('407f191e810c19729de860ef')
