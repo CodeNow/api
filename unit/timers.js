@@ -84,7 +84,7 @@ describe('Timers: ' + moduleName, function () {
         ctx.timerName = uuid()
         ctx.spyCalled = false
         ctx.spyTags = null
-        spyOnMethod(require('models/datadog'), 'timing',
+        spyOnMethod(require('monitor-dog'), 'timing',
           function (name, value, tags) {
             ctx.spyCalled = name
             ctx.spyTags = tags
