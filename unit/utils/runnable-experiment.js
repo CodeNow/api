@@ -92,7 +92,7 @@ describe('RunnableExperiment: ' + moduleName, function () {
     it('should report timing for the control and candidate', function (done) {
       experiment.publish(mockResult)
         .then(function () {
-          sinon.assert.calledThrice(datadog.histogram)
+          sinon.assert.calledTwice(datadog.histogram)
           sinon.assert.calledWithExactly(
             datadog.histogram,
             'scientist.testing.control.time',
