@@ -1,5 +1,5 @@
 /**
- * @module unit/routes/billing
+ * @module unit/routes/docker-compose-cluster
  */
 'use strict'
 require('loadenv')()
