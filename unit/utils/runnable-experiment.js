@@ -11,7 +11,7 @@ var expect = Code.expect
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 
-var datadog = require('models/datadog')
+var datadog = require('monitor-dog')
 var Experiment = require('node-scientist').Experiment
 
 var RunnableExperiment = require('utils/runnable-experiment')
@@ -53,13 +53,11 @@ describe('RunnableExperiment: ' + moduleName, function () {
     beforeEach(function (done) {
       sinon.stub(datadog, 'histogram')
       sinon.stub(datadog, 'increment')
-      sinon.stub(datadog, 'timing')
       done()
     })
     afterEach(function (done) {
       datadog.histogram.restore()
       datadog.increment.restore()
-      datadog.timing.restore()
       done()
     })
 
@@ -94,14 +92,14 @@ describe('RunnableExperiment: ' + moduleName, function () {
     it('should report timing for the control and candidate', function (done) {
       experiment.publish(mockResult)
         .then(function () {
-          sinon.assert.calledTwice(datadog.timing)
+          sinon.assert.calledTwice(datadog.histogram)
           sinon.assert.calledWithExactly(
-            datadog.timing,
+            datadog.histogram,
             'scientist.testing.control.time',
             1
           )
           sinon.assert.calledWithExactly(
-            datadog.timing,
+            datadog.histogram,
             'scientist.testing.candidate.time',
             2
           )
