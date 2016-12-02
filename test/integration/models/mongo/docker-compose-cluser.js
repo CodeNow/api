@@ -165,17 +165,6 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       })
     })
 
-    it('should fail if parent id is not provided', function (done) {
-      const invalidData = Object.assign({}, data)
-      invalidData.parentInstanceId = null
-      const composeCluster = new DockerComposeCluster(invalidData)
-      composeCluster.saveAsync().asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.errors.parentInstanceId.message).to.equal('Docker Compose Cluser requires parent instance id')
-        done()
-      })
-    })
-
     it('should fail if parent id is not valid object id', function (done) {
       const invalidId = 'some-invalid-id'
       const invalidData = Object.assign({}, data)
