@@ -64,7 +64,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       }]
     }
     const org = {
-      _id: 1
+      id: 1
     }
     const sessionUser = {
       _id: objectId('107f191e810c19729de860ee'),
@@ -222,7 +222,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             dockerComposeFilePath,
             createdBy: sessionUser.bigPoppaUser.id,
             ownedBy: org.id,
-            triggeredAction })
+            triggeredAction,
+            repoFullName })
         })
         .asCallback(done)
       })
