@@ -222,8 +222,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             dockerComposeFilePath,
             createdBy: sessionUser.bigPoppaUser.id,
             ownedBy: org.id,
-            triggeredAction,
-            repoFullName })
+            triggeredAction
+          })
         })
         .asCallback(done)
       })
@@ -238,7 +238,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             parsedCompose: testParsedContent,
             sessionUserBigPoppaId: sessionUser.bigPoppaUser.id,
             orgBigPoppaId: org.id,
-            triggeredAction
+            triggeredAction,
+            repoFullName
           }
           sinon.assert.calledWithExactly(rabbitMQ.clusterCreated, payload)
         })
