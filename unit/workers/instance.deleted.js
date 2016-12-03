@@ -180,7 +180,7 @@ describe('Instance Deleted Worker', function () {
         .tap(function () {
           sinon.assert.calledOnce(rabbitMQ.deleteCluster)
           const id = clusterId.toString()
-          sinon.assert.calledWithExactly(rabbitMQ.deleteCluster, { id })
+          sinon.assert.calledWithExactly(rabbitMQ.deleteCluster, { cluster: { id } })
         })
         .asCallback(done)
       })
