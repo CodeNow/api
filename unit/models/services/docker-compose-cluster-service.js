@@ -23,7 +23,6 @@ const ContextService = require('models/services/context-service')
 const ContextVersion = require('models/mongo/context-version')
 const InstanceService = require('models/services/instance-service')
 
-
 require('sinon-as-promised')(Promise)
 
 describe('Docker Compose Cluster Service Unit Tests', function () {
