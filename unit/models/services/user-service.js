@@ -589,4 +589,43 @@ describe('User Service', function () {
       })
     })
   })
+
+  describe('getBpOrgInfoFromRepoName', () => {
+    it('should return correct org info', (done) => {
+      const testInfo = {
+        lowerName: 'good'
+      }
+      const sessionUser = {
+        bigPoppaUser: {
+          organizations: [{
+            lowerName: 'bad'
+          },
+          testInfo, {
+            lowerName: 'worst'
+          }]
+        }
+      }
+      const output = UserService.getBpOrgInfoFromRepoName(sessionUser, 'good/repo-name')
+      expect(output).to.equal(testInfo)
+      done()
+    })
+
+    it('should throw if no org found', (done) => {
+      const sessionUser = {
+        bigPoppaUser: {
+          organizations: [{
+            lowerName: 'bad'
+          }, {
+            lowerName: 'good'
+          }, {
+            lowerName: 'worst'
+          }]
+        }
+      }
+      expect(() => {
+        UserService.getBpOrgInfoFromRepoName(sessionUser, 'mysterious/repo')
+      }).to.throw(UserService.OrganizationNotFoundError)
+      done()
+    })
+  }) // end getBpOrgInfoFromRepoName
 })
