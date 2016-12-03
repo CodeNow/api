@@ -22,6 +22,7 @@ const BuildService = require('models/services/build-service')
 const ContextService = require('models/services/context-service')
 const ContextVersion = require('models/mongo/context-version')
 const InstanceService = require('models/services/instance-service')
+const OrganizationService = require('models/services/organization-service')
 
 require('sinon-as-promised')(Promise)
 
@@ -61,6 +62,9 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           env: ['HELLO=WORLD']
         }
       }]
+    }
+    const org = {
+      _id: 1
     }
     const sessionUser = {
       _id: objectId('107f191e810c19729de860ee'),
@@ -103,6 +107,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     beforeEach(function (done) {
       sinon.stub(DockerComposeCluster, 'createAsync').resolves(new DockerComposeCluster(clusterData))
       sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves(dockerComposeContent)
+      sinon.stub(OrganizationService, 'getByGithubUsername').resolves(org)
       sinon.stub(octobear, 'parse').returns(testParsedContent)
       sinon.stub(rabbitMQ, 'clusterCreated').returns()
       done()
@@ -110,6 +115,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     afterEach(function (done) {
       DockerComposeCluster.createAsync.restore()
       GitHub.prototype.getRepoContentAsync.restore()
+      OrganizationService.getByGithubUsername.restore()
       octobear.parse.restore()
       rabbitMQ.clusterCreated.restore()
       done()
@@ -129,6 +135,17 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       it('should return error if octobear.parse failed', function (done) {
         const error = new Error('Some error')
         octobear.parse.throws(error)
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoFullName, branchName, dockerComposeFilePath, newInstanceName)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+
+      it('should return error if OrganizationService.getByGithubUsername failed', function (done) {
+        const error = new Error('Some error')
+        OrganizationService.getByGithubUsername.rejects(error)
         DockerComposeClusterService.create(sessionUser, triggeredAction, repoFullName, branchName, dockerComposeFilePath, newInstanceName)
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -188,6 +205,15 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         .asCallback(done)
       })
 
+      it('should call OrganizationService.getByGithubUsername with correct args', function (done) {
+        DockerComposeClusterService.create(sessionUser, triggeredAction, repoFullName, branchName, dockerComposeFilePath, newInstanceName)
+        .tap(function () {
+          sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+          sinon.assert.calledWithExactly(OrganizationService.getByGithubUsername, ownerUsername)
+        })
+        .asCallback(done)
+      })
+
       it('should call createAsync with correct args', function (done) {
         DockerComposeClusterService.create(sessionUser, triggeredAction, repoFullName, branchName, dockerComposeFilePath, newInstanceName)
         .tap(function () {
@@ -195,6 +221,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           sinon.assert.calledWithExactly(DockerComposeCluster.createAsync, {
             dockerComposeFilePath,
             createdBy: sessionUser.bigPoppaUser.id,
+            ownedBy: org.id,
             triggeredAction })
         })
         .asCallback(done)
@@ -207,7 +234,10 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           const cluster = { id: clusterId.toString() }
           const payload = {
             cluster,
-            parsedCompose: testParsedContent
+            parsedCompose: testParsedContent,
+            sessionUserBigPoppaId: sessionUser.bigPoppaUser.id,
+            orgBigPoppaId: org.id,
+            triggeredAction
           }
           sinon.assert.calledWithExactly(rabbitMQ.clusterCreated, payload)
         })
@@ -220,6 +250,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           sinon.assert.callOrder(
             GitHub.prototype.getRepoContentAsync,
             octobear.parse,
+            OrganizationService.getByGithubUsername,
             DockerComposeCluster.createAsync,
             rabbitMQ.clusterCreated)
         })
