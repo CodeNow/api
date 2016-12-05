@@ -4,7 +4,6 @@ require('loadenv')()
 const Promise = require('bluebird')
 const Lab = require('lab')
 const sinon = require('sinon')
-const Code = require('code')
 require('sinon-as-promised')(Promise)
 
 const PromsieResponseHandler = require('routes/promise-response-handler')
@@ -12,7 +11,6 @@ const PromsieResponseHandler = require('routes/promise-response-handler')
 const lab = exports.lab = Lab.script()
 const describe = lab.describe
 const beforeEach = lab.beforeEach
-const expect = Code.expect
 const it = lab.it
 
 describe('PromsieResponseHandler', function () {
