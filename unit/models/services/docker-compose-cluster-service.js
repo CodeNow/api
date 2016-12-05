@@ -228,7 +228,9 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
   })
   let testSessionUser
-  const testOrgGithubId = 123
+  const testOrgGithubId = 111
+  const testBpOrgId = 222
+  const testOrgName = 'Runnable'
 
   beforeEach((done) => {
     testSessionUser = {
@@ -239,6 +241,14 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         },
         login: 'login',
         username: 'best'
+      },
+      bigPoppaUser: {
+        organizations: [{
+          name: testOrgName,
+          lowerName: testOrgName.toLowerCase(),
+          id: testBpOrgId,
+          githubId: testOrgGithubId
+        }]
       }
     }
     done()
@@ -262,7 +272,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
     it('should create cluster parent', (done) => {
       const testParentComposeData = { data: 'base' }
-      const testRepoName = 'runnable/boo'
+      const testRepoName = 'Runnable/boo'
       const testInstance = { _id: 'instance' }
       const testBuild = { _id: 'build' }
       const testContext = { _id: 'context' }
@@ -273,11 +283,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       DockerComposeClusterService._createParentContextVersion.resolves(testContextVersion)
       DockerComposeClusterService._createParentContext.resolves(testContext)
 
-      DockerComposeClusterService.createClusterParent(testSessionUser, testParentComposeData, testOrgGithubId, testRepoName).asCallback((err, instance) => {
+      DockerComposeClusterService.createClusterParent(testSessionUser, testParentComposeData, testRepoName).asCallback((err, instance) => {
         if (err) { return done(err) }
         expect(instance).to.equal(testInstance)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentContext)
-        sinon.assert.calledWith(DockerComposeClusterService._createParentContext, testSessionUser, testOrgGithubId)
+        sinon.assert.calledWith(DockerComposeClusterService._createParentContext, testSessionUser, testBpOrgId, testOrgGithubId)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentContextVersion)
         sinon.assert.calledWith(DockerComposeClusterService._createParentContextVersion, testSessionUser, testContext._id, testOrgGithubId, testRepoName)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentBuild)
@@ -304,12 +314,15 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testContext = 'context'
       ContextService.createNew.resolves(testContext)
 
-      DockerComposeClusterService._createParentContext(testSessionUser, testOrgGithubId).asCallback((err, context) => {
+      DockerComposeClusterService._createParentContext(testSessionUser, testBpOrgId, testOrgGithubId).asCallback((err, context) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(ContextService.createNew)
         sinon.assert.calledWith(ContextService.createNew, testSessionUser, sinon.match({
           name: sinon.match.string,
-          owner: testOrgGithubId
+          owner: {
+            github: testOrgGithubId,
+            bigPoppa: testBpOrgId
+          }
         }))
 
         expect(context).to.equal(testContext)
