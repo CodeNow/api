@@ -17,31 +17,49 @@ const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
 const DockerComposeClusterService = require('models/services/docker-compose-cluster-service')
+const objectid = require('objectid')
+const rabbitMQ = require('models/rabbitmq')
 const UserService = require('models/services/user-service')
-const Worker = require('workers/cluster.create')
+const Worker = require('workers/cluster.created')
 
-describe('Cluster Create Worker', function () {
+describe('Cluster Created Worker', function () {
   describe('worker', function () {
+    const instance = {
+      _id: objectid('5568f58160e9990d009c9429')
+    }
+    const mainInstanceDef = {
+      metadata: {
+        name: 'api',
+        isMain: true
+      }
+    }
     const testData = {
-      sessionUserGithubId: 123,
+      cluster: {
+        id: '1111'
+      },
+
+      parsedCompose: {
+        results: [mainInstanceDef]
+      },
+      sessionUserBigPoppaId: 12,
+      orgBigPoppaId: 101,
       triggeredAction: 'user',
-      repoFullName: 'Runnable/api',
-      branchName: 'feature-1',
-      dockerComposeFilePath: 'compose.yml',
-      newInstanceName: 'api'
+      repoFullName: 'Runnable/api'
     }
     const sessionUser = {
       _id: 'some-id'
     }
     beforeEach(function (done) {
-      sinon.stub(DockerComposeClusterService, 'create').resolves()
+      sinon.stub(DockerComposeClusterService, 'createClusterParent').resolves(instance)
       sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(sessionUser)
+      sinon.stub(rabbitMQ, 'clusterParentInstanceCreated').returns()
       done()
     })
 
     afterEach(function (done) {
-      DockerComposeClusterService.create.restore()
+      DockerComposeClusterService.createClusterParent.restore()
       UserService.getCompleteUserByBigPoppaId.restore()
+      rabbitMQ.clusterParentInstanceCreated.restore()
       done()
     })
 
@@ -55,9 +73,9 @@ describe('Cluster Create Worker', function () {
           done()
         })
       })
-      it('should reject with any DockerComposeClusterService.create error', function (done) {
+      it('should reject with any DockerComposeClusterService.createClusterParent error', function (done) {
         const mongoError = new Error('Mongo failed')
-        DockerComposeClusterService.create.rejects(mongoError)
+        DockerComposeClusterService.createClusterParent.rejects(mongoError)
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(mongoError)
@@ -79,15 +97,27 @@ describe('Cluster Create Worker', function () {
       })
     })
 
-    it('should call create cluster', function (done) {
+    it('should call create cluster parent', function (done) {
       Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(DockerComposeClusterService.create)
-        sinon.assert.calledWithExactly(DockerComposeClusterService.create,
+        sinon.assert.calledOnce(DockerComposeClusterService.createClusterParent)
+        sinon.assert.calledWithExactly(DockerComposeClusterService.createClusterParent,
           sessionUser,
-          testData.triggeredAction,
-          testData.repoFullName,
-          testData.branchName, testData.dockerComposeFilePath, testData.newInstanceName)
+          mainInstanceDef,
+          testData.repoFullName)
+        done()
+      })
+    })
+
+    it('should call rabbit publish', function (done) {
+      Worker.task(testData).asCallback(function (err) {
+        expect(err).to.not.exist()
+        const newJob = Object.assign({}, testData)
+        newJob.instance = {
+          id: instance._id.toString()
+        }
+        sinon.assert.calledOnce(rabbitMQ.clusterParentInstanceCreated)
+        sinon.assert.calledWithExactly(rabbitMQ.clusterParentInstanceCreated, newJob)
         done()
       })
     })
@@ -97,7 +127,8 @@ describe('Cluster Create Worker', function () {
         expect(err).to.not.exist()
         sinon.assert.callOrder(
           UserService.getCompleteUserByBigPoppaId,
-          DockerComposeClusterService.create
+          DockerComposeClusterService.createClusterParent,
+          rabbitMQ.clusterParentInstanceCreated
         )
         done()
       })
