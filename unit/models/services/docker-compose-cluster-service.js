@@ -331,7 +331,16 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledOnce(DockerComposeClusterService._createParentBuild)
         sinon.assert.calledWith(DockerComposeClusterService._createParentBuild, testSessionUser, testContextVersion._id)
         sinon.assert.calledOnce(BuildService.buildBuild)
-        sinon.assert.calledWith(BuildService.buildBuild, testBuild._id, { message: 'Initial Cluster Creation', triggeredAction: testTriggeredAction }, testSessionUser)
+        const buildData = {
+          message: 'Initial Cluster Creation',
+          triggeredAction: {
+            manual: testTriggeredAction === 'user'
+          },
+          triggeredBy: {
+            github: testSessionUser.accounts.github.id
+          }
+         }
+        sinon.assert.calledWith(BuildService.buildBuild, testBuild._id, buildData, testSessionUser)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentInstance)
         sinon.assert.calledWith(DockerComposeClusterService._createParentInstance, testSessionUser, testParentComposeData, testBuild._id.toString())
         done()
