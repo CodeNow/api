@@ -317,7 +317,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
       DockerComposeClusterService._createParentInstance.resolves(testInstance)
       DockerComposeClusterService._createParentBuild.resolves(testBuild)
-      BuildService.buildBuild.resolves()
+      BuildService.buildBuild.resolves(testBuild)
       DockerComposeClusterService._createParentContextVersion.resolves(testContextVersion)
       DockerComposeClusterService._createParentContext.resolves(testContext)
 
