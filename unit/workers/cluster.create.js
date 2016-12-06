@@ -17,7 +17,7 @@ const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
 const DockerComposeClusterService = require('models/services/docker-compose-cluster-service')
-const User = require('models/mongo/user')
+const UserService = require('models/services/user-service')
 const Worker = require('workers/cluster.create')
 
 describe('Cluster Create Worker', function () {
@@ -25,9 +25,9 @@ describe('Cluster Create Worker', function () {
     const testData = {
       sessionUserGithubId: 123,
       triggeredAction: 'user',
-      repoName: 'Runnable/api',
+      repoFullName: 'Runnable/api',
       branchName: 'feature-1',
-      dockerComposeFilePath: './compose.yml',
+      dockerComposeFilePath: 'compose.yml',
       newInstanceName: 'api'
     }
     const sessionUser = {
@@ -35,20 +35,20 @@ describe('Cluster Create Worker', function () {
     }
     beforeEach(function (done) {
       sinon.stub(DockerComposeClusterService, 'create').resolves()
-      sinon.stub(User, 'findByGithubIdAsync').resolves(sessionUser)
+      sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(sessionUser)
       done()
     })
 
     afterEach(function (done) {
       DockerComposeClusterService.create.restore()
-      User.findByGithubIdAsync.restore()
+      UserService.getCompleteUserByBigPoppaId.restore()
       done()
     })
 
     describe('errors', function () {
-      it('should reject with any User.findByGithubIdAsync error', function (done) {
+      it('should reject with any UserService.getCompleteUserByBigPoppaId error', function (done) {
         const mongoError = new Error('Mongo failed')
-        User.findByGithubIdAsync.rejects(mongoError)
+        UserService.getCompleteUserByBigPoppaId.rejects(mongoError)
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(mongoError)
@@ -73,8 +73,8 @@ describe('Cluster Create Worker', function () {
     it('should find an user by githubid', function (done) {
       Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(User.findByGithubIdAsync)
-        sinon.assert.calledWithExactly(User.findByGithubIdAsync, testData.sessionUserGithubId)
+        sinon.assert.calledOnce(UserService.getCompleteUserByBigPoppaId)
+        sinon.assert.calledWithExactly(UserService.getCompleteUserByBigPoppaId, testData.sessionUserBigPoppaId)
         done()
       })
     })
@@ -86,7 +86,7 @@ describe('Cluster Create Worker', function () {
         sinon.assert.calledWithExactly(DockerComposeClusterService.create,
           sessionUser,
           testData.triggeredAction,
-          testData.repoName,
+          testData.repoFullName,
           testData.branchName, testData.dockerComposeFilePath, testData.newInstanceName)
         done()
       })
@@ -96,7 +96,7 @@ describe('Cluster Create Worker', function () {
       Worker.task(testData).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.callOrder(
-          User.findByGithubIdAsync,
+          UserService.getCompleteUserByBigPoppaId,
           DockerComposeClusterService.create
         )
         done()

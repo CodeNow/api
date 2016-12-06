@@ -483,14 +483,14 @@ describe('User Service', function () {
     })
 
     it('should not matter if the big poppa user is not found', function (done) {
-      getByGithubIdStub.rejects(new Error(''))
+      let error = new Error('')
+      getByGithubIdStub.rejects(error)
 
       UserService.getCompleteUserByGithubId(githubId)
-      .then(function (res) {
-        expect(res).to.equal(user)
-        sinon.assert.notCalled(user.set)
+      .asCallback(function (err) {
+        expect(err).to.equal(error)
+        done()
       })
-      .asCallback(done)
     })
 
     it('should throw an error if no user is found', function (done) {
@@ -504,4 +504,128 @@ describe('User Service', function () {
       })
     })
   })
+
+  describe('getCompleteUserByBigPoppaId', function () {
+    var findByGithubIdStub
+    var getUserStub
+    var user
+    const bpId = 1981198
+    const githubId = 1981198
+    var bigPoppaUser
+    beforeEach(function (done) {
+      user = {
+        accounts: {
+          github: {
+            id: githubId
+          }
+        },
+        set: sinon.stub()
+      }
+      bigPoppaUser = { githubId }
+      findByGithubIdStub = sinon.stub(User, 'findByGithubIdAsync').resolves(user)
+      getUserStub = sinon.stub(BigPoppaClient.prototype, 'getUser').resolves(bigPoppaUser)
+      done()
+    })
+    afterEach(function (done) {
+      findByGithubIdStub.restore()
+      getUserStub.restore()
+      done()
+    })
+
+    it('should fetch the big poppa user', function (done) {
+      UserService.getCompleteUserByBigPoppaId(bpId)
+      .then(function (res) {
+        sinon.assert.calledOnce(getUserStub)
+        sinon.assert.calledWithExactly(getUserStub, bpId)
+      })
+      .asCallback(done)
+    })
+
+    it('should find the user by its id', function (done) {
+      UserService.getCompleteUserByBigPoppaId(bpId)
+      .then(function (res) {
+        sinon.assert.calledOnce(findByGithubIdStub)
+        sinon.assert.calledWithExactly(findByGithubIdStub, githubId)
+      })
+      .asCallback(done)
+    })
+
+    it('should set the big poppa user', function (done) {
+      UserService.getCompleteUserByBigPoppaId(bpId)
+      .then(function (res) {
+        sinon.assert.calledOnce(user.set)
+        sinon.assert.calledWithExactly(user.set, 'bigPoppaUser', bigPoppaUser)
+      })
+      .asCallback(done)
+    })
+
+    it('should return the mongo user', function (done) {
+      UserService.getCompleteUserByBigPoppaId(bpId)
+      .then(function (res) {
+        expect(res).to.equal(user)
+      })
+      .asCallback(done)
+    })
+
+    it('should throw an error if the BP user is not found', function (done) {
+      let error = new Error('')
+      getUserStub.rejects(error)
+
+      UserService.getCompleteUserByBigPoppaId(bpId)
+      .asCallback(function (err) {
+        expect(err).to.equal(error)
+        done()
+      })
+    })
+
+    it('should throw an error if no user is found', function (done) {
+      findByGithubIdStub.resolves(null)
+
+      UserService.getCompleteUserByBigPoppaId(bpId)
+      .asCallback(function (err, res) {
+        expect(err).to.be.an.instanceof(errors.UserNotFoundError)
+        expect(err.message).to.match(/user.*not.*found/i)
+        done()
+      })
+    })
+  })
+
+  describe('getBpOrgInfoFromRepoName', () => {
+    it('should return correct org info', (done) => {
+      const testInfo = {
+        lowerName: 'good'
+      }
+      const sessionUser = {
+        bigPoppaUser: {
+          organizations: [{
+            lowerName: 'bad'
+          },
+          testInfo, {
+            lowerName: 'worst'
+          }]
+        }
+      }
+      const output = UserService.getBpOrgInfoFromRepoName(sessionUser, 'good/repo-name')
+      expect(output).to.equal(testInfo)
+      done()
+    })
+
+    it('should throw if no org found', (done) => {
+      const sessionUser = {
+        bigPoppaUser: {
+          organizations: [{
+            lowerName: 'bad'
+          }, {
+            lowerName: 'good'
+          }, {
+            lowerName: 'worst'
+          }]
+        }
+      }
+      expect(() => {
+        UserService.getBpOrgInfoFromRepoName(sessionUser, 'mysterious/repo')
+      }).to.throw(UserService.OrganizationNotFoundError)
+      done()
+    })
+  }) // end getBpOrgInfoFromRepoName
 })
