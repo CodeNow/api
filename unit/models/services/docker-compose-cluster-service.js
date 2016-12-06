@@ -27,6 +27,7 @@ require('sinon-as-promised')(Promise)
 
 describe('Docker Compose Cluster Service Unit Tests', function () {
   const testOrgGithubId = 111
+  const testUserGithubId = 333
   const testBpOrgId = 222
   const testOrgName = 'Runnable'
   let testParsedContent
@@ -294,7 +295,10 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         if (err) { return done(err) }
         expect(instance).to.equal(testInstance)
         sinon.assert.calledOnce(DockerComposeClusterService._createContext)
-        sinon.assert.calledWith(DockerComposeClusterService._createContext, testSessionUser, testBpOrgId, testOrgGithubId)
+        sinon.assert.calledWith(DockerComposeClusterService._createContext, testSessionUser, {
+          githubOrgId: testOrgGithubId,
+          bigPoppaOrgId: testBpOrgId
+        })
         sinon.assert.calledOnce(DockerComposeClusterService._createParentContextVersion)
         sinon.assert.calledWith(DockerComposeClusterService._createParentContextVersion, testSessionUser, testContext._id, testOrgGithubId, testRepoName, testMainParsedContent.contextVersion.buildDockerfilePath)
         sinon.assert.calledOnce(DockerComposeClusterService._createBuild)
@@ -321,12 +325,18 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testContext = 'context'
       ContextService.createNew.resolves(testContext)
 
-      DockerComposeClusterService._createContext(testSessionUser, testBpOrgId, testOrgGithubId).asCallback((err, context) => {
+      DockerComposeClusterService._createContext(testSessionUser, {
+        githubOrgId: testOrgGithubId,
+        bigPoppaOrgId: testBpOrgId
+      }).asCallback((err, context) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(ContextService.createNew)
         sinon.assert.calledWith(ContextService.createNew, testSessionUser, sinon.match({
           name: sinon.match.string,
-          owner: testOrgGithubId
+          owner: {
+            github: testOrgGithubId,
+            bigPoppa: testBpOrgId
+          }
         }))
 
         expect(context).to.equal(testContext)
@@ -609,15 +619,19 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       DockerComposeClusterService._createContext.resolves(testContext)
 
       DockerComposeClusterService.createClusterSibling(testSessionUser, testMainParsedContent, {
-        githubId: testOrgGithubId,
+        githubOrgId: testOrgGithubId,
         bigPoppaOrgId: testBpOrgId
       }).asCallback((err, instance) => {
         if (err) { return done(err) }
+        const testOrgInfo = {
+          bigPoppaOrgId: testBpOrgId,
+          githubOrgId: testOrgGithubId
+        }
         expect(instance).to.equal(testInstance)
         sinon.assert.calledOnce(DockerComposeClusterService._createContext)
-        sinon.assert.calledWith(DockerComposeClusterService._createContext, testSessionUser, testBpOrgId, testOrgGithubId)
+        sinon.assert.calledWith(DockerComposeClusterService._createContext, testSessionUser, testOrgInfo)
         sinon.assert.calledOnce(DockerComposeClusterService._createSiblingContextVersion)
-        sinon.assert.calledWith(DockerComposeClusterService._createSiblingContextVersion, testSessionUser, testContext._id, testOrgGithubId, testMainParsedContent.contextVersion.buildDockerfilePath)
+        sinon.assert.calledWith(DockerComposeClusterService._createSiblingContextVersion, testSessionUser, testContext._id, testOrgInfo, testMainParsedContent.contextVersion.buildDockerfilePath)
         sinon.assert.calledOnce(DockerComposeClusterService._createBuild)
         sinon.assert.calledWith(DockerComposeClusterService._createBuild, testSessionUser, testContextVersion._id)
         sinon.assert.calledOnce(DockerComposeClusterService._createInstance)
@@ -639,14 +653,16 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
 
     it('should create contextVersion', (done) => {
-      const testRepoName = 'runnable/boo'
       const testContextId = objectId('407f191e810c19729de860ef')
       const testContextVersion = { _id: 'contextVersion' }
-      const testDockerfilePath = '/Dockerfile'
-
+      const testDockerfileContent = testMainParsedContent.files['/Dockerfile'].body
+      const testOrgInfo = {
+        bigPoppaOrgId: testBpOrgId,
+        githubOrgId: testOrgGithubId
+      }
       ContextVersion.createWithDockerFileContent.resolves(testContextVersion)
 
-      DockerComposeClusterService._createSiblingContextVersion(testSessionUser, testContextId, testOrgGithubId, testRepoName, testDockerfilePath).asCallback((err, contextVersion) => {
+      DockerComposeClusterService._createSiblingContextVersion(testSessionUser, testContextId, testOrgInfo, testDockerfileContent).asCallback((err, contextVersion) => {
         if (err) { return done(err) }
         expect(contextVersion).to.equal(testContextVersion)
         sinon.assert.calledOnce(ContextVersion.createWithDockerFileContent)
@@ -656,11 +672,12 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             github: testOrgGithubId
           },
           owner: {
-            github: testOrgGithubId
+            github: testOrgGithubId,
+            bigPoppa: testBpOrgId
           },
           advance: true,
           appCodeVersions: []
-        })
+        }, testDockerfileContent)
         done()
       })
     })
