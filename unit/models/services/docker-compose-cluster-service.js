@@ -629,12 +629,12 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
   describe('_createSiblingContextVersion', () => {
     beforeEach((done) => {
-      sinon.stub(ContextVersion, 'createWithNewInfraCode')
+      sinon.stub(ContextVersion, 'createWithDockerFileContent')
       done()
     })
 
     afterEach((done) => {
-      ContextVersion.createWithNewInfraCode.restore()
+      ContextVersion.createWithDockerFileContent.restore()
       done()
     })
 
@@ -642,16 +642,15 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testRepoName = 'runnable/boo'
       const testContextId = objectId('407f191e810c19729de860ef')
       const testContextVersion = { _id: 'contextVersion' }
-      const testAppCodeVersion = { _id: 'testAppCodeVersion' }
       const testDockerfilePath = '/Dockerfile'
 
-      ContextVersion.createWithNewInfraCode.resolves(testContextVersion)
+      ContextVersion.createWithDockerFileContent.resolves(testContextVersion)
 
       DockerComposeClusterService._createSiblingContextVersion(testSessionUser, testContextId, testOrgGithubId, testRepoName, testDockerfilePath).asCallback((err, contextVersion) => {
         if (err) { return done(err) }
         expect(contextVersion).to.equal(testContextVersion)
-        sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
-        sinon.assert.calledWith(ContextVersion.createWithNewInfraCode, {
+        sinon.assert.calledOnce(ContextVersion.createWithDockerFileContent)
+        sinon.assert.calledWith(ContextVersion.createWithDockerFileContent, {
           context: testContextId,
           createdBy: {
             github: testOrgGithubId
@@ -660,8 +659,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             github: testOrgGithubId
           },
           advance: true,
-          buildDockerfilePath: testDockerfilePath,
-          appCodeVersions: [testAppCodeVersion]
+          appCodeVersions: []
         })
         done()
       })
