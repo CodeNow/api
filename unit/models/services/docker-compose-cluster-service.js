@@ -261,6 +261,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
   })
   let testSessionUser
+  const testSessionUserGitHubId = 171771
   const testOrgGithubId = 111
   const testBpOrgId = 222
   const testOrgName = 'Runnable'
@@ -270,7 +271,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       _id: 'id',
       accounts: {
         github: {
-          id: testOrgGithubId
+          id: testSessionUserGitHubId
         },
         login: 'login',
         username: 'best'
@@ -395,7 +396,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledWith(ContextVersion.createWithNewInfraCodeAsync, {
           context: testContextId,
           createdBy: {
-            github: testOrgGithubId
+            github: testSessionUserGitHubId
           },
           owner: {
             github: testOrgGithubId
@@ -423,11 +424,17 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testBuild = 'build'
       BuildService.createBuild.resolves(testBuild)
 
-      DockerComposeClusterService._createParentBuild(testSessionUser, testContextVersionId).asCallback((err, build) => {
+      DockerComposeClusterService._createParentBuild(testSessionUser, testContextVersionId, testOrgGithubId).asCallback((err, build) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(BuildService.createBuild)
         sinon.assert.calledWith(BuildService.createBuild, {
-          contextVersion: testContextVersionId
+          contextVersion: testContextVersionId,
+          createdBy: {
+            github: testSessionUserGitHubId
+          },
+          owner: {
+            github: testOrgGithubId
+          },
         }, testSessionUser)
 
         expect(build).to.equal(testBuild)
