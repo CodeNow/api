@@ -460,10 +460,12 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     it('should create context', (done) => {
       const testParentBuildId = objectId('407f191e810c19729de860ef')
       const testParentComposeData = {
-        env: 'env',
-        ports: 'ports',
-        containerStartCommand: 'containerStartCommand',
-        name: 'name'
+        instance: {
+          env: 'env',
+          ports: 'ports',
+          containerStartCommand: 'containerStartCommand',
+          name: 'name'
+        }
       }
       const testInstance = 'build'
       InstanceService.createInstance.resolves(testInstance)
@@ -473,10 +475,10 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledOnce(InstanceService.createInstance)
         sinon.assert.calledWith(InstanceService.createInstance, {
           build: testParentBuildId.toString(),
-          env: testParentComposeData.env,
-          ports: testParentComposeData.ports,
-          containerStartCommand: testParentComposeData.containerStartCommand,
-          name: testParentComposeData.name,
+          env: testParentComposeData.instance.env,
+          ports: testParentComposeData.instance.ports,
+          containerStartCommand: testParentComposeData.instance.containerStartCommand,
+          name: testParentComposeData.instance.name,
           isTesting: false,
           masterPod: true,
           ipWhitelist: {
