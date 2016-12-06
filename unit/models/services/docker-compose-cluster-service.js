@@ -383,13 +383,13 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   describe('_createParentContextVersion', () => {
     beforeEach((done) => {
       sinon.stub(ContextVersion, 'createAppcodeVersion')
-      sinon.stub(ContextVersion, 'createWithNewInfraCodeAsync')
+      sinon.stub(ContextVersion, 'createWithNewInfraCode')
       done()
     })
 
     afterEach((done) => {
       ContextVersion.createAppcodeVersion.restore()
-      ContextVersion.createWithNewInfraCodeAsync.restore()
+      ContextVersion.createWithNewInfraCode.restore()
       done()
     })
 
@@ -400,15 +400,15 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testAppCodeVersion = { _id: 'testAppCodeVersion' }
 
       ContextVersion.createAppcodeVersion.resolves(testAppCodeVersion)
-      ContextVersion.createWithNewInfraCodeAsync.resolves(testContextVersion)
+      ContextVersion.createWithNewInfraCode.resolves(testContextVersion)
 
       DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgGithubId, testRepoName).asCallback((err, contextVersion) => {
         if (err) { return done(err) }
         expect(contextVersion).to.equal(testContextVersion)
         sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
         sinon.assert.calledWith(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
-        sinon.assert.calledOnce(ContextVersion.createWithNewInfraCodeAsync)
-        sinon.assert.calledWith(ContextVersion.createWithNewInfraCodeAsync, {
+        sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
+        sinon.assert.calledWith(ContextVersion.createWithNewInfraCode, {
           context: testContextId,
           createdBy: {
             github: testSessionUserGitHubId
