@@ -308,7 +308,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testParentComposeData = { data: 'base' }
       const testRepoName = 'Runnable/boo'
       const testInstance = { _id: 'instance' }
-      const testBuild = { _id: 'build' }
+      const testBuild = { _id: objectId('407f191e810c19729de860ef') }
       const testContext = { _id: 'context' }
       const testContextVersion = { _id: 'contextVersion' }
 
@@ -327,7 +327,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledOnce(DockerComposeClusterService._createParentBuild)
         sinon.assert.calledWith(DockerComposeClusterService._createParentBuild, testSessionUser, testContextVersion._id)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentInstance)
-        sinon.assert.calledWith(DockerComposeClusterService._createParentInstance, testSessionUser, testParentComposeData, testBuild._id)
+        sinon.assert.calledWith(DockerComposeClusterService._createParentInstance, testSessionUser, testParentComposeData, testBuild._id.toString())
         done()
       })
     })
@@ -421,7 +421,10 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
     it('should create build', (done) => {
       const testContextVersionId = objectId('407f191e810c19729de860ef')
-      const testBuild = 'build'
+      const testBuildId = objectId('507f191e810c19729de860ee')
+      const testBuild = {
+        _id: testBuildId
+      }
       BuildService.createBuild.resolves(testBuild)
 
       DockerComposeClusterService._createParentBuild(testSessionUser, testContextVersionId, testOrgGithubId).asCallback((err, build) => {
@@ -465,11 +468,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testInstance = 'build'
       InstanceService.createInstance.resolves(testInstance)
 
-      DockerComposeClusterService._createParentInstance(testSessionUser, testParentComposeData, testParentBuildId).asCallback((err, instance) => {
+      DockerComposeClusterService._createParentInstance(testSessionUser, testParentComposeData, testParentBuildId.toString()).asCallback((err, instance) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(InstanceService.createInstance)
         sinon.assert.calledWith(InstanceService.createInstance, {
-          build: testParentBuildId,
+          build: testParentBuildId.toString(),
           env: testParentComposeData.env,
           ports: testParentComposeData.ports,
           containerStartCommand: testParentComposeData.containerStartCommand,
