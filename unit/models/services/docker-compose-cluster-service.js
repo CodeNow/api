@@ -623,7 +623,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledOnce(DockerComposeClusterService._createContext)
         sinon.assert.calledWith(DockerComposeClusterService._createContext, testSessionUser, testOrgInfo)
         sinon.assert.calledOnce(DockerComposeClusterService._createSiblingContextVersion)
-        sinon.assert.calledWith(DockerComposeClusterService._createSiblingContextVersion, testSessionUser, testContext._id, testOrgInfo, testMainParsedContent.contextVersion.buildDockerfilePath)
+        sinon.assert.calledWith(DockerComposeClusterService._createSiblingContextVersion, testSessionUser, testContext._id, testOrgInfo, testMainParsedContent.files['/Dockerfile'].body)
         sinon.assert.calledOnce(DockerComposeClusterService._createBuild)
         sinon.assert.calledWith(DockerComposeClusterService._createBuild, testSessionUser, testContextVersion._id)
         sinon.assert.calledOnce(DockerComposeClusterService._createInstance)
