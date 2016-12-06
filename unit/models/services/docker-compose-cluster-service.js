@@ -26,6 +26,35 @@ const InstanceService = require('models/services/instance-service')
 require('sinon-as-promised')(Promise)
 
 describe('Docker Compose Cluster Service Unit Tests', function () {
+  let testParsedContent
+  let testMainParsedContent
+  beforeEach((done) => {
+    testMainParsedContent = {
+      metadata: {
+        name: 'api',
+        isMain: true
+      },
+      contextVersion: {
+        advanced: true,
+        buildDockerfilePath: '.'
+      },
+      files: { // Optional
+        '/Dockerfile': {
+          body: 'FROM node'
+        }
+      },
+      instance: {
+        name: 'api',
+        containerStartCommand: 'npm start',
+        ports: [80],
+        env: ['HELLO=WORLD']
+      }
+    }
+    testParsedContent = {
+      results: [testMainParsedContent]
+    }
+    done()
+  })
   describe('create', function () {
     const clusterId = objectId('407f191e810c19729de860ef')
     const parentInstanceId = objectId('507f191e810c19729de860ea')
@@ -39,29 +68,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         objectId('707f191e810c19729de860ec')
       ]
     }
-    const testParsedContent = {
-      results: [{
-        metadata: {
-          name: 'api',
-          isMain: true
-        },
-        contextVersion: {
-          advanced: true,
-          buildDockerfilePath: '.'
-        },
-        files: { // Optional
-          '/Dockerfile': {
-            body: 'FROM node'
-          }
-        },
-        instance: {
-          name: 'api',
-          containerStartCommand: 'npm start',
-          ports: [80],
-          env: ['HELLO=WORLD']
-        }
-      }]
-    }
+
     const sessionUser = {
       _id: objectId('107f191e810c19729de860ee'),
       bigPoppaUser: {
@@ -271,7 +278,6 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
 
     it('should create cluster parent', (done) => {
-      const testParentComposeData = { data: 'base' }
       const testRepoName = 'Runnable/boo'
       const testInstance = { _id: 'instance' }
       const testBuild = { _id: 'build' }
@@ -283,17 +289,17 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       DockerComposeClusterService._createParentContextVersion.resolves(testContextVersion)
       DockerComposeClusterService._createParentContext.resolves(testContext)
 
-      DockerComposeClusterService.createClusterParent(testSessionUser, testParentComposeData, testRepoName).asCallback((err, instance) => {
+      DockerComposeClusterService.createClusterParent(testSessionUser, testMainParsedContent, testRepoName).asCallback((err, instance) => {
         if (err) { return done(err) }
         expect(instance).to.equal(testInstance)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentContext)
         sinon.assert.calledWith(DockerComposeClusterService._createParentContext, testSessionUser, testBpOrgId, testOrgGithubId)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentContextVersion)
-        sinon.assert.calledWith(DockerComposeClusterService._createParentContextVersion, testSessionUser, testContext._id, testOrgGithubId, testRepoName)
+        sinon.assert.calledWith(DockerComposeClusterService._createParentContextVersion, testSessionUser, testContext._id, testOrgGithubId, testRepoName, testMainParsedContent.contextVersion.buildDockerfilePath)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentBuild)
         sinon.assert.calledWith(DockerComposeClusterService._createParentBuild, testSessionUser, testContextVersion._id)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentInstance)
-        sinon.assert.calledWith(DockerComposeClusterService._createParentInstance, testSessionUser, testParentComposeData, testBuild._id)
+        sinon.assert.calledWith(DockerComposeClusterService._createParentInstance, testSessionUser, testMainParsedContent.instance, testBuild._id)
         done()
       })
     })
@@ -349,11 +355,12 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testContextId = objectId('407f191e810c19729de860ef')
       const testContextVersion = { _id: 'contextVersion' }
       const testAppCodeVersion = { _id: 'testAppCodeVersion' }
+      const testDockerfilePath = '/Dockerfile'
 
       ContextVersion.createAppcodeVersion.resolves(testAppCodeVersion)
       ContextVersion.createWithNewInfraCode.resolves(testContextVersion)
 
-      DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgGithubId, testRepoName).asCallback((err, contextVersion) => {
+      DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgGithubId, testRepoName, testDockerfilePath).asCallback((err, contextVersion) => {
         if (err) { return done(err) }
         expect(contextVersion).to.equal(testContextVersion)
         sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
@@ -367,6 +374,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           owner: {
             github: testOrgGithubId
           },
+          advance: true,
+          buildDockerfilePath: testDockerfilePath,
           appCodeVersions: [testAppCodeVersion]
         })
         done()
