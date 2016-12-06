@@ -292,6 +292,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       sinon.stub(DockerComposeClusterService, '_createParentContext')
       sinon.stub(DockerComposeClusterService, '_createParentContextVersion')
       sinon.stub(DockerComposeClusterService, '_createParentBuild')
+      sinon.stub(BuildService, 'buildBuild')
       sinon.stub(DockerComposeClusterService, '_createParentInstance')
       done()
     })
@@ -300,6 +301,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       DockerComposeClusterService._createParentInstance.restore()
       DockerComposeClusterService._createParentBuild.restore()
       DockerComposeClusterService._createParentContextVersion.restore()
+      BuildService.buildBuild.restore()
       DockerComposeClusterService._createParentContext.restore()
       done()
     })
@@ -311,13 +313,15 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testBuild = { _id: objectId('407f191e810c19729de860ef') }
       const testContext = { _id: 'context' }
       const testContextVersion = { _id: 'contextVersion' }
+      const testTriggeredAction = 'user'
 
       DockerComposeClusterService._createParentInstance.resolves(testInstance)
       DockerComposeClusterService._createParentBuild.resolves(testBuild)
+      BuildService.buildBuild.resolves()
       DockerComposeClusterService._createParentContextVersion.resolves(testContextVersion)
       DockerComposeClusterService._createParentContext.resolves(testContext)
 
-      DockerComposeClusterService.createClusterParent(testSessionUser, testParentComposeData, testRepoName).asCallback((err, instance) => {
+      DockerComposeClusterService.createClusterParent(testSessionUser, testParentComposeData, testRepoName, testTriggeredAction).asCallback((err, instance) => {
         if (err) { return done(err) }
         expect(instance).to.equal(testInstance)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentContext)
@@ -326,6 +330,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledWith(DockerComposeClusterService._createParentContextVersion, testSessionUser, testContext._id, testOrgGithubId, testRepoName)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentBuild)
         sinon.assert.calledWith(DockerComposeClusterService._createParentBuild, testSessionUser, testContextVersion._id)
+        sinon.assert.calledOnce(BuildService.buildBuild)
+        sinon.assert.calledWith(BuildService.buildBuild, testBuild._id, { message: 'Initial Cluster Creation', triggeredAction: testTriggeredAction }, testSessionUser)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentInstance)
         sinon.assert.calledWith(DockerComposeClusterService._createParentInstance, testSessionUser, testParentComposeData, testBuild._id.toString())
         done()

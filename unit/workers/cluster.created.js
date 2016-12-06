@@ -104,7 +104,8 @@ describe('Cluster Created Worker', function () {
         sinon.assert.calledWithExactly(DockerComposeClusterService.createClusterParent,
           sessionUser,
           mainInstanceDef,
-          testData.repoFullName)
+          testData.repoFullName,
+          testData.triggeredAction)
         done()
       })
     })
