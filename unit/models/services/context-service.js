@@ -178,6 +178,7 @@ describe('ContextService Unit Test', function () {
 
   describe('createNew', function () {
     beforeEach(function (done) {
+      sinon.stub(ContextService, '_addBpInfoToDataFromSessionUser').resolves()
       ctx.sessionUser = {
         accounts: {
           github: {
@@ -185,6 +186,11 @@ describe('ContextService Unit Test', function () {
           }
         }
       }
+      done()
+    })
+
+    afterEach((done) => {
+      ContextService._addBpInfoToDataFromSessionUser.restore()
       done()
     })
 
@@ -394,11 +400,58 @@ describe('ContextService Unit Test', function () {
       .tap(function () {
         sinon.assert.callOrder(
           PermissionService.isOwnerOf,
+          ContextService._addBpInfoToDataFromSessionUser,
+          Context.createAsync)
+      })
+      .asCallback(done)
+    })
+
+    it('should call functions in if adding bp info failed', function (done) {
+      var payload = {
+        name: 'code',
+        owner: {
+          github: 2
+        }
+      }
+      ContextService._addBpInfoToDataFromSessionUser.throws()
+      ContextService.createNew(ctx.sessionUser, clone(payload))
+      .tap(function () {
+        sinon.assert.callOrder(
+          PermissionService.isOwnerOf,
+          ContextService._addBpInfoToDataFromSessionUser,
           Context.createAsync)
       })
       .asCallback(done)
     })
   })
+
+  describe('_addBpInfoToDataFromSessionUser', () => {
+    it('should add bp into to data', (done) => {
+      const output = {}
+      const testBpUserId = 111
+      const testGithubOrgId = 222
+      const testBpOrgId = 333
+
+      ContextService._addBpInfoToDataFromSessionUser({
+        bigPoppaUser: {
+          id: testBpUserId,
+          organizations: [{
+            githubId: testGithubOrgId,
+            id: testBpOrgId
+          }]
+        }
+      }, testGithubOrgId, output)
+      expect(output).to.equal({
+        createdBy: {
+          bigPoppa: testBpUserId
+        },
+        owner: {
+          bigPoppa: testBpOrgId
+        }
+      })
+      done()
+    })
+  }) // end _addBpInfoToDataFromSessionUser
 
   describe('handleVersionDeepCopy', function () {
     beforeEach(function (done) {
