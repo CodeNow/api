@@ -340,7 +340,6 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testContextVersion = { _id: 'contextVersion' }
       const testTriggeredAction = 'user'
 
-
       DockerComposeClusterService._createInstance.resolves(testInstance)
       DockerComposeClusterService._createBuild.resolves(testBuild)
       BuildService.buildBuild.resolves(testBuild)
@@ -365,11 +364,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           noCache: true,
           triggeredAction: {
             manual: testTriggeredAction === 'user'
-          },
+          }
           // triggeredBy: {
           //   github: testSessionUser.accounts.github.id
           // }
-         }
+        }
         sinon.assert.calledWith(BuildService.buildBuild, testBuild._id, buildData, testSessionUser)
         sinon.assert.calledOnce(DockerComposeClusterService._createInstance)
         sinon.assert.calledWith(DockerComposeClusterService._createInstance, testSessionUser, testMainParsedContent.instance, testBuild._id.toString())
@@ -414,10 +413,13 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   }) // end _createContext
 
   describe('_createParentContextVersion', () => {
+    let testContextVersion = { _id: 'contextVersion' }
+    let testAppCodeVersion = { _id: 'testAppCodeVersion' }
+    let testParentInfraCodeVersion = { _id: 'infraCodeVersion' }
     beforeEach((done) => {
-      sinon.stub(ContextVersion, 'createAppcodeVersion')
-      sinon.stub(ContextVersion, 'createWithNewInfraCode')
-      sinon.stub(InfraCodeVersionService, 'findBlankInfraCodeVersion')
+      sinon.stub(ContextVersion, 'createAppcodeVersion').resolves(testAppCodeVersion)
+      sinon.stub(ContextVersion, 'createWithNewInfraCode').resolves(testContextVersion)
+      sinon.stub(InfraCodeVersionService, 'findBlankInfraCodeVersion').resolves(testParentInfraCodeVersion)
       done()
     })
 
@@ -427,39 +429,46 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       InfraCodeVersionService.findBlankInfraCodeVersion.restore()
       done()
     })
+    describe('success', () => {
+      it('should create contextVersion', (done) => {
+        const testRepoName = 'runnable/boo'
+        const testDockerfilePath = '/Dockerfile'
 
-    it('should create contextVersion', (done) => {
-      const testRepoName = 'runnable/boo'
-      const testContextVersion = { _id: 'contextVersion' }
-      const testAppCodeVersion = { _id: 'testAppCodeVersion' }
-      const testDockerfilePath = '/Dockerfile'
-      const testParentInfraCodeVersion = { _id: 'infraCodeVersion' }
-      ContextVersion.createAppcodeVersion.resolves(testAppCodeVersion)
-      InfraCodeVersionService.findBlankInfraCodeVersion.resolves(testParentInfraCodeVersion)
-      ContextVersion.createWithNewInfraCode.resolves(testContextVersion)
+        DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgGithubId, testRepoName, testDockerfilePath)
+        .tap((contextVersion) => {
+          expect(contextVersion).to.equal(testContextVersion)
+          sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
+          sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
+          sinon.assert.calledOnce(InfraCodeVersionService.findBlankInfraCodeVersion)
+          sinon.assert.calledWithExactly(InfraCodeVersionService.findBlankInfraCodeVersion)
+          sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
+          sinon.assert.calledWithExactly(ContextVersion.createWithNewInfraCode, {
+            context: testContextId,
+            parentInfraCodeVersion: testParentInfraCodeVersion._id,
+            createdBy: {
+              github: testSessionUser.accounts.github.id
+            },
+            owner: {
+              github: testOrgGithubId
+            },
+            advance: true,
+            buildDockerfilePath: testDockerfilePath,
+            appCodeVersions: [testAppCodeVersion]
+          })
+        }).asCallback(done)
+      })
+      it('should call all functions in order', (done) => {
+        const testRepoName = 'runnable/boo'
+        const testDockerfilePath = '/Dockerfile'
 
-      DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgGithubId, testRepoName, testDockerfilePath).asCallback((err, contextVersion) => {
-        if (err) { return done(err) }
-        expect(contextVersion).to.equal(testContextVersion)
-        sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
-        sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
-        sinon.assert.calledOnce(InfraCodeVersionService.findBlankInfraCodeVersion)
-        sinon.assert.calledWithExactly(InfraCodeVersionService.findBlankInfraCodeVersion)
-        sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
-        sinon.assert.calledWithExactly(ContextVersion.createWithNewInfraCode, {
-          context: testContextId,
-          parentInfraCodeVersion: testParentInfraCodeVersion._id,
-          createdBy: {
-            github: testSessionUser.accounts.github.id
-          },
-          owner: {
-            github: testOrgGithubId
-          },
-          advance: true,
-          buildDockerfilePath: testDockerfilePath,
-          appCodeVersions: [testAppCodeVersion]
-        })
-        done()
+        DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgGithubId, testRepoName, testDockerfilePath)
+        .tap((contextVersion) => {
+          expect(contextVersion).to.equal(testContextVersion)
+          sinon.assert.callOrder(
+            InfraCodeVersionService.findBlankInfraCodeVersion,
+            ContextVersion.createAppcodeVersion,
+            ContextVersion.createWithNewInfraCode)
+        }).asCallback(done)
       })
     })
   }) // end _createParentContextVersion
@@ -492,7 +501,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           },
           owner: {
             github: testOrgGithubId
-          },
+          }
         }, testSessionUser)
 
         expect(build).to.equal(testBuild)
