@@ -628,4 +628,43 @@ describe('User Service', function () {
       done()
     })
   }) // end getBpOrgInfoFromRepoName
+
+  describe('getBpOrgInfoFromGithubOrgId', () => {
+    it('should return correct org info', (done) => {
+      const testInfo = {
+        githubId: 111
+      }
+      const sessionUser = {
+        bigPoppaUser: {
+          organizations: [{
+            githubId: 222
+          },
+          testInfo, {
+            githubId: 333
+          }]
+        }
+      }
+      const output = UserService.getBpOrgInfoFromGithubOrgId(sessionUser, testInfo.githubId)
+      expect(output).to.equal(testInfo)
+      done()
+    })
+
+    it('should throw if no org found', (done) => {
+      const sessionUser = {
+        bigPoppaUser: {
+          organizations: [{
+            githubId: 222
+          }, {
+            githubId: 111
+          }, {
+            githubId: 333
+          }]
+        }
+      }
+      expect(() => {
+        UserService.getBpOrgInfoFromGithubOrgId(sessionUser, 666)
+      }).to.throw(UserService.OrganizationNotFoundError)
+      done()
+    })
+  }) // end getBpOrgInfoFromGithubOrgId
 })
