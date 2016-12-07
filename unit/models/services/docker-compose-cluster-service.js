@@ -449,7 +449,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             context: testContextId,
             parentInfraCodeVersion: testParentInfraCodeVersion._id,
             createdBy: {
-              github: testSessionUser.accounts.github.id
+              github: testSessionUser.accounts.github.id,
+              bigPoppa: testSessionUser.bigPoppaUser.id
             },
             owner: {
               github: testOrgGithubId,
