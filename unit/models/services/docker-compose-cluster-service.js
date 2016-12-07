@@ -253,8 +253,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           sinon.assert.calledOnce(DockerComposeCluster.createAsync)
           sinon.assert.calledWithExactly(DockerComposeCluster.createAsync, {
             dockerComposeFilePath,
-            createdBy: testSessionUser.bigPoppaUser.id,
-            ownedBy: testOrg.id,
+            createdByUser: testSessionUser.bigPoppaUser.id,
+            ownedByOrg: testOrg.id,
             triggeredAction
           })
         })

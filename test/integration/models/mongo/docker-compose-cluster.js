@@ -24,8 +24,8 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       objectId('607f191e810c19729de860eb'),
       objectId('707f191e810c19729de860ec')
     ],
-    createdBy: 123123,
-    ownedBy: 1,
+    createdByUser: 123123,
+    ownedByOrg: 1,
     triggeredAction: 'user'
   }
   before(mongooseControl.start)
@@ -101,8 +101,8 @@ describe('DockerComposeCluster Model Integration Tests', function () {
           objectId('607f191e810c19729de860eb'),
           objectId('707f191e810c19729de860ec')
         ],
-        createdBy: 123123,
-        ownedBy: 2,
+        createdByUser: 123123,
+        ownedByOrg: 2,
         triggeredAction: 'user'
       }
       const composeCluster = new DockerComposeCluster(data)
@@ -114,7 +114,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(saved.siblingsInstanceIds[0].toString()).to.equal(data.siblingsInstanceIds[0].toString())
         expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
         expect(saved.created).to.exist()
-        expect(saved.createdBy).to.equal(data.createdBy)
+        expect(saved.createdByUser).to.equal(data.createdByUser)
         expect(saved.triggeredAction).to.equal(data.triggeredAction)
         expect(saved.ownerBy).to.equal(data.ownerBy)
       })
@@ -171,13 +171,13 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       })
     })
 
-    it('should fail if createdBy is not provided', function (done) {
+    it('should fail if createdByUser is not provided', function (done) {
       const invalidData = Object.assign({}, data)
-      invalidData.createdBy = null
+      invalidData.createdByUser = null
       const composeCluster = new DockerComposeCluster(invalidData)
       composeCluster.saveAsync().asCallback(function (err) {
         expect(err).to.exist()
-        expect(err.errors.createdBy.message).to.equal('Docker Compose Cluster requires createdBy')
+        expect(err.errors.createdByUser.message).to.equal('Docker Compose Cluster requires createdByUser')
         done()
       })
     })
@@ -193,13 +193,13 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       })
     })
 
-    it('should fail if ownedBy is not provided', function (done) {
+    it('should fail if ownedByOrg is not provided', function (done) {
       const invalidData = Object.assign({}, data)
-      invalidData.ownedBy = null
+      invalidData.ownedByOrg = null
       const composeCluster = new DockerComposeCluster(invalidData)
       composeCluster.saveAsync().asCallback(function (err) {
         expect(err).to.exist()
-        expect(err.errors.ownedBy.message).to.equal('Docker Compose Cluster requires ownedBy')
+        expect(err.errors.ownedByOrg.message).to.equal('Docker Compose Cluster requires ownedByOrg')
         done()
       })
     })
