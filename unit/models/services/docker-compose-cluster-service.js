@@ -368,9 +368,6 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           triggeredAction: {
             manual: testTriggeredAction === 'user'
           }
-          // triggeredBy: {
-          //   github: testSessionUser.accounts.github.id
-          // }
         }
         sinon.assert.calledWith(BuildService.buildBuild, testBuild._id, buildData, testSessionUser)
         sinon.assert.calledOnce(DockerComposeClusterService._createInstance)
