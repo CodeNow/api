@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/cluster.create
+ * @module unit/workers/cluster.created
  */
 'use strict'
 

@@ -21,6 +21,7 @@ const octobear = require('@runnable/octobear')
 const BuildService = require('models/services/build-service')
 const ContextService = require('models/services/context-service')
 const ContextVersion = require('models/mongo/context-version')
+const InfraCodeVersionService = require('models/services/infracode-version-service')
 const InstanceService = require('models/services/instance-service')
 const OrganizationService = require('models/services/organization-service')
 
@@ -416,12 +417,14 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     beforeEach((done) => {
       sinon.stub(ContextVersion, 'createAppcodeVersion')
       sinon.stub(ContextVersion, 'createWithNewInfraCode')
+      sinon.stub(InfraCodeVersionService, 'findBlankInfraCodeVersion')
       done()
     })
 
     afterEach((done) => {
       ContextVersion.createAppcodeVersion.restore()
       ContextVersion.createWithNewInfraCode.restore()
+      InfraCodeVersionService.findBlankInfraCodeVersion.restore()
       done()
     })
 
@@ -430,18 +433,22 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testContextVersion = { _id: 'contextVersion' }
       const testAppCodeVersion = { _id: 'testAppCodeVersion' }
       const testDockerfilePath = '/Dockerfile'
-
+      const testParentInfraCodeVersion = { _id: 'infraCodeVersion' }
       ContextVersion.createAppcodeVersion.resolves(testAppCodeVersion)
+      InfraCodeVersionService.findBlankInfraCodeVersion.resolves(testParentInfraCodeVersion)
       ContextVersion.createWithNewInfraCode.resolves(testContextVersion)
 
       DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgGithubId, testRepoName, testDockerfilePath).asCallback((err, contextVersion) => {
         if (err) { return done(err) }
         expect(contextVersion).to.equal(testContextVersion)
         sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
-        sinon.assert.calledWith(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
+        sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
+        sinon.assert.calledOnce(InfraCodeVersionService.findBlankInfraCodeVersion)
+        sinon.assert.calledWithExactly(InfraCodeVersionService.findBlankInfraCodeVersion)
         sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
-        sinon.assert.calledWith(ContextVersion.createWithNewInfraCode, {
+        sinon.assert.calledWithExactly(ContextVersion.createWithNewInfraCode, {
           context: testContextId,
+          parentInfraCodeVersion: testParentInfraCodeVersion._id,
           createdBy: {
             github: testSessionUser.accounts.github.id
           },
