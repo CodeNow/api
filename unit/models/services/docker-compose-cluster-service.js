@@ -770,6 +770,80 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
   }) // end _createSiblingContextVersion
 
+  describe('_updateAndRebuildInstancesWithConfigs', () => {
+    beforeEach((done) => {
+      sinon.stub(rabbitMQ, 'publishInstanceRebuild')
+      done()
+    })
+
+    afterEach((done) => {
+      rabbitMQ.publishInstanceRebuild.restore()
+      done()
+    })
+
+    it('should update instance if it has new config', (done) => {
+      const testConfig = {
+        env: 'env',
+        containerStartCommand: 'start',
+        name: 'NewName'
+      }
+
+      const instanceMock = {
+        _id: 1,
+        updateAsync: sinon.stub().resolves(),
+        name: 'test',
+        config: {
+          instance: testConfig
+        }
+      }
+
+      DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
+      .then(() => {
+        sinon.assert.calledOnce(instanceMock.updateAsync)
+        sinon.assert.calledWith(instanceMock.updateAsync, {
+          $set: {
+            env: testConfig.env,
+            containerStartCommand: testConfig.containerStartCommand,
+            name: testConfig.name,
+            lowerName: testConfig.name.toLowerCase()
+          }
+        })
+
+        sinon.assert.calledOnce(rabbitMQ.publishInstanceRebuild)
+        sinon.assert.calledWith(rabbitMQ.publishInstanceRebuild, {
+          instanceId: instanceMock._id
+        })
+      })
+      .asCallback(done)
+    })
+
+    it('should not update instance if it has no config', (done) => {
+      const instanceMock = {
+        _id: 1,
+        updateAsync: sinon.stub().returns(),
+        name: 'test'
+      }
+
+      DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
+      sinon.assert.notCalled(instanceMock.updateAsync)
+      sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
+      done()
+    })
+
+    it('should not update instance if it has no name', (done) => {
+      const instanceMock = {
+        _id: 1,
+        updateAsync: sinon.stub().returns(),
+        config: {}
+      }
+
+      DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
+      sinon.assert.notCalled(instanceMock.updateAsync)
+      sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
+      done()
+    })
+  }) // end _updateAndRebuildInstancesWithConfigs
+
   describe('_deleteInstanceIfMissingConfig', () => {
     beforeEach((done) => {
       sinon.stub(rabbitMQ, 'deleteInstance')
