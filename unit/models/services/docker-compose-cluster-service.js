@@ -21,7 +21,9 @@ const octobear = require('@runnable/octobear')
 const BuildService = require('models/services/build-service')
 const ContextService = require('models/services/context-service')
 const ContextVersion = require('models/mongo/context-version')
+const InfraCodeVersionService = require('models/services/infracode-version-service')
 const InstanceService = require('models/services/instance-service')
+const OrganizationService = require('models/services/organization-service')
 
 require('sinon-as-promised')(Promise)
 
@@ -36,6 +38,9 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   let testParsedContent
   let testMainParsedContent
   let testSessionUser
+  const testOrg = {
+    id: testOrgBpId
+  }
 
   beforeEach((done) => {
     testMainParsedContent = {
@@ -135,6 +140,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     beforeEach(function (done) {
       sinon.stub(DockerComposeCluster, 'createAsync').resolves(new DockerComposeCluster(clusterData))
       sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves(dockerComposeContent)
+      sinon.stub(OrganizationService, 'getByGithubUsername').resolves(testOrg)
       sinon.stub(octobear, 'parse').returns(testParsedContent)
       sinon.stub(rabbitMQ, 'clusterCreated').returns()
       done()
@@ -142,6 +148,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     afterEach(function (done) {
       DockerComposeCluster.createAsync.restore()
       GitHub.prototype.getRepoContentAsync.restore()
+      OrganizationService.getByGithubUsername.restore()
       octobear.parse.restore()
       rabbitMQ.clusterCreated.restore()
       done()
@@ -161,6 +168,17 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       it('should return error if octobear.parse failed', function (done) {
         const error = new Error('Some error')
         octobear.parse.throws(error)
+        DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, dockerComposeFilePath, newInstanceName)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+
+      it('should return error if OrganizationService.getByGithubUsername failed', function (done) {
+        const error = new Error('Some error')
+        OrganizationService.getByGithubUsername.rejects(error)
         DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, dockerComposeFilePath, newInstanceName)
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -220,14 +238,25 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         .asCallback(done)
       })
 
+      it('should call OrganizationService.getByGithubUsername with correct args', function (done) {
+        DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, dockerComposeFilePath, newInstanceName)
+        .tap(function () {
+          sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
+          sinon.assert.calledWithExactly(OrganizationService.getByGithubUsername, ownerUsername)
+        })
+        .asCallback(done)
+      })
+
       it('should call createAsync with correct args', function (done) {
         DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, dockerComposeFilePath, newInstanceName)
         .tap(function () {
           sinon.assert.calledOnce(DockerComposeCluster.createAsync)
           sinon.assert.calledWithExactly(DockerComposeCluster.createAsync, {
             dockerComposeFilePath,
-            createdBy: testUserBpId,
-            triggeredAction })
+            createdByUser: testSessionUser.bigPoppaUser.id,
+            ownedByOrg: testOrg.id,
+            triggeredAction
+          })
         })
         .asCallback(done)
       })
@@ -239,7 +268,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           const cluster = { id: clusterId.toString() }
           const payload = {
             cluster,
-            parsedCompose: testParsedContent
+            parsedCompose: testParsedContent,
+            sessionUserBigPoppaId: testSessionUser.bigPoppaUser.id,
+            orgBigPoppaId: testOrg.id,
+            triggeredAction,
+            repoFullName
           }
           sinon.assert.calledWithExactly(rabbitMQ.clusterCreated, payload)
         })
@@ -252,6 +285,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           sinon.assert.callOrder(
             GitHub.prototype.getRepoContentAsync,
             octobear.parse,
+            OrganizationService.getByGithubUsername,
             DockerComposeCluster.createAsync,
             rabbitMQ.clusterCreated)
         })
@@ -260,11 +294,37 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
   })
 
+  const testSessionUserGitHubId = 171771
+
+  beforeEach((done) => {
+    testSessionUser = {
+      _id: 'id',
+      accounts: {
+        github: {
+          id: testSessionUserGitHubId
+        },
+        login: 'login',
+        username: 'best'
+      },
+      bigPoppaUser: {
+        id: testUserBpId,
+        organizations: [{
+          name: testOrgName,
+          lowerName: testOrgName.toLowerCase(),
+          id: testOrgBpId,
+          githubId: testOrgGithubId
+        }]
+      }
+    }
+    done()
+  })
+
   describe('createClusterParent', () => {
     beforeEach((done) => {
       sinon.stub(DockerComposeClusterService, '_createContext')
       sinon.stub(DockerComposeClusterService, '_createParentContextVersion')
       sinon.stub(DockerComposeClusterService, '_createBuild')
+      sinon.stub(BuildService, 'buildBuild')
       sinon.stub(DockerComposeClusterService, '_createInstance')
       done()
     })
@@ -273,6 +333,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       DockerComposeClusterService._createInstance.restore()
       DockerComposeClusterService._createBuild.restore()
       DockerComposeClusterService._createParentContextVersion.restore()
+      BuildService.buildBuild.restore()
       DockerComposeClusterService._createContext.restore()
       done()
     })
@@ -280,16 +341,18 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     it('should create cluster parent', (done) => {
       const testRepoName = 'Runnable/boo'
       const testInstance = { _id: 'instance' }
-      const testBuild = { _id: 'build' }
+      const testBuild = { _id: objectId('407f191e810c19729de860ef') }
       const testContext = { _id: 'context' }
       const testContextVersion = { _id: 'contextVersion' }
+      const testTriggeredAction = 'user'
 
       DockerComposeClusterService._createInstance.resolves(testInstance)
       DockerComposeClusterService._createBuild.resolves(testBuild)
+      BuildService.buildBuild.resolves(testBuild)
       DockerComposeClusterService._createParentContextVersion.resolves(testContextVersion)
       DockerComposeClusterService._createContext.resolves(testContext)
 
-      DockerComposeClusterService.createClusterParent(testSessionUser, testMainParsedContent, testRepoName).asCallback((err, instance) => {
+      DockerComposeClusterService.createClusterParent(testSessionUser, testMainParsedContent, testRepoName, testTriggeredAction).asCallback((err, instance) => {
         if (err) { return done(err) }
         expect(instance).to.equal(testInstance)
         sinon.assert.calledOnce(DockerComposeClusterService._createContext)
@@ -298,8 +361,17 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledWith(DockerComposeClusterService._createParentContextVersion, testSessionUser, testContext._id, testOrgInfo, testRepoName, testMainParsedContent.contextVersion.buildDockerfilePath)
         sinon.assert.calledOnce(DockerComposeClusterService._createBuild)
         sinon.assert.calledWith(DockerComposeClusterService._createBuild, testSessionUser, testContextVersion._id)
+        sinon.assert.calledOnce(BuildService.buildBuild)
+        const buildData = {
+          message: 'Initial Cluster Creation',
+          noCache: true,
+          triggeredAction: {
+            manual: testTriggeredAction === 'user'
+          }
+        }
+        sinon.assert.calledWith(BuildService.buildBuild, testBuild._id, buildData, testSessionUser)
         sinon.assert.calledOnce(DockerComposeClusterService._createInstance)
-        sinon.assert.calledWith(DockerComposeClusterService._createInstance, testSessionUser, testMainParsedContent.instance, testBuild._id)
+        sinon.assert.calledWith(DockerComposeClusterService._createInstance, testSessionUser, testMainParsedContent.instance, testBuild._id.toString())
         done()
       })
     })
@@ -341,48 +413,63 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   }) // end _createContext
 
   describe('_createParentContextVersion', () => {
+    let testContextVersion = { _id: 'contextVersion' }
+    let testAppCodeVersion = { _id: 'testAppCodeVersion' }
+    let testParentInfraCodeVersion = { _id: 'infraCodeVersion' }
     beforeEach((done) => {
-      sinon.stub(ContextVersion, 'createAppcodeVersion')
-      sinon.stub(ContextVersion, 'createWithNewInfraCode')
+      sinon.stub(ContextVersion, 'createAppcodeVersion').resolves(testAppCodeVersion)
+      sinon.stub(ContextVersion, 'createWithNewInfraCode').resolves(testContextVersion)
+      sinon.stub(InfraCodeVersionService, 'findBlankInfraCodeVersion').resolves(testParentInfraCodeVersion)
       done()
     })
 
     afterEach((done) => {
       ContextVersion.createAppcodeVersion.restore()
       ContextVersion.createWithNewInfraCode.restore()
+      InfraCodeVersionService.findBlankInfraCodeVersion.restore()
       done()
     })
+    describe('success', () => {
+      it('should create contextVersion', (done) => {
+        const testRepoName = 'runnable/boo'
+        const testDockerfilePath = '/Dockerfile'
 
-    it('should create contextVersion', (done) => {
-      const testRepoName = 'runnable/boo'
-      const testContextVersion = { _id: 'contextVersion' }
-      const testAppCodeVersion = { _id: 'testAppCodeVersion' }
-      const testDockerfilePath = '/Dockerfile'
-
-      ContextVersion.createAppcodeVersion.resolves(testAppCodeVersion)
-      ContextVersion.createWithNewInfraCode.resolves(testContextVersion)
-
-      DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testDockerfilePath).asCallback((err, contextVersion) => {
-        if (err) { return done(err) }
-        expect(contextVersion).to.equal(testContextVersion)
-        sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
-        sinon.assert.calledWith(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
-        sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
-        sinon.assert.calledWith(ContextVersion.createWithNewInfraCode, {
-          context: testContextId,
-          createdBy: {
-            github: testUserGithubId,
-            bigPoppa: testUserBpId
-          },
-          owner: {
-            github: testOrgGithubId,
-            bigPoppa: testOrgBpId
-          },
-          advance: true,
-          buildDockerfilePath: testDockerfilePath,
-          appCodeVersions: [testAppCodeVersion]
-        })
-        done()
+        DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testDockerfilePath)
+        .tap((contextVersion) => {
+          expect(contextVersion).to.equal(testContextVersion)
+          sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
+          sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
+          sinon.assert.calledOnce(InfraCodeVersionService.findBlankInfraCodeVersion)
+          sinon.assert.calledWithExactly(InfraCodeVersionService.findBlankInfraCodeVersion)
+          sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
+          sinon.assert.calledWithExactly(ContextVersion.createWithNewInfraCode, {
+            context: testContextId,
+            parentInfraCodeVersion: testParentInfraCodeVersion._id,
+            createdBy: {
+              github: testSessionUser.accounts.github.id,
+              bigPoppa: testSessionUser.bigPoppaUser.id
+            },
+            owner: {
+              github: testOrgGithubId,
+              bigPoppa: testOrgBpId
+            },
+            advance: true,
+            buildDockerfilePath: testDockerfilePath,
+            appCodeVersions: [testAppCodeVersion]
+          })
+        }).asCallback(done)
+      })
+      it('should call all functions in order', (done) => {
+        const testRepoName = 'runnable/boo'
+        const testDockerfilePath = '/Dockerfile'
+        DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testDockerfilePath)
+        .tap((contextVersion) => {
+          expect(contextVersion).to.equal(testContextVersion)
+          sinon.assert.callOrder(
+            InfraCodeVersionService.findBlankInfraCodeVersion,
+            ContextVersion.createAppcodeVersion,
+            ContextVersion.createWithNewInfraCode)
+        }).asCallback(done)
       })
     })
   }) // end _createParentContextVersion
@@ -400,14 +487,22 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
     it('should create build', (done) => {
       const testContextVersionId = objectId('407f191e810c19729de860ef')
-      const testBuild = 'build'
+      const testBuildId = objectId('507f191e810c19729de860ee')
+      const testBuild = {
+        _id: testBuildId
+      }
       BuildService.createBuild.resolves(testBuild)
-
-      DockerComposeClusterService._createBuild(testSessionUser, testContextVersionId).asCallback((err, build) => {
+      DockerComposeClusterService._createBuild(testSessionUser, testContextVersionId, testOrgGithubId).asCallback((err, build) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(BuildService.createBuild)
         sinon.assert.calledWith(BuildService.createBuild, {
-          contextVersion: testContextVersionId
+          contextVersion: testContextVersionId,
+          createdBy: {
+            github: testSessionUserGitHubId
+          },
+          owner: {
+            github: testOrgGithubId
+          }
         }, testSessionUser)
 
         expect(build).to.equal(testBuild)
@@ -437,11 +532,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testInstance = 'build'
       InstanceService.createInstance.resolves(testInstance)
 
-      DockerComposeClusterService._createInstance(testSessionUser, testParentComposeData, testParentBuildId).asCallback((err, instance) => {
+      DockerComposeClusterService._createInstance(testSessionUser, testParentComposeData, testParentBuildId.toString()).asCallback((err, instance) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(InstanceService.createInstance)
         sinon.assert.calledWith(InstanceService.createInstance, {
-          build: testParentBuildId,
+          build: testParentBuildId.toString(),
           env: testParentComposeData.env,
           containerStartCommand: testParentComposeData.containerStartCommand,
           name: testParentComposeData.name,
@@ -660,7 +755,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledWith(ContextVersion.createWithDockerFileContent, {
           context: testContextId,
           createdBy: {
-            github: testUserGithubId,
+            github: testSessionUser.accounts.github.id,
             bigPoppa: testUserBpId
           },
           owner: {
