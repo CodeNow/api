@@ -674,4 +674,89 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       })
     })
   }) // end _createSiblingContextVersion
+
+  describe('_deleteInstanceIfMissingConfig', () => {
+    beforeEach((done) => {
+      sinon.stub(rabbitMQ, 'deleteInstance')
+      done()
+    })
+
+    afterEach((done) => {
+      rabbitMQ.deleteInstance.restore()
+      done()
+    })
+
+    it('should call delete if instance does not have a config', (done) => {
+      const testId = 1
+      DockerComposeClusterService._deleteInstanceIfMissingConfig({ _id: testId })
+      sinon.assert.calledOnce(rabbitMQ.deleteInstance)
+      sinon.assert.calledWith(rabbitMQ.deleteInstance, { instanceId: testId })
+      done()
+    })
+
+    it('should not call delete if instance does not have a config', (done) => {
+      DockerComposeClusterService._deleteInstanceIfMissingConfig({ config: {} })
+      sinon.assert.notCalled(rabbitMQ.deleteInstance)
+      done()
+    })
+  }) // end _deleteInstanceIfMissingConfig
+
+  describe('_mergeConfigsIntoInstances', () => {
+    it('should output list of configs and instances', (done) => {
+      const out = DockerComposeClusterService._mergeConfigsIntoInstances(
+        [{instance: {name: '1'}}, {instance: {name: '4'}}],
+        [{lowerName: '1'}, {lowerName: '2'}]
+      )
+      expect(out).to.equal([
+        {lowerName: '1', config: {instance: {name: '1'}}},
+        {lowerName: '2', config: undefined},
+        {config: {instance: {name: '4'}}}
+      ])
+      done()
+    })
+  }) // end _mergeConfigsIntoInstances
+
+  describe('_addConfigToInstances', () => {
+    it('should add instances and missing configs into array', (done) => {
+      const out = DockerComposeClusterService._addConfigToInstances(
+        [{instance: {name: '1'}}, {instance: {name: '4'}}],
+        [{lowerName: '1'}, {lowerName: '2'}]
+      )
+      expect(out).to.equal([{lowerName: '1', config: {instance: {name: '1'}}}, {lowerName: '2', config: undefined}])
+      done()
+    })
+  }) // end _addConfigToInstances
+
+  describe('_addMissingConfigs', () => {
+    it('should add missing configs to array', (done) => {
+      const out = DockerComposeClusterService._addMissingConfigs(
+        [{instance: {name: '1'}}, {instance: {name: '4'}}],
+        [{lowerName: '1'}, {lowerName: '2'}]
+      )
+      expect(out).to.equal([{lowerName: '1'}, {lowerName: '2'}, {config: {instance: {name: '4'}}}])
+      done()
+    })
+  }) // end _addMissingConfigs
+
+  describe('_isConfigMissingInstance', () => {
+    it('should return false if config has an instance', (done) => {
+      const out = DockerComposeClusterService._isConfigMissingInstance(
+        [{lowerName: '1'}, {lowerName: '2'}, {lowerName: '3'}],
+        {instance: {name: '1'}}
+      )
+
+      expect(out).to.be.false()
+      done()
+    })
+
+    it('should return true if config does not have an instance', (done) => {
+      const out = DockerComposeClusterService._isConfigMissingInstance(
+        [{lowerName: '1'}, {lowerName: '2'}, {lowerName: '3'}],
+        {instance: {name: '5'}}
+      )
+
+      expect(out).to.be.true()
+      done()
+    })
+  }) // end _isConfigMissingInstance
 })
