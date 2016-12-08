@@ -444,7 +444,6 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
           sinon.assert.calledWithExactly(ContextVersion.createWithNewInfraCode, {
             context: testContextId,
-            parentInfraCodeVersion: testParentInfraCodeVersion._id,
             createdBy: {
               github: testSessionUser.accounts.github.id,
               bigPoppa: testSessionUser.bigPoppaUser.id
@@ -456,7 +455,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             advance: true,
             buildDockerfilePath: testDockerfilePath,
             appCodeVersions: [testAppCodeVersion]
-          })
+          }, { parent: testParentInfraCodeVersion._id })
         }).asCallback(done)
       })
       it('should call all functions in order', (done) => {
@@ -742,30 +741,32 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   }) // end createClusterSibling
 
   describe('_createSiblingContextVersion', () => {
+    let testParentInfraCodeVersion = { _id: 'testParentInfraCodeVersion' }
+    let testContextVersion = { _id: 'contextVersion' }
+    let testDockerfileContent
+    let testOrgInfo = {
+      bigPoppaOrgId: testOrgBpId,
+      githubOrgId: testOrgGithubId
+    }
     beforeEach((done) => {
-      sinon.stub(ContextVersion, 'createWithDockerFileContent')
+      testDockerfileContent = testMainParsedContent.files['/Dockerfile'].body
+      sinon.stub(ContextVersion, 'createWithDockerFileContent').resolves(testContextVersion)
+      sinon.stub(InfraCodeVersionService, 'findBlankInfraCodeVersion').resolves(testParentInfraCodeVersion)
       done()
     })
 
     afterEach((done) => {
       ContextVersion.createWithDockerFileContent.restore()
+      InfraCodeVersionService.findBlankInfraCodeVersion.restore()
       done()
     })
 
     it('should create contextVersion', (done) => {
-      const testContextVersion = { _id: 'contextVersion' }
-      const testDockerfileContent = testMainParsedContent.files['/Dockerfile'].body
-      const testOrgInfo = {
-        bigPoppaOrgId: testOrgBpId,
-        githubOrgId: testOrgGithubId
-      }
-      ContextVersion.createWithDockerFileContent.resolves(testContextVersion)
-
       DockerComposeClusterService._createSiblingContextVersion(testSessionUser, testContextId, testOrgInfo, testDockerfileContent).asCallback((err, contextVersion) => {
         if (err) { return done(err) }
         expect(contextVersion).to.equal(testContextVersion)
         sinon.assert.calledOnce(ContextVersion.createWithDockerFileContent)
-        sinon.assert.calledWith(ContextVersion.createWithDockerFileContent, {
+        sinon.assert.calledWithExactly(ContextVersion.createWithDockerFileContent, {
           context: testContextId,
           createdBy: {
             github: testSessionUser.accounts.github.id,
@@ -777,7 +778,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           },
           advance: true,
           appCodeVersions: []
-        }, testDockerfileContent)
+        }, testDockerfileContent, { parent: testParentInfraCodeVersion._id })
         done()
       })
     })
