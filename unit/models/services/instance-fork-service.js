@@ -15,7 +15,7 @@ var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
 var Context = require('models/mongo/context')
-var ContextService = require('models/services/context-service')
+var ContextVersionService = require('models/services/context-version-service')
 var Instance = require('models/mongo/instance')
 var BuildService = require('models/services/build-service')
 var InstanceForkService = require('models/services/instance-fork-service')
@@ -299,13 +299,13 @@ describe('InstanceForkService', function () {
       mockNewContextVersion = {}
       mockNewContextVersion.update = sinon.stub().yieldsAsync(null, mockNewContextVersion)
       sinon.stub(Context, 'findOne').yieldsAsync(null, mockFoundContext)
-      sinon.stub(ContextService, 'handleVersionDeepCopy').yieldsAsync(null, mockNewContextVersion)
+      sinon.stub(ContextVersionService, 'handleVersionDeepCopy').yieldsAsync(null, mockNewContextVersion)
       done()
     })
 
     afterEach(function (done) {
       Context.findOne.restore()
-      ContextService.handleVersionDeepCopy.restore()
+      ContextVersionService.handleVersionDeepCopy.restore()
       done()
     })
 
@@ -362,7 +362,7 @@ describe('InstanceForkService', function () {
 
       it('should reject with any context version copy error', function (done) {
         var error = new Error('robot')
-        ContextService.handleVersionDeepCopy.yieldsAsync(error)
+        ContextVersionService.handleVersionDeepCopy.yieldsAsync(error)
         InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -401,9 +401,9 @@ describe('InstanceForkService', function () {
       InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+          sinon.assert.calledOnce(ContextVersionService.handleVersionDeepCopy)
           sinon.assert.calledWithExactly(
-            ContextService.handleVersionDeepCopy,
+            ContextVersionService.handleVersionDeepCopy,
             mockFoundContext,
             mockContextVersion,
             { accounts: { github: { id: mockCreatedById } } },
@@ -434,7 +434,7 @@ describe('InstanceForkService', function () {
           expect(err).to.not.exist()
           sinon.assert.callOrder(
             Context.findOne,
-            ContextService.handleVersionDeepCopy,
+            ContextVersionService.handleVersionDeepCopy,
             mockNewContextVersion.update
           )
           done()

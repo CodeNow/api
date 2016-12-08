@@ -24,7 +24,8 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       objectId('607f191e810c19729de860eb'),
       objectId('707f191e810c19729de860ec')
     ],
-    createdBy: 123123,
+    createdByUser: 123123,
+    ownedByOrg: 1,
     triggeredAction: 'user'
   }
   before(mongooseControl.start)
@@ -47,6 +48,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
         expect(saved.created).to.exist()
         expect(saved.deleted).to.not.exist()
+        expect(saved.ownerBy).to.equal(data.ownerBy)
         savedDockerComposeCluster = saved
       }).asCallback(done)
     })
@@ -60,6 +62,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(composeCluster.siblingsInstanceIds.length).to.equal(savedDockerComposeCluster.siblingsInstanceIds.length)
         expect(composeCluster.created).to.equal(savedDockerComposeCluster.created)
         expect(composeCluster.deleted).to.not.exist()
+        expect(composeCluster.ownerBy).to.equal(data.ownerBy)
       })
       .asCallback(done)
     })
@@ -73,6 +76,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(composeCluster.siblingsInstanceIds.length).to.equal(savedDockerComposeCluster.siblingsInstanceIds.length)
         expect(composeCluster.created).to.equal(savedDockerComposeCluster.created)
         expect(composeCluster.deleted).to.not.exist()
+        expect(composeCluster.ownerBy).to.equal(data.ownerBy)
       })
       .asCallback(done)
     })
@@ -97,7 +101,8 @@ describe('DockerComposeCluster Model Integration Tests', function () {
           objectId('607f191e810c19729de860eb'),
           objectId('707f191e810c19729de860ec')
         ],
-        createdBy: 123123,
+        createdByUser: 123123,
+        ownedByOrg: 2,
         triggeredAction: 'user'
       }
       const composeCluster = new DockerComposeCluster(data)
@@ -109,8 +114,9 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(saved.siblingsInstanceIds[0].toString()).to.equal(data.siblingsInstanceIds[0].toString())
         expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
         expect(saved.created).to.exist()
-        expect(saved.createdBy).to.equal(data.createdBy)
+        expect(saved.createdByUser).to.equal(data.createdByUser)
         expect(saved.triggeredAction).to.equal(data.triggeredAction)
+        expect(saved.ownerBy).to.equal(data.ownerBy)
       })
       .asCallback(done)
     })
@@ -160,7 +166,40 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       const composeCluster = new DockerComposeCluster(invalidData)
       composeCluster.saveAsync().asCallback(function (err) {
         expect(err).to.exist()
-        expect(err.errors.dockerComposeFilePath.message).to.equal('Docker Compose Cluser requires compose file path')
+        expect(err.errors.dockerComposeFilePath.message).to.equal('Docker Compose Cluster requires compose file path')
+        done()
+      })
+    })
+
+    it('should fail if createdByUser is not provided', function (done) {
+      const invalidData = Object.assign({}, data)
+      invalidData.createdByUser = null
+      const composeCluster = new DockerComposeCluster(invalidData)
+      composeCluster.saveAsync().asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.errors.createdByUser.message).to.equal('Docker Compose Cluster requires createdByUser')
+        done()
+      })
+    })
+
+    it('should fail if triggeredAction is not provided', function (done) {
+      const invalidData = Object.assign({}, data)
+      invalidData.triggeredAction = null
+      const composeCluster = new DockerComposeCluster(invalidData)
+      composeCluster.saveAsync().asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.errors.triggeredAction.message).to.equal('Docker Compose Cluster requires triggeredAction')
+        done()
+      })
+    })
+
+    it('should fail if ownedByOrg is not provided', function (done) {
+      const invalidData = Object.assign({}, data)
+      invalidData.ownedByOrg = null
+      const composeCluster = new DockerComposeCluster(invalidData)
+      composeCluster.saveAsync().asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.errors.ownedByOrg.message).to.equal('Docker Compose Cluster requires ownedByOrg')
         done()
       })
     })
