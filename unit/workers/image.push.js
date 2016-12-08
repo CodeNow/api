@@ -20,6 +20,7 @@ describe('image.push unit test', function () {
 
   beforeEach(function (done) {
     testJob = {
+      dockerHostUrl: 'http://10.8.220.239:4242',
       imageTag: testImageTag
     }
     done()

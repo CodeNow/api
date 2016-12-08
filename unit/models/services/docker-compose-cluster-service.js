@@ -253,8 +253,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           sinon.assert.calledOnce(DockerComposeCluster.createAsync)
           sinon.assert.calledWithExactly(DockerComposeCluster.createAsync, {
             dockerComposeFilePath,
-            createdBy: testSessionUser.bigPoppaUser.id,
-            ownedBy: testOrg.id,
+            createdByUser: testSessionUser.bigPoppaUser.id,
+            ownedByOrg: testOrg.id,
             triggeredAction
           })
         })
@@ -368,9 +368,6 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           triggeredAction: {
             manual: testTriggeredAction === 'user'
           }
-          // triggeredBy: {
-          //   github: testSessionUser.accounts.github.id
-          // }
         }
         sinon.assert.calledWith(BuildService.buildBuild, testBuild._id, buildData, testSessionUser)
         sinon.assert.calledOnce(DockerComposeClusterService._createInstance)
@@ -449,7 +446,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             context: testContextId,
             parentInfraCodeVersion: testParentInfraCodeVersion._id,
             createdBy: {
-              github: testSessionUser.accounts.github.id
+              github: testSessionUser.accounts.github.id,
+              bigPoppa: testSessionUser.bigPoppaUser.id
             },
             owner: {
               github: testOrgGithubId,
@@ -720,7 +718,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledOnce(DockerComposeClusterService._createContext)
         sinon.assert.calledWith(DockerComposeClusterService._createContext, testSessionUser, testOrgInfo)
         sinon.assert.calledOnce(DockerComposeClusterService._createSiblingContextVersion)
-        sinon.assert.calledWith(DockerComposeClusterService._createSiblingContextVersion, testSessionUser, testContext._id, testOrgInfo, testMainParsedContent.contextVersion.buildDockerfilePath)
+        sinon.assert.calledWith(DockerComposeClusterService._createSiblingContextVersion, testSessionUser, testContext._id, testOrgInfo, testMainParsedContent.files['/Dockerfile'].body)
         sinon.assert.calledOnce(DockerComposeClusterService._createBuild)
         sinon.assert.calledWith(DockerComposeClusterService._createBuild, testSessionUser, testContextVersion._id)
         sinon.assert.calledOnce(DockerComposeClusterService._createInstance)

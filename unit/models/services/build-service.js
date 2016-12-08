@@ -10,7 +10,7 @@ const sinon = require('sinon')
 const Build = require('models/mongo/build')
 const BuildService = require('models/services/build-service')
 const Context = require('models/mongo/context')
-const ContextService = require('models/services/context-service')
+const ContextVersionService = require('models/services/context-version-service')
 const ContextVersion = require('models/mongo/context-version')
 const Instance = require('models/mongo/instance')
 const PermissionService = require('models/services/permission-service')
@@ -741,14 +741,14 @@ describe('BuildService', function () {
         _id: 21
       }
       sinon.stub(Context, 'findOne').yieldsAsync(null, mockContext)
-      sinon.stub(ContextService, 'handleVersionDeepCopy').yieldsAsync(null, mockContextVersion)
+      sinon.stub(ContextVersionService, 'handleVersionDeepCopy').yieldsAsync(null, mockContextVersion)
       sinon.stub(ContextVersion, 'modifyAppCodeVersionByRepo').yieldsAsync(null, mockContextVersion)
       done()
     })
 
     afterEach(function (done) {
       Context.findOne.restore()
-      ContextService.handleVersionDeepCopy.restore()
+      ContextVersionService.handleVersionDeepCopy.restore()
       ContextVersion.modifyAppCodeVersionByRepo.restore()
       done()
     })
@@ -836,17 +836,17 @@ describe('BuildService', function () {
           BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             sinon.assert.calledOnce(Context.findOne)
-            sinon.assert.notCalled(ContextService.handleVersionDeepCopy)
+            sinon.assert.notCalled(ContextVersionService.handleVersionDeepCopy)
             sinon.assert.notCalled(ContextVersion.modifyAppCodeVersionByRepo)
             done()
           })
         })
       })
 
-      describe('in ContextService.handleVersionDeepCopy', function () {
+      describe('in ContextVersionService.handleVersionDeepCopy', function () {
         beforeEach(function (done) {
           error = new Error('robot')
-          ContextService.handleVersionDeepCopy.yieldsAsync(error)
+          ContextVersionService.handleVersionDeepCopy.yieldsAsync(error)
           done()
         })
 
@@ -862,7 +862,7 @@ describe('BuildService', function () {
           BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             sinon.assert.calledOnce(Context.findOne)
-            sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+            sinon.assert.calledOnce(ContextVersionService.handleVersionDeepCopy)
             sinon.assert.notCalled(ContextVersion.modifyAppCodeVersionByRepo)
             done()
           })
@@ -888,7 +888,7 @@ describe('BuildService', function () {
           BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             sinon.assert.calledOnce(Context.findOne)
-            sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+            sinon.assert.calledOnce(ContextVersionService.handleVersionDeepCopy)
             sinon.assert.calledOnce(ContextVersion.modifyAppCodeVersionByRepo)
             done()
           })
@@ -906,9 +906,9 @@ describe('BuildService', function () {
           { _id: 'mockContextId' },
           sinon.match.func
         )
-        sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+        sinon.assert.calledOnce(ContextVersionService.handleVersionDeepCopy)
         sinon.assert.calledWithExactly(
-          ContextService.handleVersionDeepCopy,
+          ContextVersionService.handleVersionDeepCopy,
           mockContext, // returned from `findOne`
           contextVersion, // from the Instance
           { accounts: { github: { id: 7 } } }, // from pushInfo (like sessionUser)
