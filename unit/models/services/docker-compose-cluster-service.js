@@ -894,7 +894,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
   }) // end _deleteInstanceIfMissingConfig
 
-  describe('_createNewSiblingsForNewConfigs', () => {
+  describe('_createNewInstancesForNewConfigs', () => {
     beforeEach((done) => {
       sinon.stub(rabbitMQ, 'createClusterInstance')
       done()
@@ -907,7 +907,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
     it('should call create if instance does not have a name', (done) => {
       testMainParsedContent.config = testMainParsedContent
-      DockerComposeClusterService._createNewSiblingsForNewConfigs({
+      DockerComposeClusterService._createNewInstancesForNewConfigs({
         config: testMainParsedContent
       }, testOrgBpId)
 
@@ -921,17 +921,17 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
     it('should not call create if instance missing name', (done) => {
       delete testMainParsedContent.name
-      DockerComposeClusterService._createNewSiblingsForNewConfigs(testMainParsedContent, 1)
+      DockerComposeClusterService._createNewInstancesForNewConfigs(testMainParsedContent, 1)
       sinon.assert.notCalled(rabbitMQ.createClusterInstance)
       done()
     })
 
     it('should not call create if instance missing config', (done) => {
-      DockerComposeClusterService._createNewSiblingsForNewConfigs(testMainParsedContent, 1)
+      DockerComposeClusterService._createNewInstancesForNewConfigs(testMainParsedContent, 1)
       sinon.assert.notCalled(rabbitMQ.createClusterInstance)
       done()
     })
-  }) // end _createNewSiblingsForNewConfigs
+  }) // end _createNewInstancesForNewConfigs
 
   describe('_mergeConfigsIntoInstances', () => {
     it('should output list of configs and instances', (done) => {

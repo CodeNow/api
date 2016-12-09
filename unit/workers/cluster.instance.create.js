@@ -57,7 +57,7 @@ describe('Cluster Instance Create Worker', function () {
         }]
       }
     }
-    const testSibling = {
+    const testInstance = {
       _id: objectid('5568f58160e9990d009c9429')
     }
     const testCluster = {
@@ -65,7 +65,7 @@ describe('Cluster Instance Create Worker', function () {
     }
     beforeEach(function (done) {
       sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(testSessionUser)
-      sinon.stub(DockerComposeClusterService, 'createClusterInstance').resolves(testSibling)
+      sinon.stub(DockerComposeClusterService, 'createClusterInstance').resolves(testInstance)
       sinon.stub(DockerComposeCluster, 'findOneAndUpdateAsync').resolves(testCluster)
       sinon.stub(rabbitMQ, 'clusterInstanceCreated').returns()
       done()
@@ -132,7 +132,7 @@ describe('Cluster Instance Create Worker', function () {
         })
       })
 
-      it('should call create cluster sibling', function (done) {
+      it('should call create cluster instance', function (done) {
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
           const orgInfo = {
@@ -158,7 +158,7 @@ describe('Cluster Instance Create Worker', function () {
           }
           const updateQuery = {
             $push: {
-              instancesIds: testSibling._id
+              instancesIds: testInstance._id
             }
           }
           sinon.assert.calledWithExactly(DockerComposeCluster.findOneAndUpdateAsync, query, updateQuery)
@@ -170,7 +170,7 @@ describe('Cluster Instance Create Worker', function () {
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(rabbitMQ.clusterInstanceCreated)
-          const newJob = Object.assign({}, testData, { instance: { id: testSibling._id.toString() } })
+          const newJob = Object.assign({}, testData, { instance: { id: testInstance._id.toString() } })
           sinon.assert.calledWithExactly(rabbitMQ.clusterInstanceCreated, newJob)
           done()
         })
