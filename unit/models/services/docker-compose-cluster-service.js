@@ -270,7 +270,9 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             cluster,
             parsedCompose: testParsedContent,
             sessionUserBigPoppaId: testSessionUser.bigPoppaUser.id,
-            orgBigPoppaId: testOrg.id,
+            organization: {
+              id: testOrg.id
+            },
             triggeredAction,
             repoFullName
           }
