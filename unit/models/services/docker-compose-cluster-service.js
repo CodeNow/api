@@ -359,7 +359,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledOnce(DockerComposeClusterService._createContext)
         sinon.assert.calledWithExactly(DockerComposeClusterService._createContext, testSessionUser, testOrgInfo)
         sinon.assert.calledOnce(DockerComposeClusterService._createContextVersion)
-        sinon.assert.calledWithExactly(DockerComposeClusterService._createContextVersion, testSessionUser, testContext._id, testOrgInfo, testRepoName, testMainParsedContent.contextVersion)
+        sinon.assert.calledWithExactly(DockerComposeClusterService._createContextVersion, testSessionUser, testContext._id, testOrgInfo, testRepoName, testMainParsedContent)
         sinon.assert.calledOnce(DockerComposeClusterService._createBuild)
         sinon.assert.calledWithExactly(DockerComposeClusterService._createBuild, testSessionUser, testContextVersion._id, testOrgInfo.githubOrgId)
         sinon.assert.calledOnce(BuildService.buildBuild)
@@ -417,10 +417,13 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     let testContextVersion = { _id: 'contextVersion' }
     let testAppCodeVersion = { _id: 'testAppCodeVersion' }
     let testParentInfraCodeVersion = { _id: 'infraCodeVersion' }
+    let testDockerfileContent
     beforeEach((done) => {
       sinon.stub(ContextVersion, 'createAppcodeVersion').resolves(testAppCodeVersion)
       sinon.stub(ContextVersion, 'createWithNewInfraCode').resolves(testContextVersion)
       sinon.stub(InfraCodeVersionService, 'findBlankInfraCodeVersion').resolves(testParentInfraCodeVersion)
+      testDockerfileContent = testMainParsedContent.files['/Dockerfile'].body
+      sinon.stub(ContextVersion, 'createWithDockerFileContent').resolves(testContextVersion)
       done()
     })
 
@@ -428,18 +431,22 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       ContextVersion.createAppcodeVersion.restore()
       ContextVersion.createWithNewInfraCode.restore()
       InfraCodeVersionService.findBlankInfraCodeVersion.restore()
+      ContextVersion.createWithDockerFileContent.restore()
       done()
     })
 
     describe('success', () => {
-      it('should create contextVersion', (done) => {
+      it('should call ContextVersion.createWithNewInfraCode if no Dockerfile was provided', (done) => {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
         const testParsedContextVersionOpts = {
           advanced: true,
           buildDockerfilePath: testDockerfilePath
         }
-        DockerComposeClusterService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedContextVersionOpts)
+        const testParsedComposeData = {
+          contextVersion: testParsedContextVersionOpts
+        }
+        DockerComposeClusterService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
           expect(contextVersion).to.equal(testContextVersion)
           sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
@@ -463,16 +470,82 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           }, { parent: testParentInfraCodeVersion._id })
         }).asCallback(done)
       })
-      it('should call all functions in order', (done) => {
+
+      it('should call ContextVersion.createWithDockerFileContent if Dockefile was provided', (done) => {
+        const testRepoName = 'runnable/boo'
+        const testParsedComposeData = {
+          contextVersion: {
+            advanced: true
+          },
+          files: {
+            '/Dockerfile': {
+              body: testDockerfileContent
+            }
+          }
+        }
+        DockerComposeClusterService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
+        .tap((contextVersion) => {
+          expect(contextVersion).to.equal(testContextVersion)
+          sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
+          sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
+          sinon.assert.calledOnce(InfraCodeVersionService.findBlankInfraCodeVersion)
+          sinon.assert.calledWithExactly(InfraCodeVersionService.findBlankInfraCodeVersion)
+          sinon.assert.calledOnce(ContextVersion.createWithDockerFileContent)
+          sinon.assert.calledWithExactly(ContextVersion.createWithDockerFileContent, {
+            context: testContextId,
+            createdBy: {
+              github: testSessionUser.accounts.github.id,
+              bigPoppa: testSessionUser.bigPoppaUser.id
+            },
+            owner: {
+              github: testOrgGithubId,
+              bigPoppa: testOrgBpId
+            },
+            advanced: true,
+            appCodeVersions: [testAppCodeVersion]
+          }, testDockerfileContent, { edited: true, parent: testParentInfraCodeVersion._id })
+        }).asCallback(done)
+      })
+
+      it('should call all functions in order if Dockerfile was not specified', (done) => {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
-        DockerComposeClusterService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testDockerfilePath)
+        const testParsedContextVersionOpts = {
+          advanced: true,
+          buildDockerfilePath: testDockerfilePath
+        }
+        const testParsedComposeData = {
+          contextVersion: testParsedContextVersionOpts
+        }
+        DockerComposeClusterService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
           expect(contextVersion).to.equal(testContextVersion)
           sinon.assert.callOrder(
             InfraCodeVersionService.findBlankInfraCodeVersion,
             ContextVersion.createAppcodeVersion,
             ContextVersion.createWithNewInfraCode)
+        }).asCallback(done)
+      })
+
+      it('should call all functions in order if Dockerfile was specified', (done) => {
+        const testRepoName = 'runnable/boo'
+        const testParsedComposeData = {
+          contextVersion: {
+            advanced: true
+          },
+          files: {
+            '/Dockerfile': {
+              body: testDockerfileContent
+            }
+          }
+        }
+        DockerComposeClusterService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
+        .tap((contextVersion) => {
+          expect(contextVersion).to.equal(testContextVersion)
+          sinon.assert.callOrder(
+            InfraCodeVersionService.findBlankInfraCodeVersion,
+            ContextVersion.createAppcodeVersion,
+            ContextVersion.createWithDockerFileContent)
         }).asCallback(done)
       })
     })
@@ -684,113 +757,6 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       })
     })
   })
-
-  // describe('createClusterSibling', () => {
-  //   beforeEach((done) => {
-  //     sinon.stub(DockerComposeClusterService, '_createContext')
-  //     sinon.stub(DockerComposeClusterService, '_createSiblingContextVersion')
-  //     sinon.stub(DockerComposeClusterService, '_createBuild')
-  //     sinon.stub(DockerComposeClusterService, '_createInstance')
-  //     sinon.stub(BuildService, 'buildBuild')
-  //     done()
-  //   })
-  //
-  //   afterEach((done) => {
-  //     DockerComposeClusterService._createInstance.restore()
-  //     DockerComposeClusterService._createBuild.restore()
-  //     DockerComposeClusterService._createSiblingContextVersion.restore()
-  //     DockerComposeClusterService._createContext.restore()
-  //     BuildService.buildBuild.restore()
-  //     done()
-  //   })
-  //
-  //   it('should create cluster sibling', (done) => {
-  //     const testInstance = { _id: 'instance' }
-  //     const testBuild = { _id: 'build' }
-  //     const testContext = { _id: 'context' }
-  //     const testContextVersion = { _id: 'contextVersion' }
-  //     const testTriggeredAction = 'user'
-  //
-  //     DockerComposeClusterService._createInstance.resolves(testInstance)
-  //     DockerComposeClusterService._createBuild.resolves(testBuild)
-  //     BuildService.buildBuild.resolves(testBuild)
-  //     DockerComposeClusterService._createSiblingContextVersion.resolves(testContextVersion)
-  //     DockerComposeClusterService._createContext.resolves(testContext)
-  //
-  //     DockerComposeClusterService.createClusterSibling(testSessionUser, testMainParsedContent, {
-  //       githubOrgId: testOrgGithubId,
-  //       bigPoppaOrgId: testOrgBpId
-  //     }, testTriggeredAction).asCallback((err, instance) => {
-  //       if (err) { return done(err) }
-  //       expect(instance).to.equal(testInstance)
-  //       sinon.assert.calledOnce(DockerComposeClusterService._createContext)
-  //       sinon.assert.calledWithExactly(DockerComposeClusterService._createContext, testSessionUser, testOrgInfo)
-  //       sinon.assert.calledOnce(DockerComposeClusterService._createSiblingContextVersion)
-  //       sinon.assert.calledWithExactly(DockerComposeClusterService._createSiblingContextVersion, testSessionUser, testContext._id, testOrgInfo, testMainParsedContent.files['/Dockerfile'].body)
-  //       sinon.assert.calledOnce(DockerComposeClusterService._createBuild)
-  //       sinon.assert.calledWithExactly(DockerComposeClusterService._createBuild, testSessionUser, testContextVersion._id, testOrgInfo.githubOrgId)
-  //       sinon.assert.calledOnce(BuildService.buildBuild)
-  //       const buildData = {
-  //         message: 'Initial Cluster Creation',
-  //         noCache: true,
-  //         triggeredAction: {
-  //           manual: testTriggeredAction === 'user'
-  //         }
-  //       }
-  //       sinon.assert.calledWithExactly(BuildService.buildBuild, testBuild._id, buildData, testSessionUser)
-  //       sinon.assert.calledOnce(DockerComposeClusterService._createInstance)
-  //       sinon.assert.calledWithExactly(DockerComposeClusterService._createInstance, testSessionUser, testMainParsedContent.instance, testBuild._id)
-  //       done()
-  //     })
-  //   })
-  // }) // end createClusterSibling
-  //
-  // describe('_createSiblingContextVersion', () => {
-  //   let testParentInfraCodeVersion = { _id: 'testParentInfraCodeVersion' }
-  //   let testContextVersion = { _id: 'contextVersion' }
-  //   let testDockerfileContent
-  //   let testOrgInfo = {
-  //     bigPoppaOrgId: testOrgBpId,
-  //     githubOrgId: testOrgGithubId
-  //   }
-  //   beforeEach((done) => {
-  //     testDockerfileContent = testMainParsedContent.files['/Dockerfile'].body
-  //     sinon.stub(ContextVersion, 'createWithDockerFileContent').resolves(testContextVersion)
-  //     sinon.stub(InfraCodeVersionService, 'findBlankInfraCodeVersion').resolves(testParentInfraCodeVersion)
-  //     done()
-  //   })
-  //
-  //   afterEach((done) => {
-  //     ContextVersion.createWithDockerFileContent.restore()
-  //     InfraCodeVersionService.findBlankInfraCodeVersion.restore()
-  //     done()
-  //   })
-  //
-  //   it('should create contextVersion', (done) => {
-  //     const testParsedContextVersionOpts = {
-  //       advanced: true
-  //     }
-  //     DockerComposeClusterService._createSiblingContextVersion(testSessionUser, testContextId, testOrgInfo, testParsedContextVersionOpts, testDockerfileContent).asCallback((err, contextVersion) => {
-  //       if (err) { return done(err) }
-  //       expect(contextVersion).to.equal(testContextVersion)
-  //       sinon.assert.calledOnce(ContextVersion.createWithDockerFileContent)
-  //       sinon.assert.calledWithExactly(ContextVersion.createWithDockerFileContent, {
-  //         context: testContextId,
-  //         createdBy: {
-  //           github: testSessionUser.accounts.github.id,
-  //           bigPoppa: testUserBpId
-  //         },
-  //         owner: {
-  //           github: testOrgGithubId,
-  //           bigPoppa: testOrgBpId
-  //         },
-  //         advanced: true,
-  //         appCodeVersions: []
-  //       }, testDockerfileContent, { edited: true, parent: testParentInfraCodeVersion._id })
-  //       done()
-  //     })
-  //   })
-  // }) // end _createSiblingContextVersion
 
   describe('_updateAndRebuildInstancesWithConfigs', () => {
     let instanceMock
