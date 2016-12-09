@@ -149,7 +149,7 @@
     "coverage": "NODE_PATH=./lib NODE_ENV=test lab -vl -m 60000 -e test -c -r html test/*.js > coverage.html && if [ $CIRCLE_ARTIFACTS ]; then cp coverage.html $CIRCLE_ARTIFACTS; fi",
     "docs": "jsdoc -r -d docs lib/ && if [ $CIRCLE_ARTIFACTS ]; then cp -r docs $CIRCLE_ARTIFACTS; fi",
     "fixme": "grep -nR FIXME lib test",
-    "format": "standard --format --verbose",
+    "format": "standard --fix --verbose",
     "format-snazzy": "standard --format --verbose | snazzy",
     "generate-toc": "doctoc ./README.md",
     "generate-whitelist": "find ./test -path ./test/functional/fixtures -prune -o -name '*.js' -print | sort > test/whitelist.txt",
