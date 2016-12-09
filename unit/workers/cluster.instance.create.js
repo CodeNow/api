@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/cluster.sibling-instance.create
+ * @module unit/workers/cluster.instance.create
  */
 'use strict'
 
@@ -21,9 +21,9 @@ const DockerComposeCluster = require('models/mongo/docker-compose-cluster')
 const DockerComposeClusterService = require('models/services/docker-compose-cluster-service')
 const rabbitMQ = require('models/rabbitmq')
 const UserService = require('models/services/user-service')
-const Worker = require('workers/cluster.sibling-instance.create')
+const Worker = require('workers/cluster.instance.create')
 
-describe('Cluster Sibling Instance Create Worker', function () {
+describe('Cluster Instance Create Worker', function () {
   describe('worker', function () {
     const testClusterId = '7768f58160e9990d009c9428'
     const testOrgBigPoppaId = 20001
@@ -32,7 +32,7 @@ describe('Cluster Sibling Instance Create Worker', function () {
       cluster: {
         id: testClusterId
       },
-      parsedComposeSiblingData: {
+      parsedComposeSiInsanceta: {
         contextVersion: {
           advanced: true
         },
@@ -65,17 +65,17 @@ describe('Cluster Sibling Instance Create Worker', function () {
     }
     beforeEach(function (done) {
       sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(testSessionUser)
-      sinon.stub(DockerComposeClusterService, 'createClusterSibling').resolves(testSibling)
+      sinon.stub(DockerComposeClusterService, 'createClusterInstance').resolves(testSibling)
       sinon.stub(DockerComposeCluster, 'findOneAndUpdateAsync').resolves(testCluster)
-      sinon.stub(rabbitMQ, 'clusterSiblingInstanceCreated').returns()
+      sinon.stub(rabbitMQ, 'clusterInstanceCreated').returns()
       done()
     })
 
     afterEach(function (done) {
       UserService.getCompleteUserByBigPoppaId.restore()
-      DockerComposeClusterService.createClusterSibling.restore()
+      DockerComposeClusterService.createClusterInstance.restore()
       DockerComposeCluster.findOneAndUpdateAsync.restore()
-      rabbitMQ.clusterSiblingInstanceCreated.restore()
+      rabbitMQ.clusterInstanceCreated.restore()
       done()
     })
 
@@ -89,9 +89,9 @@ describe('Cluster Sibling Instance Create Worker', function () {
           done()
         })
       })
-      it('should reject with any DockerComposeClusterService.createClusterSibling error', function (done) {
+      it('should reject with any DockerComposeClusterService.createClusterInstance error', function (done) {
         const mongoError = new Error('Mongo failed')
-        DockerComposeClusterService.createClusterSibling.rejects(mongoError)
+        DockerComposeClusterService.createClusterInstance.rejects(mongoError)
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(mongoError)
@@ -109,7 +109,7 @@ describe('Cluster Sibling Instance Create Worker', function () {
       })
       it('should reject with rabbit failure error', function (done) {
         const rabbitError = new Error('Rabbit failed')
-        rabbitMQ.clusterSiblingInstanceCreated.throws(rabbitError)
+        rabbitMQ.clusterInstanceCreated.throws(rabbitError)
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(rabbitError)
@@ -139,10 +139,10 @@ describe('Cluster Sibling Instance Create Worker', function () {
             bigPoppaOrgId: testOrgBigPoppaId,
             githubOrgId: testOrgGithubId
           }
-          sinon.assert.calledOnce(DockerComposeClusterService.createClusterSibling)
-          sinon.assert.calledWithExactly(DockerComposeClusterService.createClusterSibling,
+          sinon.assert.calledOnce(DockerComposeClusterService.createClusterInstance)
+          sinon.assert.calledWithExactly(DockerComposeClusterService.createClusterInstance,
             testSessionUser,
-            testData.parsedComposeSiblingData,
+            testData.parsedComposeInsanceData,
             orgInfo,
             testData.triggeredAction)
           done()
@@ -169,9 +169,9 @@ describe('Cluster Sibling Instance Create Worker', function () {
       it('should call rabbit publish event', function (done) {
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(rabbitMQ.clusterSiblingInstanceCreated)
+          sinon.assert.calledOnce(rabbitMQ.clusterInstanceCreated)
           const newJob = Object.assign({}, testData, { instance: { id: testSibling._id.toString() } })
-          sinon.assert.calledWithExactly(rabbitMQ.clusterSiblingInstanceCreated, newJob)
+          sinon.assert.calledWithExactly(rabbitMQ.clusterInstanceCreated, newJob)
           done()
         })
       })
@@ -181,9 +181,9 @@ describe('Cluster Sibling Instance Create Worker', function () {
           expect(err).to.not.exist()
           sinon.assert.callOrder(
             UserService.getCompleteUserByBigPoppaId,
-            DockerComposeClusterService.createClusterSibling,
+            DockerComposeClusterService.createClusterInstance,
             DockerComposeCluster.findOneAndUpdateAsync,
-            rabbitMQ.clusterSiblingInstanceCreated
+            rabbitMQ.clusterInstanceCreated
           )
           done()
         })
