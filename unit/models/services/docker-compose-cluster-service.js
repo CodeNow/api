@@ -104,7 +104,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       _id: clusterId,
       dockerComposeFilePath: dockerComposeFilePath,
       parentInstanceId: parentInstanceId,
-      siblingsInstanceIds: [
+      instancesIds: [
         objectId('607f191e810c19729de860eb'),
         objectId('707f191e810c19729de860ec')
       ]
@@ -564,7 +564,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       _id: clusterId,
       dockerComposeFilePath: '/config/compose.yml',
       parentInstanceId: parentInstanceId,
-      siblingsInstanceIds: [
+      instancesIds: [
         objectId('607f191e810c19729de860eb'),
         objectId('707f191e810c19729de860ec')
       ]
@@ -646,8 +646,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         DockerComposeClusterService.delete(clusterId.toString())
         .tap(function () {
           sinon.assert.calledTwice(rabbitMQ.deleteInstance)
-          sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, { instanceId: clusterData.siblingsInstanceIds[0] })
-          sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, { instanceId: clusterData.siblingsInstanceIds[1] })
+          sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, { instanceId: clusterData.instancesIds[0] })
+          sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, { instanceId: clusterData.instancesIds[1] })
         })
         .asCallback(done)
       })

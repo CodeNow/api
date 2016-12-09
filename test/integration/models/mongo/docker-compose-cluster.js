@@ -20,7 +20,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
   const data = {
     dockerComposeFilePath: '/config/compose.yml',
     parentInstanceId: objectId(parentInstanceId),
-    siblingsInstanceIds: [
+    instancesIds: [
       objectId('607f191e810c19729de860eb'),
       objectId('707f191e810c19729de860ec')
     ],
@@ -43,9 +43,9 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       .tap(function (saved) {
         expect(saved.dockerComposeFilePath).to.equal(data.dockerComposeFilePath)
         expect(saved.parentInstanceId.toString()).to.equal(data.parentInstanceId.toString())
-        expect(saved.siblingsInstanceIds.length).to.equal(data.siblingsInstanceIds.length)
-        expect(saved.siblingsInstanceIds[0].toString()).to.equal(data.siblingsInstanceIds[0].toString())
-        expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
+        expect(saved.instancesIds.length).to.equal(data.instancesIds.length)
+        expect(saved.instancesIds[0].toString()).to.equal(data.instancesIds[0].toString())
+        expect(saved.instancesIds[1].toString()).to.equal(data.instancesIds[1].toString())
         expect(saved.created).to.exist()
         expect(saved.deleted).to.not.exist()
         expect(saved.ownerBy).to.equal(data.ownerBy)
@@ -59,7 +59,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(String(composeCluster._id)).to.equal(String(savedDockerComposeCluster._id))
         expect(composeCluster.dockerComposeFilePath).to.equal(savedDockerComposeCluster.dockerComposeFilePath)
         expect(composeCluster.parentInstanceId.toString()).to.equal(savedDockerComposeCluster.parentInstanceId.toString())
-        expect(composeCluster.siblingsInstanceIds.length).to.equal(savedDockerComposeCluster.siblingsInstanceIds.length)
+        expect(composeCluster.instancesIds.length).to.equal(savedDockerComposeCluster.instancesIds.length)
         expect(composeCluster.created).to.equal(savedDockerComposeCluster.created)
         expect(composeCluster.deleted).to.not.exist()
         expect(composeCluster.ownerBy).to.equal(data.ownerBy)
@@ -73,7 +73,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(String(composeCluster._id)).to.equal(String(savedDockerComposeCluster._id))
         expect(composeCluster.dockerComposeFilePath).to.equal(savedDockerComposeCluster.dockerComposeFilePath)
         expect(composeCluster.parentInstanceId.toString()).to.equal(savedDockerComposeCluster.parentInstanceId.toString())
-        expect(composeCluster.siblingsInstanceIds.length).to.equal(savedDockerComposeCluster.siblingsInstanceIds.length)
+        expect(composeCluster.instancesIds.length).to.equal(savedDockerComposeCluster.instancesIds.length)
         expect(composeCluster.created).to.equal(savedDockerComposeCluster.created)
         expect(composeCluster.deleted).to.not.exist()
         expect(composeCluster.ownerBy).to.equal(data.ownerBy)
@@ -97,7 +97,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       const data = {
         dockerComposeFilePath: '/config/compose.yml',
         parentInstanceId: objectId(parentInstanceId),
-        siblingsInstanceIds: [
+        instancesIds: [
           objectId('607f191e810c19729de860eb'),
           objectId('707f191e810c19729de860ec')
         ],
@@ -110,9 +110,9 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       .tap(function (saved) {
         expect(saved.dockerComposeFilePath).to.equal(data.dockerComposeFilePath)
         expect(saved.parentInstanceId.toString()).to.equal(data.parentInstanceId.toString())
-        expect(saved.siblingsInstanceIds.length).to.equal(data.siblingsInstanceIds.length)
-        expect(saved.siblingsInstanceIds[0].toString()).to.equal(data.siblingsInstanceIds[0].toString())
-        expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
+        expect(saved.instancesIds.length).to.equal(data.instancesIds.length)
+        expect(saved.instancesIds[0].toString()).to.equal(data.instancesIds[0].toString())
+        expect(saved.instancesIds[1].toString()).to.equal(data.instancesIds[1].toString())
         expect(saved.created).to.exist()
         expect(saved.createdByUser).to.equal(data.createdByUser)
         expect(saved.triggeredAction).to.equal(data.triggeredAction)
@@ -130,9 +130,9 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       .tap(function (saved) {
         expect(saved.dockerComposeFilePath).to.equal(data.dockerComposeFilePath)
         expect(saved.parentInstanceId.toString()).to.equal(data.parentInstanceId.toString())
-        expect(saved.siblingsInstanceIds.length).to.equal(data.siblingsInstanceIds.length)
-        expect(saved.siblingsInstanceIds[0].toString()).to.equal(data.siblingsInstanceIds[0].toString())
-        expect(saved.siblingsInstanceIds[1].toString()).to.equal(data.siblingsInstanceIds[1].toString())
+        expect(saved.instancesIds.length).to.equal(data.instancesIds.length)
+        expect(saved.instancesIds[0].toString()).to.equal(data.instancesIds[0].toString())
+        expect(saved.instancesIds[1].toString()).to.equal(data.instancesIds[1].toString())
         expect(saved.created).to.exist()
         expect(saved.deleted).to.not.exist()
         savedDockerComposeCluster = saved
@@ -216,14 +216,14 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       })
     })
 
-    it('should fail if siblingsInstanceIds are not valid objectid', function (done) {
+    it('should fail if instancesIds are not valid objectid', function (done) {
       const invalidId = 'some-invalid-id'
       const invalidData = Object.assign({}, data)
-      invalidData.siblingsInstanceIds = [ invalidId ]
+      invalidData.instancesIds = [ invalidId ]
       const composeCluster = new DockerComposeCluster(invalidData)
       composeCluster.saveAsync().asCallback(function (err) {
         expect(err).to.exist()
-        expect(err.message).to.equal(`Cast to ObjectId failed for value "${invalidId}" at path "siblingsInstanceIds"`)
+        expect(err.message).to.equal(`Cast to ObjectId failed for value "${invalidId}" at path "instancesIds"`)
         done()
       })
     })

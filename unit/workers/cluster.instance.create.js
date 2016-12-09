@@ -158,7 +158,7 @@ describe('Cluster Instance Create Worker', function () {
           }
           const updateQuery = {
             $push: {
-              siblingsInstanceIds: testSibling._id
+              instancesIds: testSibling._id
             }
           }
           sinon.assert.calledWithExactly(DockerComposeCluster.findOneAndUpdateAsync, query, updateQuery)
