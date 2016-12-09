@@ -863,12 +863,51 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       done()
     })
 
-    it('should not call delete if instance does not have a config', (done) => {
+    it('should not call delete if instance has a config', (done) => {
       DockerComposeClusterService._deleteInstanceIfMissingConfig({ config: {} })
       sinon.assert.notCalled(rabbitMQ.deleteInstance)
       done()
     })
   }) // end _deleteInstanceIfMissingConfig
+
+  describe('_createNewSiblingsForNewConfigs', () => {
+    beforeEach((done) => {
+      sinon.stub(rabbitMQ, 'publishClusterSiblingCreate')
+      done()
+    })
+
+    afterEach((done) => {
+      rabbitMQ.publishClusterSiblingCreate.restore()
+      done()
+    })
+
+    it('should call create if instance does not have a name', (done) => {
+      testMainParsedContent.config = testMainParsedContent
+      DockerComposeClusterService._createNewSiblingsForNewConfigs({
+        config: testMainParsedContent
+      }, testOrgBpId)
+
+      sinon.assert.calledOnce(rabbitMQ.publishClusterSiblingCreate)
+      sinon.assert.calledWith(rabbitMQ.publishClusterSiblingCreate, {
+        parsedComposeData: testMainParsedContent,
+        bigPoppaOrgId: testOrgBpId
+      })
+      done()
+    })
+
+    it('should not call create if instance missing name', (done) => {
+      delete testMainParsedContent.name
+      DockerComposeClusterService._createNewSiblingsForNewConfigs(testMainParsedContent, 1)
+      sinon.assert.notCalled(rabbitMQ.publishClusterSiblingCreate)
+      done()
+    })
+
+    it('should not call create if instance missing config', (done) => {
+      DockerComposeClusterService._createNewSiblingsForNewConfigs(testMainParsedContent, 1)
+      sinon.assert.notCalled(rabbitMQ.publishClusterSiblingCreate)
+      done()
+    })
+  }) // end _createNewSiblingsForNewConfigs
 
   describe('_mergeConfigsIntoInstances', () => {
     it('should output list of configs and instances', (done) => {
