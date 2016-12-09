@@ -428,6 +428,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       InfraCodeVersionService.findBlankInfraCodeVersion.restore()
       done()
     })
+
     describe('success', () => {
       it('should create contextVersion', (done) => {
         const testRepoName = 'runnable/boo'
@@ -770,7 +771,23 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   }) // end _createSiblingContextVersion
 
   describe('_updateAndRebuildInstancesWithConfigs', () => {
+    let instanceMock
+    let testConfig
     beforeEach((done) => {
+      testConfig = {
+        env: 'env',
+        containerStartCommand: 'start',
+        name: 'NewName'
+      }
+
+      instanceMock = {
+        _id: 1,
+        updateAsync: sinon.stub().resolves(),
+        name: 'test',
+        config: {
+          instance: testConfig
+        }
+      }
       sinon.stub(rabbitMQ, 'publishInstanceRebuild')
       done()
     })
@@ -781,21 +798,6 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
 
     it('should update instance if it has new config', (done) => {
-      const testConfig = {
-        env: 'env',
-        containerStartCommand: 'start',
-        name: 'NewName'
-      }
-
-      const instanceMock = {
-        _id: 1,
-        updateAsync: sinon.stub().resolves(),
-        name: 'test',
-        config: {
-          instance: testConfig
-        }
-      }
-
       DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
       .then(() => {
         sinon.assert.calledOnce(instanceMock.updateAsync)
@@ -815,11 +817,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
 
     it('should not update instance if it has no config', (done) => {
-      const instanceMock = {
-        _id: 1,
-        updateAsync: sinon.stub().returns(),
-        name: 'test'
-      }
+      delete instanceMock.config
 
       DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
       sinon.assert.notCalled(instanceMock.updateAsync)
@@ -828,11 +826,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
 
     it('should not update instance if it has no name', (done) => {
-      const instanceMock = {
-        _id: 1,
-        updateAsync: sinon.stub().returns(),
-        config: {}
-      }
+      delete instanceMock.name
 
       DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
       sinon.assert.notCalled(instanceMock.updateAsync)
@@ -879,6 +873,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           containerStartCommand: 'start'
         }
       }
+
       DockerComposeClusterService.updateCluster(
         [testUpdateConfig, testNewConfig],
         [testUpdateInstance, testDeleteInstance],
