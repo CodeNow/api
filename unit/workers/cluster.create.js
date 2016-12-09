@@ -66,40 +66,42 @@ describe('Cluster Create Worker', function () {
       })
     })
 
-    it('should return no error', function (done) {
-      Worker.task(testData).asCallback(done)
-    })
-
-    it('should find an user by bigPoppaId', function (done) {
-      Worker.task(testData).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(UserService.getCompleteUserByBigPoppaId)
-        sinon.assert.calledWithExactly(UserService.getCompleteUserByBigPoppaId, testData.sessionUserBigPoppaId)
-        done()
+    describe('success', function () {
+      it('should return no error', function (done) {
+        Worker.task(testData).asCallback(done)
       })
-    })
 
-    it('should call create cluster', function (done) {
-      Worker.task(testData).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(DockerComposeClusterService.create)
-        sinon.assert.calledWithExactly(DockerComposeClusterService.create,
-          sessionUser,
-          testData.triggeredAction,
-          testData.repoFullName,
-          testData.branchName, testData.dockerComposeFilePath, testData.newInstanceName)
-        done()
+      it('should find an user by bigPoppaId', function (done) {
+        Worker.task(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(UserService.getCompleteUserByBigPoppaId)
+          sinon.assert.calledWithExactly(UserService.getCompleteUserByBigPoppaId, testData.sessionUserBigPoppaId)
+          done()
+        })
       })
-    })
 
-    it('should call functions in order', function (done) {
-      Worker.task(testData).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.callOrder(
-          UserService.getCompleteUserByBigPoppaId,
-          DockerComposeClusterService.create
-        )
-        done()
+      it('should call create cluster', function (done) {
+        Worker.task(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(DockerComposeClusterService.create)
+          sinon.assert.calledWithExactly(DockerComposeClusterService.create,
+            sessionUser,
+            testData.triggeredAction,
+            testData.repoFullName,
+            testData.branchName, testData.dockerComposeFilePath, testData.newInstanceName)
+          done()
+        })
+      })
+
+      it('should call functions in order', function (done) {
+        Worker.task(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.callOrder(
+            UserService.getCompleteUserByBigPoppaId,
+            DockerComposeClusterService.create
+          )
+          done()
+        })
       })
     })
   })
