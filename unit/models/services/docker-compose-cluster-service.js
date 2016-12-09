@@ -358,7 +358,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledOnce(DockerComposeClusterService._createContext)
         sinon.assert.calledWithExactly(DockerComposeClusterService._createContext, testSessionUser, testOrgInfo)
         sinon.assert.calledOnce(DockerComposeClusterService._createParentContextVersion)
-        sinon.assert.calledWithExactly(DockerComposeClusterService._createParentContextVersion, testSessionUser, testContext._id, testOrgInfo, testRepoName, testMainParsedContent.contextVersion.buildDockerfilePath)
+        sinon.assert.calledWithExactly(DockerComposeClusterService._createParentContextVersion, testSessionUser, testContext._id, testOrgInfo, testRepoName, testMainParsedContent.contextVersion)
         sinon.assert.calledOnce(DockerComposeClusterService._createBuild)
         sinon.assert.calledWithExactly(DockerComposeClusterService._createBuild, testSessionUser, testContextVersion._id, testOrgInfo.githubOrgId)
         sinon.assert.calledOnce(BuildService.buildBuild)
@@ -433,8 +433,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       it('should create contextVersion', (done) => {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
-
-        DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testDockerfilePath)
+        const testParsedContextVersionOpts = {
+          advanced: true,
+          buildDockerfilePath: testDockerfilePath
+        }
+        DockerComposeClusterService._createParentContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedContextVersionOpts)
         .tap((contextVersion) => {
           expect(contextVersion).to.equal(testContextVersion)
           sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
@@ -452,7 +455,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
               github: testOrgGithubId,
               bigPoppa: testOrgBpId
             },
-            advance: true,
+            advanced: true,
             buildDockerfilePath: testDockerfilePath,
             appCodeVersions: [testAppCodeVersion]
           }, { parent: testParentInfraCodeVersion._id })
@@ -762,7 +765,10 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
 
     it('should create contextVersion', (done) => {
-      DockerComposeClusterService._createSiblingContextVersion(testSessionUser, testContextId, testOrgInfo, testDockerfileContent).asCallback((err, contextVersion) => {
+      const testParsedContextVersionOpts = {
+        advanced: true
+      }
+      DockerComposeClusterService._createSiblingContextVersion(testSessionUser, testContextId, testOrgInfo, testParsedContextVersionOpts, testDockerfileContent).asCallback((err, contextVersion) => {
         if (err) { return done(err) }
         expect(contextVersion).to.equal(testContextVersion)
         sinon.assert.calledOnce(ContextVersion.createWithDockerFileContent)
@@ -776,9 +782,9 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             github: testOrgGithubId,
             bigPoppa: testOrgBpId
           },
-          advance: true,
+          advanced: true,
           appCodeVersions: []
-        }, testDockerfileContent, { parent: testParentInfraCodeVersion._id })
+        }, testDockerfileContent, { edited: true, parent: testParentInfraCodeVersion._id })
         done()
       })
     })
