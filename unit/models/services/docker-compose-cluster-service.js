@@ -850,20 +850,31 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       done()
     })
 
-    it('should delete, update, and create jobs', (done) => {
-      const testUpdateInstance = {
-        _id: 1,
-        name: 'A',
-        updateAsync: sinon.stub().resolves()
-      }
-
+    it('should delete instance that has no config', (done) => {
       const testDeleteInstance = {
         _id: 2,
         name: 'B'
       }
 
-      const testNewConfig = {
-        instance: { name: 'C' }
+      DockerComposeClusterService.updateCluster(
+        [],
+        [testDeleteInstance],
+        testOrgBpId
+      )
+      .then(() => {
+        sinon.assert.calledOnce(rabbitMQ.deleteInstance)
+        sinon.assert.calledWith(rabbitMQ.deleteInstance, {
+          instanceId: testDeleteInstance._id
+        })
+      })
+      .asCallback(done)
+    })
+
+    it('should update instance that has config', (done) => {
+      const testUpdateInstance = {
+        _id: 1,
+        name: 'A',
+        updateAsync: sinon.stub().resolves()
       }
 
       const testUpdateConfig = {
@@ -875,22 +886,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       }
 
       DockerComposeClusterService.updateCluster(
-        [testUpdateConfig, testNewConfig],
-        [testUpdateInstance, testDeleteInstance],
+        [testUpdateConfig],
+        [testUpdateInstance],
         testOrgBpId
       )
       .then(() => {
-        sinon.assert.calledOnce(rabbitMQ.deleteInstance)
-        sinon.assert.calledWith(rabbitMQ.deleteInstance, {
-          instanceId: testDeleteInstance._id
-        })
-
-        sinon.assert.calledOnce(rabbitMQ.publishClusterSiblingCreate)
-        sinon.assert.calledWith(rabbitMQ.publishClusterSiblingCreate, {
-          parsedComposeData: testNewConfig,
-          bigPoppaOrgId: testOrgBpId
-        })
-
         sinon.assert.calledOnce(rabbitMQ.publishInstanceRebuild)
         sinon.assert.calledWith(rabbitMQ.publishInstanceRebuild, {
           instanceId: testUpdateInstance._id
@@ -902,6 +902,26 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             env: testUpdateConfig.instance.env,
             containerStartCommand: testUpdateConfig.instance.containerStartCommand
           }
+        })
+      })
+      .asCallback(done)
+    })
+
+    it('should create instance for new config', (done) => {
+      const testNewConfig = {
+        instance: { name: 'C' }
+      }
+
+      DockerComposeClusterService.updateCluster(
+        [testNewConfig],
+        [],
+        testOrgBpId
+      )
+      .then(() => {
+        sinon.assert.calledOnce(rabbitMQ.publishClusterSiblingCreate)
+        sinon.assert.calledWith(rabbitMQ.publishClusterSiblingCreate, {
+          parsedComposeData: testNewConfig,
+          bigPoppaOrgId: testOrgBpId
         })
       })
       .asCallback(done)
