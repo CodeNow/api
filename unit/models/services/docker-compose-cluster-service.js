@@ -83,7 +83,6 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         id: testUserBpId,
         organizations: [{
           name: testOrgName,
-          lowerName: testOrgName.toLowerCase(),
           id: testOrgBpId,
           githubId: testOrgGithubId
         }]
@@ -429,6 +428,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       InfraCodeVersionService.findBlankInfraCodeVersion.restore()
       done()
     })
+
     describe('success', () => {
       it('should create contextVersion', (done) => {
         const testRepoName = 'runnable/boo'
@@ -769,4 +769,286 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       })
     })
   }) // end _createSiblingContextVersion
+
+  describe('_updateAndRebuildInstancesWithConfigs', () => {
+    let instanceMock
+    let testConfig
+    beforeEach((done) => {
+      testConfig = {
+        env: 'env',
+        containerStartCommand: 'start',
+        name: 'NewName'
+      }
+
+      instanceMock = {
+        _id: 1,
+        updateAsync: sinon.stub().resolves(),
+        name: 'test',
+        config: {
+          instance: testConfig
+        }
+      }
+      sinon.stub(rabbitMQ, 'publishInstanceRebuild')
+      done()
+    })
+
+    afterEach((done) => {
+      rabbitMQ.publishInstanceRebuild.restore()
+      done()
+    })
+
+    it('should update instance if it has new config', (done) => {
+      DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
+      .then(() => {
+        sinon.assert.calledOnce(instanceMock.updateAsync)
+        sinon.assert.calledWith(instanceMock.updateAsync, {
+          $set: {
+            env: testConfig.env,
+            containerStartCommand: testConfig.containerStartCommand
+          }
+        })
+
+        sinon.assert.calledOnce(rabbitMQ.publishInstanceRebuild)
+        sinon.assert.calledWith(rabbitMQ.publishInstanceRebuild, {
+          instanceId: instanceMock._id
+        })
+      })
+      .asCallback(done)
+    })
+
+    it('should not update instance if it has no config', (done) => {
+      delete instanceMock.config
+
+      DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
+      sinon.assert.notCalled(instanceMock.updateAsync)
+      sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
+      done()
+    })
+
+    it('should not update instance if it has no name', (done) => {
+      delete instanceMock.name
+
+      DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
+      sinon.assert.notCalled(instanceMock.updateAsync)
+      sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
+      done()
+    })
+  }) // end _updateAndRebuildInstancesWithConfigs
+
+  describe('updateCluster', () => {
+    beforeEach((done) => {
+      sinon.stub(rabbitMQ, 'publishInstanceRebuild')
+      sinon.stub(rabbitMQ, 'publishClusterSiblingCreate')
+      sinon.stub(rabbitMQ, 'deleteInstance')
+      done()
+    })
+
+    afterEach((done) => {
+      rabbitMQ.deleteInstance.restore()
+      rabbitMQ.publishClusterSiblingCreate.restore()
+      rabbitMQ.publishInstanceRebuild.restore()
+      done()
+    })
+
+    it('should delete instance that has no config', (done) => {
+      const testDeleteInstance = {
+        _id: 2,
+        name: 'B'
+      }
+
+      DockerComposeClusterService.updateCluster(
+        [],
+        [testDeleteInstance],
+        testOrgBpId
+      )
+      .then(() => {
+        sinon.assert.calledOnce(rabbitMQ.deleteInstance)
+        sinon.assert.calledWith(rabbitMQ.deleteInstance, {
+          instanceId: testDeleteInstance._id
+        })
+      })
+      .asCallback(done)
+    })
+
+    it('should update instance that has config', (done) => {
+      const testUpdateInstance = {
+        _id: 1,
+        name: 'A',
+        updateAsync: sinon.stub().resolves()
+      }
+
+      const testUpdateConfig = {
+        instance: {
+          name: 'A',
+          env: 'env',
+          containerStartCommand: 'start'
+        }
+      }
+
+      DockerComposeClusterService.updateCluster(
+        [testUpdateConfig],
+        [testUpdateInstance],
+        testOrgBpId
+      )
+      .then(() => {
+        sinon.assert.calledOnce(rabbitMQ.publishInstanceRebuild)
+        sinon.assert.calledWith(rabbitMQ.publishInstanceRebuild, {
+          instanceId: testUpdateInstance._id
+        })
+
+        sinon.assert.calledOnce(testUpdateInstance.updateAsync)
+        sinon.assert.calledWith(testUpdateInstance.updateAsync, {
+          $set: {
+            env: testUpdateConfig.instance.env,
+            containerStartCommand: testUpdateConfig.instance.containerStartCommand
+          }
+        })
+      })
+      .asCallback(done)
+    })
+
+    it('should create instance for new config', (done) => {
+      const testNewConfig = {
+        instance: { name: 'C' }
+      }
+
+      DockerComposeClusterService.updateCluster(
+        [testNewConfig],
+        [],
+        testOrgBpId
+      )
+      .then(() => {
+        sinon.assert.calledOnce(rabbitMQ.publishClusterSiblingCreate)
+        sinon.assert.calledWith(rabbitMQ.publishClusterSiblingCreate, {
+          parsedComposeData: testNewConfig,
+          bigPoppaOrgId: testOrgBpId
+        })
+      })
+      .asCallback(done)
+    })
+  }) // end updateCluster
+
+  describe('_deleteInstanceIfMissingConfig', () => {
+    beforeEach((done) => {
+      sinon.stub(rabbitMQ, 'deleteInstance')
+      done()
+    })
+
+    afterEach((done) => {
+      rabbitMQ.deleteInstance.restore()
+      done()
+    })
+
+    it('should call delete if instance does not have a config', (done) => {
+      const testId = 1
+      DockerComposeClusterService._deleteInstanceIfMissingConfig({ _id: testId })
+      sinon.assert.calledOnce(rabbitMQ.deleteInstance)
+      sinon.assert.calledWith(rabbitMQ.deleteInstance, { instanceId: testId })
+      done()
+    })
+
+    it('should not call delete if instance has a config', (done) => {
+      DockerComposeClusterService._deleteInstanceIfMissingConfig({ config: {} })
+      sinon.assert.notCalled(rabbitMQ.deleteInstance)
+      done()
+    })
+  }) // end _deleteInstanceIfMissingConfig
+
+  describe('_createNewSiblingsForNewConfigs', () => {
+    beforeEach((done) => {
+      sinon.stub(rabbitMQ, 'publishClusterSiblingCreate')
+      done()
+    })
+
+    afterEach((done) => {
+      rabbitMQ.publishClusterSiblingCreate.restore()
+      done()
+    })
+
+    it('should call create if instance does not have a name', (done) => {
+      testMainParsedContent.config = testMainParsedContent
+      DockerComposeClusterService._createNewSiblingsForNewConfigs({
+        config: testMainParsedContent
+      }, testOrgBpId)
+
+      sinon.assert.calledOnce(rabbitMQ.publishClusterSiblingCreate)
+      sinon.assert.calledWith(rabbitMQ.publishClusterSiblingCreate, {
+        parsedComposeData: testMainParsedContent,
+        bigPoppaOrgId: testOrgBpId
+      })
+      done()
+    })
+
+    it('should not call create if instance missing name', (done) => {
+      delete testMainParsedContent.name
+      DockerComposeClusterService._createNewSiblingsForNewConfigs(testMainParsedContent, 1)
+      sinon.assert.notCalled(rabbitMQ.publishClusterSiblingCreate)
+      done()
+    })
+
+    it('should not call create if instance missing config', (done) => {
+      DockerComposeClusterService._createNewSiblingsForNewConfigs(testMainParsedContent, 1)
+      sinon.assert.notCalled(rabbitMQ.publishClusterSiblingCreate)
+      done()
+    })
+  }) // end _createNewSiblingsForNewConfigs
+
+  describe('_mergeConfigsIntoInstances', () => {
+    it('should output list of configs and instances', (done) => {
+      const out = DockerComposeClusterService._mergeConfigsIntoInstances(
+        [{instance: {name: '1'}}, {instance: {name: '4'}}],
+        [{name: '1'}, {name: '2'}]
+      )
+      expect(out).to.equal([
+        {name: '1', config: {instance: {name: '1'}}},
+        {name: '2', config: undefined},
+        {config: {instance: {name: '4'}}}
+      ])
+      done()
+    })
+  }) // end _mergeConfigsIntoInstances
+
+  describe('_addConfigToInstances', () => {
+    it('should add instances and missing configs into array', (done) => {
+      const out = DockerComposeClusterService._addConfigToInstances(
+        [{instance: {name: '1'}}, {instance: {name: '4'}}],
+        [{name: '1'}, {name: '2'}]
+      )
+      expect(out).to.equal([{name: '1', config: {instance: {name: '1'}}}, {name: '2', config: undefined}])
+      done()
+    })
+  }) // end _addConfigToInstances
+
+  describe('_addMissingConfigs', () => {
+    it('should add missing configs to array', (done) => {
+      const out = DockerComposeClusterService._addMissingConfigs(
+        [{instance: {name: '1'}}, {instance: {name: '4'}}],
+        [{name: '1'}, {name: '2'}]
+      )
+      expect(out).to.equal([{name: '1'}, {name: '2'}, {config: {instance: {name: '4'}}}])
+      done()
+    })
+  }) // end _addMissingConfigs
+
+  describe('_isConfigMissingInstance', () => {
+    it('should return false if config has an instance', (done) => {
+      const out = DockerComposeClusterService._isConfigMissingInstance(
+        [{name: '1'}, {name: '2'}, {name: '3'}],
+        {instance: {name: '1'}}
+      )
+
+      expect(out).to.be.false()
+      done()
+    })
+
+    it('should return true if config does not have an instance', (done) => {
+      const out = DockerComposeClusterService._isConfigMissingInstance(
+        [{name: '1'}, {name: '2'}, {name: '3'}],
+        {instance: {name: '5'}}
+      )
+
+      expect(out).to.be.true()
+      done()
+    })
+  }) // end _isConfigMissingInstance
 })
