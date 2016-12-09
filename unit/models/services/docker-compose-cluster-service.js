@@ -83,6 +83,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         id: testUserBpId,
         organizations: [{
           name: testOrgName,
+          lowerName: testOrgName.toLowerCase(),
           id: testOrgBpId,
           githubId: testOrgGithubId
         }]
@@ -293,31 +294,6 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         .asCallback(done)
       })
     })
-  })
-
-  const testSessionUserGitHubId = 171771
-
-  beforeEach((done) => {
-    testSessionUser = {
-      _id: 'id',
-      accounts: {
-        github: {
-          id: testSessionUserGitHubId
-        },
-        login: 'login',
-        username: 'best'
-      },
-      bigPoppaUser: {
-        id: testUserBpId,
-        organizations: [{
-          name: testOrgName,
-          lowerName: testOrgName.toLowerCase(),
-          id: testOrgBpId,
-          githubId: testOrgGithubId
-        }]
-      }
-    }
-    done()
   })
 
   describe('createClusterInstance', () => {
@@ -575,7 +551,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         sinon.assert.calledWith(BuildService.createBuild, {
           contextVersion: testContextVersionId,
           createdBy: {
-            github: testSessionUserGitHubId
+            github: testUserGithubId
           },
           owner: {
             github: testOrgGithubId
