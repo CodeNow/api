@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/cluster.parent-instance.created
+ * @module unit/workers/cluster.created
  */
 'use strict'
 
