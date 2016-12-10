@@ -438,8 +438,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         DockerComposeClusterService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
           expect(contextVersion).to.equal(testContextVersion)
-          sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
-          sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
+          sinon.assert.notCalled(ContextVersion.createAppcodeVersion)
           sinon.assert.calledOnce(InfraCodeVersionService.findBlankInfraCodeVersion)
           sinon.assert.calledWithExactly(InfraCodeVersionService.findBlankInfraCodeVersion)
           sinon.assert.calledOnce(ContextVersion.createWithDockerFileContent)
@@ -495,7 +494,6 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           expect(contextVersion).to.equal(testContextVersion)
           sinon.assert.callOrder(
             InfraCodeVersionService.findBlankInfraCodeVersion,
-            ContextVersion.createAppcodeVersion,
             ContextVersion.createWithDockerFileContent)
         }).asCallback(done)
       })
