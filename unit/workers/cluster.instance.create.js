@@ -135,15 +135,11 @@ describe('Cluster Instance Create Worker', function () {
       it('should call create cluster instance', function (done) {
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
-          const orgInfo = {
-            bigPoppaOrgId: testOrgBigPoppaId,
-            githubOrgId: testOrgGithubId
-          }
           sinon.assert.calledOnce(DockerComposeClusterService.createClusterInstance)
           sinon.assert.calledWithExactly(DockerComposeClusterService.createClusterInstance,
             testSessionUser,
             testData.parsedComposeInsanceData,
-            orgInfo,
+            testData.repoFullName,
             testData.triggeredAction)
           done()
         })
