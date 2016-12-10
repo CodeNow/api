@@ -9,7 +9,9 @@
   "private": true,
   "standard": {
     "ignore": [
-      "scripts/mongo/*"
+      "scripts/*",
+      "test/*",
+      "unit/*"
     ]
   },
   "dependencies": {
