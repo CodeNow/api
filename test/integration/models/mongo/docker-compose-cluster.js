@@ -25,8 +25,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       objectId('707f191e810c19729de860ec')
     ],
     createdByUser: 123123,
-    ownedByOrg: 1,
-    triggeredAction: 'user'
+    ownedByOrg: 1
   }
   before(mongooseControl.start)
   afterEach(function (done) {
@@ -102,8 +101,7 @@ describe('DockerComposeCluster Model Integration Tests', function () {
           objectId('707f191e810c19729de860ec')
         ],
         createdByUser: 123123,
-        ownedByOrg: 2,
-        triggeredAction: 'user'
+        ownedByOrg: 2
       }
       const composeCluster = new DockerComposeCluster(data)
       composeCluster.saveAsync()
@@ -115,7 +113,6 @@ describe('DockerComposeCluster Model Integration Tests', function () {
         expect(saved.instancesIds[1].toString()).to.equal(data.instancesIds[1].toString())
         expect(saved.created).to.exist()
         expect(saved.createdByUser).to.equal(data.createdByUser)
-        expect(saved.triggeredAction).to.equal(data.triggeredAction)
         expect(saved.ownerBy).to.equal(data.ownerBy)
       })
       .asCallback(done)
@@ -178,17 +175,6 @@ describe('DockerComposeCluster Model Integration Tests', function () {
       composeCluster.saveAsync().asCallback(function (err) {
         expect(err).to.exist()
         expect(err.errors.createdByUser.message).to.equal('Docker Compose Cluster requires createdByUser')
-        done()
-      })
-    })
-
-    it('should fail if triggeredAction is not provided', function (done) {
-      const invalidData = Object.assign({}, data)
-      invalidData.triggeredAction = null
-      const composeCluster = new DockerComposeCluster(invalidData)
-      composeCluster.saveAsync().asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.errors.triggeredAction.message).to.equal('Docker Compose Cluster requires triggeredAction')
         done()
       })
     })

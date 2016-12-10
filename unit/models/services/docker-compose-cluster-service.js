@@ -231,8 +231,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           sinon.assert.calledWithExactly(DockerComposeCluster.createAsync, {
             dockerComposeFilePath,
             createdByUser: testSessionUser.bigPoppaUser.id,
-            ownedByOrg: testOrg.id,
-            triggeredAction
+            ownedByOrg: testOrg.id
           })
         })
         .asCallback(done)
