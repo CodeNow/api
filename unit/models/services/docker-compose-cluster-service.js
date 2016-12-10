@@ -453,8 +453,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
               github: testOrgGithubId,
               bigPoppa: testOrgBpId
             },
-            advanced: true,
-            appCodeVersions: [testAppCodeVersion]
+            advanced: true
           }, testDockerfileContent, { edited: true, parent: testParentInfraCodeVersion._id })
         }).asCallback(done)
       })
