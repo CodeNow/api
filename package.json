@@ -97,6 +97,7 @@
     "string-argv": "0.0.2",
     "substream": "0.2.0",
     "sync-exec": "^0.6.1",
+    "through": "^2.3.8",
     "through2": "^2.0.0",
     "traverse": "^0.6.6",
     "uuid": "~1.4.1",
