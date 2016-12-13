@@ -13,125 +13,91 @@ const expect = require('code').expect
 const it = lab.it
 
 const Promise = require('bluebird')
+const pick = require('101/pick')
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
-const DockerComposeClusterService = require('models/services/docker-compose-cluster-service')
-const objectid = require('objectid')
 const rabbitMQ = require('models/rabbitmq')
-const UserService = require('models/services/user-service')
 const Worker = require('workers/cluster.created')
 
 describe('Cluster Created Worker', function () {
   describe('worker', function () {
-    const instance = {
-      _id: objectid('5568f58160e9990d009c9429')
-    }
-    const mainInstanceDef = {
+    const testClusterId = '7768f58160e9990d009c9428'
+    const testOrgBigPoppaId = 20001
+    const testInstanceDef1 = {
       metadata: {
-        name: 'api',
-        isMain: true
+        isMain: false
+      },
+      contextVersion: {
+        advanced: true
+      },
+      instance: {
+        name: 'reids'
+      }
+    }
+    const testInstanceDef2 = {
+      metadata: {
+        isMain: false
+      },
+      contextVersion: {
+        advanced: true
+      },
+      instance: {
+        name: 'mongo'
       }
     }
     const testData = {
       cluster: {
-        id: '1111'
+        id: testClusterId
       },
-
       parsedCompose: {
-        results: [mainInstanceDef]
+        results: [ testInstanceDef1, testInstanceDef2 ]
       },
-      sessionUserBigPoppaId: 12,
-      orgBigPoppaId: 101,
+      sessionUserGithubId: 123,
       triggeredAction: 'user',
-      repoFullName: 'Runnable/api'
-    }
-    const sessionUser = {
-      _id: 'some-id'
+      repoFullName: 'Runnable/api',
+      organization: {
+        id: testOrgBigPoppaId
+      }
     }
     beforeEach(function (done) {
-      sinon.stub(DockerComposeClusterService, 'createClusterParent').resolves(instance)
-      sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(sessionUser)
-      sinon.stub(rabbitMQ, 'clusterParentInstanceCreated').returns()
+      sinon.stub(rabbitMQ, 'createClusterInstance').returns()
       done()
     })
 
     afterEach(function (done) {
-      DockerComposeClusterService.createClusterParent.restore()
-      UserService.getCompleteUserByBigPoppaId.restore()
-      rabbitMQ.clusterParentInstanceCreated.restore()
+      rabbitMQ.createClusterInstance.restore()
       done()
     })
 
     describe('errors', function () {
-      it('should reject with any UserService.getCompleteUserByBigPoppaId error', function (done) {
-        const mongoError = new Error('Mongo failed')
-        UserService.getCompleteUserByBigPoppaId.rejects(mongoError)
+      it('should reject with any rabbitMQ.createClusterInstance error', function (done) {
+        const rabbitError = new Error('Rabbit failed')
+        rabbitMQ.createClusterInstance.throws(rabbitError)
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err).to.equal(mongoError)
-          done()
-        })
-      })
-      it('should reject with any DockerComposeClusterService.createClusterParent error', function (done) {
-        const mongoError = new Error('Mongo failed')
-        DockerComposeClusterService.createClusterParent.rejects(mongoError)
-        Worker.task(testData).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err).to.equal(mongoError)
+          expect(err).to.equal(rabbitError)
           done()
         })
       })
     })
 
-    it('should return no error', function (done) {
-      Worker.task(testData).asCallback(done)
-    })
-
-    it('should find an user by bigPoppaId', function (done) {
-      Worker.task(testData).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(UserService.getCompleteUserByBigPoppaId)
-        sinon.assert.calledWithExactly(UserService.getCompleteUserByBigPoppaId, testData.sessionUserBigPoppaId)
-        done()
+    describe('success', function () {
+      it('should return no error', function (done) {
+        Worker.task(testData).asCallback(done)
       })
-    })
 
-    it('should call create cluster parent', function (done) {
-      Worker.task(testData).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(DockerComposeClusterService.createClusterParent)
-        sinon.assert.calledWithExactly(DockerComposeClusterService.createClusterParent,
-          sessionUser,
-          mainInstanceDef,
-          testData.repoFullName,
-          testData.triggeredAction)
-        done()
-      })
-    })
-
-    it('should call rabbit publish', function (done) {
-      Worker.task(testData).asCallback(function (err) {
-        expect(err).to.not.exist()
-        const newJob = Object.assign({}, testData)
-        newJob.instance = {
-          id: instance._id.toString()
-        }
-        sinon.assert.calledOnce(rabbitMQ.clusterParentInstanceCreated)
-        sinon.assert.calledWithExactly(rabbitMQ.clusterParentInstanceCreated, newJob)
-        done()
-      })
-    })
-
-    it('should call functions in order', function (done) {
-      Worker.task(testData).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.callOrder(
-          UserService.getCompleteUserByBigPoppaId,
-          DockerComposeClusterService.createClusterParent,
-          rabbitMQ.clusterParentInstanceCreated
-        )
-        done()
+      it('should call rabbit twice', function (done) {
+        Worker.task(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(rabbitMQ.createClusterInstance)
+          const basePayload = pick(testData, ['cluster', 'sessionUserBigPoppaId', 'organization', 'triggeredAction', 'repoFullName'])
+          const job1 = Object.assign({ parsedComposeInstanceData: testInstanceDef1 }, basePayload)
+          const job2 = Object.assign({ parsedComposeInstanceData: testInstanceDef2 }, basePayload)
+          sinon.assert.calledWithExactly(rabbitMQ.createClusterInstance, job1)
+          sinon.assert.calledWithExactly(rabbitMQ.createClusterInstance, job2)
+          done()
+        })
       })
     })
   })
