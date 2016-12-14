@@ -414,7 +414,7 @@ describe('User Service', function () {
 
       UserService.getCompleteUserById(userId)
       .asCallback(function (err, res) {
-        expect(err).to.be.an.instanceof(errors.UserNotFoundError)
+        expect(err).to.be.an.instanceof(User.NotFoundError)
         expect(err.message).to.match(/user.*not.*found/i)
         done()
       })
@@ -498,7 +498,7 @@ describe('User Service', function () {
 
       UserService.getCompleteUserByGithubId(githubId)
       .asCallback(function (err, res) {
-        expect(err).to.be.an.instanceof(errors.UserNotFoundError)
+        expect(err).to.be.an.instanceof(User.NotFoundError)
         expect(err.message).to.match(/user.*not.*found/i)
         done()
       })
@@ -583,7 +583,7 @@ describe('User Service', function () {
 
       UserService.getCompleteUserByBigPoppaId(bpId)
       .asCallback(function (err, res) {
-        expect(err).to.be.an.instanceof(errors.UserNotFoundError)
+        expect(err).to.be.an.instanceof(User.NotFoundError)
         expect(err.message).to.match(/user.*not.*found/i)
         done()
       })
