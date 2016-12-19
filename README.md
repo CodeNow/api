@@ -12,7 +12,7 @@
       - [Tests](#tests)
 - [Logs](#logs)
       - [[Guide to Using Log Levels](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Using-Log-Levels)](#guide-to-using-log-levelshttpsgithubcomcodenowdevops-scriptswikiguide-to-using-log-levels)
-      - [[Guide to Development & Production CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)](#guide-to-development-&-production-cli-log-toolshttpsgithubcomcodenowdevops-scriptswikiguide-to-development-cli-log-tools)
+      - [[Guide to Development & Production CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)](#guide-to-development--production-cli-log-toolshttpsgithubcomcodenowdevops-scriptswikiguide-to-development-cli-log-tools)
       - [[Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)](#guide-to-debugging-production-api-with-logshttpsgithubcomcodenowdevops-scriptswikiguide-to-debugging-production-api-with-logs)
 - [Shrinkwrap](#shrinkwrap)
 - [Running Tests](#running-tests)
@@ -26,7 +26,7 @@
 - [Resource Overview](#resource-overview)
 - [Help and Tips](#help-and-tips)
     - [Problems npm installing?](#problems-npm-installing)
-    - [Rapid Prototyping with Runnable-Api-Client](#rapid-prototyping-with-runnable-api-client)
+    - [Models](#models)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
