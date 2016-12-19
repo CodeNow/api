@@ -16,7 +16,7 @@ var fs = require('fs')
 ].forEach(function (lang) {
   console.log('lang', lang)
   console.log(__dirname)
-  var json = require(__dirname + '/../lib/routes/actions/analyze/data/suggestable-services-' + lang)
+  var json = require(`${__dirname}/../lib/routes/actions/analyze/data/suggestable-services-${lang}`)
   var fjson = {}
   Object.keys(json).sort().forEach(function (key) {
     var lowerCaseKey = key.toLowerCase()
@@ -25,8 +25,7 @@ var fs = require('fs')
     fjson[lowerCaseKey] = fjson[lowerCaseKey].map(function (val) {
       return val.replace(' ', '')
     })
-  //
   })
-  fs.writeFileSync(__dirname + '/../lib/routes/actions/analyze/data/suggestable-services-' + lang + '.json',
+  fs.writeFileSync(`${__dirname}/../lib/routes/actions/analyze/data/suggestable-services-${lang}.json`,
     JSON.stringify(fjson, null, ' '))
 })

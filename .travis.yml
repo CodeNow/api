@@ -23,7 +23,7 @@ services:
 before_install:
 - echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > .npmrc
 - ulimit -n
-- npm install -g npm@2.8.3
+- npm install -g npm@4.0.3
 before_script:
 - npm run lint
 script:
