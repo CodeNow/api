@@ -13,7 +13,7 @@ const objectId = require('objectid')
 const Promise = require('bluebird')
 const sinon = require('sinon')
 
-const DockerComposeCluster = require('models/mongo/docker-compose-cluster')
+const DockerComposeConfig = require('models/mongo/docker-compose-config')
 const DockerComposeClusterService = require('models/services/docker-compose-cluster-service')
 const rabbitMQ = require('models/rabbitmq')
 const GitHub = require('models/apis/github')

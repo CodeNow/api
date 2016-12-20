@@ -5,7 +5,7 @@ const Lab = require('lab')
 const Promise = require('bluebird')
 const sinon = require('sinon')
 const objectId = require('objectid')
-const DockerComposeCluster = require('models/mongo/docker-compose-cluster')
+const DockerComposeConfig = require('models/mongo/docker-compose-config')
 
 require('sinon-as-promised')(Promise)
 const lab = exports.lab = Lab.script()
@@ -24,17 +24,17 @@ describe('Docker Compose Cluster Model Tests', function () {
     }
 
     beforeEach(function (done) {
-      sinon.stub(DockerComposeCluster, 'findOneAndUpdateAsync').resolves(mockCluster)
+      sinon.stub(DockerComposeConfig, 'findOneAndUpdateAsync').resolves(mockCluster)
       done()
     })
 
     afterEach(function (done) {
-      DockerComposeCluster.findOneAndUpdateAsync.restore()
+      DockerComposeConfig.findOneAndUpdateAsync.restore()
       done()
     })
 
-    it('should call DockerComposeCluster.findOneAndUpdateAsync', function (done) {
-      DockerComposeCluster.markAsDeleted(clusterId)
+    it('should call DockerComposeConfig.findOneAndUpdateAsync', function (done) {
+      DockerComposeConfig.markAsDeleted(clusterId)
       .tap(function (cluster) {
         expect(cluster).to.equal(mockCluster)
         const query = {
@@ -48,16 +48,16 @@ describe('Docker Compose Cluster Model Tests', function () {
             deleted: sinon.match.number
           }
         }
-        sinon.assert.calledOnce(DockerComposeCluster.findOneAndUpdateAsync)
-        sinon.assert.calledWithExactly(DockerComposeCluster.findOneAndUpdateAsync, query, updates)
+        sinon.assert.calledOnce(DockerComposeConfig.findOneAndUpdateAsync)
+        sinon.assert.calledWithExactly(DockerComposeConfig.findOneAndUpdateAsync, query, updates)
       })
       .asCallback(done)
     })
 
     it('should return an error if mongo call failed', function (done) {
       const mongoError = new Error('Mongo error')
-      DockerComposeCluster.findOneAndUpdateAsync.rejects(mongoError)
-      DockerComposeCluster.markAsDeleted(clusterId)
+      DockerComposeConfig.findOneAndUpdateAsync.rejects(mongoError)
+      DockerComposeConfig.markAsDeleted(clusterId)
       .asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
@@ -74,96 +74,40 @@ describe('Docker Compose Cluster Model Tests', function () {
     }
 
     beforeEach(function (done) {
-      sinon.stub(DockerComposeCluster, 'findByIdAsync').resolves(mockCluster)
+      sinon.stub(DockerComposeConfig, 'findByIdAsync').resolves(mockCluster)
       done()
     })
 
     afterEach(function (done) {
-      DockerComposeCluster.findByIdAsync.restore()
+      DockerComposeConfig.findByIdAsync.restore()
       done()
     })
 
-    it('should call DockerComposeCluster.findByIdAsync', function (done) {
-      DockerComposeCluster.findByIdAndAssert(clusterId)
+    it('should call DockerComposeConfig.findByIdAsync', function (done) {
+      DockerComposeConfig.findByIdAndAssert(clusterId)
       .tap(function (cluster) {
         expect(cluster).to.equal(mockCluster)
-        sinon.assert.calledOnce(DockerComposeCluster.findByIdAsync)
-        sinon.assert.calledWithExactly(DockerComposeCluster.findByIdAsync, clusterId)
+        sinon.assert.calledOnce(DockerComposeConfig.findByIdAsync)
+        sinon.assert.calledWithExactly(DockerComposeConfig.findByIdAsync, clusterId)
       })
       .asCallback(done)
     })
 
     it('should return NotFound error if cluster wasn\'t found', function (done) {
-      DockerComposeCluster.findByIdAsync.resolves(null)
-      DockerComposeCluster.findByIdAndAssert(clusterId)
+      DockerComposeConfig.findByIdAsync.resolves(null)
+      DockerComposeConfig.findByIdAndAssert(clusterId)
       .asCallback(function (err) {
         expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(DockerComposeCluster.NotFoundError)
-        expect(err.message).to.equal('DockerComposeCluster not found')
+        expect(err).to.be.an.instanceOf(DockerComposeConfig.NotFoundError)
+        expect(err.message).to.equal('DockerComposeConfig not found')
         done()
       })
     })
 
     it('should return an error if mongo call failed', function (done) {
       const mongoError = new Error('Mongo error')
-      DockerComposeCluster.findByIdAsync.rejects(mongoError)
-      DockerComposeCluster.findByIdAndAssert(clusterId)
-      .asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.message).to.equal(mongoError.message)
-        done()
-      })
-    })
-  })
-  describe('findActiveByParentId', function () {
-    const clusterId = '507f1f77bcf86cd799439011'
-    const parentInstanceId = '607f1f77bcf86cd799439012'
-    const mockCluster = {
-      _id: clusterId,
-      parentInstanceId: parentInstanceId
-    }
-
-    beforeEach(function (done) {
-      sinon.stub(DockerComposeCluster, 'findOneAsync').resolves(mockCluster)
-      done()
-    })
-
-    afterEach(function (done) {
-      DockerComposeCluster.findOneAsync.restore()
-      done()
-    })
-
-    it('should call DockerComposeCluster.findOneAsync', function (done) {
-      DockerComposeCluster.findActiveByParentId(parentInstanceId)
-      .tap(function (cluster) {
-        expect(cluster).to.equal(mockCluster)
-        const query = {
-          parentInstanceId: objectId(parentInstanceId),
-          deleted: {
-            $exists: false
-          }
-        }
-        sinon.assert.calledOnce(DockerComposeCluster.findOneAsync)
-        sinon.assert.calledWithExactly(DockerComposeCluster.findOneAsync, query)
-      })
-      .asCallback(done)
-    })
-
-    it('should return NotFound error if cluster wasn\'t found', function (done) {
-      DockerComposeCluster.findOneAsync.resolves(null)
-      DockerComposeCluster.findActiveByParentId(parentInstanceId)
-      .asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err).to.be.an.instanceOf(DockerComposeCluster.NotFoundError)
-        expect(err.message).to.equal('DockerComposeCluster not found')
-        done()
-      })
-    })
-
-    it('should return an error if mongo call failed', function (done) {
-      const mongoError = new Error('Mongo error')
-      DockerComposeCluster.findOneAsync.rejects(mongoError)
-      DockerComposeCluster.findActiveByParentId(parentInstanceId)
+      DockerComposeConfig.findByIdAsync.rejects(mongoError)
+      DockerComposeConfig.findByIdAndAssert(clusterId)
       .asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(mongoError.message)
