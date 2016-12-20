@@ -17,7 +17,7 @@ const objectid = require('objectid')
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
-const DockerComposeCluster = require('models/mongo/docker-compose-cluster')
+const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 const DockerComposeClusterService = require('models/services/docker-compose-cluster-service')
 const rabbitMQ = require('models/rabbitmq')
 const UserService = require('models/services/user-service')
@@ -32,7 +32,10 @@ describe('Cluster Instance Create Worker', function () {
       cluster: {
         id: testClusterId
       },
-      parsedComposeSiInsanceta: {
+      parsedComposeInstanceData: {
+        metadata: {
+          isMain: false
+        },
         contextVersion: {
           advanced: true
         },
@@ -66,7 +69,7 @@ describe('Cluster Instance Create Worker', function () {
     beforeEach(function (done) {
       sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(testSessionUser)
       sinon.stub(DockerComposeClusterService, 'createClusterInstance').resolves(testInstance)
-      sinon.stub(DockerComposeCluster, 'findOneAndUpdateAsync').resolves(testCluster)
+      sinon.stub(AutoIsolationConfig, 'findOneAndUpdateAsync').resolves(testCluster)
       sinon.stub(rabbitMQ, 'clusterInstanceCreated').returns()
       done()
     })
@@ -74,7 +77,7 @@ describe('Cluster Instance Create Worker', function () {
     afterEach(function (done) {
       UserService.getCompleteUserByBigPoppaId.restore()
       DockerComposeClusterService.createClusterInstance.restore()
-      DockerComposeCluster.findOneAndUpdateAsync.restore()
+      AutoIsolationConfig.findOneAndUpdateAsync.restore()
       rabbitMQ.clusterInstanceCreated.restore()
       done()
     })
@@ -98,9 +101,9 @@ describe('Cluster Instance Create Worker', function () {
           done()
         })
       })
-      it('should reject with any DockerComposeCluster.findOneAndUpdateAsync error', function (done) {
+      it('should reject with any AutoIsolationConfig.findOneAndUpdateAsync error', function (done) {
         const mongoError = new Error('Mongo failed')
-        DockerComposeCluster.findOneAndUpdateAsync.rejects(mongoError)
+        AutoIsolationConfig.findOneAndUpdateAsync.rejects(mongoError)
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(mongoError)
@@ -138,26 +141,50 @@ describe('Cluster Instance Create Worker', function () {
           sinon.assert.calledOnce(DockerComposeClusterService.createClusterInstance)
           sinon.assert.calledWithExactly(DockerComposeClusterService.createClusterInstance,
             testSessionUser,
-            testData.parsedComposeInsanceData,
+            testData.parsedComposeInstanceData,
             testData.repoFullName,
             testData.triggeredAction)
           done()
         })
       })
 
-      it('should call update cluster', function (done) {
+      it('should call update AutoIsolationConfig with deps update', function (done) {
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(DockerComposeCluster.findOneAndUpdateAsync)
+          sinon.assert.calledOnce(AutoIsolationConfig.findOneAndUpdateAsync)
           const query = {
             _id: testClusterId
           }
           const updateQuery = {
             $push: {
-              instancesIds: testInstance._id
+              requestedDependencies: {
+                instance: testInstance._id
+              }
             }
           }
-          sinon.assert.calledWithExactly(DockerComposeCluster.findOneAndUpdateAsync, query, updateQuery)
+          sinon.assert.calledWithExactly(AutoIsolationConfig.findOneAndUpdateAsync, query, updateQuery)
+          done()
+        })
+      })
+
+      it('should call update AutoIsolationConfig with instance update', function (done) {
+        const newComposeInstanceData = Object.assign({},
+          testData.parsedComposeInstanceData, {
+            metadata: {
+              isMain: true
+            }
+          })
+        const newData = Object.assign({}, testData, { parsedComposeInstanceData: newComposeInstanceData })
+        Worker.task(newData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(AutoIsolationConfig.findOneAndUpdateAsync)
+          const query = {
+            _id: testClusterId
+          }
+          const updateQuery = {
+            instance: testInstance._id
+          }
+          sinon.assert.calledWithExactly(AutoIsolationConfig.findOneAndUpdateAsync, query, updateQuery)
           done()
         })
       })
@@ -178,7 +205,7 @@ describe('Cluster Instance Create Worker', function () {
           sinon.assert.callOrder(
             UserService.getCompleteUserByBigPoppaId,
             DockerComposeClusterService.createClusterInstance,
-            DockerComposeCluster.findOneAndUpdateAsync,
+            AutoIsolationConfig.findOneAndUpdateAsync,
             rabbitMQ.clusterInstanceCreated
           )
           done()
