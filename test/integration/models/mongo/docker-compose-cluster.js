@@ -5,7 +5,6 @@ const lab = exports.lab = Lab.script()
 const describe = lab.describe
 const it = lab.it
 const before = lab.before
-const beforeEach = lab.beforeEach
 const after = lab.after
 const afterEach = lab.afterEach
 const Code = require('code')
@@ -90,27 +89,27 @@ describe('DockerComposeConfig Model Integration Tests', function () {
       })
     })
 
-    it('should fail if createdByUser is not provided', function (done) {
-      const invalidData = Object.assign({}, data)
-      invalidData.createdByUser = null
-      const composeConfig = new DockerComposeConfig(invalidData)
-      composeConfig.saveAsync().asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.errors.createdByUser.message).to.equal('Docker Compose Cluster requires createdByUser')
-        done()
-      })
-    })
-
-    it('should fail if ownedByOrg is not provided', function (done) {
-      const invalidData = Object.assign({}, data)
-      invalidData.ownedByOrg = null
-      const composeConfig = new DockerComposeConfig(invalidData)
-      composeConfig.saveAsync().asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.errors.ownedByOrg.message).to.equal('Docker Compose Cluster requires ownedByOrg')
-        done()
-      })
-    })
+    // it('should fail if createdByUser is not provided', function (done) {
+    //   const invalidData = Object.assign({}, data)
+    //   invalidData.createdByUser = null
+    //   const composeConfig = new DockerComposeConfig(invalidData)
+    //   composeConfig.saveAsync().asCallback(function (err) {
+    //     expect(err).to.exist()
+    //     expect(err.errors.createdByUser.message).to.equal('Docker Compose Cluster requires createdByUser')
+    //     done()
+    //   })
+    // })
+    //
+    // it('should fail if ownedByOrg is not provided', function (done) {
+    //   const invalidData = Object.assign({}, data)
+    //   invalidData.ownedByOrg = null
+    //   const composeConfig = new DockerComposeConfig(invalidData)
+    //   composeConfig.saveAsync().asCallback(function (err) {
+    //     expect(err).to.exist()
+    //     expect(err.errors.ownedByOrg.message).to.equal('Docker Compose Cluster requires ownedByOrg')
+    //     done()
+    //   })
+    // })
 
     it('should fail if autoIsolationConfigId is not valid object id', function (done) {
       const invalidId = 'some-invalid-id'

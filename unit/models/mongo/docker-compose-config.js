@@ -16,7 +16,7 @@ const describe = lab.describe
 const expect = Code.expect
 const it = lab.it
 
-describe('Docker Compose Cluster Model Tests', function () {
+describe('Docker Compose Config Model Tests', function () {
   describe('markAsDeleted', function () {
     const clusterId = '507f1f77bcf86cd799439011'
     const mockCluster = {
