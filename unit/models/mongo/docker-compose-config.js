@@ -93,7 +93,7 @@ describe('Docker Compose Config Model Tests', function () {
       .asCallback(done)
     })
 
-    it('should return NotFound error if cluster wasn\'t found', function (done) {
+    it('should return NotFound error if config wasn\'t found', function (done) {
       DockerComposeConfig.findByIdAsync.resolves(null)
       DockerComposeConfig.findByIdAndAssert(clusterId)
       .asCallback(function (err) {
