@@ -20,7 +20,7 @@ const Promise = require('bluebird')
 var args = process.argv.slice(2)
 if (!args.length) {
   console.log('Missing Org name')
-  process.exit(1)
+  throw new Error('You must give an organization name as an input')
 }
 /*
  * START SCRIPT
@@ -83,8 +83,5 @@ function main (orgName) {
       return Promise.fromCallback(cb => {
         mongoose.disconnect(cb)
       })
-        .asCallback(err => {
-          return process.exit(err ? 1 : 0)
-        })
     })
 }
