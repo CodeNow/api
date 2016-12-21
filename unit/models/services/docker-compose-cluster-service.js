@@ -14,7 +14,7 @@ const Promise = require('bluebird')
 const sinon = require('sinon')
 
 const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
-const DockerComposeConfig = require('models/mongo/docker-compose-config')
+const InputClusterConfig = require('models/mongo/input-cluster-config')
 const DockerComposeClusterService = require('models/services/docker-compose-cluster-service')
 const rabbitMQ = require('models/rabbitmq')
 const GitHub = require('models/apis/github')
@@ -147,7 +147,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     const branchName = 'feature-1'
     const newInstanceName = 'api-unit'
     beforeEach(function (done) {
-      sinon.stub(DockerComposeConfig, 'createAsync').resolves(new DockerComposeConfig(composeConfigData))
+      sinon.stub(InputClusterConfig, 'createAsync').resolves(new InputClusterConfig(composeConfigData))
       sinon.stub(AutoIsolationConfig, 'createAsync').resolves(new AutoIsolationConfig(autoIsolationConfigData))
       sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves(dockerComposeContent)
       sinon.stub(octobear, 'parse').returns(testParsedContent)
@@ -155,7 +155,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       done()
     })
     afterEach(function (done) {
-      DockerComposeConfig.createAsync.restore()
+      InputClusterConfig.createAsync.restore()
       AutoIsolationConfig.createAsync.restore()
       GitHub.prototype.getRepoContentAsync.restore()
       octobear.parse.restore()
@@ -198,7 +198,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
       it('should return error if compose createAsync failed', function (done) {
         const error = new Error('Some error')
-        DockerComposeConfig.createAsync.rejects(error)
+        InputClusterConfig.createAsync.rejects(error)
         DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, dockerComposeFilePath, newInstanceName)
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -262,8 +262,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       it('should call compose config createAsync with correct args', function (done) {
         DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, dockerComposeFilePath, newInstanceName)
         .tap(function () {
-          sinon.assert.calledOnce(DockerComposeConfig.createAsync)
-          sinon.assert.calledWithExactly(DockerComposeConfig.createAsync, {
+          sinon.assert.calledOnce(InputClusterConfig.createAsync)
+          sinon.assert.calledWithExactly(InputClusterConfig.createAsync, {
             dockerComposeFilePath,
             autoIsolationConfigId,
             createdByUser: testSessionUser.bigPoppaUser.id,
@@ -300,7 +300,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             GitHub.prototype.getRepoContentAsync,
             octobear.parse,
             AutoIsolationConfig.createAsync,
-            DockerComposeConfig.createAsync,
+            InputClusterConfig.createAsync,
             rabbitMQ.clusterCreated)
         })
         .asCallback(done)
@@ -628,15 +628,15 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     ]
   //   }
   //   beforeEach(function (done) {
-  //     sinon.stub(DockerComposeConfig, 'findByIdAndAssert').resolves(new DockerComposeConfig(composeConfigData))
-  //     sinon.stub(DockerComposeConfig, 'markAsDeleted').resolves()
+  //     sinon.stub(InputClusterConfig, 'findByIdAndAssert').resolves(new InputClusterConfig(composeConfigData))
+  //     sinon.stub(InputClusterConfig, 'markAsDeleted').resolves()
   //     sinon.stub(rabbitMQ, 'deleteInstance').returns()
   //     sinon.stub(rabbitMQ, 'clusterDeleted').returns()
   //     done()
   //   })
   //   afterEach(function (done) {
-  //     DockerComposeConfig.findByIdAndAssert.restore()
-  //     DockerComposeConfig.markAsDeleted.restore()
+  //     InputClusterConfig.findByIdAndAssert.restore()
+  //     InputClusterConfig.markAsDeleted.restore()
   //     rabbitMQ.deleteInstance.restore()
   //     rabbitMQ.clusterDeleted.restore()
   //     done()
@@ -644,7 +644,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //   describe('errors', function () {
   //     it('should return error if findByIdAndAssert failed', function (done) {
   //       const error = new Error('Some error')
-  //       DockerComposeConfig.findByIdAndAssert.rejects(error)
+  //       InputClusterConfig.findByIdAndAssert.rejects(error)
   //       DockerComposeClusterService.delete(clusterId.toString())
   //       .asCallback(function (err) {
   //         expect(err).to.exist()
@@ -666,7 +666,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //
   //     it('should return error if findByIdAndAssert failed', function (done) {
   //       const error = new Error('Some error')
-  //       DockerComposeConfig.markAsDeleted.rejects(error)
+  //       InputClusterConfig.markAsDeleted.rejects(error)
   //       DockerComposeClusterService.delete(clusterId.toString())
   //       .asCallback(function (err) {
   //         expect(err).to.exist()
@@ -694,8 +694,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     it('should call findByIdAndAssert with correct args', function (done) {
   //       DockerComposeClusterService.delete(clusterId.toString())
   //       .tap(function () {
-  //         sinon.assert.calledOnce(DockerComposeConfig.findByIdAndAssert)
-  //         sinon.assert.calledWithExactly(DockerComposeConfig.findByIdAndAssert, clusterId.toString())
+  //         sinon.assert.calledOnce(InputClusterConfig.findByIdAndAssert)
+  //         sinon.assert.calledWithExactly(InputClusterConfig.findByIdAndAssert, clusterId.toString())
   //       })
   //       .asCallback(done)
   //     })
@@ -713,8 +713,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     it('should call markAsDeleted with correct args', function (done) {
   //       DockerComposeClusterService.delete(clusterId.toString())
   //       .tap(function () {
-  //         sinon.assert.calledOnce(DockerComposeConfig.markAsDeleted)
-  //         sinon.assert.calledWithExactly(DockerComposeConfig.markAsDeleted, clusterId)
+  //         sinon.assert.calledOnce(InputClusterConfig.markAsDeleted)
+  //         sinon.assert.calledWithExactly(InputClusterConfig.markAsDeleted, clusterId)
   //       })
   //       .asCallback(done)
   //     })
@@ -733,9 +733,9 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //       DockerComposeClusterService.delete(clusterId.toString())
   //       .tap(function () {
   //         sinon.assert.callOrder(
-  //           DockerComposeConfig.findByIdAndAssert,
+  //           InputClusterConfig.findByIdAndAssert,
   //           rabbitMQ.deleteInstance,
-  //           DockerComposeConfig.markAsDeleted,
+  //           InputClusterConfig.markAsDeleted,
   //           rabbitMQ.clusterDeleted)
   //       })
   //       .asCallback(done)

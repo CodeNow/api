@@ -18,10 +18,8 @@ require('sinon-as-promised')(Promise)
 
 const objectId = require('objectid')
 
-const DockerComposeConfig = require('models/mongo/docker-compose-config')
 const InstanceService = require('models/services/instance-service')
 const IsolationService = require('models/services/isolation-service')
-const rabbitMQ = require('models/rabbitmq')
 
 const Worker = require('workers/instance.deleted')
 
