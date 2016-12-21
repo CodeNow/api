@@ -17,7 +17,7 @@ const mongooseControl = require('models/mongo/mongoose-control')
 describe('InputClusterConfig Model Integration Tests', function () {
   const autoIsolationConfigId = '507f191e810c19729de860ea'
   const data = {
-    dockerComposeFilePath: '/config/compose.yml',
+    filePath: '/config/compose.yml',
     autoIsolationConfigId: objectId(autoIsolationConfigId),
     createdByUser: 123123,
     ownedByOrg: 1
@@ -34,7 +34,7 @@ describe('InputClusterConfig Model Integration Tests', function () {
       const composeConfig = new InputClusterConfig(data)
       composeConfig.saveAsync()
       .tap(function (saved) {
-        expect(saved.dockerComposeFilePath).to.equal(data.dockerComposeFilePath)
+        expect(saved.filePath).to.equal(data.filePath)
         expect(saved.created).to.exist()
         expect(saved.createdByUser).to.equal(data.createdByUser)
         expect(saved.ownerBy).to.equal(data.ownerBy)
@@ -49,7 +49,7 @@ describe('InputClusterConfig Model Integration Tests', function () {
   //     const composeConfig = new InputClusterConfig(data)
   //     composeConfig.saveAsync()
   //     .tap(function (saved) {
-  //       expect(saved.dockerComposeFilePath).to.equal(data.dockerComposeFilePath)
+  //       expect(saved.filePath).to.equal(data.filePath)
   //       expect(saved.autoIsolationConfigId.toString()).to.equal(data.autoIsolationConfigId.toString())
   //       expect(saved.created).to.exist()
   //       expect(saved.deleted).to.not.exist()
@@ -78,13 +78,13 @@ describe('InputClusterConfig Model Integration Tests', function () {
   // })
 
   describe('validation', function () {
-    it('should fail if dockerComposeFilePath is not provided', function (done) {
+    it('should fail if filePath is not provided', function (done) {
       const invalidData = Object.assign({}, data)
-      invalidData.dockerComposeFilePath = null
+      invalidData.filePath = null
       const composeConfig = new InputClusterConfig(invalidData)
       composeConfig.saveAsync().asCallback(function (err) {
         expect(err).to.exist()
-        expect(err.errors.dockerComposeFilePath.message).to.equal('Docker Compose Cluster requires compose file path')
+        expect(err.errors.filePath.message).to.equal('Input Cluster Config requires file path')
         done()
       })
     })

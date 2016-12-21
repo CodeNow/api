@@ -27,7 +27,7 @@ describe('Cluster Create Worker', function () {
       triggeredAction: 'user',
       repoFullName: 'Runnable/api',
       branchName: 'feature-1',
-      dockerComposeFilePath: 'compose.yml',
+      filePath: 'compose.yml',
       newInstanceName: 'api'
     }
     const sessionUser = {
@@ -88,7 +88,7 @@ describe('Cluster Create Worker', function () {
             sessionUser,
             testData.triggeredAction,
             testData.repoFullName,
-            testData.branchName, testData.dockerComposeFilePath, testData.newInstanceName)
+            testData.branchName, testData.filePath, testData.newInstanceName)
           done()
         })
       })
