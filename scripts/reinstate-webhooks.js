@@ -1,23 +1,21 @@
 /*
- * This script should be run whenever the database needs to be repopulated with
- * the seed contexts
+ * This script should be run whenever an org's webhooks are messed up.  This will create webhooks
+ * for every repository currently connected to an instance in our database
  * `NODE_ENV=development NODE_PATH=./lib node scripts/reinstate-webhooks.js {{OrgName}}`
  *
- * NOTE: This script will attempt to delete any existing source contexts, as well as their
- * instances.  It should output what it's deleting, so be sure to verify nothing else was targeted
- *
- * NOTE 2: Must log in as HelloRunnable and populate user model in mongo before running this script
+ * NOTE: This script will use every user connected to an org to attempt creating the hook
  */
 
 'use strict'
 
 require('loadenv')()
 
-const OrgService = require('models/services/organization-service')
+const customError = require('custom-error')
+const GitHub = require('models/apis/github')
 const Instance = require('models/mongo/instance')
 const mongoose = require('mongoose')
+const OrgService = require('models/services/organization-service')
 const Promise = require('bluebird')
-const GitHub = require('models/apis/github')
 
 var args = process.argv.slice(2)
 if (!args.length) {
@@ -27,6 +25,7 @@ if (!args.length) {
 /*
  * START SCRIPT
  */
+const WebhookSuccessful = customError('WebHook Successful')
 main(args[0])
 
 function main (orgName) {
@@ -49,18 +48,34 @@ function main (orgName) {
           }
         }
       }, {})
-        .map(function (instance) {
+        .mapSeries(function (instance) {
           return OrgService.getUsersByOrgName(orgName)
-            .map(user => {
+            // This mapSeries will do 1 at a time until it successfully adds the hook.  That causes
+            // the WebhookSuccessful error, which fires the WebhookSuccessful catch and ends that loop.
+            // This short circuits this mapSeries, moving us to the next instance
+            .mapSeries(user => {
               const token = user.accounts.github.accessToken
               const github = new GitHub({token})
               return github.createRepoHookIfNotAlreadyAsync(instance.getRepoName())
-                .then(function () {
-                  console.log('user', user.accounts.github.username, 'created a hook for', instance.getRepoName())
+                .catch(function (err) {
+                  console.error('user', user.accounts.github.username, 'couldn\'t add the hook for', instance.getRepoName(), err)
+                  return -1
                 })
-                .catch(err => {
-                  console.error('user', user.accounts.github.username, 'couldn\'t add the hook', err)
+                .then(hookExists => {
+                  if (hookExists === -1) {
+                    return
+                  }
+                  if (hookExists) {
+                    console.log(instance.getRepoName(), 'already exists')
+                  } else {
+                    console.log('user', user.accounts.github.username, 'created a hook for', instance.getRepoName())
+                  }
+                  throw new WebhookSuccessful('Hey')
                 })
+            })
+            .catch(WebhookSuccessful, () => {
+              console.log('HEY')
+              // successful add, so next instance!
             })
         })
     })
