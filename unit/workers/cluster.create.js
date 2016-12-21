@@ -16,7 +16,7 @@ const Promise = require('bluebird')
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
-const DockerComposeClusterService = require('models/services/docker-compose-cluster-service')
+const ClusterConfigService = require('models/services/cluster-config-service')
 const UserService = require('models/services/user-service')
 const Worker = require('workers/cluster.create')
 
@@ -34,13 +34,13 @@ describe('Cluster Create Worker', function () {
       _id: 'some-id'
     }
     beforeEach(function (done) {
-      sinon.stub(DockerComposeClusterService, 'create').resolves()
+      sinon.stub(ClusterConfigService, 'create').resolves()
       sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(sessionUser)
       done()
     })
 
     afterEach(function (done) {
-      DockerComposeClusterService.create.restore()
+      ClusterConfigService.create.restore()
       UserService.getCompleteUserByBigPoppaId.restore()
       done()
     })
@@ -55,9 +55,9 @@ describe('Cluster Create Worker', function () {
           done()
         })
       })
-      it('should reject with any DockerComposeClusterService.create error', function (done) {
+      it('should reject with any ClusterConfigService.create error', function (done) {
         const mongoError = new Error('Mongo failed')
-        DockerComposeClusterService.create.rejects(mongoError)
+        ClusterConfigService.create.rejects(mongoError)
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(mongoError)
@@ -83,8 +83,8 @@ describe('Cluster Create Worker', function () {
       it('should call create cluster', function (done) {
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(DockerComposeClusterService.create)
-          sinon.assert.calledWithExactly(DockerComposeClusterService.create,
+          sinon.assert.calledOnce(ClusterConfigService.create)
+          sinon.assert.calledWithExactly(ClusterConfigService.create,
             sessionUser,
             testData.triggeredAction,
             testData.repoFullName,
@@ -98,7 +98,7 @@ describe('Cluster Create Worker', function () {
           expect(err).to.not.exist()
           sinon.assert.callOrder(
             UserService.getCompleteUserByBigPoppaId,
-            DockerComposeClusterService.create
+            ClusterConfigService.create
           )
           done()
         })

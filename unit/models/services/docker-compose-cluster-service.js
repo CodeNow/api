@@ -15,7 +15,7 @@ const sinon = require('sinon')
 
 const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
-const DockerComposeClusterService = require('models/services/docker-compose-cluster-service')
+const ClusterConfigService = require('models/services/cluster-config-service')
 const rabbitMQ = require('models/rabbitmq')
 const GitHub = require('models/apis/github')
 const octobear = require('@runnable/octobear')
@@ -27,7 +27,7 @@ const InstanceService = require('models/services/instance-service')
 
 require('sinon-as-promised')(Promise)
 
-describe('Docker Compose Cluster Service Unit Tests', function () {
+describe('Cluster Config Service Unit Tests', function () {
   const testOrgGithubId = 111
   const testUserGithubId = 333
   const testOrgBpId = 222
@@ -166,7 +166,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     it('should return error if getRepoContentAsync failed', function (done) {
   //       const error = new Error('Some error')
   //       GitHub.prototype.getRepoContentAsync.rejects(error)
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
   //       .asCallback(function (err) {
   //         expect(err).to.exist()
   //         expect(err.message).to.equal(error.message)
@@ -177,7 +177,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     it('should return error if octobear.parse failed', function (done) {
   //       const error = new Error('Some error')
   //       octobear.parse.throws(error)
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
   //       .asCallback(function (err) {
   //         expect(err).to.exist()
   //         expect(err.message).to.equal(error.message)
@@ -188,7 +188,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     it('should return error if auto-isolation-config createAsync failed', function (done) {
   //       const error = new Error('Some error')
   //       AutoIsolationConfig.createAsync.rejects(error)
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
   //       .asCallback(function (err) {
   //         expect(err).to.exist()
   //         expect(err.message).to.equal(error.message)
@@ -199,7 +199,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     it('should return error if compose createAsync failed', function (done) {
   //       const error = new Error('Some error')
   //       InputClusterConfig.createAsync.rejects(error)
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
   //       .asCallback(function (err) {
   //         expect(err).to.exist()
   //         expect(err.message).to.equal(error.message)
@@ -210,7 +210,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     it('should return error if autoIsolationConfigCreated failed', function (done) {
   //       const error = new Error('Some error')
   //       rabbitMQ.autoIsolationConfigCreated.throws(error)
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
   //       .asCallback(function (err) {
   //         expect(err).to.exist()
   //         expect(err.message).to.equal(error.message)
@@ -220,11 +220,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //   })
   //   describe('success', function () {
   //     it('should run successfully', function (done) {
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName).asCallback(done)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName).asCallback(done)
   //     })
   //
   //     it('should call getRepoContentAsync with correct args', function (done) {
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
   //       .tap(function () {
   //         sinon.assert.calledOnce(GitHub.prototype.getRepoContentAsync)
   //         sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoFullName, filePath)
@@ -233,7 +233,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     })
   //
   //     it('should call octobear.parse with correct args', function (done) {
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
   //       .tap(function () {
   //         sinon.assert.calledOnce(octobear.parse)
   //         const parserPayload = {
@@ -248,7 +248,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     })
   //
   //     it('should call auto-isolation-config config createAsync with correct args', function (done) {
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
   //       .tap(function () {
   //         sinon.assert.calledOnce(AutoIsolationConfig.createAsync)
   //         sinon.assert.calledWithExactly(AutoIsolationConfig.createAsync, {
@@ -260,7 +260,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     })
   //
   //     it('should call compose config createAsync with correct args', function (done) {
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
   //       .tap(function () {
   //         sinon.assert.calledOnce(InputClusterConfig.createAsync)
   //         sinon.assert.calledWithExactly(InputClusterConfig.createAsync, {
@@ -273,7 +273,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     })
   //
   //     it('should call autoIsolationConfigCreated with correct args', function (done) {
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
   //       .tap(function () {
   //         sinon.assert.calledOnce(rabbitMQ.autoIsolationConfigCreated)
   //         const autoIsolationConfig = { id: autoIsolationConfigId.toString() }
@@ -299,7 +299,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     })
   //
   //     it('should call all the functions in the order', function (done) {
-  //       DockerComposeClusterService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
   //       .tap(function () {
   //         sinon.assert.callOrder(
   //           GitHub.prototype.getRepoContentAsync,
@@ -315,20 +315,20 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
   describe('createClusterInstance', () => {
     beforeEach((done) => {
-      sinon.stub(DockerComposeClusterService, '_createContext')
-      sinon.stub(DockerComposeClusterService, '_createContextVersion')
-      sinon.stub(DockerComposeClusterService, '_createBuild')
+      sinon.stub(ClusterConfigService, '_createContext')
+      sinon.stub(ClusterConfigService, '_createContextVersion')
+      sinon.stub(ClusterConfigService, '_createBuild')
       sinon.stub(BuildService, 'buildBuild')
-      sinon.stub(DockerComposeClusterService, '_createInstance')
+      sinon.stub(ClusterConfigService, '_createInstance')
       done()
     })
 
     afterEach((done) => {
-      DockerComposeClusterService._createInstance.restore()
-      DockerComposeClusterService._createBuild.restore()
-      DockerComposeClusterService._createContextVersion.restore()
+      ClusterConfigService._createInstance.restore()
+      ClusterConfigService._createBuild.restore()
+      ClusterConfigService._createContextVersion.restore()
       BuildService.buildBuild.restore()
-      DockerComposeClusterService._createContext.restore()
+      ClusterConfigService._createContext.restore()
       done()
     })
 
@@ -340,21 +340,21 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testContextVersion = { _id: 'contextVersion' }
       const testTriggeredAction = 'user'
 
-      DockerComposeClusterService._createInstance.resolves(testInstance)
-      DockerComposeClusterService._createBuild.resolves(testBuild)
+      ClusterConfigService._createInstance.resolves(testInstance)
+      ClusterConfigService._createBuild.resolves(testBuild)
       BuildService.buildBuild.resolves(testBuild)
-      DockerComposeClusterService._createContextVersion.resolves(testContextVersion)
-      DockerComposeClusterService._createContext.resolves(testContext)
+      ClusterConfigService._createContextVersion.resolves(testContextVersion)
+      ClusterConfigService._createContext.resolves(testContext)
 
-      DockerComposeClusterService.createClusterInstance(testSessionUser, testMainParsedContent, testRepoName, testTriggeredAction).asCallback((err, instance) => {
+      ClusterConfigService.createClusterInstance(testSessionUser, testMainParsedContent, testRepoName, testTriggeredAction).asCallback((err, instance) => {
         if (err) { return done(err) }
         expect(instance).to.equal(testInstance)
-        sinon.assert.calledOnce(DockerComposeClusterService._createContext)
-        sinon.assert.calledWithExactly(DockerComposeClusterService._createContext, testSessionUser, testOrgInfo)
-        sinon.assert.calledOnce(DockerComposeClusterService._createContextVersion)
-        sinon.assert.calledWithExactly(DockerComposeClusterService._createContextVersion, testSessionUser, testContext._id, testOrgInfo, testRepoName, testMainParsedContent)
-        sinon.assert.calledOnce(DockerComposeClusterService._createBuild)
-        sinon.assert.calledWithExactly(DockerComposeClusterService._createBuild, testSessionUser, testContextVersion._id, testOrgInfo.githubOrgId)
+        sinon.assert.calledOnce(ClusterConfigService._createContext)
+        sinon.assert.calledWithExactly(ClusterConfigService._createContext, testSessionUser, testOrgInfo)
+        sinon.assert.calledOnce(ClusterConfigService._createContextVersion)
+        sinon.assert.calledWithExactly(ClusterConfigService._createContextVersion, testSessionUser, testContext._id, testOrgInfo, testRepoName, testMainParsedContent)
+        sinon.assert.calledOnce(ClusterConfigService._createBuild)
+        sinon.assert.calledWithExactly(ClusterConfigService._createBuild, testSessionUser, testContextVersion._id, testOrgInfo.githubOrgId)
         sinon.assert.calledOnce(BuildService.buildBuild)
         const buildData = {
           message: 'Initial Cluster Creation',
@@ -364,8 +364,8 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
           }
         }
         sinon.assert.calledWithExactly(BuildService.buildBuild, testBuild._id, buildData, testSessionUser)
-        sinon.assert.calledOnce(DockerComposeClusterService._createInstance)
-        sinon.assert.calledWithExactly(DockerComposeClusterService._createInstance, testSessionUser, testMainParsedContent.instance, testBuild._id.toString())
+        sinon.assert.calledOnce(ClusterConfigService._createInstance)
+        sinon.assert.calledWithExactly(ClusterConfigService._createInstance, testSessionUser, testMainParsedContent.instance, testBuild._id.toString())
         done()
       })
     })
@@ -386,7 +386,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testContext = 'context'
       ContextService.createNew.resolves(testContext)
 
-      DockerComposeClusterService._createContext(testSessionUser, {
+      ClusterConfigService._createContext(testSessionUser, {
         githubOrgId: testOrgGithubId,
         bigPoppaOrgId: testOrgBpId
       }).asCallback((err, context) => {
@@ -439,7 +439,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         const testParsedComposeData = {
           contextVersion: testParsedContextVersionOpts
         }
-        DockerComposeClusterService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
+        ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
           expect(contextVersion).to.equal(testContextVersion)
           sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
@@ -476,7 +476,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             }
           }
         }
-        DockerComposeClusterService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
+        ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
           expect(contextVersion).to.equal(testContextVersion)
           sinon.assert.notCalled(ContextVersion.createAppcodeVersion)
@@ -508,7 +508,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         const testParsedComposeData = {
           contextVersion: testParsedContextVersionOpts
         }
-        DockerComposeClusterService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
+        ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
           expect(contextVersion).to.equal(testContextVersion)
           sinon.assert.callOrder(
@@ -530,7 +530,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
             }
           }
         }
-        DockerComposeClusterService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
+        ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
           expect(contextVersion).to.equal(testContextVersion)
           sinon.assert.callOrder(
@@ -559,7 +559,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
         _id: testBuildId
       }
       BuildService.createBuild.resolves(testBuild)
-      DockerComposeClusterService._createBuild(testSessionUser, testContextVersionId, testOrgGithubId).asCallback((err, build) => {
+      ClusterConfigService._createBuild(testSessionUser, testContextVersionId, testOrgGithubId).asCallback((err, build) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(BuildService.createBuild)
         sinon.assert.calledWith(BuildService.createBuild, {
@@ -599,7 +599,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
       const testInstance = 'build'
       InstanceService.createInstance.resolves(testInstance)
 
-      DockerComposeClusterService._createInstance(testSessionUser, testParentComposeData, testParentBuildId.toString()).asCallback((err, instance) => {
+      ClusterConfigService._createInstance(testSessionUser, testParentComposeData, testParentBuildId.toString()).asCallback((err, instance) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(InstanceService.createInstance)
         sinon.assert.calledWith(InstanceService.createInstance, {
@@ -650,7 +650,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     it('should return error if findByIdAndAssert failed', function (done) {
   //       const error = new Error('Some error')
   //       InputClusterConfig.findByIdAndAssert.rejects(error)
-  //       DockerComposeClusterService.delete(clusterConfigId.toString())
+  //       ClusterConfigService.delete(clusterConfigId.toString())
   //       .asCallback(function (err) {
   //         expect(err).to.exist()
   //         expect(err.message).to.equal(error.message)
@@ -661,7 +661,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     it('should return error if deleteInstance failed', function (done) {
   //       const error = new Error('Some error')
   //       rabbitMQ.deleteInstance.throws(error)
-  //       DockerComposeClusterService.delete(clusterConfigId.toString())
+  //       ClusterConfigService.delete(clusterConfigId.toString())
   //       .asCallback(function (err) {
   //         expect(err).to.exist()
   //         expect(err.message).to.equal(error.message)
@@ -672,7 +672,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     it('should return error if findByIdAndAssert failed', function (done) {
   //       const error = new Error('Some error')
   //       InputClusterConfig.markAsDeleted.rejects(error)
-  //       DockerComposeClusterService.delete(clusterConfigId.toString())
+  //       ClusterConfigService.delete(clusterConfigId.toString())
   //       .asCallback(function (err) {
   //         expect(err).to.exist()
   //         expect(err.message).to.equal(error.message)
@@ -683,7 +683,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     it('should return error if clusterDeleted failed', function (done) {
   //       const error = new Error('Some error')
   //       rabbitMQ.clusterDeleted.throws(error)
-  //       DockerComposeClusterService.delete(clusterConfigId.toString())
+  //       ClusterConfigService.delete(clusterConfigId.toString())
   //       .asCallback(function (err) {
   //         expect(err).to.exist()
   //         expect(err.message).to.equal(error.message)
@@ -693,11 +693,11 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //   })
   //   describe('success', function () {
   //     it('should run successfully', function (done) {
-  //       DockerComposeClusterService.delete(clusterConfigId.toString()).asCallback(done)
+  //       ClusterConfigService.delete(clusterConfigId.toString()).asCallback(done)
   //     })
   //
   //     it('should call findByIdAndAssert with correct args', function (done) {
-  //       DockerComposeClusterService.delete(clusterConfigId.toString())
+  //       ClusterConfigService.delete(clusterConfigId.toString())
   //       .tap(function () {
   //         sinon.assert.calledOnce(InputClusterConfig.findByIdAndAssert)
   //         sinon.assert.calledWithExactly(InputClusterConfig.findByIdAndAssert, clusterConfigId.toString())
@@ -706,7 +706,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     })
   //
   //     it('should call deleteInstance with correct args', function (done) {
-  //       DockerComposeClusterService.delete(clusterConfigId.toString())
+  //       ClusterConfigService.delete(clusterConfigId.toString())
   //       .tap(function () {
   //         sinon.assert.calledTwice(rabbitMQ.deleteInstance)
   //         sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, { instanceId: composeConfigData.instancesIds[0] })
@@ -716,7 +716,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     })
   //
   //     it('should call markAsDeleted with correct args', function (done) {
-  //       DockerComposeClusterService.delete(clusterConfigId.toString())
+  //       ClusterConfigService.delete(clusterConfigId.toString())
   //       .tap(function () {
   //         sinon.assert.calledOnce(InputClusterConfig.markAsDeleted)
   //         sinon.assert.calledWithExactly(InputClusterConfig.markAsDeleted, clusterConfigId)
@@ -725,7 +725,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     })
   //
   //     it('should call clusterDeleted with correct args', function (done) {
-  //       DockerComposeClusterService.delete(clusterConfigId.toString())
+  //       ClusterConfigService.delete(clusterConfigId.toString())
   //       .tap(function () {
   //         sinon.assert.calledOnce(rabbitMQ.clusterDeleted)
   //         const cluster = { id: clusterConfigId.toString() }
@@ -735,7 +735,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //     })
   //
   //     it('should call all the functions in the order', function (done) {
-  //       DockerComposeClusterService.delete(clusterConfigId.toString())
+  //       ClusterConfigService.delete(clusterConfigId.toString())
   //       .tap(function () {
   //         sinon.assert.callOrder(
   //           InputClusterConfig.findByIdAndAssert,
@@ -776,7 +776,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
 
     it('should update instance if it has new config', (done) => {
-      DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
+      ClusterConfigService._updateAndRebuildInstancesWithConfigs(instanceMock)
       .then(() => {
         sinon.assert.calledOnce(instanceMock.updateAsync)
         sinon.assert.calledWith(instanceMock.updateAsync, {
@@ -797,7 +797,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     it('should not update instance if it has no config', (done) => {
       delete instanceMock.config
 
-      DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
+      ClusterConfigService._updateAndRebuildInstancesWithConfigs(instanceMock)
       sinon.assert.notCalled(instanceMock.updateAsync)
       sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
       done()
@@ -806,7 +806,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     it('should not update instance if it has no name', (done) => {
       delete instanceMock.name
 
-      DockerComposeClusterService._updateAndRebuildInstancesWithConfigs(instanceMock)
+      ClusterConfigService._updateAndRebuildInstancesWithConfigs(instanceMock)
       sinon.assert.notCalled(instanceMock.updateAsync)
       sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
       done()
@@ -834,7 +834,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //       name: 'B'
   //     }
   //
-  //     DockerComposeClusterService.updateCluster(
+  //     ClusterConfigService.updateCluster(
   //       [],
   //       [testDeleteInstance],
   //       testOrgBpId
@@ -863,7 +863,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //       }
   //     }
   //
-  //     DockerComposeClusterService.updateCluster(
+  //     ClusterConfigService.updateCluster(
   //       [testUpdateConfig],
   //       [testUpdateInstance],
   //       testOrgBpId
@@ -890,7 +890,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //       instance: { name: 'C' }
   //     }
   //
-  //     DockerComposeClusterService.updateCluster(
+  //     ClusterConfigService.updateCluster(
   //       [testNewConfig],
   //       [],
   //       testOrgBpId
@@ -919,14 +919,14 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
     it('should call delete if instance does not have a config', (done) => {
       const testId = 1
-      DockerComposeClusterService._deleteInstanceIfMissingConfig({ _id: testId })
+      ClusterConfigService._deleteInstanceIfMissingConfig({ _id: testId })
       sinon.assert.calledOnce(rabbitMQ.deleteInstance)
       sinon.assert.calledWith(rabbitMQ.deleteInstance, { instanceId: testId })
       done()
     })
 
     it('should not call delete if instance has a config', (done) => {
-      DockerComposeClusterService._deleteInstanceIfMissingConfig({ config: {} })
+      ClusterConfigService._deleteInstanceIfMissingConfig({ config: {} })
       sinon.assert.notCalled(rabbitMQ.deleteInstance)
       done()
     })
@@ -945,7 +945,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //
   //   it('should call create if instance does not have a name', (done) => {
   //     testMainParsedContent.config = testMainParsedContent
-  //     DockerComposeClusterService._createNewInstancesForNewConfigs({
+  //     ClusterConfigService._createNewInstancesForNewConfigs({
   //       config: testMainParsedContent
   //     }, testOrgBpId)
   //
@@ -959,13 +959,13 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
   //
   //   it('should not call create if instance missing name', (done) => {
   //     delete testMainParsedContent.name
-  //     DockerComposeClusterService._createNewInstancesForNewConfigs(testMainParsedContent, 1)
+  //     ClusterConfigService._createNewInstancesForNewConfigs(testMainParsedContent, 1)
   //     sinon.assert.notCalled(rabbitMQ.createClusterInstance)
   //     done()
   //   })
   //
   //   it('should not call create if instance missing config', (done) => {
-  //     DockerComposeClusterService._createNewInstancesForNewConfigs(testMainParsedContent, 1)
+  //     ClusterConfigService._createNewInstancesForNewConfigs(testMainParsedContent, 1)
   //     sinon.assert.notCalled(rabbitMQ.createClusterInstance)
   //     done()
   //   })
@@ -973,7 +973,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
   describe('_mergeConfigsIntoInstances', () => {
     it('should output list of configs and instances', (done) => {
-      const out = DockerComposeClusterService._mergeConfigsIntoInstances(
+      const out = ClusterConfigService._mergeConfigsIntoInstances(
         [{instance: {name: '1'}}, {instance: {name: '4'}}],
         [{name: '1'}, {name: '2'}]
       )
@@ -988,7 +988,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
   describe('_addConfigToInstances', () => {
     it('should add instances and missing configs into array', (done) => {
-      const out = DockerComposeClusterService._addConfigToInstances(
+      const out = ClusterConfigService._addConfigToInstances(
         [{instance: {name: '1'}}, {instance: {name: '4'}}],
         [{name: '1'}, {name: '2'}]
       )
@@ -999,7 +999,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
   describe('_addMissingConfigs', () => {
     it('should add missing configs to array', (done) => {
-      const out = DockerComposeClusterService._addMissingConfigs(
+      const out = ClusterConfigService._addMissingConfigs(
         [{instance: {name: '1'}}, {instance: {name: '4'}}],
         [{name: '1'}, {name: '2'}]
       )
@@ -1010,7 +1010,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
 
   describe('_isConfigMissingInstance', () => {
     it('should return false if config has an instance', (done) => {
-      const out = DockerComposeClusterService._isConfigMissingInstance(
+      const out = ClusterConfigService._isConfigMissingInstance(
         [{name: '1'}, {name: '2'}, {name: '3'}],
         {instance: {name: '1'}}
       )
@@ -1020,7 +1020,7 @@ describe('Docker Compose Cluster Service Unit Tests', function () {
     })
 
     it('should return true if config does not have an instance', (done) => {
-      const out = DockerComposeClusterService._isConfigMissingInstance(
+      const out = ClusterConfigService._isConfigMissingInstance(
         [{name: '1'}, {name: '2'}, {name: '3'}],
         {instance: {name: '5'}}
       )
