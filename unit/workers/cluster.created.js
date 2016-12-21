@@ -22,7 +22,8 @@ const Worker = require('workers/cluster.created')
 
 describe('Cluster Created Worker', function () {
   describe('worker', function () {
-    const testClusterId = '7768f58160e9990d009c9428'
+    const testAutoIsolationConfigId = '6768f58160e9990d009c9427'
+    const testClusterConfigId = '7768f58160e9990d009c9428'
     const testOrgBigPoppaId = 20001
     const testInstanceDef1 = {
       metadata: {
@@ -47,13 +48,18 @@ describe('Cluster Created Worker', function () {
       }
     }
     const testData = {
-      cluster: {
-        id: testClusterId
+      autoIsolationConfig: {
+        id: testAutoIsolationConfigId
+      },
+      inputClusterConfig: {
+        id: testClusterConfigId
       },
       parsedCompose: {
         results: [ testInstanceDef1, testInstanceDef2 ]
       },
-      sessionUserGithubId: 123,
+      user: {
+        id: 123
+      },
       triggeredAction: 'user',
       repoFullName: 'Runnable/api',
       organization: {
@@ -91,7 +97,7 @@ describe('Cluster Created Worker', function () {
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(rabbitMQ.createClusterInstance)
-          const basePayload = pick(testData, ['cluster', 'sessionUserBigPoppaId', 'organization', 'triggeredAction', 'repoFullName'])
+          const basePayload = pick(testData, ['autoIsolationConfig', 'inputClusterConfig', 'user', 'organization', 'triggeredAction', 'repoFullName'])
           const job1 = Object.assign({ parsedComposeInstanceData: testInstanceDef1 }, basePayload)
           const job2 = Object.assign({ parsedComposeInstanceData: testInstanceDef2 }, basePayload)
           sinon.assert.calledWithExactly(rabbitMQ.createClusterInstance, job1)

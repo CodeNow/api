@@ -25,12 +25,16 @@ const Worker = require('workers/cluster.instance.create')
 
 describe('Cluster Instance Create Worker', function () {
   describe('worker', function () {
-    const testClusterId = '7768f58160e9990d009c9428'
+    const testAutoIsolationConfigId = '6768f58160e9990d009c9427'
+    const testClusterConfigId = '7768f58160e9990d009c9428'
     const testOrgBigPoppaId = 20001
     const testOrgGithubId = 213123
     const testData = {
-      cluster: {
-        id: testClusterId
+      autoIsolationConfig: {
+        id: testAutoIsolationConfigId
+      },
+      inputClusterConfig: {
+        id: testClusterConfigId
       },
       parsedComposeInstanceData: {
         metadata: {
@@ -43,7 +47,9 @@ describe('Cluster Instance Create Worker', function () {
           name: 'db'
         }
       },
-      sessionUserGithubId: 123,
+      user: {
+        id: 123
+      },
       triggeredAction: 'user',
       repoFullName: 'Runnable/api',
       organization: {
@@ -63,13 +69,13 @@ describe('Cluster Instance Create Worker', function () {
     const testInstance = {
       _id: objectid('5568f58160e9990d009c9429')
     }
-    const testCluster = {
-      _id: objectid(testClusterId)
+    const testAutoIsolationConfig = {
+      _id: objectid(testAutoIsolationConfigId)
     }
     beforeEach(function (done) {
       sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(testSessionUser)
       sinon.stub(DockerComposeClusterService, 'createClusterInstance').resolves(testInstance)
-      sinon.stub(AutoIsolationConfig, 'findOneAndUpdateAsync').resolves(testCluster)
+      sinon.stub(AutoIsolationConfig, 'findOneAndUpdateAsync').resolves(testAutoIsolationConfig)
       sinon.stub(rabbitMQ, 'clusterInstanceCreated').returns()
       done()
     })
@@ -130,7 +136,7 @@ describe('Cluster Instance Create Worker', function () {
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(UserService.getCompleteUserByBigPoppaId)
-          sinon.assert.calledWithExactly(UserService.getCompleteUserByBigPoppaId, testData.sessionUserBigPoppaId)
+          sinon.assert.calledWithExactly(UserService.getCompleteUserByBigPoppaId, testData.user.id)
           done()
         })
       })
@@ -153,7 +159,7 @@ describe('Cluster Instance Create Worker', function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(AutoIsolationConfig.findOneAndUpdateAsync)
           const query = {
-            _id: testClusterId
+            _id: testAutoIsolationConfigId
           }
           const updateQuery = {
             $push: {
@@ -179,7 +185,7 @@ describe('Cluster Instance Create Worker', function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(AutoIsolationConfig.findOneAndUpdateAsync)
           const query = {
-            _id: testClusterId
+            _id: testAutoIsolationConfigId
           }
           const updateQuery = {
             instance: testInstance._id
