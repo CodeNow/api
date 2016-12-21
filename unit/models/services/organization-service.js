@@ -397,14 +397,14 @@ describe('Organization Service', function () {
       it('should validate and fail because of Joi (bad values)', function (done) {
         OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, badOpts)
           .catch(function (err) {
-            expect(err.message).to.match(/[prBotEnabled, metadata]/)
+            expect(err.message).to.match(/[prBotEnabled, metadata, isPermanentlyBanned]/)
             done()
           })
       })
       it('should validate and fail because of Joi (missing values)', function (done) {
         OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, { fact: 'Donald Trump will be president' })
           .catch(function (err) {
-            expect(err.message).to.match(/[prBotEnabled, metadata]/)
+            expect(err.message).to.match(/[prBotEnabled, metadata, isPermanentlyBanned]/)
             done()
           })
       })
