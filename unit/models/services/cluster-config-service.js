@@ -14,6 +14,7 @@ const Promise = require('bluebird')
 const sinon = require('sinon')
 
 const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
+const AutoIsolationService = require('models/services/auto-isolation-service')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
 const ClusterConfigService = require('models/services/cluster-config-service')
 const rabbitMQ = require('models/rabbitmq')
@@ -35,39 +36,58 @@ describe('Cluster Config Service Unit Tests', function () {
   const testOrgName = 'Runnable'
   const testContextId = objectId('407f191e810c19729de860ef')
   let testOrgInfo
-  let testParsedContent
-  let testMainParsedContent
+
+  const testMainParsedContent = {
+    metadata: {
+      name: 'api',
+      isMain: true
+    },
+    contextVersion: {
+      advanced: true,
+      buildDockerfilePath: '.'
+    },
+    files: { // Optional
+      '/Dockerfile': {
+        body: 'FROM node'
+      }
+    },
+    instance: {
+      name: 'api',
+      containerStartCommand: 'npm start',
+      ports: [80],
+      env: ['HELLO=WORLD']
+    }
+  }
+  const testDepParsedContent = {
+    metadata: {
+      name: 'workers',
+      isMain: false
+    },
+    contextVersion: {
+      advanced: true,
+      buildDockerfilePath: '.'
+    },
+    files: { // Optional
+      '/Dockerfile': {
+        body: 'FROM node'
+      }
+    },
+    instance: {
+      name: 'api',
+      containerStartCommand: 'npm start-workers',
+      ports: [80],
+      env: ['HELLO=WORLD']
+    }
+  }
+  const testParsedContent = {
+    results: [testMainParsedContent, testDepParsedContent]
+  }
   let testSessionUser
   const testOrg = {
     id: testOrgBpId
   }
 
   beforeEach((done) => {
-    testMainParsedContent = {
-      metadata: {
-        name: 'api',
-        isMain: true
-      },
-      contextVersion: {
-        advanced: true,
-        buildDockerfilePath: '.'
-      },
-      files: { // Optional
-        '/Dockerfile': {
-          body: 'FROM node'
-        }
-      },
-      instance: {
-        name: 'api',
-        containerStartCommand: 'npm start',
-        ports: [80],
-        env: ['HELLO=WORLD']
-      }
-    }
-
-    testParsedContent = {
-      results: [testMainParsedContent]
-    }
 
     testSessionUser = {
       _id: 'id',
@@ -98,28 +118,7 @@ describe('Cluster Config Service Unit Tests', function () {
   })
 
   describe('create', function () {
-    const autoIsolationConfigId = objectId('107f191e810c19729de860ee')
-    const clusterConfigId = objectId('407f191e810c19729de860ef')
-    const parentInstanceId = objectId('507f191e810c19729de860ea')
     const filePath = 'config/compose.yml'
-    const composeConfigData = {
-      _id: clusterConfigId,
-      filePath: filePath
-    }
-
-    const autoIsolationConfigData = {
-      _id: autoIsolationConfigId,
-      instance: parentInstanceId,
-      requestedDependencies: [
-        {
-          instance: objectId('607f191e810c19729de860eb')
-        },
-        {
-          instance: objectId('707f191e810c19729de860ec')
-        }
-      ]
-    }
-
     const dockerComposeContent = {
       name: 'docker-compose.yml',
       path: 'docker-compose.yml',
@@ -247,221 +246,153 @@ describe('Cluster Config Service Unit Tests', function () {
     })
   })
 
-  // describe('create', function () {
-  //   const autoIsolationConfigId = objectId('107f191e810c19729de860ee')
-  //   const clusterConfigId = objectId('407f191e810c19729de860ef')
-  //   const parentInstanceId = objectId('507f191e810c19729de860ea')
-  //   const filePath = 'config/compose.yml'
-  //   const composeConfigData = {
-  //     _id: clusterConfigId,
-  //     filePath: filePath
-  //   }
-  //
-  //   const autoIsolationConfigData = {
-  //     _id: autoIsolationConfigId,
-  //     instance: parentInstanceId,
-  //     requestedDependencies: [
-  //       {
-  //         instance: objectId('607f191e810c19729de860eb')
-  //       },
-  //       {
-  //         instance: objectId('707f191e810c19729de860ec')
-  //       }
-  //     ]
-  //   }
-  //
-  //   const dockerComposeContent = {
-  //     name: 'docker-compose.yml',
-  //     path: 'docker-compose.yml',
-  //     sha: '13ec49b1014891c7b494126226f95e318e1d3e82',
-  //     size: 193,
-  //     url: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/contents/docker-compose.yml?ref=master',
-  //     html_url: 'https://github.com/Runnable/compose-test-repo-1.2/blob/master/docker-compose.yml',
-  //     git_url: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/git/blobs/13ec49b1014891c7b494126226f95e318e1d3e82',
-  //     download_url: 'https://raw.githubusercontent.com/Runnable/compose-test-repo-1.2/master/docker-compose.yml',
-  //     type: 'file',
-  //     content: 'dmVyc2lvbjogJzInCnNlcnZpY2VzOgogIHdlYjoKICAgIGJ1aWxkOiAnLi9z\ncmMvJwogICAgY29tbWFuZDogW25vZGUsIGluZGV4LmpzXQogICAgcG9ydHM6\nCiAgICAgIC0gIjUwMDA6NTAwMCIKICAgIGVudmlyb25tZW50OgogICAgICAt\nIE5PREVfRU5WPWRldmVsb3BtZW50CiAgICAgIC0gU0hPVz10cnVlCiAgICAg\nIC0gSEVMTE89Njc4Cg==\n',
-  //     encoding: 'base64',
-  //     _links:
-  //      { self: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/contents/docker-compose.yml?ref=master',
-  //        git: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/git/blobs/13ec49b1014891c7b494126226f95e318e1d3e82',
-  //        html: 'https://github.com/Runnable/compose-test-repo-1.2/blob/master/docker-compose.yml'
-  //      }
-  //   }
-  //   const triggeredAction = 'webhook'
-  //   const dockerComposeFileString = 'version: \'2\'\nservices:\n  web:\n    build: \'./src/\'\n    command: [node, index.js]\n    ports:\n      - "5000:5000"\n    environment:\n      - NODE_ENV=development\n      - SHOW=true\n      - HELLO=678\n'
-  //   const orgName = 'Runnable'
-  //   const ownerUsername = orgName.toLowerCase()
-  //   const repoName = 'api'
-  //   const repoFullName = orgName + '/' + repoName
-  //   const branchName = 'feature-1'
-  //   const newInstanceName = 'api-unit'
-  //   beforeEach(function (done) {
-  //     sinon.stub(InputClusterConfig, 'createAsync').resolves(new InputClusterConfig(composeConfigData))
-  //     sinon.stub(AutoIsolationConfig, 'createAsync').resolves(new AutoIsolationConfig(autoIsolationConfigData))
-  //     sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves(dockerComposeContent)
-  //     sinon.stub(octobear, 'parse').returns(testParsedContent)
-  //     sinon.stub(rabbitMQ, 'autoIsolationConfigCreated').returns()
-  //     done()
-  //   })
-  //   afterEach(function (done) {
-  //     InputClusterConfig.createAsync.restore()
-  //     AutoIsolationConfig.createAsync.restore()
-  //     GitHub.prototype.getRepoContentAsync.restore()
-  //     octobear.parse.restore()
-  //     rabbitMQ.autoIsolationConfigCreated.restore()
-  //     done()
-  //   })
-  //   describe('errors', function () {
-  //     it('should return error if getRepoContentAsync failed', function (done) {
-  //       const error = new Error('Some error')
-  //       GitHub.prototype.getRepoContentAsync.rejects(error)
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
-  //       .asCallback(function (err) {
-  //         expect(err).to.exist()
-  //         expect(err.message).to.equal(error.message)
-  //         done()
-  //       })
-  //     })
-  //
-  //     it('should return error if octobear.parse failed', function (done) {
-  //       const error = new Error('Some error')
-  //       octobear.parse.throws(error)
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
-  //       .asCallback(function (err) {
-  //         expect(err).to.exist()
-  //         expect(err.message).to.equal(error.message)
-  //         done()
-  //       })
-  //     })
-  //
-  //     it('should return error if auto-isolation-config createAsync failed', function (done) {
-  //       const error = new Error('Some error')
-  //       AutoIsolationConfig.createAsync.rejects(error)
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
-  //       .asCallback(function (err) {
-  //         expect(err).to.exist()
-  //         expect(err.message).to.equal(error.message)
-  //         done()
-  //       })
-  //     })
-  //
-  //     it('should return error if compose createAsync failed', function (done) {
-  //       const error = new Error('Some error')
-  //       InputClusterConfig.createAsync.rejects(error)
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
-  //       .asCallback(function (err) {
-  //         expect(err).to.exist()
-  //         expect(err.message).to.equal(error.message)
-  //         done()
-  //       })
-  //     })
-  //
-  //     it('should return error if autoIsolationConfigCreated failed', function (done) {
-  //       const error = new Error('Some error')
-  //       rabbitMQ.autoIsolationConfigCreated.throws(error)
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
-  //       .asCallback(function (err) {
-  //         expect(err).to.exist()
-  //         expect(err.message).to.equal(error.message)
-  //         done()
-  //       })
-  //     })
-  //   })
-  //   describe('success', function () {
-  //     it('should run successfully', function (done) {
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName).asCallback(done)
-  //     })
-  //
-  //     it('should call getRepoContentAsync with correct args', function (done) {
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
-  //       .tap(function () {
-  //         sinon.assert.calledOnce(GitHub.prototype.getRepoContentAsync)
-  //         sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoFullName, filePath)
-  //       })
-  //       .asCallback(done)
-  //     })
-  //
-  //     it('should call octobear.parse with correct args', function (done) {
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
-  //       .tap(function () {
-  //         sinon.assert.calledOnce(octobear.parse)
-  //         const parserPayload = {
-  //           dockerComposeFileString,
-  //           repositoryName: newInstanceName,
-  //           ownerUsername: ownerUsername,
-  //           userContentDomain: process.env.USER_CONTENT_DOMAIN
-  //         }
-  //         sinon.assert.calledWithExactly(octobear.parse, parserPayload)
-  //       })
-  //       .asCallback(done)
-  //     })
-  //
-  //     it('should call auto-isolation-config config createAsync with correct args', function (done) {
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
-  //       .tap(function () {
-  //         sinon.assert.calledOnce(AutoIsolationConfig.createAsync)
-  //         sinon.assert.calledWithExactly(AutoIsolationConfig.createAsync, {
-  //           createdByUser: testSessionUser.bigPoppaUser.id,
-  //           ownedByOrg: testOrg.id
-  //         })
-  //       })
-  //       .asCallback(done)
-  //     })
-  //
-  //     it('should call compose config createAsync with correct args', function (done) {
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
-  //       .tap(function () {
-  //         sinon.assert.calledOnce(InputClusterConfig.createAsync)
-  //         sinon.assert.calledWithExactly(InputClusterConfig.createAsync, {
-  //           filePath,
-  //           createdByUser: testSessionUser.bigPoppaUser.id,
-  //           ownedByOrg: testOrg.id
-  //         })
-  //       })
-  //       .asCallback(done)
-  //     })
-  //
-  //     it('should call autoIsolationConfigCreated with correct args', function (done) {
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
-  //       .tap(function () {
-  //         sinon.assert.calledOnce(rabbitMQ.autoIsolationConfigCreated)
-  //         const autoIsolationConfig = { id: autoIsolationConfigId.toString() }
-  //         const inputClusterConfig = { id: clusterConfigId.toString() }
-  //         const payload = {
-  //           autoIsolationConfig,
-  //           user: {
-  //             id: testSessionUser.bigPoppaUser.id
-  //           },
-  //           organization: {
-  //             id: testOrg.id
-  //           },
-  //           meta: {
-  //             inputClusterConfig,
-  //             parsedCompose: testParsedContent,
-  //             triggeredAction,
-  //             repoFullName
-  //           }
-  //         }
-  //         sinon.assert.calledWithExactly(rabbitMQ.autoIsolationConfigCreated, payload)
-  //       })
-  //       .asCallback(done)
-  //     })
-  //
-  //     it('should call all the functions in the order', function (done) {
-  //       ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
-  //       .tap(function () {
-  //         sinon.assert.callOrder(
-  //           GitHub.prototype.getRepoContentAsync,
-  //           octobear.parse,
-  //           InputClusterConfig.createAsync,
-  //           AutoIsolationConfig.createAsync,
-  //           rabbitMQ.autoIsolationConfigCreated)
-  //       })
-  //       .asCallback(done)
-  //     })
-  //   })
-  // })
+  describe('createFromRunnableConfig', function () {
+    const autoIsolationConfigId = objectId('107f191e810c19729de860ee')
+    const clusterConfigId = objectId('407f191e810c19729de860ef')
+    const parentInstanceId = objectId('507f191e810c19729de860ea')
+    const depInstanceId1 = objectId('607f191e810c19729de860eb')
+    const filePath = 'config/compose.yml'
+    const composeConfigData = {
+      _id: clusterConfigId,
+      filePath: filePath
+    }
+
+    const autoIsolationConfigData = {
+      _id: autoIsolationConfigId,
+      instance: parentInstanceId,
+      requestedDependencies: [
+        {
+          instance: depInstanceId1
+        }
+      ]
+    }
+
+    const triggeredAction = 'webhook'
+    const orgName = 'Runnable'
+    const repoName = 'api'
+    const repoFullName = orgName + '/' + repoName
+    beforeEach(function (done) {
+      const instanceCreate = sinon.stub(ClusterConfigService, 'createClusterInstance')
+      instanceCreate.onCall(0).resolves({
+        _id: parentInstanceId
+      })
+      instanceCreate.onCall(1).resolves({
+        _id: depInstanceId1
+      })
+      sinon.stub(InputClusterConfig, 'createAsync').resolves(new InputClusterConfig(composeConfigData))
+      sinon.stub(AutoIsolationService, 'createAndEmit').resolves(new AutoIsolationConfig(autoIsolationConfigData))
+      done()
+    })
+    afterEach(function (done) {
+      InputClusterConfig.createAsync.restore()
+      AutoIsolationService.createAndEmit.restore()
+      ClusterConfigService.createClusterInstance.restore()
+      done()
+    })
+    describe('errors', function () {
+      it('should return error if createClusterInstance failed', function (done) {
+        const error = new Error('Some error')
+        ClusterConfigService.createClusterInstance.onCall(0).rejects(error)
+        ClusterConfigService.createClusterInstance.onCall(1).rejects(error)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+
+      it('should return error if AutoIsolationService.createAndEmit failed', function (done) {
+        const error = new Error('Some error')
+        AutoIsolationService.createAndEmit.rejects(error)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+
+      it('should return error if InputClusterConfig.createAsync failed', function (done) {
+        const error = new Error('Some error')
+        InputClusterConfig.createAsync.rejects(error)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+    })
+    describe('success', function () {
+      it('should run successfully', function (done) {
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath).asCallback(done)
+      })
+
+      it('should call ClusterConfigService.createClusterInstance with correct args', function (done) {
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath)
+        .tap(function () {
+          sinon.assert.calledTwice(ClusterConfigService.createClusterInstance)
+          sinon.assert.calledWithExactly(ClusterConfigService.createClusterInstance,
+            testSessionUser,
+            testParsedContent.results[0],
+            repoFullName,
+            triggeredAction)
+          sinon.assert.calledWithExactly(ClusterConfigService.createClusterInstance,
+            testSessionUser,
+            testParsedContent.results[1],
+            repoFullName,
+            triggeredAction)
+        })
+        .asCallback(done)
+      })
+
+      it('should call AutoIsolationService.createAndEmit correct args', function (done) {
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath)
+        .tap(function () {
+          sinon.assert.calledOnce(AutoIsolationService.createAndEmit)
+          const autoIsolationOpts = {
+            createdByUser: testSessionUser.bigPoppaUser.id,
+            ownedByOrg: testOrg.id,
+            instance: parentInstanceId,
+            requestedDependencies: [
+              {
+                instance: depInstanceId1
+              }
+            ]
+          }
+          sinon.assert.calledWithExactly(AutoIsolationService.createAndEmit, autoIsolationOpts)
+        })
+        .asCallback(done)
+      })
+
+      it('should call InputClusterConfig.createAsync with correct args', function (done) {
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath)
+        .tap(function () {
+          sinon.assert.calledOnce(InputClusterConfig.createAsync)
+          sinon.assert.calledWithExactly(InputClusterConfig.createAsync, {
+            autoIsolationConfigId,
+            filePath,
+            createdByUser: testSessionUser.bigPoppaUser.id,
+            ownedByOrg: testOrg.id
+          })
+        })
+        .asCallback(done)
+      })
+
+
+      it('should call all the functions in the order', function (done) {
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath)
+        .tap(function () {
+          sinon.assert.callOrder(
+            ClusterConfigService.createClusterInstance,
+            AutoIsolationService.createAndEmit,
+            InputClusterConfig.createAsync)
+        })
+        .asCallback(done)
+      })
+    })
+  })
 
   describe('createClusterInstance', () => {
     beforeEach((done) => {
