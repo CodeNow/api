@@ -97,6 +97,156 @@ describe('Cluster Config Service Unit Tests', function () {
     done()
   })
 
+  describe('create', function () {
+    const autoIsolationConfigId = objectId('107f191e810c19729de860ee')
+    const clusterConfigId = objectId('407f191e810c19729de860ef')
+    const parentInstanceId = objectId('507f191e810c19729de860ea')
+    const filePath = 'config/compose.yml'
+    const composeConfigData = {
+      _id: clusterConfigId,
+      filePath: filePath
+    }
+
+    const autoIsolationConfigData = {
+      _id: autoIsolationConfigId,
+      instance: parentInstanceId,
+      requestedDependencies: [
+        {
+          instance: objectId('607f191e810c19729de860eb')
+        },
+        {
+          instance: objectId('707f191e810c19729de860ec')
+        }
+      ]
+    }
+
+    const dockerComposeContent = {
+      name: 'docker-compose.yml',
+      path: 'docker-compose.yml',
+      sha: '13ec49b1014891c7b494126226f95e318e1d3e82',
+      size: 193,
+      url: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/contents/docker-compose.yml?ref=master',
+      html_url: 'https://github.com/Runnable/compose-test-repo-1.2/blob/master/docker-compose.yml',
+      git_url: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/git/blobs/13ec49b1014891c7b494126226f95e318e1d3e82',
+      download_url: 'https://raw.githubusercontent.com/Runnable/compose-test-repo-1.2/master/docker-compose.yml',
+      type: 'file',
+      content: 'dmVyc2lvbjogJzInCnNlcnZpY2VzOgogIHdlYjoKICAgIGJ1aWxkOiAnLi9z\ncmMvJwogICAgY29tbWFuZDogW25vZGUsIGluZGV4LmpzXQogICAgcG9ydHM6\nCiAgICAgIC0gIjUwMDA6NTAwMCIKICAgIGVudmlyb25tZW50OgogICAgICAt\nIE5PREVfRU5WPWRldmVsb3BtZW50CiAgICAgIC0gU0hPVz10cnVlCiAgICAg\nIC0gSEVMTE89Njc4Cg==\n',
+      encoding: 'base64',
+      _links:
+       { self: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/contents/docker-compose.yml?ref=master',
+         git: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/git/blobs/13ec49b1014891c7b494126226f95e318e1d3e82',
+         html: 'https://github.com/Runnable/compose-test-repo-1.2/blob/master/docker-compose.yml'
+       }
+    }
+    const triggeredAction = 'webhook'
+    const dockerComposeFileString = 'version: \'2\'\nservices:\n  web:\n    build: \'./src/\'\n    command: [node, index.js]\n    ports:\n      - "5000:5000"\n    environment:\n      - NODE_ENV=development\n      - SHOW=true\n      - HELLO=678\n'
+    const orgName = 'Runnable'
+    const ownerUsername = orgName.toLowerCase()
+    const repoName = 'api'
+    const repoFullName = orgName + '/' + repoName
+    const branchName = 'feature-1'
+    const newInstanceName = 'api-unit'
+    beforeEach(function (done) {
+      sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves(dockerComposeContent)
+      sinon.stub(octobear, 'parse').returns(testParsedContent)
+      sinon.stub(ClusterConfigService, 'createFromRunnableConfig').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      GitHub.prototype.getRepoContentAsync.restore()
+      octobear.parse.restore()
+      ClusterConfigService.createFromRunnableConfig.restore()
+      done()
+    })
+    describe('errors', function () {
+      it('should return error if getRepoContentAsync failed', function (done) {
+        const error = new Error('Some error')
+        GitHub.prototype.getRepoContentAsync.rejects(error)
+        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+
+      it('should return error if octobear.parse failed', function (done) {
+        const error = new Error('Some error')
+        octobear.parse.throws(error)
+        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+
+      it('should return error if createFromRunnableConfig failed', function (done) {
+        const error = new Error('Some error')
+        ClusterConfigService.createFromRunnableConfig.rejects(error)
+        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+        .asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+
+    })
+    describe('success', function () {
+      it('should run successfully', function (done) {
+        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName).asCallback(done)
+      })
+
+      it('should call getRepoContentAsync with correct args', function (done) {
+        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+        .tap(function () {
+          sinon.assert.calledOnce(GitHub.prototype.getRepoContentAsync)
+          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoFullName, filePath)
+        })
+        .asCallback(done)
+      })
+
+      it('should call octobear.parse with correct args', function (done) {
+        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+        .tap(function () {
+          sinon.assert.calledOnce(octobear.parse)
+          const parserPayload = {
+            dockerComposeFileString,
+            repositoryName: newInstanceName,
+            ownerUsername: ownerUsername,
+            userContentDomain: process.env.USER_CONTENT_DOMAIN
+          }
+          sinon.assert.calledWithExactly(octobear.parse, parserPayload)
+        })
+        .asCallback(done)
+      })
+
+      it('should call ClusterConfigService.createFromRunnableConfig with correct args', function (done) {
+        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+        .tap(function () {
+          sinon.assert.calledOnce(ClusterConfigService.createFromRunnableConfig)
+          sinon.assert.calledWithExactly(ClusterConfigService.createFromRunnableConfig,
+            testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath
+          )
+        })
+        .asCallback(done)
+      })
+
+
+      it('should call all the functions in the order', function (done) {
+        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, newInstanceName)
+        .tap(function () {
+          sinon.assert.callOrder(
+            GitHub.prototype.getRepoContentAsync,
+            octobear.parse,
+            ClusterConfigService.createFromRunnableConfig)
+        })
+        .asCallback(done)
+      })
+    })
+  })
+
   // describe('create', function () {
   //   const autoIsolationConfigId = objectId('107f191e810c19729de860ee')
   //   const clusterConfigId = objectId('407f191e810c19729de860ef')
