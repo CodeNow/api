@@ -31,5 +31,9 @@ describe('Input Cluster Config Model Tests', () => {
       expect(InputClusterConfig.findAllActive).to.exist()
       done()
     })
+    it('should have function assertFound', (done) => {
+      expect(InputClusterConfig.assertFound).to.exist()
+      done()
+    })
   })
 })
