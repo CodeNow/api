@@ -56,10 +56,7 @@ describe('AutoIsolationConfig Model Integration Tests', function () {
     beforeEach(function (done) {
       AutoIsolationConfig.createAsync(data)
         .tap(function (saved) {
-          expect(saved.instance).to.equal(data.instance)
-          expect(saved.requestedDependencies.length).to.equal(2)
-          expect(saved.created).to.exist()
-          expect(saved.deleted).to.not.exist()
+          expect(saved).to.exist()
           savedAutoIsolationConfig = saved
         }).asCallback(done)
     })
