@@ -42,13 +42,13 @@ describe('/docker-compose-cluster', function () {
     let reqMock
     const repo = 'octobear'
     const branch = 'master'
-    const dockerComposeFilePath = '/docker-compose.yml'
+    const filePath = '/docker-compose.yml'
     const name = 'super-cool-name'
     beforeEach(function (done) {
       createClusterStub = sinon.stub(rabbitMQ, 'createCluster')
       validateOrBoomStub = sinon.spy(joi, 'validateOrBoomAsync')
       reqMock = {
-        body: { repo, branch, dockerComposeFilePath, name },
+        body: { repo, branch, filePath, name },
         sessionUser: {
           accounts: { github: { id: sessionUserGithubId } }
         }
@@ -92,7 +92,7 @@ describe('/docker-compose-cluster', function () {
               triggeredAction: 'user',
               repoName: repo,
               branchName: branch,
-              dockerComposeFilePath,
+              filePath,
               newInstanceName: name
             })
           })
