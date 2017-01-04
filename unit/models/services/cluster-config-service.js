@@ -357,7 +357,8 @@ describe('Cluster Config Service Unit Tests', function () {
             instance: parentInstanceId,
             requestedDependencies: [
               {
-                instance: depInstanceId1
+                instance: depInstanceId1,
+                matchBranch: true
               }
             ]
           }
