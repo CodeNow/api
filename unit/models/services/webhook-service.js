@@ -209,6 +209,7 @@ describe('Webhook Service Unit Tests', function () {
       sinon.stub(Instance, 'findMasterPodsToAutoFork')
       sinon.stub(InstanceForkService, 'autoFork')
       sinon.stub(IsolationService, 'autoIsolate')
+      sinon.stub(rabbitMQ, 'forkInstance')
       done()
     })
     afterEach(function (done) {
@@ -216,6 +217,7 @@ describe('Webhook Service Unit Tests', function () {
       Instance.findMasterPodsToAutoFork.restore()
       InstanceForkService.autoFork.restore()
       IsolationService.autoIsolate.restore()
+      rabbitMQ.forkInstance.restore()
       done()
     })
     describe('validating errors', function () {
@@ -238,29 +240,6 @@ describe('Webhook Service Unit Tests', function () {
             done()
           })
       })
-      it('should reject if autoFork fails', function (done) {
-        var error = new Error('User is bad')
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
-        Instance.findMasterPodsToAutoFork.resolves(instances)
-        InstanceForkService.autoFork.rejects(error)
-        WebhookService.autoFork(contextIds, githubPushInfo)
-          .asCallback(function (err) {
-            expect(err).to.equal(error)
-            done()
-          })
-      })
-      it('should reject if autoIsolate fails', function (done) {
-        var error = new Error('User is bad')
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
-        Instance.findMasterPodsToAutoFork.resolves(instances)
-        InstanceForkService.autoFork.resolves(instances)
-        IsolationService.autoIsolate.rejects(error)
-        WebhookService.autoFork(contextIds, githubPushInfo)
-          .asCallback(function (err) {
-            expect(err).to.equal(error)
-            done()
-          })
-      })
     })
     describe('Successful runs', function () {
       var forkedInstances
@@ -275,19 +254,18 @@ describe('Webhook Service Unit Tests', function () {
       it('should skip autoFork when instance fetch returns null, then return null', function (done) {
         WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.resolves([])
-        InstanceForkService.autoFork.resolves([])
+        rabbitMQ.forkInstance.resolves()
         WebhookService.autoFork(contextIds, githubPushInfo)
           .then(function (instances) {
-            expect(instances).to.equal(null)
-            sinon.assert.notCalled(InstanceForkService.autoFork)
+            expect(instances).to.equal([])
+            sinon.assert.notCalled(rabbitMQ.forkInstance)
           })
           .asCallback(done)
       })
       it('should fetch the MasterPods with repo, branch, and contextIds', function (done) {
         WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.resolves(instances)
-        InstanceForkService.autoFork.resolves(forkedInstances)
-        IsolationService.autoIsolate.resolves()
+        rabbitMQ.forkInstance.resolves()
         WebhookService.autoFork(contextIds, githubPushInfo)
           .then(function () {
             sinon.assert.calledWith(
@@ -299,35 +277,26 @@ describe('Webhook Service Unit Tests', function () {
           })
           .asCallback(done)
       })
-      it('should attempt to autoFork all instances returned from findMasterPodsToAutoFork', function (done) {
+      it('should create an autoFork job for all instances returned from findMasterPodsToAutoFork', function (done) {
         WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.resolves(instances)
-        InstanceForkService.autoFork.resolves(forkedInstances)
-        IsolationService.autoIsolate.resolves()
+        rabbitMQ.forkInstance.resolves()
         WebhookService.autoFork(contextIds, githubPushInfo)
           .then(function () {
-            sinon.assert.calledOnce(InstanceForkService.autoFork)
+            sinon.assert.calledTwice(rabbitMQ.forkInstance)
             sinon.assert.calledWith(
-              InstanceForkService.autoFork,
-              instances,
-              githubPushInfo
+              rabbitMQ.forkInstance,
+              {
+                instance: instances[0],
+                pushInfo: githubPushInfo
+              }
             )
-          })
-          .asCallback(done)
-      })
-      it('should autoIsolate the new forked instances from autoFork, and return the forked instances', function (done) {
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
-        Instance.findMasterPodsToAutoFork.resolves(instances)
-        InstanceForkService.autoFork.resolves(forkedInstances)
-        IsolationService.autoIsolate.resolves()
-        WebhookService.autoFork(contextIds, githubPushInfo)
-          .then(function (instances) {
-            expect(instances).to.equal(forkedInstances)
-            sinon.assert.calledOnce(IsolationService.autoIsolate)
             sinon.assert.calledWith(
-              IsolationService.autoIsolate,
-              forkedInstances,
-              githubPushInfo
+              rabbitMQ.forkInstance,
+              {
+                instance: instances[1],
+                pushInfo: githubPushInfo
+              }
             )
           })
           .asCallback(done)

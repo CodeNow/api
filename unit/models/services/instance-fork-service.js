@@ -715,12 +715,12 @@ describe('InstanceForkService', function () {
   })
 
   describe('#autoFork', function () {
-    var instances
+    var instance
     var pushInfo = {}
     var mockTimer
 
     beforeEach(function (done) {
-      instances = []
+      instance = {}
       mockTimer = {
         stop: sinon.stub()
       }
@@ -740,17 +740,8 @@ describe('InstanceForkService', function () {
     })
 
     describe('errors', function () {
-      it('should make sure instances is an array', function (done) {
-        InstanceForkService.autoFork('').asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.match(/instances.+array/i)
-          sinon.assert.notCalled(InstanceForkService._forkOne)
-          done()
-        })
-      })
-
       it('should require pushInfo to exist', function (done) {
-        InstanceForkService.autoFork(instances).asCallback(function (err) {
+        InstanceForkService.autoFork(instance).asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.match(/autoFork.+requires.+pushInfo/i)
           sinon.assert.notCalled(InstanceForkService._forkOne)
@@ -759,16 +750,8 @@ describe('InstanceForkService', function () {
       })
     })
 
-    it('should not fork anything with an empty array', function (done) {
-      InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.notCalled(InstanceForkService._forkOne)
-        done()
-      })
-    })
-
     it('should increment auto_fork counter', function (done) {
-      InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err) {
+      InstanceForkService.autoFork(instance, pushInfo).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(monitorDog.increment)
         sinon.assert.calledWithExactly(
@@ -779,53 +762,25 @@ describe('InstanceForkService', function () {
       })
     })
 
-    it('should fork all given instances', function (done) {
-      var i = {}
-      instances.push(i)
-      InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err) {
+    it('should fork given instance', function (done) {
+      InstanceForkService.autoFork(instance, pushInfo).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(InstanceForkService._forkOne)
         sinon.assert.calledWithExactly(
           InstanceForkService._forkOne,
-          i,
+          instance,
           pushInfo
         )
-        done()
-      })
-    })
-
-    it('should collect all results in an array and return them', function (done) {
-      var one = {}
-      var two = {}
-      instances.push(one, two)
-      InstanceForkService._forkOne.onFirstCall().resolves(1)
-      InstanceForkService._forkOne.onSecondCall().resolves(2)
-      InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
-        expect(err).to.not.exist()
-        sinon.assert.calledTwice(InstanceForkService._forkOne)
-        sinon.assert.calledWithExactly(
-          InstanceForkService._forkOne,
-          one,
-          pushInfo
-        )
-        sinon.assert.calledWithExactly(
-          InstanceForkService._forkOne,
-          two,
-          pushInfo
-        )
-        expect(results).to.equal([ 1, 2 ])
         done()
       })
     })
 
     it('should silence any errors from forking', function (done) {
-      instances.push({}, {})
       var error = new Error('robot')
-      InstanceForkService._forkOne.onFirstCall().resolves(1)
-      InstanceForkService._forkOne.onSecondCall().rejects(error)
-      InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
+      InstanceForkService._forkOne.onFirstCall().rejects(error)
+      InstanceForkService.autoFork(instance, pushInfo).asCallback(function (err, results) {
         expect(err).to.not.exist()
-        expect(results).to.equal([ 1 ])
+        expect(results).to.be.undefined()
         sinon.assert.calledOnce(Bunyan.prototype.error)
         sinon.assert.calledWithExactly(
           Bunyan.prototype.error,
@@ -837,27 +792,15 @@ describe('InstanceForkService', function () {
     })
 
     it('should time the process for forking', function (done) {
-      instances.push({}, {})
-      InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
+      InstanceForkService.autoFork(instance, pushInfo).asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.called(monitorDog.timer)
         sinon.assert.called(mockTimer.stop)
         sinon.assert.callOrder(
           monitorDog.timer,
           InstanceForkService._forkOne,
-          InstanceForkService._forkOne,
           mockTimer.stop
         )
-        done()
-      })
-    })
-
-    it('should filter out null instances', function (done) {
-      InstanceForkService._forkOne.onCall(0).rejects(new Error('wow'))
-      InstanceForkService._forkOne.onCall(1).resolves(null)
-      InstanceForkService.autoFork(instances, pushInfo).asCallback(function (err, results) {
-        expect(err).to.not.exist()
-        expect(results).to.equal([])
         done()
       })
     })
