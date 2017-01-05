@@ -85,14 +85,9 @@ describe('Cluster Create Worker', function () {
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(ClusterConfigService.create)
-          sinon.assert.calledWithExactly(ClusterConfigService.create,
-            sessionUser,
-            testData.triggeredAction,
-            testData.repoFullName,
-            testData.branchName,
-            testData.filePath,
-            testData.isTesting,
-            testData.newInstanceName)
+          const data = Object.assign({}, testData)
+          delete data.sessionUserGithubId
+          sinon.assert.calledWithExactly(ClusterConfigService.create, sessionUser, data)
           done()
         })
       })

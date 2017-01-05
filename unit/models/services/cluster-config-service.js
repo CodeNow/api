@@ -147,6 +147,10 @@ describe('Cluster Config Service Unit Tests', function () {
     const branchName = 'feature-1'
     const newInstanceName = 'api-unit'
 
+    const testData = {
+      triggeredAction, repoFullName, branchName, filePath, isTesting, newInstanceName
+    }
+
     beforeEach(function (done) {
       sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves(dockerComposeContent)
       sinon.stub(octobear, 'parse').returns(testParsedContent)
@@ -163,7 +167,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if getRepoContentAsync failed', function (done) {
         const error = new Error('Some error')
         GitHub.prototype.getRepoContentAsync.rejects(error)
-        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, isTesting, newInstanceName)
+        ClusterConfigService.create(testSessionUser, testData)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -174,7 +178,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if octobear.parse failed', function (done) {
         const error = new Error('Some error')
         octobear.parse.throws(error)
-        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, isTesting, newInstanceName)
+        ClusterConfigService.create(testSessionUser, testData)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -185,7 +189,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if createFromRunnableConfig failed', function (done) {
         const error = new Error('Some error')
         ClusterConfigService.createFromRunnableConfig.rejects(error)
-        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, isTesting, newInstanceName)
+        ClusterConfigService.create(testSessionUser, testData)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -196,11 +200,11 @@ describe('Cluster Config Service Unit Tests', function () {
     })
     describe('success', function () {
       it('should run successfully', function (done) {
-        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, isTesting, newInstanceName).asCallback(done)
+        ClusterConfigService.create(testSessionUser, testData).asCallback(done)
       })
 
       it('should call getRepoContentAsync with correct args', function (done) {
-        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, isTesting, newInstanceName)
+        ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
           sinon.assert.calledOnce(GitHub.prototype.getRepoContentAsync)
           sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoFullName, filePath)
@@ -209,7 +213,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call octobear.parse with correct args', function (done) {
-        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, isTesting, newInstanceName)
+        ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
           sinon.assert.calledOnce(octobear.parse)
           const parserPayload = {
@@ -224,7 +228,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call ClusterConfigService.createFromRunnableConfig with correct args', function (done) {
-        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, isTesting, newInstanceName)
+        ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
           sinon.assert.calledOnce(ClusterConfigService.createFromRunnableConfig)
           sinon.assert.calledWithExactly(ClusterConfigService.createFromRunnableConfig,
@@ -236,7 +240,7 @@ describe('Cluster Config Service Unit Tests', function () {
 
 
       it('should call all the functions in the order', function (done) {
-        ClusterConfigService.create(testSessionUser, triggeredAction, repoFullName, branchName, filePath, isTesting, newInstanceName)
+        ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
           sinon.assert.callOrder(
             GitHub.prototype.getRepoContentAsync,
