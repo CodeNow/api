@@ -1636,7 +1636,7 @@ describe('Isolation Services Model', function () {
 
     beforeEach(function (done) {
       sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
-      sinon.stub(AutoIsolationConfig, 'findOne').yieldsAsync(null, mockAIC)
+      sinon.stub(AutoIsolationConfig, 'findActiveByInstanceId').resolves(mockAIC)
       sinon.stub(User, 'findByGithubId').yieldsAsync(new Error('nope'))
         .withArgs(1).yieldsAsync(null, mockInstanceUser)
         .withArgs(2).yieldsAsync(null, mockPushUser)
@@ -1646,7 +1646,7 @@ describe('Isolation Services Model', function () {
 
     afterEach(function (done) {
       Instance.findOne.restore()
-      AutoIsolationConfig.findOne.restore()
+      AutoIsolationConfig.findActiveByInstanceId.restore()
       User.findByGithubId.restore()
       IsolationService.createIsolationAndEmitInstanceUpdates.restore()
       done()
@@ -1670,11 +1670,9 @@ describe('Isolation Services Model', function () {
       IsolationService.autoIsolate(newInstances, pushInfo)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(AutoIsolationConfig.findOne)
+          sinon.assert.calledOnce(AutoIsolationConfig.findActiveByInstanceId)
           sinon.assert.calledWithExactly(
-            AutoIsolationConfig.findOne,
-            { instance: 'foobar' },
-            sinon.match.func
+            AutoIsolationConfig.findActiveByInstanceId, 'foobar'
           )
           done()
         })
@@ -1732,7 +1730,7 @@ describe('Isolation Services Model', function () {
         matchBranch: true
       }
       var mockAIC = { requestedDependencies: [ child ] }
-      AutoIsolationConfig.findOne.yieldsAsync(null, mockAIC)
+      AutoIsolationConfig.findActiveByInstanceId.resolves(mockAIC)
 
       IsolationService.autoIsolate(newInstances, pushInfo)
       .asCallback(function (err) {
@@ -1756,7 +1754,7 @@ describe('Isolation Services Model', function () {
 
     it('should copy over redeployOnKilled flag', function (done) {
       mockAIC.redeployOnKilled = true
-      AutoIsolationConfig.findOne.yieldsAsync(null, mockAIC)
+      AutoIsolationConfig.findActiveByInstanceId.resolves(mockAIC)
       IsolationService.autoIsolate(newInstances, pushInfo)
         .asCallback(function (err) {
           expect(err).to.not.exist()

@@ -9,24 +9,24 @@ if (process.env.NEW_RELIC_LICENSE_KEY) {
   require('newrelic')
 }
 
-var cluster = require('cluster')
-var createCount = require('callback-count')
+const cluster = require('cluster')
+const createCount = require('callback-count')
 
-var ApiServer = require('server')
-var dogstatsd = require('models/datadog')
-var envIs = require('101/env-is')
-var error = require('error')
-var keyGen = require('key-generator')
-var logger = require('middlewares/logger')(__filename)
-var mongooseControl = require('models/mongo/mongoose-control')
-var noop = require('101/noop')
-var redisClient = require('models/redis')
-var redisPubSub = require('models/redis/pubsub')
+const ApiServer = require('server')
+const envIs = require('101/env-is')
+const error = require('error')
+const keyGen = require('key-generator')
+const logger = require('middlewares/logger')(__filename)
+const mongooseControl = require('models/mongo/mongoose-control')
+const monitor = require('monitor-dog')
+const noop = require('101/noop')
+const redisClient = require('models/redis')
+const redisPubSub = require('models/redis/pubsub')
 
-var log = logger.log
+const log = logger.log
 
 // express server, handles web HTTP requests
-var apiServer = new ApiServer()
+const apiServer = new ApiServer()
 
 /**
  * @class
@@ -52,7 +52,7 @@ Api.prototype.start = function (cb) {
   // start github ssh key generator
   keyGen.start(count.inc().next)
   // start sending socket count
-  dogstatsd.monitorStart()
+  monitor.startSocketsMonitor()
   // connect to mongoose
   mongooseControl.start(count.inc().next)
   // express server start
@@ -91,7 +91,7 @@ Api.prototype.stop = function (cb) {
   // stop github ssh key generator
   keyGen.stop(count.inc().next)
   // stop sending socket count
-  dogstatsd.monitorStop()
+  monitor.stopSocketsMonitor()
   // express server
   apiServer.stop(count.inc().next)
 

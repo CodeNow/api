@@ -218,7 +218,9 @@ describe('ContainerImageBuilderCreate unit test', function () {
 
         beforeEach(function (done) {
           BuildService.updateFailedBuild.resolves()
-          ContextVersion.findOneCreating.rejects(new ContextVersion.IncorrectStateError('funning', {}))
+          ContextVersion.findOneCreating.rejects(new ContextVersion.IncorrectStateError('funning', {
+            state: 'not funning'
+          }))
           Worker.task(validJob).asCallback(function (err) {
             rejectError = err
             done()
@@ -232,7 +234,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
         })
 
         it('should set the correct error message', function (done) {
-          expect(rejectError.message).to.match(/ContextVersion not in correct state/)
+          expect(rejectError.message).to.match(/ContextVersion.*funning.*not funning/)
           done()
         })
 
