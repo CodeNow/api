@@ -19,6 +19,7 @@ describe('InputClusterConfig Model Integration Tests', function () {
   const autoIsolationConfigId = '507f191e810c19729de860ea'
   const data = {
     filePath: '/config/compose.yml',
+    fileSha: 'asdasdsasadasdasdsadsadas',
     autoIsolationConfigId: objectId(autoIsolationConfigId),
     createdByUser: 123123,
     ownedByOrg: 1
@@ -76,6 +77,15 @@ describe('InputClusterConfig Model Integration Tests', function () {
       InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.errors.filePath.message).to.equal('Input Cluster Config requires file path')
+        done()
+      })
+    })
+    it('should fail if fileSha is not valid', function (done) {
+      const invalidData = Object.assign({}, data)
+      invalidData.fileSha = null
+      InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.errors.fileSha.message).to.equal('Input Cluster Config requires a sha')
         done()
       })
     })
