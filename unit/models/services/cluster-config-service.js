@@ -366,6 +366,31 @@ describe('Cluster Config Service Unit Tests', function () {
         .asCallback(done)
       })
 
+      it('should call AutoIsolationService.createAndEmit correct args and set matchBranch', function (done) {
+        const depParsedContent = Object.assign({}, testDepParsedContent)
+        delete depParsedContent.files
+        const parsedContent = {
+          results: [testMainParsedContent, depParsedContent]
+        }
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, parsedContent, triggeredAction, repoFullName, filePath)
+          .tap(function () {
+            sinon.assert.calledOnce(AutoIsolationService.createAndEmit)
+            const autoIsolationOpts = {
+              createdByUser: testSessionUser.bigPoppaUser.id,
+              ownedByOrg: testOrg.id,
+              instance: parentInstanceId,
+              requestedDependencies: [
+                {
+                  instance: depInstanceId1,
+                  matchBranch: true
+                }
+              ]
+            }
+            sinon.assert.calledWithExactly(AutoIsolationService.createAndEmit, autoIsolationOpts)
+          })
+          .asCallback(done)
+      })
+
       it('should call InputClusterConfig.createAsync with correct args', function (done) {
         ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath)
         .tap(function () {
