@@ -28,6 +28,7 @@ describe('Cluster Create Worker', function () {
       repoFullName: 'Runnable/api',
       branchName: 'feature-1',
       filePath: 'compose.yml',
+      isTesting: true,
       newInstanceName: 'api'
     }
     const sessionUser = {
@@ -88,7 +89,10 @@ describe('Cluster Create Worker', function () {
             sessionUser,
             testData.triggeredAction,
             testData.repoFullName,
-            testData.branchName, testData.filePath, testData.newInstanceName)
+            testData.branchName,
+            testData.filePath,
+            testData.isTesting,
+            testData.newInstanceName)
           done()
         })
       })
