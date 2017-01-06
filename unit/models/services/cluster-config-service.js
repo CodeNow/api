@@ -1174,4 +1174,79 @@ describe('Cluster Config Service Unit Tests', function () {
       done()
     })
   }) // end _isConfigMissingInstance
+
+  describe('fetchConfigByInstanceId', function () {
+    const autoIsolationConfigId = objectId('107f191e810c19729de860ee')
+    const clusterConfigId = objectId('407f191e810c19729de860ef')
+    const parentInstanceId = objectId('507f191e810c19729de860ea')
+    const depInstanceId1 = objectId('607f191e810c19729de860eb')
+    const filePath = 'config/compose.yml'
+    const composeConfigData = {
+      _id: clusterConfigId,
+      autoIsolationConfigId: autoIsolationConfigId,
+      filePath: filePath
+    }
+
+    const autoIsolationConfigData = {
+      _id: autoIsolationConfigId,
+      instance: parentInstanceId,
+      requestedDependencies: [
+        {
+          instance: depInstanceId1
+        }
+      ]
+    }
+
+    beforeEach(function (done) {
+      sinon.stub(InputClusterConfig, 'findActiveByAutoIsolationId').resolves(new InputClusterConfig(composeConfigData))
+      sinon.stub(AutoIsolationConfig, 'findActiveByInstanceId').resolves(new AutoIsolationConfig(autoIsolationConfigData))
+      done()
+    })
+    afterEach(function (done) {
+      InputClusterConfig.findActiveByAutoIsolationId.restore()
+      AutoIsolationConfig.findActiveByInstanceId.restore()
+      done()
+    })
+    describe('errors', function () {
+      it('should return error if findActiveByAutoIsolationId failed', function (done) {
+        const error = new Error('Some error')
+        InputClusterConfig.findActiveByAutoIsolationId.rejects(error)
+        ClusterConfigService.fetchConfigByInstanceId(parentInstanceId)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should return error if findActiveByInstanceId failed', function (done) {
+        const error = new Error('Some error')
+        AutoIsolationConfig.findActiveByInstanceId.rejects(error)
+        ClusterConfigService.fetchConfigByInstanceId(parentInstanceId)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+    })
+
+    describe('success', function () {
+      it('should run successfully', function (done) {
+        ClusterConfigService.fetchConfigByInstanceId(parentInstanceId).asCallback(done)
+      })
+
+      it('should call InputClusterConfig.findActiveByAutoIsolationId with isolation id from the instance', function (done) {
+        ClusterConfigService.fetchConfigByInstanceId(parentInstanceId)
+          .tap(function () {
+            sinon.assert.calledOnce(InputClusterConfig.findActiveByAutoIsolationId)
+            sinon.assert.calledWithExactly(
+              InputClusterConfig.findActiveByAutoIsolationId,
+              autoIsolationConfigId
+            )
+          })
+          .asCallback(done)
+      })
+    })
+  })
 })
