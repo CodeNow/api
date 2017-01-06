@@ -28,6 +28,7 @@ describe('Cluster Create Worker', function () {
       repoFullName: 'Runnable/api',
       branchName: 'feature-1',
       filePath: 'compose.yml',
+      isTesting: true,
       newInstanceName: 'api'
     }
     const sessionUser = {
@@ -84,11 +85,9 @@ describe('Cluster Create Worker', function () {
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(ClusterConfigService.create)
-          sinon.assert.calledWithExactly(ClusterConfigService.create,
-            sessionUser,
-            testData.triggeredAction,
-            testData.repoFullName,
-            testData.branchName, testData.filePath, testData.newInstanceName)
+          const data = Object.assign({}, testData)
+          delete data.sessionUserGithubId
+          sinon.assert.calledWithExactly(ClusterConfigService.create, sessionUser, data)
           done()
         })
       })
