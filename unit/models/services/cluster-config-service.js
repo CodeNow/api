@@ -349,7 +349,7 @@ describe('Cluster Config Service Unit Tests', function () {
             testSessionUser,
             testParsedContent.results[1],
             repoFullName,
-            isTesting,
+            false,
             triggeredAction)
         })
         .asCallback(done)
