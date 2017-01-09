@@ -19,7 +19,7 @@ require('sinon-as-promised')(Promise)
 var messenger = require('socket/messenger')
 var BigPoppaClient = require('@runnable/big-poppa-client')
 var bigPoppaClient = new BigPoppaClient(process.env.BIG_POPPA_HOST)
-var Worker = require('workers/organization.invoice.pay')
+var Worker = require('workers/invoice.payment_succeeded')
 
 var testJob = {
   invoice: {
@@ -34,7 +34,7 @@ var testOrganization = {
   githubId: 'hey hey my my'
 }
 
-describe('Organization Invoice Pay Worker', function () {
+describe('invoice.payment_succeeded Worker', function () {
   beforeEach(function (done) {
     sinon.stub(messenger, 'messageRoom').resolves('yes')
     sinon.stub(BigPoppaClient.prototype, 'getOrganization').resolves(testOrganization)
@@ -52,7 +52,7 @@ describe('Organization Invoice Pay Worker', function () {
         Worker.task(testJob).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(bigPoppaClient.getOrganization)
-          sinon.assert.calledWith(messenger.messageRoom, 'org', testOrganization.githubId, { task: 'organization.invoice.pay' })
+          sinon.assert.calledWith(messenger.messageRoom, 'org', testOrganization.githubId, { task: 'invoice.payment_succeeded' })
           done()
         })
       })
