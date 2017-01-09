@@ -1628,7 +1628,6 @@ describe('Isolation Services Model', function () {
       parent: 'parentId',
       createdBy: { github: 1 }
     }
-    var newInstances = [ mockInstance ]
     var mockAIC = { requestedDependencies: [] }
     var mockInstanceUser = { user: 1 }
     var mockPushUser = { user: 2 }
@@ -1653,7 +1652,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should find each instance', function (done) {
-      IsolationService.autoIsolate(newInstances, pushInfo)
+      IsolationService.autoIsolate(mockInstance, pushInfo)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findOne)
@@ -1667,7 +1666,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should look for auto isolation config', function (done) {
-      IsolationService.autoIsolate(newInstances, pushInfo)
+      IsolationService.autoIsolate(mockInstance, pushInfo)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(AutoIsolationConfig.findActiveByInstanceId)
@@ -1679,7 +1678,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should find a user from the instance', function (done) {
-      IsolationService.autoIsolate(newInstances, pushInfo)
+      IsolationService.autoIsolate(mockInstance, pushInfo)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(User.findByGithubId)
@@ -1693,7 +1692,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should find a user from the push info', function (done) {
-      IsolationService.autoIsolate(newInstances, pushInfo)
+      IsolationService.autoIsolate(mockInstance, pushInfo)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledTwice(User.findByGithubId)
@@ -1707,7 +1706,7 @@ describe('Isolation Services Model', function () {
     })
 
     it('should find a user from the push info', function (done) {
-      IsolationService.autoIsolate(newInstances, pushInfo)
+      IsolationService.autoIsolate(mockInstance, pushInfo)
       .asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(IsolationService.createIsolationAndEmitInstanceUpdates)
@@ -1732,7 +1731,7 @@ describe('Isolation Services Model', function () {
       var mockAIC = { requestedDependencies: [ child ] }
       AutoIsolationConfig.findActiveByInstanceId.resolves(mockAIC)
 
-      IsolationService.autoIsolate(newInstances, pushInfo)
+      IsolationService.autoIsolate(mockInstance, pushInfo)
       .asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(IsolationService.createIsolationAndEmitInstanceUpdates)
@@ -1755,7 +1754,7 @@ describe('Isolation Services Model', function () {
     it('should copy over redeployOnKilled flag', function (done) {
       mockAIC.redeployOnKilled = true
       AutoIsolationConfig.findActiveByInstanceId.resolves(mockAIC)
-      IsolationService.autoIsolate(newInstances, pushInfo)
+      IsolationService.autoIsolate(mockInstance, pushInfo)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(IsolationService.createIsolationAndEmitInstanceUpdates)
