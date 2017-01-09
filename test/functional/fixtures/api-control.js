@@ -54,7 +54,7 @@ var publishedEvents = [
   'instance.expired',
   'instance.started',
   'organization.payment-method.added',
-  'organization.invoice.pay'
+  'stripe.invoice.payment-succeeded'
 ]
 
 var opts = {
