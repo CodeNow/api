@@ -22,11 +22,14 @@ var bigPoppaClient = new BigPoppaClient(process.env.BIG_POPPA_HOST)
 var Worker = require('workers/stripe.invoice.payment-succeeded')
 
 var testJob = {
-  invoice: {
-    id: '90210'
-  },
-  organization: {
-    id: 1486
+  id: 3,
+  type: 'stripe.invoice.payment-succeeded',
+  data: {
+    object: {
+      object : 'hello',
+      customer : 'Francis',
+      subscription: 'dsn2efkj2'
+    }
   }
 }
 
