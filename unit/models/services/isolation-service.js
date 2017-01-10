@@ -1628,6 +1628,11 @@ describe('Isolation Services Model', function () {
       parent: 'parentId',
       createdBy: { github: 1 }
     }
+    var mockInstance1 = {
+      _id: 'foobar1',
+      parent: 'parentId1',
+      createdBy: { github: 1 }
+    }
     var newInstances = [ mockInstance ]
     var mockAIC = { requestedDependencies: [] }
     var mockInstanceUser = { user: 1 }
@@ -1706,7 +1711,24 @@ describe('Isolation Services Model', function () {
         })
     })
 
-    it('should find a user from the push info', function (done) {
+
+    it('should find a user from the push info for the second aic even if the first one was not found', function (done) {
+      AutoIsolationConfig.findActiveByInstanceId.onCall(0).rejects(new AutoIsolationConfig.NotFoundError('Not found'))
+      IsolationService.autoIsolate([ mockInstance, mockInstance1 ], pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(User.findByGithubId)
+          sinon.assert.calledWithExactly(
+            User.findByGithubId,
+            2,
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+
+    it('should create isolation', function (done) {
       IsolationService.autoIsolate(newInstances, pushInfo)
       .asCallback(function (err) {
         expect(err).to.not.exist()
