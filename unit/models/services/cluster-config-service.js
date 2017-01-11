@@ -15,7 +15,6 @@ const sinon = require('sinon')
 
 const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 const AutoIsolationService = require('models/services/auto-isolation-service')
-const BaseSchema = require('models/mongo/schemas/base')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
 const ClusterConfigService = require('models/services/cluster-config-service')
 const rabbitMQ = require('models/rabbitmq')
@@ -1417,7 +1416,7 @@ describe('Cluster Config Service Unit Tests', function () {
           .then(function () {
             done(new Error('Expecting NotFoundError'))
           })
-          .catch(BaseSchema.NotFoundError, function () {
+          .catch(InputClusterConfig.NotFoundError, function () {
             done()
           })
       })
