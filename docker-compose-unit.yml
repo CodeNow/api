@@ -1,0 +1,12 @@
+version: '2'
+services:
+  unit:
+    build:
+      context: .
+      dockerfile: Dockerfile_unit
+    links:
+      - 'redis'
+    environment:
+      - REDIS_IPADDRESS=redis
+  redis:
+    image: redis:3.2
