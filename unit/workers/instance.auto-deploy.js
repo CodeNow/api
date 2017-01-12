@@ -41,7 +41,6 @@ describe('Workers: Instance Auto Deploy', function () {
     pushInfo: githubPushInfo
   }
 
-
   beforeEach(function (done) {
     testInstance = new Instance({
       _id: testInstanceId,
