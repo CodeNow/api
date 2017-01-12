@@ -1410,13 +1410,13 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService.checkIfComposeFileHasChanged(instanceId, githubPushInfo)
           .asCallback(done)
       })
-      it('should return BaseSchema.NotFoundError if shas match', function (done) {
+      it('should return InputClusterConfig.NotChangedError if shas match', function (done) {
         ClusterConfigService.fetchComposeFileFromGithub.resolves(clusterConfig)
         ClusterConfigService.checkIfComposeFileHasChanged(instanceId, githubPushInfo)
           .then(function () {
-            done(new Error('Expecting NotFoundError'))
+            done(new Error('Expecting NotChangedError'))
           })
-          .catch(InputClusterConfig.NotFoundError, function () {
+          .catch(InputClusterConfig.NotChangedError, function () {
             done()
           })
       })
