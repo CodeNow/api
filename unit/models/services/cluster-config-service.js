@@ -904,16 +904,18 @@ describe('Cluster Config Service Unit Tests', function () {
   //   })
   // })
 
-  describe('_updateAndRebuildInstancesWithConfigs', () => {
+  describe('_updateInstancesWithConfigs', () => {
     let instanceMock
     let testConfig
+    let sessionUser
     beforeEach((done) => {
+      sessionUser = {}
       testConfig = {
-        env: 'env',
+        env: ['env'],
+        ports: [123],
         containerStartCommand: 'start',
         name: 'NewName'
       }
-
       instanceMock = {
         _id: 1,
         updateAsync: sinon.stub().resolves(),
@@ -922,52 +924,31 @@ describe('Cluster Config Service Unit Tests', function () {
           instance: testConfig
         }
       }
-      sinon.stub(rabbitMQ, 'publishInstanceRebuild')
+      sinon.stub(InstanceService, 'updateInstance').resolves(instanceMock)
       done()
     })
 
     afterEach((done) => {
-      rabbitMQ.publishInstanceRebuild.restore()
+      InstanceService.updateInstance.restore()
       done()
     })
 
     it('should update instance if it has new config', (done) => {
-      ClusterConfigService._updateAndRebuildInstancesWithConfigs(instanceMock)
-      .then(() => {
-        sinon.assert.calledOnce(instanceMock.updateAsync)
-        sinon.assert.calledWith(instanceMock.updateAsync, {
-          $set: {
-            env: testConfig.env,
-            containerStartCommand: testConfig.containerStartCommand
-          }
+      ClusterConfigService._updateInstancesWithConfigs(sessionUser, instanceMock)
+        .then(() => {
+          sinon.assert.calledOnce(InstanceService.updateInstance)
+          sinon.assert.calledWith(InstanceService.updateInstance,
+            instanceMock, {
+              env: testConfig.env,
+              ports: testConfig.ports,
+              containerStartCommand: testConfig.containerStartCommand
+            },
+            sessionUser
+          )
         })
-
-        sinon.assert.calledOnce(rabbitMQ.publishInstanceRebuild)
-        sinon.assert.calledWith(rabbitMQ.publishInstanceRebuild, {
-          instanceId: instanceMock._id
-        })
-      })
-      .asCallback(done)
+        .asCallback(done)
     })
-
-    it('should not update instance if it has no config', (done) => {
-      delete instanceMock.config
-
-      ClusterConfigService._updateAndRebuildInstancesWithConfigs(instanceMock)
-      sinon.assert.notCalled(instanceMock.updateAsync)
-      sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
-      done()
-    })
-
-    it('should not update instance if it has no name', (done) => {
-      delete instanceMock.name
-
-      ClusterConfigService._updateAndRebuildInstancesWithConfigs(instanceMock)
-      sinon.assert.notCalled(instanceMock.updateAsync)
-      sinon.assert.notCalled(rabbitMQ.publishInstanceRebuild)
-      done()
-    })
-  }) // end _updateAndRebuildInstancesWithConfigs
+  }) // end _updateInstancesWithConfigs
 
   // describe('updateCluster', () => {
   //   beforeEach((done) => {
@@ -1061,32 +1042,6 @@ describe('Cluster Config Service Unit Tests', function () {
   //     .asCallback(done)
   //   })
   // }) // end updateCluster
-
-  describe('_deleteInstanceIfMissingConfig', () => {
-    beforeEach((done) => {
-      sinon.stub(rabbitMQ, 'deleteInstance')
-      done()
-    })
-
-    afterEach((done) => {
-      rabbitMQ.deleteInstance.restore()
-      done()
-    })
-
-    it('should call delete if instance does not have a config', (done) => {
-      const testId = 1
-      ClusterConfigService._deleteInstanceIfMissingConfig({ _id: testId })
-      sinon.assert.calledOnce(rabbitMQ.deleteInstance)
-      sinon.assert.calledWith(rabbitMQ.deleteInstance, { instanceId: testId })
-      done()
-    })
-
-    it('should not call delete if instance has a config', (done) => {
-      ClusterConfigService._deleteInstanceIfMissingConfig({ config: {} })
-      sinon.assert.notCalled(rabbitMQ.deleteInstance)
-      done()
-    })
-  }) // end _deleteInstanceIfMissingConfig
 
   // describe('_createNewInstancesForNewConfigs', () => {
   //   beforeEach((done) => {
