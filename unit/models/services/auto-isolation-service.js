@@ -16,6 +16,7 @@ require('sinon-as-promised')(Promise)
 
 const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 const AutoIsolationService = require('models/services/auto-isolation-service')
+const Instance = require('models/mongo/instance')
 
 const rabbitMQ = require('models/rabbitmq')
 const octobear = require('@runnable/octobear')
@@ -122,6 +123,89 @@ describe('AutoIsolationService', () => {
           sinon.assert.callOrder(AutoIsolationConfig.createAsync, rabbitMQ.autoIsolationConfigCreated)
         })
         .asCallback(done)
+      })
+    })
+  })
+
+  describe('fetchAutoIsolationDependentInstances', () => {
+    let mockAutoIsolationConfig = {
+      instance,
+      requestedDependencies,
+      createdByUser,
+      ownedByOrg
+    }
+    beforeEach((done) => {
+      sinon.stub(AutoIsolationConfig, 'findActiveByInstanceId').resolves(mockAutoIsolationConfig)
+      sinon.stub(Instance, 'findByIdAsync', function (instanceId) {
+        return Promise.resolve({
+          _id: instanceId
+        })
+      })
+      done()
+    })
+    afterEach((done) => {
+      AutoIsolationConfig.findActiveByInstanceId.restore()
+      Instance.findByIdAsync.restore()
+      done()
+    })
+    describe('errors', () => {
+      it('should fail if AutoIsolationConfig.findActiveByInstanceId failed', (done) => {
+        const error = new Error('Some error')
+        AutoIsolationConfig.findActiveByInstanceId.rejects(error)
+        AutoIsolationService.fetchAutoIsolationDependentInstances(instance)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should fail if Instance.findByIdAsync failed', (done) => {
+        const error = new Error('Some error')
+        Instance.findByIdAsync.restore()
+        sinon.stub(Instance, 'findByIdAsync').rejects(error)
+        AutoIsolationService.fetchAutoIsolationDependentInstances(instance)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+    })
+
+    describe('success', () => {
+      it('should pass without failure', (done) => {
+        AutoIsolationService.fetchAutoIsolationDependentInstances(instance)
+          .asCallback(function (err) {
+            expect(err).to.not.exist()
+            done()
+          })
+      })
+      it('should resolve with an instance for each dep', (done) => {
+        AutoIsolationService.fetchAutoIsolationDependentInstances(instance)
+          .then(function (instances) {
+            expect(instances.length).to.equal(2)
+            sinon.assert.calledTwice(Instance.findByIdAsync)
+            sinon.assert.calledWith(Instance.findByIdAsync, requestedDependencies[0].instance)
+            sinon.assert.calledWith(Instance.findByIdAsync, requestedDependencies[1].instance)
+          })
+          .asCallback(done)
+      })
+      it('should filter out a dep without an instanceId', (done) => {
+        const changedDeps = [
+          { instance: objectId('107f191e810c19729de860ef') }, {}
+        ]
+        AutoIsolationConfig.findActiveByInstanceId.resolves({
+          instance,
+          requestedDependencies: changedDeps
+        })
+        AutoIsolationService.fetchAutoIsolationDependentInstances(instance)
+          .then(function (instances) {
+            expect(instances.length).to.equal(1)
+            sinon.assert.calledOnce(Instance.findByIdAsync)
+            sinon.assert.calledWith(Instance.findByIdAsync, changedDeps[0].instance)
+          })
+          .asCallback(done)
       })
     })
   })
