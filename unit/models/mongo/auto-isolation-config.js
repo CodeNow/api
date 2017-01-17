@@ -131,7 +131,10 @@ describe('Auto Isolation Config Model Tests', function () {
           expect(config).to.equal(model)
           sinon.assert.calledOnce(AutoIsolationConfig.updateAsync)
           const query = {
-            instance: objectId(modelId)
+            instance: objectId(modelId),
+            deleted: {
+              $exists: false
+            }
           }
           const $set = {
             requestedDependencies: requestedDeps
