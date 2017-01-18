@@ -1089,8 +1089,8 @@ describe('Cluster Config Service Unit Tests', function () {
         [{name: '1'}, {name: '2'}]
       )
       expect(out).to.equal([
-        {name: '1', config: {instance: {name: '1'}}},
-        {name: '2', config: undefined},
+        {instance: { name: '1'}, config: {instance: {name: '1'}}},
+        {instance: { name: '2'}, config: undefined},
         {config: {instance: {name: '4'}}}
       ])
       done()
@@ -1103,7 +1103,10 @@ describe('Cluster Config Service Unit Tests', function () {
         [{instance: {name: '1'}}, {instance: {name: '4'}}],
         [{name: '1'}, {name: '2'}]
       )
-      expect(out).to.equal([{name: '1', config: {instance: {name: '1'}}}, {name: '2', config: undefined}])
+      expect(out).to.equal([
+        { instance: { name: '1'}, config: { instance: { name: '1'}}},
+        { instance: { name: '2'}, config: undefined}
+      ])
       done()
     })
   }) // end _addConfigToInstances
@@ -1112,9 +1115,9 @@ describe('Cluster Config Service Unit Tests', function () {
     it('should add missing configs to array', (done) => {
       const out = ClusterConfigService._addMissingConfigs(
         [{instance: {name: '1'}}, {instance: {name: '4'}}],
-        [{name: '1'}, {name: '2'}]
+        [{instance: {name: '1'}}, {instance: {name: '2'}}]
       )
-      expect(out).to.equal([{name: '1'}, {name: '2'}, {config: {instance: {name: '4'}}}])
+      expect(out).to.equal([{instance: {name: '1'}}, {instance: {name: '2'}}, {config: {instance: {name: '4'}}}])
       done()
     })
   }) // end _addMissingConfigs
@@ -1122,7 +1125,7 @@ describe('Cluster Config Service Unit Tests', function () {
   describe('_isConfigMissingInstance', () => {
     it('should return false if config has an instance', (done) => {
       const out = ClusterConfigService._isConfigMissingInstance(
-        [{name: '1'}, {name: '2'}, {name: '3'}],
+        [{instance: {name: '1'}}, {instance: {name: '2'}}, {instance: {name: '3'}}],
         {instance: {name: '1'}}
       )
 
@@ -1132,7 +1135,7 @@ describe('Cluster Config Service Unit Tests', function () {
 
     it('should return true if config does not have an instance', (done) => {
       const out = ClusterConfigService._isConfigMissingInstance(
-        [{name: '1'}, {name: '2'}, {name: '3'}],
+        [{instance: {name: '1'}}, {instance: {name: '2'}}, {instance: {name: '3'}}],
         {instance: {name: '5'}}
       )
 
@@ -1382,32 +1385,41 @@ describe('Cluster Config Service Unit Tests', function () {
     const depInstanceId = objectId('407f191e810c19729de860f0')
     const depRepoInstanceId = objectId('407f191e810c19729de860ff')
     const mainInstance = {
+      _id: mainInstanceId,
+      name: 'api'
+    }
+    const mainInstanceObj = {
       config: {
         metadata: {
           isMain: true
         }
       },
-      _id: mainInstanceId,
-      name: 'api'
+      instance: mainInstance
     }
     const depRepoInstance = {
+      _id: depRepoInstanceId,
+      name: 'navi'
+    }
+    const depRepoInstanceObj = {
       config: {
         metadata: {
           isMain: false
         }
       },
-      _id: depRepoInstanceId,
-      name: 'navi'
+      instance: depRepoInstance
     }
     const depInstance = {
+      _id: depInstanceId,
+      name: 'mongo'
+    }
+    const depInstanceObj = {
       config: {
         metadata: {
           isMain: false
         },
         files: {}
       },
-      _id: depInstanceId,
-      name: 'mongo'
+      instance: depInstance
     }
     let instances
     beforeEach(function (done) {
@@ -1416,12 +1428,12 @@ describe('Cluster Config Service Unit Tests', function () {
     })
     describe('success', function () {
       it('should run successfully', function (done) {
-        instances = [mainInstance, depInstance]
+        instances = [mainInstanceObj, depInstanceObj]
         ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances)
         done()
       })
       it('should return main instance and dep', function (done) {
-        instances = [mainInstance, depInstance]
+        instances = [mainInstanceObj, depInstanceObj]
         const model = ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances)
         expect(model).to.exist()
         expect(model.instance).to.equal(mainInstanceId)
@@ -1431,7 +1443,7 @@ describe('Cluster Config Service Unit Tests', function () {
         done()
       })
       it('should return main instance and matched-branched dep', function (done) {
-        instances = [mainInstance, depRepoInstance]
+        instances = [mainInstanceObj, depRepoInstanceObj]
         const model = ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances)
         expect(model).to.exist()
         expect(model.instance).to.equal(mainInstanceId)
@@ -1441,7 +1453,7 @@ describe('Cluster Config Service Unit Tests', function () {
         done()
       })
       it('should return main instance and both deps', function (done) {
-        instances = [mainInstance, depRepoInstance, depInstance]
+        instances = [mainInstanceObj, depRepoInstanceObj, depInstanceObj]
         const model = ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances)
         expect(model).to.exist()
         expect(model.instance).to.equal(mainInstanceId)
@@ -1496,22 +1508,31 @@ describe('Cluster Config Service Unit Tests', function () {
       name: 'api'
     }
     const updateInstance = {
+      _id: updateInstanceId,
+      name: 'api'
+    }
+    const updateInstanceObj = {
       config: {
         metadata: {}
       },
-      _id: updateInstanceId,
-      name: 'api'
+      instance: updateInstance
     }
     const deleteInstance = {
       _id: deleteInstanceId,
       name: 'navi'
     }
+    const deleteInstanceObj = {
+      instance: deleteInstance
+    }
     const createInstance = {
+      _id: createInstanceId,
+      name: 'web'
+    }
+    const createInstanceObj = {
       config: {
         metadata: {},
         files: {}
-      },
-      _id: createInstanceId
+      }
     }
     let instances
     beforeEach(function (done) {
@@ -1519,8 +1540,8 @@ describe('Cluster Config Service Unit Tests', function () {
       done()
     })
     beforeEach(function (done) {
-      sinon.stub(ClusterConfigService, '_updateInstancesWithConfigs').resolves(updateInstance)
-      sinon.stub(ClusterConfigService, '_createNewInstancesForNewConfigs').resolves(createInstance)
+      sinon.stub(ClusterConfigService, '_updateInstancesWithConfigs').resolves(updateInstanceObj)
+      sinon.stub(ClusterConfigService, '_createNewInstancesForNewConfigs').resolves(createInstanceObj)
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       done()
     })
@@ -1532,7 +1553,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
     describe('success', function () {
       beforeEach(function (done) {
-        instances = [updateInstance, deleteInstance, createInstance]
+        instances = [updateInstanceObj, deleteInstanceObj, createInstanceObj]
         done()
       })
       it('should run successfully', function (done) {
@@ -1543,8 +1564,8 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(testSessionUser, instances, mainInstance, githubPushInfo)
           .then(instances => {
             expect(instances.length).to.equal(2)
-            expect(instances).to.contains(updateInstance)
-            expect(instances).to.contains(createInstance)
+            expect(instances).to.contains(updateInstanceObj)
+            expect(instances).to.contains(createInstanceObj)
           })
           .asCallback(done)
       })
@@ -1552,7 +1573,7 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(testSessionUser, instances, mainInstance, githubPushInfo)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._updateInstancesWithConfigs)
-            sinon.assert.calledWithExactly(ClusterConfigService._updateInstancesWithConfigs, testSessionUser, updateInstance)
+            sinon.assert.calledWithExactly(ClusterConfigService._updateInstancesWithConfigs, testSessionUser, updateInstanceObj)
           })
           .asCallback(done)
       })
@@ -1563,7 +1584,7 @@ describe('Cluster Config Service Unit Tests', function () {
             sinon.assert.calledWithExactly(
               ClusterConfigService._createNewInstancesForNewConfigs,
               testSessionUser,
-              createInstance.config,
+              createInstanceObj.config,
               githubPushInfo.repo,
               mainInstance.isTesting,
               'autoDeploy'
