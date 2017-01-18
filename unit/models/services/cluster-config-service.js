@@ -1557,11 +1557,21 @@ describe('Cluster Config Service Unit Tests', function () {
         done()
       })
       it('should run successfully', function (done) {
-        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(testSessionUser, instances, mainInstance, githubPushInfo)
+        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
+          testSessionUser,
+          instances,
+          mainInstance,
+          githubPushInfo
+        )
           .asCallback(done)
       })
       it('should resolve with an array with 2 instances in it', function (done) {
-        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(testSessionUser, instances, mainInstance, githubPushInfo)
+        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
+          testSessionUser,
+          instances,
+          mainInstance,
+          githubPushInfo
+        )
           .then(instances => {
             expect(instances.length).to.equal(2)
             expect(instances).to.contains(updateInstanceObj)
@@ -1570,7 +1580,12 @@ describe('Cluster Config Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should have called update with updateInstance', function (done) {
-        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(testSessionUser, instances, mainInstance, githubPushInfo)
+        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
+          testSessionUser,
+          instances,
+          mainInstance,
+          githubPushInfo
+        )
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._updateInstancesWithConfigs)
             sinon.assert.calledWithExactly(ClusterConfigService._updateInstancesWithConfigs, testSessionUser, updateInstanceObj)
@@ -1578,7 +1593,12 @@ describe('Cluster Config Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should have called create with createInstance', function (done) {
-        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(testSessionUser, instances, mainInstance, githubPushInfo)
+        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
+          testSessionUser,
+          instances,
+          mainInstance,
+          githubPushInfo
+        )
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createNewInstancesForNewConfigs)
             sinon.assert.calledWithExactly(
@@ -1593,7 +1613,12 @@ describe('Cluster Config Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should have called delete with deleteInstance', function (done) {
-        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(testSessionUser, instances, mainInstance, githubPushInfo)
+        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
+          testSessionUser,
+          instances,
+          mainInstance,
+          githubPushInfo
+        )
           .then(() => {
             sinon.assert.calledOnce(rabbitMQ.deleteInstance)
             sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, {
