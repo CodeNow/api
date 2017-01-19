@@ -41,7 +41,8 @@ describe('Cluster Update Worker', function () {
       user: user
     }
     const config = {
-      filePath: 'github.com'
+      filePath: 'github.com',
+      clusterName: 'asdasd'
     }
     const composeData = {}
     const octobearInfo = {}
@@ -172,7 +173,7 @@ describe('Cluster Update Worker', function () {
               ClusterConfigService.parseComposeFile,
               composeData,
               job.pushInfo.repo,
-              testInstance.name
+              config.clusterName
             )
           })
           .asCallback(done)

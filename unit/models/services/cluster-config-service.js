@@ -1628,7 +1628,7 @@ describe('Cluster Config Service Unit Tests', function () {
           .then(() => {
             sinon.assert.calledOnce(rabbitMQ.deleteInstance)
             sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, {
-              instanceId: deleteInstanceId
+              instanceId: deleteInstanceId.toString()
             })
           })
           .asCallback(done)
