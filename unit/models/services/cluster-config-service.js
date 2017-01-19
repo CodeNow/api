@@ -1577,11 +1577,26 @@ describe('Cluster Config Service Unit Tests', function () {
           instances,
           mainInstance,
           githubPushInfo
-        )
+          )
           .then(instances => {
             expect(instances.length).to.equal(2)
             expect(instances).to.contains(updateInstanceObj)
             expect(instances).to.contains(createInstanceObj)
+          })
+          .asCallback(done)
+      })
+      it('should call createInstance before update', function (done) {
+        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
+          testSessionUser,
+          instances,
+          mainInstance,
+          githubPushInfo
+          )
+          .then(instances => {
+            sinon.assert.callOrder(
+              ClusterConfigService._createNewInstancesForNewConfigs,
+              ClusterConfigService._updateInstancesWithConfigs
+            )
           })
           .asCallback(done)
       })
