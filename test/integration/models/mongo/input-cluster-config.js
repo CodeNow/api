@@ -22,7 +22,8 @@ describe('InputClusterConfig Model Integration Tests', function () {
     fileSha: 'asdasdsasadasdasdsadsadas',
     autoIsolationConfigId: objectId(autoIsolationConfigId),
     createdByUser: 123123,
-    ownedByOrg: 1
+    ownedByOrg: 1,
+    clusterName: 'asddasdasd'
   }
   before(mongooseControl.start)
   afterEach(function (done) {
@@ -128,6 +129,15 @@ describe('InputClusterConfig Model Integration Tests', function () {
       InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(`Cast to ObjectId failed for value "${invalidId}" at path "autoIsolationConfigId"`)
+        done()
+      })
+    })
+    it('should fail if clusterName is missing', function (done) {
+      const invalidData = Object.assign({}, data)
+      delete invalidData.clusterName
+      InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.errors.clusterName.message).to.equal('Input Cluster Config requires a clusterName')
         done()
       })
     })
