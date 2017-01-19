@@ -137,7 +137,7 @@ describe('InputClusterConfig Model Integration Tests', function () {
       delete invalidData.clusterName
       InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err.message).to.equal('Input Cluster Config requires a clusterName')
+        expect(err.errors.clusterName.message).to.equal('Input Cluster Config requires a clusterName')
         done()
       })
     })
