@@ -919,6 +919,7 @@ describe('Cluster Config Service Unit Tests', function () {
     let instanceMock
     let testConfig
     let sessionUser
+    let instanceObj
     beforeEach((done) => {
       sessionUser = {}
       testConfig = {
@@ -930,7 +931,10 @@ describe('Cluster Config Service Unit Tests', function () {
       instanceMock = {
         _id: 1,
         updateAsync: sinon.stub().resolves(),
-        name: 'test',
+        name: 'test'
+      }
+      instanceObj = {
+        instance: instanceMock,
         config: {
           instance: testConfig
         }
@@ -945,7 +949,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
 
     it('should update instance if it has new config', (done) => {
-      ClusterConfigService._updateInstancesWithConfigs(sessionUser, instanceMock)
+      ClusterConfigService._updateInstancesWithConfigs(sessionUser, instanceObj)
         .then(() => {
           sinon.assert.calledOnce(InstanceService.updateInstance)
           sinon.assert.calledWith(InstanceService.updateInstance,
@@ -960,99 +964,6 @@ describe('Cluster Config Service Unit Tests', function () {
         .asCallback(done)
     })
   }) // end _updateInstancesWithConfigs
-
-  // describe('updateCluster', () => {
-  //   beforeEach((done) => {
-  //     sinon.stub(rabbitMQ, 'publishInstanceRebuild')
-  //     sinon.stub(rabbitMQ, 'createClusterInstance')
-  //     sinon.stub(rabbitMQ, 'deleteInstance')
-  //     done()
-  //   })
-  //
-  //   afterEach((done) => {
-  //     rabbitMQ.deleteInstance.restore()
-  //     rabbitMQ.createClusterInstance.restore()
-  //     rabbitMQ.publishInstanceRebuild.restore()
-  //     done()
-  //   })
-  //
-  //   it('should delete instance that has no config', (done) => {
-  //     const testDeleteInstance = {
-  //       _id: 2,
-  //       name: 'B'
-  //     }
-  //
-  //     ClusterConfigService.updateCluster(
-  //       [],
-  //       [testDeleteInstance],
-  //       testOrgBpId
-  //     )
-  //     .then(() => {
-  //       sinon.assert.calledOnce(rabbitMQ.deleteInstance)
-  //       sinon.assert.calledWith(rabbitMQ.deleteInstance, {
-  //         instanceId: testDeleteInstance._id
-  //       })
-  //     })
-  //     .asCallback(done)
-  //   })
-  //
-  //   it('should update instance that has config', (done) => {
-  //     const testUpdateInstance = {
-  //       _id: 1,
-  //       name: 'A',
-  //       updateAsync: sinon.stub().resolves()
-  //     }
-  //
-  //     const testUpdateConfig = {
-  //       instance: {
-  //         name: 'A',
-  //         env: 'env',
-  //         containerStartCommand: 'start'
-  //       }
-  //     }
-  //
-  //     ClusterConfigService.updateCluster(
-  //       [testUpdateConfig],
-  //       [testUpdateInstance],
-  //       testOrgBpId
-  //     )
-  //     .then(() => {
-  //       sinon.assert.calledOnce(rabbitMQ.publishInstanceRebuild)
-  //       sinon.assert.calledWith(rabbitMQ.publishInstanceRebuild, {
-  //         instanceId: testUpdateInstance._id
-  //       })
-  //
-  //       sinon.assert.calledOnce(testUpdateInstance.updateAsync)
-  //       sinon.assert.calledWith(testUpdateInstance.updateAsync, {
-  //         $set: {
-  //           env: testUpdateConfig.instance.env,
-  //           containerStartCommand: testUpdateConfig.instance.containerStartCommand
-  //         }
-  //       })
-  //     })
-  //     .asCallback(done)
-  //   })
-  //
-  //   it('should create instance for new config', (done) => {
-  //     const testNewConfig = {
-  //       instance: { name: 'C' }
-  //     }
-  //
-  //     ClusterConfigService.updateCluster(
-  //       [testNewConfig],
-  //       [],
-  //       testOrgBpId
-  //     )
-  //     .then(() => {
-  //       sinon.assert.calledOnce(rabbitMQ.createClusterInstance)
-  //       sinon.assert.calledWith(rabbitMQ.createClusterInstance, {
-  //         parsedComposeData: testNewConfig,
-  //         bigPoppaOrgId: testOrgBpId
-  //       })
-  //     })
-  //     .asCallback(done)
-  //   })
-  // }) // end updateCluster
 
   // describe('_createNewInstancesForNewConfigs', () => {
   //   beforeEach((done) => {
@@ -1730,6 +1641,7 @@ describe('Cluster Config Service Unit Tests', function () {
       sinon.stub(ClusterConfigService, '_createUpdateAndDeleteInstancesForClusterUpdate').resolves(instanceObjs)
       sinon.stub(ClusterConfigService, '_createAutoIsolationModelsFromClusterInstances').resolves(autoIsolationModel)
       sinon.stub(AutoIsolationConfig, 'updateAutoIsolationDependencies').resolves()
+      sinon.stub(rabbitMQ, 'autoDeployInstance').resolves()
       done()
     })
     afterEach(function (done) {
@@ -1738,6 +1650,7 @@ describe('Cluster Config Service Unit Tests', function () {
       ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate.restore()
       ClusterConfigService._createAutoIsolationModelsFromClusterInstances.restore()
       AutoIsolationConfig.updateAutoIsolationDependencies.restore()
+      rabbitMQ.autoDeployInstance.restore()
       done()
     })
     describe('success', function () {
@@ -1806,6 +1719,18 @@ describe('Cluster Config Service Unit Tests', function () {
               AutoIsolationConfig.updateAutoIsolationDependencies,
               autoIsolationModel.instance,
               autoIsolationModel.requestedDependencies)
+          })
+          .asCallback(done)
+      })
+      it('should call autoDeployInstance with the right inputs', function (done) {
+        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo)
+          .then(() => {
+            sinon.assert.calledOnce(rabbitMQ.autoDeployInstance)
+            sinon.assert.calledWith(
+              rabbitMQ.autoDeployInstance, {
+                instanceId: mainInstance._id.toString(),
+                pushInfo: githubPushInfo
+              })
           })
           .asCallback(done)
       })
