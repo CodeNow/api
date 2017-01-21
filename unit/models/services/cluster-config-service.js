@@ -1445,11 +1445,16 @@ describe('Cluster Config Service Unit Tests', function () {
       _id: createInstanceId,
       name: 'web'
     }
-    const createInstanceObj = {
-      config: {
-        metadata: {},
-        files: {}
-      }
+    const createInstanceConfig = {
+      metadata: {},
+      files: {}
+    }
+    const preCreateInstanceObj = {
+      config: createInstanceConfig
+    }
+    const postCreateInstanceObj = {
+      config: createInstanceConfig,
+      instance: createInstance
     }
     let instances
     beforeEach(function (done) {
@@ -1458,7 +1463,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
     beforeEach(function (done) {
       sinon.stub(ClusterConfigService, '_updateInstancesWithConfigs').resolves(updateInstanceObj)
-      sinon.stub(ClusterConfigService, '_createNewInstancesForNewConfigs').resolves(createInstanceObj)
+      sinon.stub(ClusterConfigService, '_createNewInstancesForNewConfigs').resolves(postCreateInstanceObj)
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       done()
     })
@@ -1470,7 +1475,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
     describe('success', function () {
       beforeEach(function (done) {
-        instances = [updateInstanceObj, deleteInstanceObj, createInstanceObj]
+        instances = [updateInstanceObj, deleteInstanceObj, preCreateInstanceObj]
         done()
       })
       it('should run successfully', function (done) {
@@ -1492,7 +1497,7 @@ describe('Cluster Config Service Unit Tests', function () {
           .then(instances => {
             expect(instances.length).to.equal(2)
             expect(instances).to.contains(updateInstanceObj)
-            expect(instances).to.contains(createInstanceObj)
+            expect(instances).to.contains(postCreateInstanceObj)
           })
           .asCallback(done)
       })
@@ -1536,7 +1541,7 @@ describe('Cluster Config Service Unit Tests', function () {
             sinon.assert.calledWithExactly(
               ClusterConfigService._createNewInstancesForNewConfigs,
               testSessionUser,
-              createInstanceObj.config,
+              preCreateInstanceObj.config,
               githubPushInfo.repo,
               mainInstance.isTesting,
               'autoDeploy'
