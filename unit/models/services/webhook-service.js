@@ -101,17 +101,17 @@ describe('Webhook Service Unit Tests', function () {
       }, {
         _id: 'erfvsdfsavxscvsacfvserw'
       }]
-      sinon.stub(BuildService, 'createAndBuildContextVersion')
+      sinon.stub(rabbitMQ, 'autoDeployInstance')
       done()
     })
     afterEach(function (done) {
-      BuildService.createAndBuildContextVersion.restore()
+      rabbitMQ.autoDeployInstance.restore()
       done()
     })
     describe('validating errors', function () {
       it('should reject when createAndBuildContextVersion fails', function (done) {
         var mongoErr = new Error('Mongo error')
-        BuildService.createAndBuildContextVersion.rejects(mongoErr)
+        rabbitMQ.autoDeployInstance.rejects(mongoErr)
         WebhookService.autoDeploy(instances, githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.equal(mongoErr)
@@ -121,69 +121,61 @@ describe('Webhook Service Unit Tests', function () {
     })
     describe('Successful runs', function () {
       it('should skip createAndBuildContextVersion but return successfully when given []', function (done) {
-        BuildService.createAndBuildContextVersion.resolves({
-          hello: 'asdfasdfdsa'
-        })
+        rabbitMQ.autoDeployInstance.resolves()
         WebhookService.autoDeploy([], githubPushInfo)
           .then(function (results) {
-            expect(results).to.equal([])
-            sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
+            expect(results).to.exist()
+            sinon.assert.notCalled(rabbitMQ.autoDeployInstance)
           })
           .asCallback(done)
       })
       it('shouldn\'t build  but return successfully when given only locked instances', function (done) {
         instances[0].locked = true
         instances[1].locked = true
-        BuildService.createAndBuildContextVersion.resolves({
-          hello: 'asdfasdfdsa'
-        })
+        rabbitMQ.autoDeployInstance.resolves()
         WebhookService.autoDeploy(instances, githubPushInfo)
           .then(function (results) {
-            expect(results).to.equal([])
-            sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
+            expect(results).to.exist()
+            sinon.assert.notCalled(rabbitMQ.autoDeployInstance)
           })
           .asCallback(done)
       })
       it('should skip createAndBuildContextVersion on an instance that is locked', function (done) {
         instances[0].locked = true
-        BuildService.createAndBuildContextVersion.resolves({
-          hello: 'asdfasdfdsa'
-        })
+        rabbitMQ.autoDeployInstance.resolves()
         WebhookService.autoDeploy(instances, githubPushInfo)
           .then(function (results) {
-            expect(results).to.equal([{
-              hello: 'asdfasdfdsa'
-            }])
-            sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)
-            sinon.assert.neverCalledWith(BuildService.createAndBuildContextVersion, {
-              locked: true,
-              instanceId: 'sdasdsaddgfasdfgasdfasdf'
+            expect(results).to.exist()
+            sinon.assert.calledOnce(rabbitMQ.autoDeployInstance)
+            sinon.assert.neverCalledWith(rabbitMQ.autoDeployInstance, {
+              instanceId: 'sdasdsaddgfasdfgasdfasdf',
+              pushInfo: githubPushInfo
             })
             sinon.assert.calledWith(
-              BuildService.createAndBuildContextVersion,
-              { _id: 'erfvsdfsavxscvsacfvserw' },
-              githubPushInfo,
-              'autodeploy'
+              rabbitMQ.autoDeployInstance, {
+                instanceId: instances[1]._id.toString(),
+                pushInfo: githubPushInfo
+              }
             )
           })
           .asCallback(done)
       })
-      it('should createAndBuildContextVersion for each instance', function (done) {
-        BuildService.createAndBuildContextVersion.resolves()
+      it('should rabbitMQ.autoDeployInstance for each instance', function (done) {
+        rabbitMQ.autoDeployInstance.resolves()
         WebhookService.autoDeploy(instances, githubPushInfo)
           .then(function () {
-            sinon.assert.calledTwice(BuildService.createAndBuildContextVersion)
+            sinon.assert.calledTwice(rabbitMQ.autoDeployInstance)
             sinon.assert.calledWith(
-              BuildService.createAndBuildContextVersion,
-              { _id: 'sdasdsaddgfasdfgasdfasdf' },
-              githubPushInfo,
-              'autodeploy'
+              rabbitMQ.autoDeployInstance, {
+                instanceId: instances[0]._id.toString(),
+                pushInfo: githubPushInfo
+              }
             )
             sinon.assert.calledWith(
-              BuildService.createAndBuildContextVersion,
-              { _id: 'erfvsdfsavxscvsacfvserw' },
-              githubPushInfo,
-              'autodeploy'
+              rabbitMQ.autoDeployInstance, {
+                instanceId: instances[1]._id.toString(),
+                pushInfo: githubPushInfo
+              }
             )
           })
           .asCallback(done)
