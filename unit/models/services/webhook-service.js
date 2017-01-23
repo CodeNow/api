@@ -15,6 +15,7 @@ const Promise = require('bluebird')
 const sinon = require('sinon')
 
 const BuildService = require('models/services/build-service')
+const ClusterConfigService = require('models/services/cluster-config-service')
 const Instance = require('models/mongo/instance')
 const InstanceForkService = require('models/services/instance-fork-service')
 const IsolationService = require('models/services/isolation-service')
@@ -102,10 +103,14 @@ describe('Webhook Service Unit Tests', function () {
         _id: 'erfvsdfsavxscvsacfvserw'
       }]
       sinon.stub(BuildService, 'createAndBuildContextVersion')
+      sinon.stub(ClusterConfigService, 'checkIfComposeFileHasChanged').rejects(new Error())
+      sinon.stub(rabbitMQ, 'updateCluster').resolves()
       done()
     })
     afterEach(function (done) {
       BuildService.createAndBuildContextVersion.restore()
+      ClusterConfigService.checkIfComposeFileHasChanged.restore()
+      rabbitMQ.updateCluster.restore()
       done()
     })
     describe('validating errors', function () {
@@ -184,6 +189,33 @@ describe('Webhook Service Unit Tests', function () {
               { _id: 'erfvsdfsavxscvsacfvserw' },
               githubPushInfo,
               'autodeploy'
+            )
+          })
+          .asCallback(done)
+      })
+      it('should checkIfComposeFileHasChanged for each instance', function (done) {
+        WebhookService.autoDeploy(instances, githubPushInfo)
+          .then(function () {
+            sinon.assert.calledTwice(ClusterConfigService.checkIfComposeFileHasChanged)
+          })
+          .asCallback(done)
+      })
+      it('should updateCluster for each instance that resolves checkIfComposeFileHasChanged', function (done) {
+        ClusterConfigService.checkIfComposeFileHasChanged.resolves()
+        WebhookService.autoDeploy(instances, githubPushInfo)
+          .then(function () {
+            sinon.assert.calledTwice(rabbitMQ.updateCluster)
+            sinon.assert.calledWith(
+              rabbitMQ.updateCluster, {
+                instanceId: 'sdasdsaddgfasdfgasdfasdf',
+                pushInfo: githubPushInfo
+              }
+            )
+            sinon.assert.calledWith(
+              rabbitMQ.updateCluster, {
+                instanceId: 'erfvsdfsavxscvsacfvserw',
+                pushInfo: githubPushInfo
+              }
             )
           })
           .asCallback(done)
