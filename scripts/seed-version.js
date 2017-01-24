@@ -27,7 +27,13 @@ const rabbitMQ = require('models/rabbitmq/index')
 const sinon = require('sinon')
 const User = require('models/mongo/user')
 
-const sources = [{
+const blankSource = {
+  name: 'Blank',
+  isSource: true,
+  body: '# Empty Dockerfile!\n'
+}
+const sources = [
+  {
   name: 'PHP',
   isTemplate: true,
   isSource: true,
@@ -117,21 +123,22 @@ function main () {
     .then(user => {
       createdBy = { github: user.accounts.github.id }
       return findOrCreateBlankContext()
-        .tap(function (blankIcv) {
-          ctx.blankIcv = blankIcv
+        .tap((res) => {
+          let blankIcv = res[0]
+          let blankContext = res[1]
+          return createContextVersion(blankSource, blankContext, blankIcv)
+            .then(cv => createAndBuildBuild(user, blankSource, cv))
+            .then(build => createOrUpdateInstance(user, blankSource, build))
+        })
+        .tap(function (res) {
+          const blankIcv = res[0]
           return Promise.each(sources, function (source) {
             return findOrCreateContext(source)
               .then(context => {
                 return createNewIcv(source, context, blankIcv)
-                  .then(icv => {
-                    return createContextVersion(source, context, icv)
-                  })
-                  .then(cv => {
-                    return createAndBuildBuild(user, source, cv)
-                  })
-                  .then(build => {
-                    return createOrUpdateInstance(user, source, build)
-                  })
+                  .then(icv => createContextVersion(source, context, icv))
+                  .then(cv => createAndBuildBuild(user, source, cv))
+                  .then(build => createOrUpdateInstance(user, source, build))
               })
           })
         })
@@ -154,19 +161,14 @@ function main () {
 }
 
 function findOrCreateBlankContext () {
-  const blankData = {
-    name: 'Blank',
-    isSource: true,
-    body: '# Empty Dockerfile!\n'
-  }
-  return findOrCreateContext(blankData)
+  return findOrCreateContext(blankSource)
     .then(blankContext => {
       return InfraCodeVersion.findOneAsync({ context: blankContext.id })
         .then(blankIcv => {
           if (!blankIcv) {
-            return createNewIcv(blankData, blankContext)
+            return createNewIcv(blankSource, blankContext)
           }
-          return blankIcv
+          return [blankIcv, blankContext]
         })
     })
 }
