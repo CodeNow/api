@@ -102,6 +102,92 @@ describe('Webhook Service Unit Tests', function () {
       }, {
         _id: 'erfvsdfsavxscvsacfvserw'
       }]
+      sinon.stub(WebhookService, 'updateComposeOrAutoDeploy').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      WebhookService.updateComposeOrAutoDeploy.restore()
+      done()
+    })
+    describe('Successful runs', function () {
+      it('should skip createAndBuildContextVersion but return successfully when given []', function (done) {
+        WebhookService.updateComposeOrAutoDeploy.resolves({
+          hello: 'asdfasdfdsa'
+        })
+        WebhookService.autoDeploy([], githubPushInfo)
+          .then(function (results) {
+            expect(results).to.equal([])
+            sinon.assert.notCalled(WebhookService.updateComposeOrAutoDeploy)
+          })
+          .asCallback(done)
+      })
+      it('shouldn\'t build  but return successfully when given only locked instances', function (done) {
+        instances[0].locked = true
+        instances[1].locked = true
+        WebhookService.updateComposeOrAutoDeploy.resolves({
+          hello: 'asdfasdfdsa'
+        })
+        WebhookService.autoDeploy(instances, githubPushInfo)
+          .then(function (results) {
+            expect(results).to.equal([])
+            sinon.assert.notCalled(WebhookService.updateComposeOrAutoDeploy)
+          })
+          .asCallback(done)
+      })
+      it('should skip createAndBuildContextVersion on an instance that is locked', function (done) {
+        instances[0].locked = true
+        WebhookService.updateComposeOrAutoDeploy.resolves({
+          hello: 'asdfasdfdsa'
+        })
+        WebhookService.autoDeploy(instances, githubPushInfo)
+          .then(function (results) {
+            expect(results).to.equal([{
+              hello: 'asdfasdfdsa'
+            }])
+            sinon.assert.calledOnce(WebhookService.updateComposeOrAutoDeploy)
+            sinon.assert.neverCalledWith(WebhookService.updateComposeOrAutoDeploy,
+              instances[0],
+              githubPushInfo
+            )
+            sinon.assert.calledWith(
+              WebhookService.updateComposeOrAutoDeploy,
+              instances[1],
+              githubPushInfo
+            )
+          })
+          .asCallback(done)
+      })
+      it('should createAndBuildContextVersion for each instance', function (done) {
+        WebhookService.updateComposeOrAutoDeploy.resolves()
+        WebhookService.autoDeploy(instances, githubPushInfo)
+          .then(function () {
+            sinon.assert.calledTwice(WebhookService.updateComposeOrAutoDeploy)
+            sinon.assert.calledWith(
+              WebhookService.updateComposeOrAutoDeploy,
+              instances[0],
+              githubPushInfo
+            )
+            sinon.assert.calledWith(
+              WebhookService.updateComposeOrAutoDeploy,
+              instances[1],
+              githubPushInfo
+            )
+          })
+          .asCallback(done)
+      })
+    })
+  })
+
+  describe('updateComposeOrAutoDeploy', function () {
+    var githubPushInfo = {
+      repo: 'theRepo',
+      branch: 'theBranch'
+    }
+    var instance
+    beforeEach(function (done) {
+      instance = {
+        _id: 'sdasdsaddgfasdfgasdfasdf'
+      }
       sinon.stub(BuildService, 'createAndBuildContextVersion')
       sinon.stub(ClusterConfigService, 'checkIfComposeFileHasChanged').rejects(new Error())
       sinon.stub(rabbitMQ, 'updateCluster').resolves()
@@ -117,7 +203,7 @@ describe('Webhook Service Unit Tests', function () {
       it('should reject when createAndBuildContextVersion fails', function (done) {
         var mongoErr = new Error('Mongo error')
         BuildService.createAndBuildContextVersion.rejects(mongoErr)
-        WebhookService.autoDeploy(instances, githubPushInfo)
+        WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.equal(mongoErr)
             done()
@@ -125,68 +211,14 @@ describe('Webhook Service Unit Tests', function () {
       })
     })
     describe('Successful runs', function () {
-      it('should skip createAndBuildContextVersion but return successfully when given []', function (done) {
-        BuildService.createAndBuildContextVersion.resolves({
-          hello: 'asdfasdfdsa'
-        })
-        WebhookService.autoDeploy([], githubPushInfo)
-          .then(function (results) {
-            expect(results).to.equal([])
-            sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
-          })
-          .asCallback(done)
-      })
-      it('shouldn\'t build  but return successfully when given only locked instances', function (done) {
-        instances[0].locked = true
-        instances[1].locked = true
-        BuildService.createAndBuildContextVersion.resolves({
-          hello: 'asdfasdfdsa'
-        })
-        WebhookService.autoDeploy(instances, githubPushInfo)
-          .then(function (results) {
-            expect(results).to.equal([])
-            sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
-          })
-          .asCallback(done)
-      })
-      it('should skip createAndBuildContextVersion on an instance that is locked', function (done) {
-        instances[0].locked = true
-        BuildService.createAndBuildContextVersion.resolves({
-          hello: 'asdfasdfdsa'
-        })
-        WebhookService.autoDeploy(instances, githubPushInfo)
-          .then(function (results) {
-            expect(results).to.equal([{
-              hello: 'asdfasdfdsa'
-            }])
-            sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)
-            sinon.assert.neverCalledWith(BuildService.createAndBuildContextVersion, {
-              locked: true,
-              instanceId: 'sdasdsaddgfasdfgasdfasdf'
-            })
-            sinon.assert.calledWith(
-              BuildService.createAndBuildContextVersion,
-              { _id: 'erfvsdfsavxscvsacfvserw' },
-              githubPushInfo,
-              'autodeploy'
-            )
-          })
-          .asCallback(done)
-      })
       it('should createAndBuildContextVersion for each instance', function (done) {
         BuildService.createAndBuildContextVersion.resolves()
-        WebhookService.autoDeploy(instances, githubPushInfo)
+        WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
           .then(function () {
-            sinon.assert.calledTwice(BuildService.createAndBuildContextVersion)
+            sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)
             sinon.assert.calledWith(
               BuildService.createAndBuildContextVersion,
               { _id: 'sdasdsaddgfasdfgasdfasdf' },
-              githubPushInfo,
-              'autodeploy'
-            )
-            sinon.assert.calledWith(
-              BuildService.createAndBuildContextVersion,
-              { _id: 'erfvsdfsavxscvsacfvserw' },
               githubPushInfo,
               'autodeploy'
             )
@@ -194,26 +226,20 @@ describe('Webhook Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should checkIfComposeFileHasChanged for each instance', function (done) {
-        WebhookService.autoDeploy(instances, githubPushInfo)
+        WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
           .then(function () {
-            sinon.assert.calledTwice(ClusterConfigService.checkIfComposeFileHasChanged)
+            sinon.assert.calledOnce(ClusterConfigService.checkIfComposeFileHasChanged)
           })
           .asCallback(done)
       })
-      it('should updateCluster for each instance that resolves checkIfComposeFileHasChanged', function (done) {
+      it('should updateCluster for instance that resolves checkIfComposeFileHasChanged', function (done) {
         ClusterConfigService.checkIfComposeFileHasChanged.resolves()
-        WebhookService.autoDeploy(instances, githubPushInfo)
+        WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
           .then(function () {
-            sinon.assert.calledTwice(rabbitMQ.updateCluster)
+            sinon.assert.calledOnce(rabbitMQ.updateCluster)
             sinon.assert.calledWith(
               rabbitMQ.updateCluster, {
                 instanceId: 'sdasdsaddgfasdfgasdfasdf',
-                pushInfo: githubPushInfo
-              }
-            )
-            sinon.assert.calledWith(
-              rabbitMQ.updateCluster, {
-                instanceId: 'erfvsdfsavxscvsacfvserw',
                 pushInfo: githubPushInfo
               }
             )
