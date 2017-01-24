@@ -102,7 +102,6 @@ const sources = [
 }]
 sinon.stub(messenger)
 
-var ctx = {}
 var createdBy
 
 /*
@@ -128,7 +127,6 @@ function main () {
           let blankContext = res[1]
           return createContextVersion(blankSource, blankContext, blankIcv)
             .then(cv => createAndBuildBuild(user, blankSource, cv))
-            .then(build => createOrUpdateInstance(user, blankSource, build))
         })
         .tap(function (res) {
           const blankIcv = res[0]
@@ -254,4 +252,4 @@ function createOrUpdateInstance (user, data, build) {
         owner: createdBy
       }, user)
     })
-}
+
