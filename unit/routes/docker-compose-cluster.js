@@ -26,7 +26,9 @@ describe('/docker-compose-cluster', function () {
   let resMock
   let validateOrBoomStub
   let nextStub
+  let isTesting = false
   const sessionUserGithubId = 1981198
+  const sessionUserBigPoppaId = 8084808
   beforeEach(function (done) {
     nextStub = sinon.stub()
     resMock = {
@@ -42,15 +44,18 @@ describe('/docker-compose-cluster', function () {
     let reqMock
     const repo = 'octobear'
     const branch = 'master'
-    const dockerComposeFilePath = '/docker-compose.yml'
+    const filePath = '/docker-compose.yml'
     const name = 'super-cool-name'
     beforeEach(function (done) {
       createClusterStub = sinon.stub(rabbitMQ, 'createCluster')
       validateOrBoomStub = sinon.spy(joi, 'validateOrBoomAsync')
       reqMock = {
-        body: { repo, branch, dockerComposeFilePath, name },
+        body: { repo, branch, filePath, name },
         sessionUser: {
-          accounts: { github: { id: sessionUserGithubId } }
+          accounts: {
+            github: { id: sessionUserGithubId }
+          },
+          _bigPoppaUser: { id: sessionUserBigPoppaId }
         }
       }
       done()
@@ -88,11 +93,12 @@ describe('/docker-compose-cluster', function () {
           .then(function () {
             sinon.assert.calledOnce(createClusterStub)
             sinon.assert.calledWith(createClusterStub, {
-              sessionUserGithubId,
+              sessionUserBigPoppaId,
               triggeredAction: 'user',
-              repoName: repo,
+              repoFullName: repo,
               branchName: branch,
-              dockerComposeFilePath,
+              filePath,
+              isTesting,
               newInstanceName: name
             })
           })

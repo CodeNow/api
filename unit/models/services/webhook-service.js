@@ -15,6 +15,7 @@ const Promise = require('bluebird')
 const sinon = require('sinon')
 
 const BuildService = require('models/services/build-service')
+const ClusterConfigService = require('models/services/cluster-config-service')
 const Instance = require('models/mongo/instance')
 const InstanceForkService = require('models/services/instance-fork-service')
 const IsolationService = require('models/services/isolation-service')
@@ -101,52 +102,41 @@ describe('Webhook Service Unit Tests', function () {
       }, {
         _id: 'erfvsdfsavxscvsacfvserw'
       }]
-      sinon.stub(BuildService, 'createAndBuildContextVersion')
+      sinon.stub(WebhookService, 'updateComposeOrAutoDeploy').resolves()
       done()
     })
     afterEach(function (done) {
-      BuildService.createAndBuildContextVersion.restore()
+      WebhookService.updateComposeOrAutoDeploy.restore()
       done()
-    })
-    describe('validating errors', function () {
-      it('should reject when createAndBuildContextVersion fails', function (done) {
-        var mongoErr = new Error('Mongo error')
-        BuildService.createAndBuildContextVersion.rejects(mongoErr)
-        WebhookService.autoDeploy(instances, githubPushInfo)
-          .asCallback(function (err) {
-            expect(err).to.equal(mongoErr)
-            done()
-          })
-      })
     })
     describe('Successful runs', function () {
       it('should skip createAndBuildContextVersion but return successfully when given []', function (done) {
-        BuildService.createAndBuildContextVersion.resolves({
+        WebhookService.updateComposeOrAutoDeploy.resolves({
           hello: 'asdfasdfdsa'
         })
         WebhookService.autoDeploy([], githubPushInfo)
           .then(function (results) {
             expect(results).to.equal([])
-            sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
+            sinon.assert.notCalled(WebhookService.updateComposeOrAutoDeploy)
           })
           .asCallback(done)
       })
       it('shouldn\'t build  but return successfully when given only locked instances', function (done) {
         instances[0].locked = true
         instances[1].locked = true
-        BuildService.createAndBuildContextVersion.resolves({
+        WebhookService.updateComposeOrAutoDeploy.resolves({
           hello: 'asdfasdfdsa'
         })
         WebhookService.autoDeploy(instances, githubPushInfo)
           .then(function (results) {
             expect(results).to.equal([])
-            sinon.assert.notCalled(BuildService.createAndBuildContextVersion)
+            sinon.assert.notCalled(WebhookService.updateComposeOrAutoDeploy)
           })
           .asCallback(done)
       })
       it('should skip createAndBuildContextVersion on an instance that is locked', function (done) {
         instances[0].locked = true
-        BuildService.createAndBuildContextVersion.resolves({
+        WebhookService.updateComposeOrAutoDeploy.resolves({
           hello: 'asdfasdfdsa'
         })
         WebhookService.autoDeploy(instances, githubPushInfo)
@@ -154,36 +144,104 @@ describe('Webhook Service Unit Tests', function () {
             expect(results).to.equal([{
               hello: 'asdfasdfdsa'
             }])
-            sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)
-            sinon.assert.neverCalledWith(BuildService.createAndBuildContextVersion, {
-              locked: true,
-              instanceId: 'sdasdsaddgfasdfgasdfasdf'
-            })
+            sinon.assert.calledOnce(WebhookService.updateComposeOrAutoDeploy)
+            sinon.assert.neverCalledWith(WebhookService.updateComposeOrAutoDeploy,
+              instances[0],
+              githubPushInfo
+            )
             sinon.assert.calledWith(
-              BuildService.createAndBuildContextVersion,
-              { _id: 'erfvsdfsavxscvsacfvserw' },
-              githubPushInfo,
-              'autodeploy'
+              WebhookService.updateComposeOrAutoDeploy,
+              instances[1],
+              githubPushInfo
             )
           })
           .asCallback(done)
       })
       it('should createAndBuildContextVersion for each instance', function (done) {
-        BuildService.createAndBuildContextVersion.resolves()
+        WebhookService.updateComposeOrAutoDeploy.resolves()
         WebhookService.autoDeploy(instances, githubPushInfo)
           .then(function () {
-            sinon.assert.calledTwice(BuildService.createAndBuildContextVersion)
+            sinon.assert.calledTwice(WebhookService.updateComposeOrAutoDeploy)
+            sinon.assert.calledWith(
+              WebhookService.updateComposeOrAutoDeploy,
+              instances[0],
+              githubPushInfo
+            )
+            sinon.assert.calledWith(
+              WebhookService.updateComposeOrAutoDeploy,
+              instances[1],
+              githubPushInfo
+            )
+          })
+          .asCallback(done)
+      })
+    })
+  })
+
+  describe('updateComposeOrAutoDeploy', function () {
+    var githubPushInfo = {
+      repo: 'theRepo',
+      branch: 'theBranch'
+    }
+    var instance
+    beforeEach(function (done) {
+      instance = {
+        _id: 'sdasdsaddgfasdfgasdfasdf'
+      }
+      sinon.stub(BuildService, 'createAndBuildContextVersion')
+      sinon.stub(ClusterConfigService, 'checkIfComposeFileHasChanged').rejects(new Error())
+      sinon.stub(rabbitMQ, 'updateCluster').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      BuildService.createAndBuildContextVersion.restore()
+      ClusterConfigService.checkIfComposeFileHasChanged.restore()
+      rabbitMQ.updateCluster.restore()
+      done()
+    })
+    describe('validating errors', function () {
+      it('should reject when createAndBuildContextVersion fails', function (done) {
+        var mongoErr = new Error('Mongo error')
+        BuildService.createAndBuildContextVersion.rejects(mongoErr)
+        WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
+          .asCallback(function (err) {
+            expect(err).to.equal(mongoErr)
+            done()
+          })
+      })
+    })
+    describe('Successful runs', function () {
+      it('should createAndBuildContextVersion for each instance', function (done) {
+        BuildService.createAndBuildContextVersion.resolves()
+        WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
+          .then(function () {
+            sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)
             sinon.assert.calledWith(
               BuildService.createAndBuildContextVersion,
               { _id: 'sdasdsaddgfasdfgasdfasdf' },
               githubPushInfo,
               'autodeploy'
             )
+          })
+          .asCallback(done)
+      })
+      it('should checkIfComposeFileHasChanged for each instance', function (done) {
+        WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
+          .then(function () {
+            sinon.assert.calledOnce(ClusterConfigService.checkIfComposeFileHasChanged)
+          })
+          .asCallback(done)
+      })
+      it('should updateCluster for instance that resolves checkIfComposeFileHasChanged', function (done) {
+        ClusterConfigService.checkIfComposeFileHasChanged.resolves()
+        WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
+          .then(function () {
+            sinon.assert.calledOnce(rabbitMQ.updateCluster)
             sinon.assert.calledWith(
-              BuildService.createAndBuildContextVersion,
-              { _id: 'erfvsdfsavxscvsacfvserw' },
-              githubPushInfo,
-              'autodeploy'
+              rabbitMQ.updateCluster, {
+                instanceId: 'sdasdsaddgfasdfgasdfasdf',
+                pushInfo: githubPushInfo
+              }
             )
           })
           .asCallback(done)
