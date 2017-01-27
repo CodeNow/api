@@ -61,7 +61,6 @@ describe('Cluster Create Worker', function () {
         ClusterConfigService.create.rejects(mongoError)
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err).to.equal(mongoError)
           done()
         })
       })
