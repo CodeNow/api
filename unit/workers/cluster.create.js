@@ -19,6 +19,7 @@ require('sinon-as-promised')(Promise)
 const ClusterConfigService = require('models/services/cluster-config-service')
 const UserService = require('models/services/user-service')
 const Worker = require('workers/cluster.create')
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 describe('Cluster Create Worker', function () {
   describe('worker', function () {
@@ -61,6 +62,7 @@ describe('Cluster Create Worker', function () {
         ClusterConfigService.create.rejects(mongoError)
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
+          expect(err).to.be.an.instanceof(WorkerStopError)
           done()
         })
       })
