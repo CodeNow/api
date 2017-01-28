@@ -52,7 +52,9 @@ var publishedEvents = [
   'docker.events-stream.disconnected',
   'github.pushed',
   'instance.expired',
-  'instance.started'
+  'instance.started',
+  'organization.payment-method.added',
+  'stripe.invoice.payment-succeeded'
 ]
 
 var opts = {

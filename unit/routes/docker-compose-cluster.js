@@ -26,7 +26,9 @@ describe('/docker-compose-cluster', function () {
   let resMock
   let validateOrBoomStub
   let nextStub
+  let isTesting = false
   const sessionUserGithubId = 1981198
+  const sessionUserBigPoppaId = 8084808
   beforeEach(function (done) {
     nextStub = sinon.stub()
     resMock = {
@@ -50,7 +52,10 @@ describe('/docker-compose-cluster', function () {
       reqMock = {
         body: { repo, branch, filePath, name },
         sessionUser: {
-          accounts: { github: { id: sessionUserGithubId } }
+          accounts: {
+            github: { id: sessionUserGithubId }
+          },
+          _bigPoppaUser: { id: sessionUserBigPoppaId }
         }
       }
       done()
@@ -88,11 +93,12 @@ describe('/docker-compose-cluster', function () {
           .then(function () {
             sinon.assert.calledOnce(createClusterStub)
             sinon.assert.calledWith(createClusterStub, {
-              sessionUserGithubId,
+              sessionUserBigPoppaId,
               triggeredAction: 'user',
-              repoName: repo,
+              repoFullName: repo,
               branchName: branch,
               filePath,
+              isTesting,
               newInstanceName: name
             })
           })
