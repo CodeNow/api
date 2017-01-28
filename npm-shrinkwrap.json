@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "11.22.7",
+  "version": "11.22.8",
   "dependencies": {
     "101": {
       "version": "1.6.2",
