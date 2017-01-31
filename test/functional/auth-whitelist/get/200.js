@@ -74,6 +74,7 @@ describe('GET /auth/whitelist/', function () {
       request(opts, function (err, res, body) {
         expect(err).to.be.null()
         expect(res).to.exist()
+        expect(body).to.equal('fail')
         expect(body).to.be.an.array()
         expect(body.length).to.equal(1)
         expect(res.statusCode).to.equal(200)
