@@ -126,7 +126,9 @@ function main () {
           let blankIcv = res[0]
           let blankContext = res[1]
           return createContextVersion(blankSource, blankContext, blankIcv)
-            .then(cv => createAndBuildBuild(user, blankSource, cv))
+          .then(cv => {
+            return createAndBuildBuild(user, blankSource, cv)
+          })
         })
         .tap(function (res) {
           const blankIcv = res[0]
@@ -134,9 +136,15 @@ function main () {
             return findOrCreateContext(source)
               .then(context => {
                 return createNewIcv(source, context, blankIcv)
-                  .then(icv => createContextVersion(source, context, icv))
-                  .then(cv => createAndBuildBuild(user, source, cv))
-                  .then(build => createOrUpdateInstance(user, source, build))
+                  .then(icv => {
+                    return createContextVersion(source, context, icv)
+                  })
+                  .then(cv => {
+                    return createAndBuildBuild(user, source, cv)
+                  })
+                  .then(build => {
+                    return createOrUpdateInstance(user, source, build)
+                  })
               })
           })
         })
