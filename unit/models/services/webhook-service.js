@@ -446,6 +446,19 @@ describe('Webhook Service Unit Tests', function () {
         })
         .asCallback(done)
     })
+
+    it('should next if repo is public', function (done) {
+      const newInfo = Object.assign({}, githubPushInfo, {
+        repository: {
+          private: false
+        }
+      })
+      WebhookService.checkCommitPusherIsRunnableUser(newInfo)
+        .then(function () {
+          sinon.assert.notCalled(User.findOneAsync)
+        })
+        .asCallback(done)
+    })
   })
 
   describe('checkRepoOrganizationAgainstWhitelist', function () {
