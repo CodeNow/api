@@ -393,7 +393,7 @@ describe('github: ' + moduleName, function () {
     })
   }) // end createHooksAndKeys
 
-  /* describe('_getAllOrgs', () => {
+  describe('_getAllOrgs', () => {
     let github
 
     beforeEach((done) => {
@@ -471,5 +471,5 @@ describe('github: ' + moduleName, function () {
         done()
       })
     })
-  }) */
+  })
 })
