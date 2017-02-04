@@ -551,6 +551,7 @@ describe('Cluster Config Service Unit Tests', function () {
       sinon.stub(ContextVersion, 'createAppcodeVersion').resolves(testAppCodeVersion)
       sinon.stub(ContextVersion, 'createWithNewInfraCode').resolves(testContextVersion)
       sinon.stub(InfraCodeVersionService, 'findBlankInfraCodeVersion').resolves(testParentInfraCodeVersion)
+      sinon.spy(ClusterConfigService, '_createDockerfileContent')
       testDockerfileContent = testMainParsedContent.files['/Dockerfile'].body
       sinon.stub(ContextVersion, 'createWithDockerFileContent').resolves(testContextVersion)
       done()
@@ -559,6 +560,7 @@ describe('Cluster Config Service Unit Tests', function () {
     afterEach((done) => {
       ContextVersion.createAppcodeVersion.restore()
       ContextVersion.createWithNewInfraCode.restore()
+      ClusterConfigService._createDockerfileContent.restore()
       InfraCodeVersionService.findBlankInfraCodeVersion.restore()
       ContextVersion.createWithDockerFileContent.restore()
       done()
@@ -673,6 +675,48 @@ describe('Cluster Config Service Unit Tests', function () {
             InfraCodeVersionService.findBlankInfraCodeVersion,
             ContextVersion.createWithDockerFileContent)
         }).asCallback(done)
+      })
+      it('should call _createDockerfileContent after createAppcodeVersion if the config metadata isMain is true', (done) => {
+        const testRepoName = 'runnable/boo'
+        const testParsedComposeDataIsMain = {
+          contextVersion: {
+            advanced: true
+          },
+          files: {
+            '/Dockerfile': {
+              body: testDockerfileContent
+            }
+          },
+          metadata: {
+            isMain: true
+          }
+        }
+        ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeDataIsMain)
+          .tap((contextVersion) => {
+            expect(contextVersion).to.equal(testContextVersion)
+            sinon.assert.callOrder(
+              InfraCodeVersionService.findBlankInfraCodeVersion,
+              ContextVersion.createAppcodeVersion,
+              ClusterConfigService._createDockerfileContent)
+          }).asCallback(done)
+      })
+      it('should not call  before createAppcodeVersion if the config metadata isMain is false', (done) => {
+        const testRepoName = 'runnable/boo'
+        const testParsedComposeDataIsMain = {
+          contextVersion: {
+            advanced: true
+          },
+          files: {
+            '/Dockerfile': {
+              body: testDockerfileContent
+            }
+          }
+        }
+        ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeDataIsMain)
+          .tap((contextVersion) => {
+            expect(contextVersion).to.equal(testContextVersion)
+            sinon.assert.notCalled(ContextVersion.createAppcodeVersion)
+          }).asCallback(done)
       })
     })
   }) // end _createContextVersion
