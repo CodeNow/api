@@ -405,7 +405,7 @@ describe('github: ' + moduleName, function () {
     it('should return no results', (done) => {
       let opts = {}
       github.user.getOrgs.yields(null, {data:[]});
-      github._getAllOrgs(opts, null, (err, allOrgs) => {
+      github._getAllOrgs(opts, null, function (err, allOrgs) {
         sinon.assert.calledOnce(github.user.getOrgs)
         sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 1}, null, sinon.match.func)
         expect(allOrgs.length).to.equal(0)
