@@ -404,10 +404,10 @@ describe('github: ' + moduleName, function () {
 
     it('should return no results', (done) => {
       let opts = {}
-      github.user.getOrgs.yields(null, {data:[]});
-      github._getAllOrgs(opts, null, function (err, allOrgs) {
+      github.user.getOrgs.yields(null, []);
+      github._getAllOrgs(opts, function (err, allOrgs) {
         sinon.assert.calledOnce(github.user.getOrgs)
-        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 1}, null, sinon.match.func)
+        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 1}, sinon.match.func)
         expect(allOrgs.length).to.equal(0)
         done()
       })
@@ -417,10 +417,10 @@ describe('github: ' + moduleName, function () {
     it('should return 99 results', (done) => {
       let opts = {}
 
-      github.user.getOrgs.yields(null, {data:new Array(99)})
-      github._getAllOrgs(opts, null, (err, allOrgs) => {
+      github.user.getOrgs.yields(null, new Array(99))
+      github._getAllOrgs(opts, (err, allOrgs) => {
         sinon.assert.calledOnce(github.user.getOrgs)
-        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 1}, null, sinon.match.func)
+        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 1}, sinon.match.func)
         expect(allOrgs.length).to.equal(99)
         done()
       })
@@ -429,12 +429,12 @@ describe('github: ' + moduleName, function () {
     it('should return 100 results', (done) => {
       let opts = {}
 
-      github.user.getOrgs.onFirstCall().yields(null, {data:new Array(100)})
-      github.user.getOrgs.onSecondCall().yields(null, {data:[]})
-      github._getAllOrgs(opts, null, (err, allOrgs) => {
+      github.user.getOrgs.onFirstCall().yields(null, new Array(100))
+      github.user.getOrgs.onSecondCall().yields(null, [])
+      github._getAllOrgs(opts, (err, allOrgs) => {
         sinon.assert.calledTwice(github.user.getOrgs)
-        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 1}, null, sinon.match.func)
-        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 2}, null, sinon.match.func)
+        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 1}, sinon.match.func)
+        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 2}, sinon.match.func)
         expect(allOrgs.length).to.equal(100)
         done()
       })
@@ -443,14 +443,14 @@ describe('github: ' + moduleName, function () {
     it('should return 201 results', (done) => {
       let opts = {}
 
-      github.user.getOrgs.onFirstCall().yields(null, {data:new Array(100)})
-      github.user.getOrgs.onSecondCall().yields(null, {data:new Array(100)})
-      github.user.getOrgs.onThirdCall().yields(null, {data:new Array(1)})
-      github._getAllOrgs(opts, null, (err, allOrgs) => {
+      github.user.getOrgs.onFirstCall().yields(null, new Array(100))
+      github.user.getOrgs.onSecondCall().yields(null, new Array(100))
+      github.user.getOrgs.onThirdCall().yields(null, new Array(1))
+      github._getAllOrgs(opts, (err, allOrgs) => {
         sinon.assert.calledThrice(github.user.getOrgs)
-        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 1}, null, sinon.match.func)
-        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 2}, null, sinon.match.func)
-        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 3}, null, sinon.match.func)
+        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 1}, sinon.match.func)
+        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 2}, sinon.match.func)
+        sinon.assert.calledWith(github.user.getOrgs, {per_page: 100, page: 3}, sinon.match.func)
         expect(allOrgs.length).to.equal(201)
         done()
       })
@@ -459,14 +459,14 @@ describe('github: ' + moduleName, function () {
     it('should return 40 results, over 2 pages, with three calls', (done) => {
       let opts = {per_page: 20}
 
-      github.user.getOrgs.onFirstCall().yields(null, {data:new Array(20)})
-      github.user.getOrgs.onSecondCall().yields(null, {data:new Array(20)})
-      github.user.getOrgs.onThirdCall().yields(null, {data:[]})
-      github._getAllOrgs(opts, null, (err, allOrgs) => {
+      github.user.getOrgs.onFirstCall().yields(null, new Array(20))
+      github.user.getOrgs.onSecondCall().yields(null, new Array(20))
+      github.user.getOrgs.onThirdCall().yields(null, [])
+      github._getAllOrgs(opts, (err, allOrgs) => {
         sinon.assert.calledThrice(github.user.getOrgs)
-        sinon.assert.calledWith(github.user.getOrgs, {per_page: 20, page: 1}, null, sinon.match.func)
-        sinon.assert.calledWith(github.user.getOrgs, {per_page: 20, page: 2}, null, sinon.match.func)
-        sinon.assert.calledWith(github.user.getOrgs, {per_page: 20, page: 3}, null, sinon.match.func)
+        sinon.assert.calledWith(github.user.getOrgs, {per_page: 20, page: 1}, sinon.match.func)
+        sinon.assert.calledWith(github.user.getOrgs, {per_page: 20, page: 2}, sinon.match.func)
+        sinon.assert.calledWith(github.user.getOrgs, {per_page: 20, page: 3}, sinon.match.func)
         expect(allOrgs.length).to.equal(40)
         done()
       })
