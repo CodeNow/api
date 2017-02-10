@@ -126,9 +126,6 @@ function main () {
           let blankIcv = res[0]
           let blankContext = res[1]
           return createContextVersion(blankSource, blankContext, blankIcv)
-          .then(cv => {
-            return createAndBuildBuild(user, blankSource, cv)
-          })
         })
         .tap(function (res) {
           const blankIcv = res[0]
@@ -150,7 +147,7 @@ function main () {
         })
     })
     .catch(err => {
-      console.error('hello runnable error', err)
+      console.log('Error seeding versions', err)
       throw err
     })
     .finally(() => {
@@ -260,4 +257,5 @@ function createOrUpdateInstance (user, data, build) {
         owner: createdBy
       }, user)
     })
+}
 
