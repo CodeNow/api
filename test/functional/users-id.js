@@ -84,6 +84,7 @@ describe('User - /users/:id', function () {
             }
           })
           ctx.user.update({
+            'userOptions.uiState.demo.explanationUi': true,
             'userOptions.uiState.shownCoachMarks.repoList': true
           }, function (err, body, code) {
             if (err) {
@@ -92,6 +93,9 @@ describe('User - /users/:id', function () {
             expect(code).to.equal(200)
             expect(body.userOptions).to.equal({
               uiState: {
+                demo: {
+                  explanationUi: true
+                },
                 shownCoachMarks: {
                   editButton: true,
                   repoList: true
