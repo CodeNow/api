@@ -51,11 +51,11 @@ describe('Instances Services Model', function () {
   describe('#filter for instances by branch name', () => {
     it('should use the org and branchname to find documents', (done) => {
       const branchName = 'hello-henry-branch-name'
-      const atlassianOrg = 'henrymollman'
-      InstanceService.findInstanceByBranchName(atlassianOrg, branchName, mockSessionUser)
+      const githubId = 999999
+      InstanceService.findInstanceByBranchName(githubId, branchName, mockSessionUser)
         .asCallback((err) => {
           expect(err).to.not.exist()
-          sinon.assert.calledWithExactly(Instance.aggregateAsync, [{ $match: { name: 'hello-henry-branch-name', 'owner.username': 'henrymollman' }}] )
+          sinon.assert.calledWithExactly(Instance.aggregateAsync, [{ $match: { name: 'hello-henry-branch-name', 'owner.github': 999999 }}] )
           done()
       })
     })
