@@ -80,7 +80,7 @@ describe('Cluster Update Worker', function () {
       sinon.stub(InstanceService, 'findInstanceById').resolves(testInstance)
       sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(config)
       sinon.stub(ClusterConfigService, 'fetchFileFromGithub').resolves(composeData)
-      sinon.stub(ClusterConfigService, 'parseComposeFile').resolves(octobearInfo)
+      sinon.stub(ClusterConfigService, 'parseComposeFileAndPopulateENVs').resolves(octobearInfo)
       sinon.stub(ClusterConfigService, 'updateCluster').resolves()
       done()
     })
@@ -90,7 +90,7 @@ describe('Cluster Update Worker', function () {
       InstanceService.findInstanceById.restore()
       ClusterConfigService.fetchConfigByInstanceId.restore()
       ClusterConfigService.fetchFileFromGithub.restore()
-      ClusterConfigService.parseComposeFile.restore()
+      ClusterConfigService.parseComposeFileAndPopulateENVs.restore()
       ClusterConfigService.updateCluster.restore()
       done()
     })
@@ -168,12 +168,13 @@ describe('Cluster Update Worker', function () {
       it('should parse the compose file', function (done) {
         Worker.task(job)
           .then(() => {
-            sinon.assert.calledOnce(ClusterConfigService.parseComposeFile)
+            sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
             sinon.assert.calledWithExactly(
-              ClusterConfigService.parseComposeFile,
+              ClusterConfigService.parseComposeFileAndPopulateENVs,
               composeData,
               job.pushInfo.repo,
-              config.clusterName
+              config.clusterName,
+              bigPoppaUser
             )
           })
           .asCallback(done)
@@ -187,7 +188,7 @@ describe('Cluster Update Worker', function () {
               InstanceService.findInstanceById,
               ClusterConfigService.fetchConfigByInstanceId,
               ClusterConfigService.fetchFileFromGithub,
-              ClusterConfigService.parseComposeFile,
+              ClusterConfigService.parseComposeFileAndPopulateENVs,
               ClusterConfigService.updateCluster
             )
           })

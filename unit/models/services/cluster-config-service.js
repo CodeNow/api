@@ -434,7 +434,6 @@ describe('Cluster Config Service Unit Tests', function () {
         .asCallback(done)
       })
 
-
       it('should call all the functions in the order', function (done) {
         ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, composeData, isTesting)
         .tap(function () {
