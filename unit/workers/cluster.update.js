@@ -24,7 +24,6 @@ const UserService = require('models/services/user-service')
 const Worker = require('workers/cluster.update')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
-
 describe('Cluster Update Worker', function () {
   describe('worker', function () {
     var testInstanceId = '5633e9273e2b5b0c0077fd41'

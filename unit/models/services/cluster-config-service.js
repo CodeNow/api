@@ -39,58 +39,15 @@ describe('Cluster Config Service Unit Tests', function () {
   const isTesting = true
   let testOrgInfo
 
-  const testMainParsedContent = {
-    metadata: {
-      name: 'api',
-      isMain: true
-    },
-    contextVersion: {
-      advanced: true,
-      buildDockerfilePath: '.'
-    },
-    files: { // Optional
-      '/Dockerfile': {
-        body: 'FROM node'
-      }
-    },
-    instance: {
-      name: 'api',
-      containerStartCommand: 'npm start',
-      ports: [80],
-      env: ['HELLO=WORLD']
-    }
-  }
-  const testDepParsedContent = {
-    metadata: {
-      name: 'workers',
-      isMain: false
-    },
-    contextVersion: {
-      advanced: true,
-      buildDockerfilePath: '.'
-    },
-    files: { // Optional
-      '/Dockerfile': {
-        body: 'FROM node'
-      }
-    },
-    instance: {
-      name: 'api',
-      containerStartCommand: 'npm start-workers',
-      ports: [80],
-      env: ['HELLO=WORLD']
-    }
-  }
-  const testParsedContent = {
-    results: [testMainParsedContent, testDepParsedContent]
-  }
+  let testMainParsedContent
+  let testDepParsedContent
+  let testParsedContent
   let testSessionUser
   const testOrg = {
     id: testOrgBpId
   }
 
   beforeEach((done) => {
-
     testSessionUser = {
       _id: 'id',
       accounts: {
@@ -115,6 +72,55 @@ describe('Cluster Config Service Unit Tests', function () {
     testOrgInfo = {
       githubOrgId: testOrgGithubId,
       bigPoppaOrgId: testOrgBpId
+    }
+
+    testMainParsedContent = {
+      metadata: {
+        name: 'api',
+        isMain: true,
+        envFiles: []
+      },
+      contextVersion: {
+        advanced: true,
+        buildDockerfilePath: '.'
+      },
+      files: { // Optional
+        '/Dockerfile': {
+          body: 'FROM node'
+        }
+      },
+      instance: {
+        name: 'api',
+        containerStartCommand: 'npm start',
+        ports: [80],
+        env: ['HELLO=WORLD']
+      }
+    }
+    testDepParsedContent = {
+      metadata: {
+        name: 'workers',
+        isMain: false,
+        envFiles: []
+      },
+      contextVersion: {
+        advanced: true,
+        buildDockerfilePath: '.'
+      },
+      files: { // Optional
+        '/Dockerfile': {
+          body: 'FROM node'
+        }
+      },
+      instance: {
+        name: 'api',
+        containerStartCommand: 'npm start-workers',
+        ports: [80],
+        env: ['HELLO=WORLD']
+      }
+    }
+    testParsedContent = {
+      results: [testMainParsedContent, testDepParsedContent],
+      envFiles: []
     }
     done()
   })
@@ -242,7 +248,7 @@ describe('Cluster Config Service Unit Tests', function () {
           sinon.assert.calledWithExactly(
             ClusterConfigService.createFromRunnableConfig,
             testSessionUser,
-            testParsedContent,
+            { results: testParsedContent.results }, // `envFiles` property removed
             triggeredAction,
             repoFullName,
             filePath,
