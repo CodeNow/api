@@ -1789,4 +1789,114 @@ describe('Cluster Config Service Unit Tests', function () {
       })
     })
   })
+
+  describe('parseComposeFileAndPopulateENVs', () => {
+    const mainInstanceName = 'mainInstanceName'
+    const bigPoppaUser = {}
+    const repoFullName = 'Runnable/octobear'
+    const composeFileData = {}
+    const fileString = 'ENV1=hello'
+   const envFiles = ['./env', './docker/.env', './wow/.env']
+    let parseResult
+    beforeEach(done => {
+      parseResult = {
+        results: [{
+          metadata: {
+            name: 'wow',
+            envFiles: []
+          },
+          instance: {
+            env: []
+          }
+        }],
+        envFiles
+      }
+      sinon.spy(octobear, 'populateENVsFromFiles')
+      sinon.stub(ClusterConfigService, 'parseComposeFile').resolves(parseResult)
+      sinon.stub(ClusterConfigService, 'fetchFileFromGithub').resolves({ fileString })
+      done()
+    })
+    afterEach(done => {
+      octobear.populateENVsFromFiles.restore()
+      ClusterConfigService.parseComposeFile.restore()
+      ClusterConfigService.fetchFileFromGithub.restore()
+      done()
+    })
+
+    it('should call `parse`', done => {
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+        .then(result => {
+          sinon.assert.calledOnce(ClusterConfigService.parseComposeFile)
+          sinon.assert.calledWithExactly(
+            ClusterConfigService.parseComposeFile,
+            composeFileData,
+            repoFullName,
+            mainInstanceName
+          )
+        })
+        .asCallback(done)
+    })
+
+    it('should not fetch any files if `envFiles` is empty', done => {
+      parseResult.envFiles = []
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+        .then(result => {
+          sinon.assert.notCalled(ClusterConfigService.fetchFileFromGithub)
+        })
+        .asCallback(done)
+    })
+
+    it('should fetch all files in `envFiles`', done => {
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+        .then(result => {
+          sinon.assert.called(ClusterConfigService.fetchFileFromGithub)
+          sinon.assert.callCount(ClusterConfigService.fetchFileFromGithub, envFiles.length)
+          sinon.assert.calledWithExactly(
+            ClusterConfigService.fetchFileFromGithub,
+            bigPoppaUser,
+            repoFullName,
+            envFiles[0]
+          )
+          sinon.assert.calledWithExactly(
+            ClusterConfigService.fetchFileFromGithub,
+            bigPoppaUser,
+            repoFullName,
+            envFiles[1]
+          )
+          sinon.assert.calledWithExactly(
+            ClusterConfigService.fetchFileFromGithub,
+            bigPoppaUser,
+            repoFullName,
+            envFiles[2]
+          )
+        })
+        .asCallback(done)
+    })
+
+    it('should call `populateENVsFromFiles`', done => {
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+        .then(result => {
+          sinon.assert.calledOnce(octobear.populateENVsFromFiles)
+          sinon.assert.calledWithExactly(
+            octobear.populateENVsFromFiles,
+            parseResult.results,
+            {
+              './env': fileString,
+              './docker/.env': fileString,
+              './wow/.env': fileString
+            }
+          )
+        })
+        .asCallback(done)
+    })
+
+    it('should return an object with `.results`', done => {
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+        .then(res => {
+          expect(res.results).to.be.an.array()
+          expect(res.results).to.equal(parseResult.results)
+        })
+        .asCallback(done)
+    })
+  })
 })
