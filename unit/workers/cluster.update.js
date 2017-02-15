@@ -79,7 +79,7 @@ describe('Cluster Update Worker', function () {
       sinon.stub(UserService, 'getCompleteUserByGithubId').resolves(user)
       sinon.stub(InstanceService, 'findInstanceById').resolves(testInstance)
       sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(config)
-      sinon.stub(ClusterConfigService, 'fetchComposeFileFromGithub').resolves(composeData)
+      sinon.stub(ClusterConfigService, 'fetchFileFromGithub').resolves(composeData)
       sinon.stub(ClusterConfigService, 'parseComposeFile').resolves(octobearInfo)
       sinon.stub(ClusterConfigService, 'updateCluster').resolves()
       done()
@@ -89,7 +89,7 @@ describe('Cluster Update Worker', function () {
       UserService.getCompleteUserByGithubId.restore()
       InstanceService.findInstanceById.restore()
       ClusterConfigService.fetchConfigByInstanceId.restore()
-      ClusterConfigService.fetchComposeFileFromGithub.restore()
+      ClusterConfigService.fetchFileFromGithub.restore()
       ClusterConfigService.parseComposeFile.restore()
       ClusterConfigService.updateCluster.restore()
       done()
@@ -154,9 +154,9 @@ describe('Cluster Update Worker', function () {
       it('should fetch the compose file', function (done) {
         Worker.task(job)
           .then(() => {
-            sinon.assert.calledOnce(ClusterConfigService.fetchComposeFileFromGithub)
+            sinon.assert.calledOnce(ClusterConfigService.fetchFileFromGithub)
             sinon.assert.calledWithExactly(
-              ClusterConfigService.fetchComposeFileFromGithub,
+              ClusterConfigService.fetchFileFromGithub,
               bigPoppaUser,
               job.pushInfo.repo,
               config.filePath
@@ -186,7 +186,7 @@ describe('Cluster Update Worker', function () {
               UserService.getCompleteUserByGithubId,
               InstanceService.findInstanceById,
               ClusterConfigService.fetchConfigByInstanceId,
-              ClusterConfigService.fetchComposeFileFromGithub,
+              ClusterConfigService.fetchFileFromGithub,
               ClusterConfigService.parseComposeFile,
               ClusterConfigService.updateCluster
             )
