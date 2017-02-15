@@ -257,7 +257,7 @@ describe('docker: ' + moduleName, function () {
     it('should return command in array form', (done) => {
       let output = {}
       Docker._addCmdToDataFromInstance(output, {
-        containerRunCommand: 'this command runs'
+        containerStartCommand: 'this command runs'
       })
       expect(output.Cmd).to.equal(['this', 'command', 'runs'])
       done()
@@ -1287,7 +1287,7 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should create a container with run cmd', function (done) {
-        ctx.opts.instance.containerRunCommand = 'keep calm and code on'
+        ctx.opts.instance.containerStartCommand = 'keep calm and code on'
 
         model.createUserContainer(ctx.opts, function (err, container) {
           if (err) { return done(err) }
