@@ -39,26 +39,34 @@ const InstanceService = require('models/services/instance-service')
 
 describe('Instances Services Model', function () {
   beforeEach((done) => {
-    sinon.stub(Instance, 'findAsync').resolves({})
-    sinon.stub(Instance, 'populateModelsAsync').resolves()
+    sinon.stub(Instance, 'aggregateAsync').resolves({})
     done()
   })
 
   afterEach((done) => {
-    Instance.findAsync.restore()
-    Instance.populateModelsAsync.restore()
+    Instance.aggregateAsync.restore()
     done()
   })
 
   describe('#filter for instances by branch name', () => {
-    it('should use the instance model to find documents', (done) => {
+    it('should use the org and branchname to find documents', (done) => {
       const branchName = 'hello-henry-branch-name'
-      InstanceService.findInstanceByBranchName(branchName, mockSessionUser)
+      const githubId = 999999
+      InstanceService.findInstanceByBranchName(githubId, branchName, mockSessionUser)
         .asCallback((err) => {
           expect(err).to.not.exist()
-          sinon.assert.calledWithExactly(Instance.findAsync, {name: branchName})
+          sinon.assert.calledWithExactly(Instance.aggregateAsync, [{ $match: { name: 'hello-henry-branch-name', 'owner.github': 999999 }}] )
           done()
       })
+    })
+    it('should use the branchname to find documents if no org', (done) => {
+      const branchName = 'hello-henry-branch-name'
+      InstanceService.findInstanceByBranchName(null, branchName, mockSessionUser)
+        .asCallback((err) => {
+          expect(err).to.not.exist()
+          sinon.assert.calledWithExactly(Instance.aggregateAsync, [{ $match: { name: 'hello-henry-branch-name'}}] )
+          done()
+        })
     })
   })
 })
