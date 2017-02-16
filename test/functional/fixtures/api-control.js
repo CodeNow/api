@@ -51,6 +51,8 @@ var publishedEvents = [
   'docker.events-stream.connected',
   'docker.events-stream.disconnected',
   'github.pushed',
+  'github.pull-request.opened',
+  'github.pull-request.synchronized',
   'instance.expired',
   'instance.started',
   'organization.payment-method.added',
