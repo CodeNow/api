@@ -619,6 +619,18 @@ describe('docker: ' + moduleName, function () {
       done()
     })
 
+    it('should return a swarm constraint orgId of 1 for personal account', function (done) {
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        noCache: false,
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: Object.assign({}, ctx.mockSessionUser, { accounts: { github: { id: 'owner' }}})
+    })
+      expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
+        .to.equal('["org==1"]')
+      done()
+    })
+
     it('should add dock constraint if prevDockerHost exist', function (done) {
       ctx.mockContextVersion.prevDockerHost = 'http://10.0.0.1:4242'
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
