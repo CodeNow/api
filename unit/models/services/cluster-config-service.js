@@ -232,6 +232,7 @@ describe('Cluster Config Service Unit Tests', function () {
           sinon.assert.calledOnce(octobear.parse)
           const parserPayload = {
             dockerComposeFileString: fileString,
+            dockerComposeFilePath: filePath,
             repositoryName: newInstanceName,
             ownerUsername: ownerUsername,
             userContentDomain: process.env.USER_CONTENT_DOMAIN
@@ -1258,7 +1259,8 @@ describe('Cluster Config Service Unit Tests', function () {
           .tap(function (parsed) {
             expect(parsed).to.equal({
               fileString,
-              fileSha: dockerComposeContent.sha
+              fileSha: dockerComposeContent.sha,
+              filePath
             })
           })
           .asCallback(done)
