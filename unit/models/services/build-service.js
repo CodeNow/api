@@ -730,7 +730,8 @@ describe('BuildService', function () {
         commit: 'mockCommit',
         user: {
           id: 7
-        }
+        },
+        pullRequest: 1
       }
       mockContext = {
         owner: {
@@ -922,6 +923,7 @@ describe('BuildService', function () {
           pushInfo.repo,
           pushInfo.branch,
           pushInfo.commit,
+          pushInfo.pullRequest,
           sinon.match.func
         )
         done()
@@ -955,7 +957,8 @@ describe('BuildService', function () {
         commit: 'mockCommit',
         user: {
           id: 'pushUserId'
-        }
+        },
+        pullRequest: 1
       }
       mockInstanceUser = { accounts: { github: { accessToken: 'instanceUserGithubToken' } } }
       mockPushUser = { accounts: { github: { accessToken: 'pushUserGithubToken' } } }
