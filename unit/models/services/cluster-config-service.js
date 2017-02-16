@@ -231,7 +231,7 @@ describe('Cluster Config Service Unit Tests', function () {
         .tap(function () {
           sinon.assert.calledOnce(octobear.parse)
           const parserPayload = {
-            dockerFileString: fileString,
+            dockerComposeFileString: fileString,
             repositoryName: newInstanceName,
             ownerUsername: ownerUsername,
             userContentDomain: process.env.USER_CONTENT_DOMAIN
