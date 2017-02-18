@@ -709,6 +709,100 @@ describe('Webhook Service Unit Tests', function () {
     })
   })
 
+  describe('parseGitHubPullRequestData', function () {
+    var body
+    var sender
+    beforeEach(function (done) {
+      sender = {
+        login: 'podviaznikov',
+        id: 429706,
+        avatar_url: 'https://avatars.githubusercontent.com/u/429706?v=3',
+        gravatar_id: '',
+        url: 'https://api.github.com/users/podviaznikov',
+        html_url: 'https://github.com/podviaznikov',
+        followers_url: 'https://api.github.com/users/podviaznikov/followers',
+        following_url: 'https://api.github.com/users/podviaznikov/following{/other_user}',
+        gists_url: 'https://api.github.com/users/podviaznikov/gists{/gist_id}',
+        starred_url: 'https://api.github.com/users/podviaznikov/starred{/owner}{/repo}',
+        subscriptions_url: 'https://api.github.com/users/podviaznikov/subscriptions',
+        organizations_url: 'https://api.github.com/users/podviaznikov/orgs',
+        repos_url: 'https://api.github.com/users/podviaznikov/repos',
+        events_url: 'https://api.github.com/users/podviaznikov/events{/privacy}',
+        received_events_url: 'https://api.github.com/users/podviaznikov/received_events',
+        type: 'User',
+        site_admin: false
+      }
+      body = {
+        number: 777,
+        pull_request: {
+          head: {
+            label: 'myorg:mybranch',
+            sha: '77485a1a3c2fcf1a6db52e72bf1c05f40336d244'
+          }
+        },
+        sender: sender,
+        repository: {
+          id: 20736018,
+          name: 'api',
+          full_name: 'CodeNow/api',
+          owner: {
+            id: 890,
+            name: 'CodeNow',
+            email: 'live@codenow.com'
+          },
+          private: true
+        }
+      }
+      done()
+    })
+    it('should parse data', function (done) {
+      WebhookService.parseGitHubPullRequestData(body)
+        .then(function (githubPushInfo) {
+          expect(githubPushInfo.branch).to.equal('myorg:mybranch')
+          expect(githubPushInfo.pullRequest).to.equal(777)
+          expect(githubPushInfo.repo).to.equal('CodeNow/api')
+          expect(githubPushInfo.repoName).to.equal('api')
+          expect(githubPushInfo.repoOwnerOrgName).to.equal('CodeNow')
+          expect(githubPushInfo.commit).to.equal(body.pull_request.head.sha)
+          expect(githubPushInfo.commitLog.length).to.equal(0)
+          expect(githubPushInfo.user).to.equal(sender)
+        })
+        .asCallback(done)
+    })
+  })
+
+  describe('shouldHandlePullRequestEvent', function () {
+    it('should return false if head and base are the same', function (done) {
+      const result = WebhookService.shouldHandlePullRequestEvent({
+        pull_request: {
+          head: {
+            repo: { id: 1 }
+          },
+          base: {
+            repo: { id: 1 }
+          }
+        }
+      })
+      expect(result).to.be.false()
+      done()
+    })
+
+    it('should return true if head and base are the same', function (done) {
+      const result = WebhookService.shouldHandlePullRequestEvent({
+        pull_request: {
+          head: {
+            repo: { id: 1 }
+          },
+          base: {
+            repo: { id: 2 }
+          }
+        }
+      })
+      expect(result).to.be.true()
+      done()
+    })
+  })
+
   describe('processGithookEvent', function () {
     var githubPushInfo
     var payload
