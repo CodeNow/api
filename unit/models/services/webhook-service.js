@@ -802,7 +802,48 @@ describe('Webhook Service Unit Tests', function () {
       done()
     })
   })
-
+  describe('processGithookPullRequestOpened', function () {
+    beforeEach(function (done) {
+      sinon.stub(WebhookService, '_processGithookPullRequestEvent').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      WebhookService._processGithookPullRequestEvent.restore()
+      done()
+    })
+    it('should call _processGithookPullRequestEvent', function (done) {
+      const payload = {
+        number: 777
+      }
+      WebhookService.processGithookPullRequestOpened(payload)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService._processGithookPullRequestEvent)
+        sinon.assert.calledWith(WebhookService._processGithookPullRequestEvent, payload, WebhookService.autoFork)
+        done()
+      })
+    })
+  })
+  describe('processGithookPullRequestSynced', function () {
+    beforeEach(function (done) {
+      sinon.stub(WebhookService, '_processGithookPullRequestEvent').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      WebhookService._processGithookPullRequestEvent.restore()
+      done()
+    })
+    it('should call _processGithookPullRequestEvent', function (done) {
+      const payload = {
+        number: 777
+      }
+      WebhookService.processGithookPullRequestSynced(payload)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService._processGithookPullRequestEvent)
+        sinon.assert.calledWith(WebhookService._processGithookPullRequestEvent, payload, WebhookService.autoDeploy)
+        done()
+      })
+    })
+  })
   describe('processGithookEvent', function () {
     var githubPushInfo
     var payload
