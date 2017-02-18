@@ -844,6 +844,199 @@ describe('Webhook Service Unit Tests', function () {
       })
     })
   })
+  describe('_processGithookPullRequestEvent', function () {
+    let body
+    let sender
+    let parsedData = {
+      repo: 'CodeNow/api',
+      branch: 'myorg:mybranch'
+    }
+    const instances = [
+      {
+        _id: 1
+      }
+    ]
+    beforeEach(function (done) {
+      sender = {
+        login: 'podviaznikov',
+        id: 429706,
+        avatar_url: 'https://avatars.githubusercontent.com/u/429706?v=3',
+        gravatar_id: '',
+        url: 'https://api.github.com/users/podviaznikov',
+        html_url: 'https://github.com/podviaznikov',
+        followers_url: 'https://api.github.com/users/podviaznikov/followers',
+        following_url: 'https://api.github.com/users/podviaznikov/following{/other_user}',
+        gists_url: 'https://api.github.com/users/podviaznikov/gists{/gist_id}',
+        starred_url: 'https://api.github.com/users/podviaznikov/starred{/owner}{/repo}',
+        subscriptions_url: 'https://api.github.com/users/podviaznikov/subscriptions',
+        organizations_url: 'https://api.github.com/users/podviaznikov/orgs',
+        repos_url: 'https://api.github.com/users/podviaznikov/repos',
+        events_url: 'https://api.github.com/users/podviaznikov/events{/privacy}',
+        received_events_url: 'https://api.github.com/users/podviaznikov/received_events',
+        type: 'User',
+        site_admin: false
+      }
+      body = {
+        number: 777,
+        pull_request: {
+          head: {
+            label: 'myorg:mybranch',
+            sha: '77485a1a3c2fcf1a6db52e72bf1c05f40336d244'
+          }
+        },
+        sender: sender,
+        repository: {
+          id: 20736018,
+          name: 'api',
+          full_name: 'CodeNow/api',
+          owner: {
+            id: 890,
+            name: 'CodeNow',
+            email: 'live@codenow.com'
+          },
+          private: true
+        }
+      }
+      sinon.stub(WebhookService, 'shouldHandlePullRequestEvent').returns(true)
+      sinon.stub(WebhookService, 'parseGitHubPullRequestData').resolves(parsedData)
+      sinon.stub(WebhookService, 'checkRepoOrganizationAgainstWhitelist').resolves()
+      sinon.stub(WebhookService, 'reportMixpanelUserPush').resolves()
+      sinon.stub(Instance, 'findInstancesLinkedToBranchAsync').resolves(instances)
+      sinon.stub(WebhookService, 'autoFork').resolves([])
+      done()
+      // if (WebhookService.shouldHandlePullRequestEvent(payload)) {
+      //   return WebhookService.parseGitHubPullRequestData(payload)
+      //   .tap(WebhookService.checkRepoOrganizationAgainstWhitelist)
+      //   .tap(WebhookService.reportMixpanelUserPush)
+      //   .then((githubPushInfo) => {
+      //     return Instance.findInstancesLinkedToBranchAsync(githubPushInfo.repo, githubPushInfo.branch)
+      //       .then(function (instances) {
+      //         return processFn(instances, githubPushInfo)
+      //       })
+      //   })
+      // }
+    })
+    afterEach(function (done) {
+      WebhookService.shouldHandlePullRequestEvent.restore()
+      WebhookService.parseGitHubPullRequestData.restore()
+      WebhookService.checkRepoOrganizationAgainstWhitelist.restore()
+      WebhookService.reportMixpanelUserPush.restore()
+      Instance.findInstancesLinkedToBranchAsync.restore()
+      WebhookService.autoFork.restore()
+      done()
+    })
+    it('should not call anything if shouldHandlePullRequestEvent return false', function (done) {
+      WebhookService.shouldHandlePullRequestEvent.returns(false)
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.notCalled(WebhookService.parseGitHubPullRequestData)
+        done()
+      })
+    })
+    it('should call parseGitHubPullRequestData', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService.parseGitHubPullRequestData)
+        sinon.assert.calledWithExactly(WebhookService.parseGitHubPullRequestData, body)
+        done()
+      })
+    })
+    it('should call checkRepoOrganizationAgainstWhitelist', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService.checkRepoOrganizationAgainstWhitelist)
+        sinon.assert.calledWithExactly(WebhookService.checkRepoOrganizationAgainstWhitelist, parsedData)
+        done()
+      })
+    })
+    it('should call reportMixpanelUserPush', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService.reportMixpanelUserPush)
+        sinon.assert.calledWithExactly(WebhookService.reportMixpanelUserPush, parsedData)
+        done()
+      })
+    })
+    it('should call findInstancesLinkedToBranchAsync', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.calledOnce(Instance.findInstancesLinkedToBranchAsync)
+        sinon.assert.calledWithExactly(Instance.findInstancesLinkedToBranchAsync, parsedData.repo, parsedData.branch)
+        done()
+      })
+    })
+    it('should call autoFork', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService.autoFork)
+        sinon.assert.calledWithExactly(WebhookService.autoFork, instances, parsedData)
+        done()
+      })
+    })
+    it('should call in order', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.callOrder(
+          WebhookService.parseGitHubPullRequestData,
+          WebhookService.checkRepoOrganizationAgainstWhitelist,
+          WebhookService.reportMixpanelUserPush,
+          Instance.findInstancesLinkedToBranchAsync,
+          WebhookService.autoFork
+        )
+        done()
+      })
+    })
+    describe('errors', function () {
+      it('should return error if parseGitHubPullRequestData faled', function (done) {
+        const error = new Error('My error')
+        WebhookService.parseGitHubPullRequestData.rejects(error)
+        WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+        .then(function () {
+          done(new Error('Should not happen'))
+        })
+        .catch(function (err) {
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+      it('should return error if reportMixpanelUserPush faled', function (done) {
+        const error = new Error('My error')
+        WebhookService.reportMixpanelUserPush.rejects(error)
+        WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+        .then(function () {
+          done(new Error('Should not happen'))
+        })
+        .catch(function (err) {
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+      it('should return error if findInstancesLinkedToBranchAsync faled', function (done) {
+        const error = new Error('My error')
+        Instance.findInstancesLinkedToBranchAsync.rejects(error)
+        WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+        .then(function () {
+          done(new Error('Should not happen'))
+        })
+        .catch(function (err) {
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+      it('should return error if autoFork faled', function (done) {
+        const error = new Error('My error')
+        WebhookService.autoFork.rejects(error)
+        WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+        .then(function () {
+          done(new Error('Should not happen'))
+        })
+        .catch(function (err) {
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+    })
+  })
   describe('processGithookEvent', function () {
     var githubPushInfo
     var payload
