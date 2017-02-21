@@ -39,7 +39,7 @@ describe('github.pull-request.synchronized unit test', function () {
       done()
     })
 
-    it('should push image', function (done) {
+    it('should handle pr synchronized', function (done) {
       Worker.task(testJob).asCallback(function (err) {
         if (err) { return done(err) }
 

@@ -904,17 +904,6 @@ describe('Webhook Service Unit Tests', function () {
       sinon.stub(Instance, 'findInstancesLinkedToBranchAsync').resolves(instances)
       sinon.stub(WebhookService, 'autoFork').resolves([])
       done()
-      // if (WebhookService.shouldHandlePullRequestEvent(payload)) {
-      //   return WebhookService.parseGitHubPullRequestData(payload)
-      //   .tap(WebhookService.checkRepoOrganizationAgainstWhitelist)
-      //   .tap(WebhookService.reportMixpanelUserPush)
-      //   .then((githubPushInfo) => {
-      //     return Instance.findInstancesLinkedToBranchAsync(githubPushInfo.repo, githubPushInfo.branch)
-      //       .then(function (instances) {
-      //         return processFn(instances, githubPushInfo)
-      //       })
-      //   })
-      // }
     })
     afterEach(function (done) {
       WebhookService.shouldHandlePullRequestEvent.restore()
@@ -991,10 +980,7 @@ describe('Webhook Service Unit Tests', function () {
         const error = new Error('My error')
         WebhookService.parseGitHubPullRequestData.rejects(error)
         WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
-        .then(function () {
-          done(new Error('Should not happen'))
-        })
-        .catch(function (err) {
+        .asCallback(function (err) {
           expect(err.message).to.equal(error.message)
           done()
         })
@@ -1003,10 +989,7 @@ describe('Webhook Service Unit Tests', function () {
         const error = new Error('My error')
         WebhookService.reportMixpanelUserPush.rejects(error)
         WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
-        .then(function () {
-          done(new Error('Should not happen'))
-        })
-        .catch(function (err) {
+        .asCallback(function (err) {
           expect(err.message).to.equal(error.message)
           done()
         })
@@ -1015,10 +998,7 @@ describe('Webhook Service Unit Tests', function () {
         const error = new Error('My error')
         Instance.findInstancesLinkedToBranchAsync.rejects(error)
         WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
-        .then(function () {
-          done(new Error('Should not happen'))
-        })
-        .catch(function (err) {
+        .asCallback(function (err) {
           expect(err.message).to.equal(error.message)
           done()
         })
@@ -1027,10 +1007,7 @@ describe('Webhook Service Unit Tests', function () {
         const error = new Error('My error')
         WebhookService.autoFork.rejects(error)
         WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
-        .then(function () {
-          done(new Error('Should not happen'))
-        })
-        .catch(function (err) {
+        .asCallback(function (err) {
           expect(err.message).to.equal(error.message)
           done()
         })

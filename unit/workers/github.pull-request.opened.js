@@ -39,7 +39,7 @@ describe('github.pull-request.opened unit test', function () {
       done()
     })
 
-    it('should push image', function (done) {
+    it('should handle pr opened', function (done) {
       Worker.task(testJob).asCallback(function (err) {
         if (err) { return done(err) }
 
