@@ -967,6 +967,73 @@ describe('Instance Model Integration Tests', function () {
           })
         })
       })
+      describe('checking envs don\'t hurt alias in connections', function () {
+        beforeEach(function (done) {
+          createNewInstance('fb1-adelle', {
+            name: 'fb1-adelle',
+            masterPod: false,
+            branch: 'fb1',
+            cv: ctx.adelle.contextVersion
+          })(done)
+        })
+        beforeEach(function (done) {
+          createNewInstance('fb1-goodbye', {
+            name: 'fb1-goodbye',
+            masterPod: false,
+            branch: 'fb1',
+            cv: ctx.goodbye.contextVersion
+          })(done)
+        })
+        beforeEach(function (done) {
+          // Set the dep to a branch
+          ctx.hello.addDependency(ctx['fb1-adelle']).asCallback(done)
+        })
+        it('should not remove the existing dep, when not adding any new ones', function (done) {
+          ctx.hello.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              return done(err)
+            }
+            ctx.hello.getDependencies(function (err, dependencies) {
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(1)
+              expect(dependencies[0]._id).to.equal(ctx['fb1-adelle']._id)
+              expect(dependencies[0].elasticHostname).to.equal(ctx['fb1-adelle'].elasticHostname)
+              done(err)
+            })
+          })
+        })
+        it('should add 1 new dep, and keep the existing one', function (done) {
+          ctx.hello.env.push([
+            'as=goodbye-staging-' + ownerName + '.runnableapp.com'
+          ])
+          ctx.hello.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              return done(err)
+            }
+            ctx.hello.getDependencies(function (err, dependencies) {
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(2)
+              var ids = dependencies.map(pluck('_id.toString()'))
+              expect(ids).to.include(ctx.goodbye._id.toString())
+              expect(ids).to.include(ctx['fb1-adelle']._id.toString())
+              done(err)
+            })
+          })
+        })
+        it('should remove the only dependency', function (done) {
+          ctx.hello.env = []
+          ctx.hello.setDependenciesFromEnvironment(ownerName, function (err) {
+            if (err) {
+              return done(err)
+            }
+            ctx.hello.getDependencies(function (err, dependencies) {
+              expect(dependencies).to.be.array()
+              expect(dependencies.length).to.equal(0)
+              done(err)
+            })
+          })
+        })
+      })
 
       describe('being isolated', function () {
         beforeEach(function (done) {
