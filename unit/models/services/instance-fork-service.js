@@ -914,7 +914,8 @@ describe('InstanceForkService', function () {
               },
               masterPod: false,
               autoForked: true,
-              isTesting: master.isTesting
+              isTesting: master.isTesting,
+              containerStartCommand: master.containerStartCommand
             },
             mockSessionUser
           )
@@ -939,7 +940,8 @@ describe('InstanceForkService', function () {
               },
               masterPod: false,
               autoForked: true,
-              isTesting: master.isTesting
+              isTesting: master.isTesting,
+              containerStartCommand: master.containerStartCommand
             },
             mockSessionUser
           )
