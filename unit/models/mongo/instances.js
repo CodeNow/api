@@ -790,121 +790,7 @@ describe('Instance Model Tests', function () {
         })
       })
     })
-    describe('Testing changes in aliases', function () {
-      var masterInstances
-      var contextId1 = 'asd'
-      var contextId2 = 'gsfdg'
-      var alias1 = {
-        contextId: contextId1,
-        alias: 'hello'
-      }
-      var alias2 = {
-        contextId: contextId2,
-        alias: 'hello.world'
-      }
-      var alias12 = {
-        contextId: contextId1,
-        alias: 'hello.world'
-      }
-      beforeEach(function (done) {
-        masterInstances = [
-          mongoFactory.createNewInstance('hello', {
-            masterPod: true,
-            hostname: 'hello-staging-' + ownerName + '.runnableapp.com',
-            contextVersion: {
-              context: contextId1
-            }
-          }),
-          mongoFactory.createNewInstance('adelle', {
-            masterPod: true,
-            hostname: 'adelle-staging-' + ownerName + '.runnableapp.com',
-            contextVersion: {
-              context: contextId2
-            }
-          })
-        ]
-        sinon.stub(Instance, 'find').yieldsAsync(null, masterInstances)
-        sinon.stub(instance, 'getAliases')
-        sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
-        sinon.stub(instance, 'addDependency').resolves()
-        sinon.stub(instance, 'removeDependency').resolves()
-        done()
-      })
-      afterEach(function (done) {
-        instance.addDependency.restore()
-        instance.removeDependency.restore()
-        instance.getAliases.restore()
-        done()
-      })
-      describe('Aliases', function () {
-        it('should add a new dep for the alias', function (done) {
-          instance.getAliases.returns([alias1])
-          instance.setDependenciesFromEnvironment(ownerName, function (err) {
-            if (err) {
-              return done(err)
-            }
-            sinon.assert.calledOnce(instance.invalidateContainerDNS)
-            sinon.assert.calledOnce(instance.addDependency)
-            sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('name', masterInstances[0].name)
-            )
-            sinon.assert.notCalled(instance.removeDependency)
-            done()
-          })
-        })
-        it('should add a new dep, and keep the existing one', function (done) {
-          instance.dependencies = [{
-            elasticHostname: alias2.alias,
-            instanceId: masterInstances[1]._id,
-            name: masterInstances[1].name,
-            isAlias: true
-          }]
-          instance.getDependencies.yieldsAsync(null, [masterInstances[1]])
-          instance.getAliases.returns([alias1, alias2])
-          instance.setDependenciesFromEnvironment(ownerName, function (err) {
-            if (err) {
-              return done(err)
-            }
-            sinon.assert.calledOnce(instance.invalidateContainerDNS)
-            sinon.assert.calledOnce(instance.addDependency)
-            sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('name', masterInstances[0].name)
-            )
-            sinon.assert.notCalled(instance.removeDependency)
-            done()
-          })
-        })
-        it('should add 2 new deps, and remove the existing one', function (done) {
-          instance.dependencies = [{
-            elasticHostname: 'completely different',
-            instanceId: masterInstances[1]._id,
-            name: masterInstances[1].name,
-            isAlias: true
-          }]
-          instance.getDependencies.yieldsAsync(null, [masterInstances[1]])
-          instance.getAliases.returns([alias1, alias2])
-          instance.setDependenciesFromEnvironment(ownerName, function (err) {
-            if (err) {
-              return done(err)
-            }
-            sinon.assert.calledOnce(instance.invalidateContainerDNS)
-            sinon.assert.calledTwice(instance.addDependency)
-            sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('name', masterInstances[0].name)
-            )
-            sinon.assert.calledWith(instance.addDependency.getCall(1),
-              sinon.match.has('name', masterInstances[1].name)
-            )
-            sinon.assert.calledOnce(instance.removeDependency)
-            sinon.assert.calledWith(instance.removeDependency.getCall(0),
-              masterInstances[1]._id,
-              'completely different'
-            )
-            done()
-          })
-        })
-      })
-    })
+
     describe('Testing changes in connections', function () {
       var masterInstances
       beforeEach(function (done) {
@@ -918,7 +804,6 @@ describe('Instance Model Tests', function () {
             hostname: 'adelle-staging-' + ownerName + '.runnableapp.com'
           })
         ]
-        sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
         sinon.stub(Instance, 'find').yieldsAsync(null, masterInstances)
         sinon.stub(instance, 'addDependency').resolves()
         sinon.stub(instance, 'removeDependency').resolves()
@@ -931,6 +816,7 @@ describe('Instance Model Tests', function () {
       })
       describe('Envs', function () {
         it('should add a new dep for each env, when starting with none', function (done) {
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
           instance.env = [
             'as=hello-staging-' + ownerName + '.runnableapp.com',
             'df=adelle-staging-' + ownerName + '.runnableapp.com'
@@ -942,17 +828,17 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledTwice(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('name', masterInstances[0].name)
+              sinon.match.has('shortHash', masterInstances[0].shortHash)
             )
             sinon.assert.calledWith(instance.addDependency.getCall(1),
-              sinon.match.has('name', masterInstances[1].name)
+              sinon.match.has('shortHash', masterInstances[1].shortHash)
             )
             sinon.assert.notCalled(instance.removeDependency)
             done()
           })
         })
         it('should not allow it to add itself', function (done) {
-          instance.getDependencies.yieldsAsync(null, [])
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
           instance.env = [
             'as=' + instance.elasticHostname
           ]
@@ -966,8 +852,7 @@ describe('Instance Model Tests', function () {
           })
         })
         it('should add 1 new dep, and keep the existing one', function (done) {
-          instance.getDependencies.yieldsAsync(null, [masterInstances[1]])
-          instance.dependencies = [masterInstances[1].generateGraphNode()]
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [masterInstances[1]])
           instance.env = [
             'as=hello-staging-' + ownerName + '.runnableapp.com',
             'df=adelle-staging-' + ownerName + '.runnableapp.com'
@@ -979,18 +864,14 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledOnce(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('name', masterInstances[0].name)
+              sinon.match.has('shortHash', masterInstances[0].shortHash)
             )
             sinon.assert.notCalled(instance.removeDependency)
             done()
           })
         })
         it('should remove one of the existing, but leave the other', function (done) {
-          instance.getDependencies.yieldsAsync(null, masterInstances)
-          instance.dependencies = [
-            masterInstances[0].generateGraphNode(),
-            masterInstances[1].generateGraphNode()
-          ]
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances)
           instance.env = [
             'df=adelle-staging-' + ownerName + '.runnableapp.com' // Keep masterInstance[1]
           ]
@@ -1008,11 +889,7 @@ describe('Instance Model Tests', function () {
           })
         })
         it('should remove both of the existing', function (done) {
-          instance.getDependencies.yieldsAsync(null, masterInstances)
-          instance.dependencies = [
-            masterInstances[0].generateGraphNode(),
-            masterInstances[1].generateGraphNode()
-          ]
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances)
           instance.setDependenciesFromEnvironment(ownerName, function (err) {
             if (err) {
               done(err)
@@ -1030,10 +907,7 @@ describe('Instance Model Tests', function () {
           })
         })
         it('should remove the existing one, and add the new one', function (done) {
-          instance.getDependencies.yieldsAsync(null, [masterInstances[1]])
-          instance.dependencies = [
-            masterInstances[1].generateGraphNode()
-          ]
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [masterInstances[1]])
           instance.env = [
             'df=hello-staging-' + ownerName + '.runnableapp.com' // Add masterInstance[0]
           ]
@@ -1048,7 +922,7 @@ describe('Instance Model Tests', function () {
             )
             sinon.assert.calledOnce(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('name', masterInstances[0].name)
+              sinon.match.has('shortHash', masterInstances[0].shortHash)
             )
             done()
           })
@@ -1070,9 +944,7 @@ describe('Instance Model Tests', function () {
             masterPod: true,
             hostname: 'potatoes-staging-' + ownerName + '.runnableapp.com'
           })) // 5
-          var existingDeps = masterInstances.slice(0, 3);
-          instance.getDependencies.yieldsAsync(null, existingDeps)
-          instance.dependencies = existingDeps.map(dep => dep.generateGraphNode())
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
           instance.env = [
             'df=hello-staging-' + ownerName + '.runnableapp.com', // keep masterInstance[0]
             'asd=chicken-staging-' + ownerName + '.runnableapp.com', // add masterInstance[3]
@@ -1092,10 +964,10 @@ describe('Instance Model Tests', function () {
             )
             sinon.assert.calledTwice(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('name', masterInstances[3].name)
+              sinon.match.has('shortHash', masterInstances[3].shortHash)
             )
             sinon.assert.calledWith(instance.addDependency.getCall(1),
-              sinon.match.has('name', masterInstances[5].name)
+              sinon.match.has('shortHash', masterInstances[5].shortHash)
             )
             done()
           })
@@ -1103,7 +975,7 @@ describe('Instance Model Tests', function () {
       })
       describe('FnR', function () {
         it('should add a new dep for each replace rule, when starting with none', function (done) {
-          instance.getDependencies.yieldsAsync(null, [])
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, [])
           var firstAppCodeVersion = keypather.get(instance, 'contextVersion.appCodeVersions[0]')
           firstAppCodeVersion.transformRules.replace = [
             {
@@ -1126,10 +998,10 @@ describe('Instance Model Tests', function () {
             sinon.assert.calledOnce(instance.invalidateContainerDNS)
             sinon.assert.calledTwice(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('name', masterInstances[0].name)
+              sinon.match.has('shortHash', masterInstances[0].shortHash)
             )
             sinon.assert.calledWith(instance.addDependency.getCall(1),
-              sinon.match.has('name', masterInstances[1].name)
+              sinon.match.has('shortHash', masterInstances[1].shortHash)
             )
             sinon.assert.notCalled(instance.removeDependency)
             done()
@@ -1152,9 +1024,7 @@ describe('Instance Model Tests', function () {
             masterPod: true,
             hostname: 'potatoes-staging-' + ownerName + '.runnableapp.com'
           })) // 5
-          const existingDeps = masterInstances.slice(0, 3)
-          instance.getDependencies.yieldsAsync(null, existingDeps)
-          instance.dependencies = existingDeps.map(dep => dep.generateGraphNode())
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
           instance.contextVersion.appCodeVersions[0].transformRules.replace = [
             {
               action: 'Replace',
@@ -1191,10 +1061,10 @@ describe('Instance Model Tests', function () {
             )
             sinon.assert.calledTwice(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('name', masterInstances[3].name)
+              sinon.match.has('shortHash', masterInstances[3].shortHash)
             )
             sinon.assert.calledWith(instance.addDependency.getCall(1),
-              sinon.match.has('name', masterInstances[5].name)
+              sinon.match.has('shortHash', masterInstances[5].shortHash)
             )
             done()
           })
@@ -1218,9 +1088,7 @@ describe('Instance Model Tests', function () {
             masterPod: true,
             hostname: 'potatoes-staging-' + ownerName + '.runnableapp.com'
           })) // 5
-          const existingDeps = masterInstances.slice(0, 3)
-          instance.getDependencies.yieldsAsync(null, existingDeps)
-          instance.dependencies = existingDeps.map(dep => dep.generateGraphNode())
+          sinon.stub(instance, 'getDependencies').yieldsAsync(null, masterInstances.slice(0, 3))
           instance.contextVersion.appCodeVersions[0].transformRules.replace = [
             {
               action: 'Replace',
@@ -1254,10 +1122,10 @@ describe('Instance Model Tests', function () {
             )
             sinon.assert.calledTwice(instance.addDependency)
             sinon.assert.calledWith(instance.addDependency.getCall(0),
-              sinon.match.has('name', masterInstances[5].name)
+              sinon.match.has('shortHash', masterInstances[5].shortHash)
             )
             sinon.assert.calledWith(instance.addDependency.getCall(1),
-              sinon.match.has('name', masterInstances[3].name)
+              sinon.match.has('shortHash', masterInstances[3].shortHash)
             )
             done()
           })
