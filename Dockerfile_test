@@ -1,0 +1,30 @@
+# Full list of versions available here: https://registry.hub.docker.com/_/node/tags/manage/\n' +
+FROM node:argon
+
+# Add repository files to container
+
+ENV NPM_TOKEN=c76363e9-78e0-4667-82ac-e2ac01efcfe2
+
+#Start: SSH Key
+ADD ["./id_rsa", "/root/.ssh/"]
+WORKDIR /root/.ssh/
+RUN chmod 0400 id_rsa && echo "IdentityFile /root/.ssh/id_rsa" >> /etc/ssh/ssh_config && ssh-keyscan -H github.com > /etc/ssh/ssh_known_hosts
+#End
+
+#Start: Main Repository
+ADD ["./api", "/api"]
+WORKDIR /api
+RUN echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+RUN npm install
+
+
+#End
+
+WORKDIR /api
+
+
+# Open up ports on the container
+EXPOSE 3000
+
+# Command to start the app
+CMD npm run _bdd
