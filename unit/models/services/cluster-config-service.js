@@ -91,6 +91,12 @@ describe('Cluster Config Service Unit Tests', function () {
       },
       instance: {
         name: 'api',
+        aliases: {
+          'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
+            'instanceName': 'compose-test-5-1-rethinkdb4',
+            'alias': 'three-changing-the-hostname'
+          }
+        },
         containerStartCommand: 'npm start',
         ports: [80],
         env: ['HELLO=WORLD']
@@ -113,6 +119,12 @@ describe('Cluster Config Service Unit Tests', function () {
       },
       instance: {
         name: 'api',
+        aliases: {
+          'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
+            'instanceName': 'compose-test-5-1-rethinkdb4',
+            'alias': 'three-changing-the-hostname'
+          }
+        },
         containerStartCommand: 'npm start-workers',
         ports: [80],
         env: ['HELLO=WORLD']
@@ -778,6 +790,12 @@ describe('Cluster Config Service Unit Tests', function () {
       const testParentBuildId = objectId('407f191e810c19729de860ef')
       const testParentComposeData = {
         env: 'env',
+        aliases: {
+          'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
+            'instanceName': 'compose-test-5-1-rethinkdb4',
+            'alias': 'three-changing-the-hostname'
+          }
+        },
         containerStartCommand: 'containerStartCommand',
         name: 'name'
       }
@@ -789,6 +807,7 @@ describe('Cluster Config Service Unit Tests', function () {
         sinon.assert.calledOnce(InstanceService.createInstance)
         sinon.assert.calledWith(InstanceService.createInstance, {
           build: testParentBuildId.toString(),
+          aliases: testParentComposeData.aliases,
           env: testParentComposeData.env,
           containerStartCommand: testParentComposeData.containerStartCommand,
           name: testParentComposeData.name,
@@ -809,6 +828,12 @@ describe('Cluster Config Service Unit Tests', function () {
       const testParentBuildId = objectId('407f191e810c19729de860ef')
       const testParentComposeData = {
         env: 'env',
+        aliases: {
+          'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
+            'instanceName': 'compose-test-5-1-rethinkdb4',
+            'alias': 'three-changing-the-hostname'
+          }
+        },
         containerStartCommand: 'containerStartCommand',
         name: 'name'
       }
@@ -821,6 +846,7 @@ describe('Cluster Config Service Unit Tests', function () {
         sinon.assert.calledWith(InstanceService.createInstance, {
           build: testParentBuildId.toString(),
           env: testParentComposeData.env,
+          aliases: testParentComposeData.aliases,
           containerStartCommand: testParentComposeData.containerStartCommand,
           name: testParentComposeData.name,
           isTesting,
@@ -972,6 +998,20 @@ describe('Cluster Config Service Unit Tests', function () {
     beforeEach((done) => {
       sessionUser = {}
       testConfig = {
+        aliases: {
+          'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
+            'instanceName': 'compose-test-5-1-rethinkdb4',
+            'alias': 'three-changing-the-hostname'
+          },
+          'cmV0aGlua2RiNA==': {
+            'instanceName': 'compose-test-5-1-rethinkdb4',
+            'alias': 'rethinkdb4'
+          },
+          'dGhyZWUtY2hhbmdpbmctdGhlLXdlaXJkLWhvc3Q=': {
+            'instanceName': 'compose-test-5-1-rethinkdb3',
+            'alias': 'three-changing-the-weird-host'
+          }
+        },
         env: ['env'],
         ports: [123],
         containerStartCommand: 'start',
@@ -1003,6 +1043,7 @@ describe('Cluster Config Service Unit Tests', function () {
           sinon.assert.calledOnce(InstanceService.updateInstance)
           sinon.assert.calledWith(InstanceService.updateInstance,
             instanceMock, {
+              aliases: testConfig.aliases,
               env: testConfig.env,
               ports: testConfig.ports,
               containerStartCommand: testConfig.containerStartCommand
