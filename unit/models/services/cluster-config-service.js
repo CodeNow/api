@@ -327,7 +327,7 @@ describe('Cluster Config Service Unit Tests', function () {
         _id: depInstanceId1
       })
       sinon.stub(ClusterConfigService, 'createClusterContext').resolves()
-      sinon.stub(ClusterConfigService, 'mapAliasesToContexts').resolves()
+      sinon.stub(ClusterConfigService, 'addAliasesToContexts').resolves()
       sinon.stub(UserService, 'getBpOrgInfoFromRepoName').returns(bigPoppaOwnerObject)
       sinon.stub(InputClusterConfig, 'createAsync').resolves(new InputClusterConfig(composeConfigData))
       sinon.stub(AutoIsolationService, 'createAndEmit').resolves(new AutoIsolationConfig(autoIsolationConfigData))
@@ -335,7 +335,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
     afterEach(function (done) {
       ClusterConfigService.createClusterContext.restore()
-      ClusterConfigService.mapAliasesToContexts.restore()
+      ClusterConfigService.addAliasesToContexts.restore()
       UserService.getBpOrgInfoFromRepoName.restore()
       InputClusterConfig.createAsync.restore()
       AutoIsolationService.createAndEmit.restore()
@@ -402,11 +402,11 @@ describe('Cluster Config Service Unit Tests', function () {
           })
           .asCallback(done)
       })
-      it('should call ClusterConfigService.mapAliasesToContexts with correct args', function (done) {
+      it('should call ClusterConfigService.addAliasesToContexts with correct args', function (done) {
         ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting)
           .tap(function () {
-            sinon.assert.calledOnce(ClusterConfigService.mapAliasesToContexts)
-            sinon.assert.calledWithExactly(ClusterConfigService.mapAliasesToContexts,
+            sinon.assert.calledOnce(ClusterConfigService.addAliasesToContexts)
+            sinon.assert.calledWithExactly(ClusterConfigService.addAliasesToContexts,
               testParsedContent.results
             )
           })
@@ -506,7 +506,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
   })
 
-  describe('mapAliasesToContexts', function () {
+  describe('addAliasesToContexts', function () {
     const mainContextId = objectId('107f191e810c19729de86011')
     const depContextId = objectId('107f191e810c19729de86012')
     beforeEach(function (done) {
@@ -516,25 +516,25 @@ describe('Cluster Config Service Unit Tests', function () {
     })
     describe('success', function () {
       it('should run successfully', function (done) {
-        ClusterConfigService.mapAliasesToContexts([testMainParsedContent, testDepParsedContent])
+        ClusterConfigService.addAliasesToContexts([testMainParsedContent, testDepParsedContent])
         expect(testMainParsedContent.instance.aliases.dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l.contextId).to.equal(depContextId)
         expect(testDepParsedContent.instance.aliases.dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l.contextId).to.be.undefined()
         done()
       })
       it('shouldn\'t fail if no configs given', function (done) {
-        ClusterConfigService.mapAliasesToContexts()
+        ClusterConfigService.addAliasesToContexts()
         done()
       })
       it('shouldn\'t fail if no configs with aliases are given', function (done) {
         delete testMainParsedContent.instance.aliases
         delete testDepParsedContent.instance.aliases
-        ClusterConfigService.mapAliasesToContexts([testMainParsedContent, testDepParsedContent])
+        ClusterConfigService.addAliasesToContexts([testMainParsedContent, testDepParsedContent])
         done()
       })
       it('should connect both configs together when they reference each other', function (done) {
         // make the other connection
         testDepParsedContent.instance.aliases.dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l.instanceName = testMainParsedContent.metadata.name
-        ClusterConfigService.mapAliasesToContexts([testMainParsedContent, testDepParsedContent])
+        ClusterConfigService.addAliasesToContexts([testMainParsedContent, testDepParsedContent])
         expect(testMainParsedContent.instance.aliases.dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l.contextId).to.equal(depContextId)
         expect(testDepParsedContent.instance.aliases.dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l.contextId).to.equal(mainContextId)
         done()
