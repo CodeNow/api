@@ -93,7 +93,7 @@ describe('Cluster Config Service Unit Tests', function () {
         name: 'api',
         aliases: {
           'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
-            'instanceName': 'workers',
+            'instanceName': 'api-workers',
             'alias': 'three-changing-the-hostname'
           }
         },
@@ -118,7 +118,7 @@ describe('Cluster Config Service Unit Tests', function () {
         }
       },
       instance: {
-        name: 'api',
+        name: 'api-workers',
         aliases: {
           'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
             'instanceName': 'compose-test-5-1-rethinkdb4',
