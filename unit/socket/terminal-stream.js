@@ -146,6 +146,7 @@ describe('terminal stream: ' + moduleName, function () {
             sinon.assert.calledWith(Instance.findOneAsync, {
               'container.dockerContainer': mockData.containerId
             })
+            sinon.assert.notCalled(Instance.findByIdAsync)
           })
           .asCallback(done)
       })
