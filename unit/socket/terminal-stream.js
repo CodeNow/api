@@ -79,7 +79,8 @@ describe('terminal stream: ' + moduleName, function () {
         id: 'mockInstance'
       }
       mockDebugContainer = {
-        id: 'mockDebugContainer'
+        id: 'mockDebugContainer',
+        instance: mockInstance.id
       }
       mockData = {
         isDebugContainer: false,
@@ -103,6 +104,7 @@ describe('terminal stream: ' + moduleName, function () {
       sinon.stub(commonStream, 'onValidateFailure').returnsArg(0)
       sinon.stub(terminalStream, '_setupStream').resolves()
       sinon.stub(Instance, 'findOneAsync').resolves(mockInstance)
+      sinon.stub(Instance, 'findByIdAsync').resolves(mockInstance)
       sinon.stub(DebugContainer, 'findOneAsync').resolves(mockDebugContainer)
       done()
     })
@@ -113,6 +115,7 @@ describe('terminal stream: ' + moduleName, function () {
       commonStream.onValidateFailure.restore()
       terminalStream._setupStream.restore()
       Instance.findOneAsync.restore()
+      Instance.findByIdAsync.restore()
       DebugContainer.findOneAsync.restore()
       done()
     })
@@ -129,6 +132,8 @@ describe('terminal stream: ' + moduleName, function () {
             sinon.assert.calledWith(DebugContainer.findOneAsync, {
               'inspect.dockerContainer': mockData.containerId
             })
+            sinon.assert.calledOnce(Instance.findByIdAsync)
+            sinon.assert.calledWith(Instance.findByIdAsync, mockDebugContainer.instance)
           })
           .asCallback(done)
       })
@@ -141,6 +146,7 @@ describe('terminal stream: ' + moduleName, function () {
             sinon.assert.calledWith(Instance.findOneAsync, {
               'container.dockerContainer': mockData.containerId
             })
+            sinon.assert.notCalled(Instance.findByIdAsync)
           })
           .asCallback(done)
       })
