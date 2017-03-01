@@ -46,7 +46,7 @@ describe('Instance Volumes Delete Worker', function () {
 
   describe('_deleteVolumes', function () {
     const testJob = {
-      volumes: [{Name: 'volume hash here'}]
+      volume: {Name: 'volume hash here'}
     }
     beforeEach(function (done) {
       sinon.stub(InstanceService, 'deleteInstanceVolumes').resolves()
@@ -66,7 +66,7 @@ describe('Instance Volumes Delete Worker', function () {
         Worker._deleteVolumes(testJob)
           .tap(function () {
             sinon.assert.calledOnce(InstanceService.deleteInstanceVolumes)
-            sinon.assert.calledWithExactly(InstanceService.deleteInstanceVolumes, testJob.volumes)
+            sinon.assert.calledWithExactly(InstanceService.deleteInstanceVolumes, testJob.volume)
           })
           .asCallback(done)
       })
