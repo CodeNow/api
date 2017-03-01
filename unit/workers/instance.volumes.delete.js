@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/instance.deleted
+ * @module unit/workers/instance.volumes.delete
  */
 'use strict'
 
