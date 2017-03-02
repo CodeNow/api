@@ -14,7 +14,7 @@ services:
       - RABBITMQ_HOSTNAME=rabbitBdd
       - MONGO=mongodb://localhost:27017/runnable_test
       - REDIS_IPADDRESS=redisBdd
-  bdd:
+  unit:
     build:
       context: .
       dockerfile: Dockerfile_unit_test
