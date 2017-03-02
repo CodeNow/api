@@ -80,10 +80,7 @@ describe('Cluster Config Service Unit Tests', function () {
         isMain: true,
         envFiles: []
       },
-      contextVersion: {
-        advanced: true,
-        buildDockerfilePath: '.'
-      },
+      buildDockerfilePath: '.',
       files: { // Optional
         '/Dockerfile': {
           body: 'FROM node'
@@ -108,10 +105,7 @@ describe('Cluster Config Service Unit Tests', function () {
         isMain: false,
         envFiles: []
       },
-      contextVersion: {
-        advanced: true,
-        buildDockerfilePath: '.'
-      },
+      buildDockerfilePath: '.',
       files: { // Optional
         '/Dockerfile': {
           body: 'FROM node'
@@ -658,12 +652,8 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call ContextVersion.createWithNewInfraCode if no Dockerfile was provided', (done) => {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
-        const testParsedContextVersionOpts = {
-          advanced: true,
-          buildDockerfilePath: testDockerfilePath
-        }
         const testParsedComposeData = {
-          contextVersion: testParsedContextVersionOpts
+          buildDockerfilePath: testDockerfilePath
         }
         ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
@@ -727,12 +717,8 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call all functions in order if Dockerfile was not specified', (done) => {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
-        const testParsedContextVersionOpts = {
-          advanced: true,
-          buildDockerfilePath: testDockerfilePath
-        }
         const testParsedComposeData = {
-          contextVersion: testParsedContextVersionOpts
+          buildDockerfilePath: testDockerfilePath
         }
         ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
