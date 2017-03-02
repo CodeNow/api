@@ -93,7 +93,7 @@ describe('Cluster Config Service Unit Tests', function () {
         name: 'api',
         aliases: {
           'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
-            'instanceName': 'compose-test-5-1-rethinkdb4',
+            'instanceName': 'api-workers',
             'alias': 'three-changing-the-hostname'
           }
         },
@@ -118,7 +118,7 @@ describe('Cluster Config Service Unit Tests', function () {
         }
       },
       instance: {
-        name: 'api',
+        name: 'api-workers',
         aliases: {
           'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
             'instanceName': 'compose-test-5-1-rethinkdb4',
@@ -310,10 +310,13 @@ describe('Cluster Config Service Unit Tests', function () {
         }
       ]
     }
-
     const triggeredAction = 'webhook'
     const orgName = 'Runnable'
     const repoName = 'api'
+    const bigPoppaOwnerObject = {
+      githubId: testOrgGithubId,
+      id: testOrgBpId
+    }
     const repoFullName = orgName + '/' + repoName
     beforeEach(function (done) {
       const instanceCreate = sinon.stub(ClusterConfigService, 'createClusterInstance')
@@ -323,11 +326,17 @@ describe('Cluster Config Service Unit Tests', function () {
       instanceCreate.onCall(1).resolves({
         _id: depInstanceId1
       })
+      sinon.stub(ClusterConfigService, 'createClusterContext').resolves()
+      sinon.stub(ClusterConfigService, 'addAliasesToContexts').resolves()
+      sinon.stub(UserService, 'getBpOrgInfoFromRepoName').returns(bigPoppaOwnerObject)
       sinon.stub(InputClusterConfig, 'createAsync').resolves(new InputClusterConfig(composeConfigData))
       sinon.stub(AutoIsolationService, 'createAndEmit').resolves(new AutoIsolationConfig(autoIsolationConfigData))
       done()
     })
     afterEach(function (done) {
+      ClusterConfigService.createClusterContext.restore()
+      ClusterConfigService.addAliasesToContexts.restore()
+      UserService.getBpOrgInfoFromRepoName.restore()
       InputClusterConfig.createAsync.restore()
       AutoIsolationService.createAndEmit.restore()
       ClusterConfigService.createClusterInstance.restore()
@@ -371,6 +380,37 @@ describe('Cluster Config Service Unit Tests', function () {
     describe('success', function () {
       it('should run successfully', function (done) {
         ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting).asCallback(done)
+      })
+      it('should call ClusterConfigService.createClusterContext with correct args', function (done) {
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting)
+          .tap(function () {
+            sinon.assert.calledTwice(ClusterConfigService.createClusterInstance)
+            sinon.assert.calledWithExactly(ClusterConfigService.createClusterContext,
+              testSessionUser,
+              testParsedContent.results[0],
+              sinon.match({
+                githubOrgId: bigPoppaOwnerObject.githubId,
+                bigPoppaOrgId: bigPoppaOwnerObject.id
+              }))
+            sinon.assert.calledWithExactly(ClusterConfigService.createClusterContext,
+              testSessionUser,
+              testParsedContent.results[0],
+              sinon.match({
+                githubOrgId: bigPoppaOwnerObject.githubId,
+                bigPoppaOrgId: bigPoppaOwnerObject.id
+              }))
+          })
+          .asCallback(done)
+      })
+      it('should call ClusterConfigService.addAliasesToContexts with correct args', function (done) {
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting)
+          .tap(function () {
+            sinon.assert.calledOnce(ClusterConfigService.addAliasesToContexts)
+            sinon.assert.calledWithExactly(ClusterConfigService.addAliasesToContexts,
+              testParsedContent.results
+            )
+          })
+          .asCallback(done)
       })
 
       it('should call ClusterConfigService.createClusterInstance with correct args', function (done) {
@@ -466,9 +506,43 @@ describe('Cluster Config Service Unit Tests', function () {
     })
   })
 
+  describe('addAliasesToContexts', function () {
+    const mainContextId = objectId('107f191e810c19729de86011')
+    const depContextId = objectId('107f191e810c19729de86012')
+    beforeEach(function (done) {
+      testMainParsedContent.contextId = mainContextId
+      testDepParsedContent.contextId = depContextId
+      done()
+    })
+    describe('success', function () {
+      it('should run successfully', function (done) {
+        ClusterConfigService.addAliasesToContexts([testMainParsedContent, testDepParsedContent])
+        expect(testMainParsedContent.instance.aliases.dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l.contextId).to.equal(depContextId)
+        expect(testDepParsedContent.instance.aliases.dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l.contextId).to.be.undefined()
+        done()
+      })
+      it('shouldn\'t fail if no configs given', function (done) {
+        ClusterConfigService.addAliasesToContexts()
+        done()
+      })
+      it('shouldn\'t fail if no configs with aliases are given', function (done) {
+        delete testMainParsedContent.instance.aliases
+        delete testDepParsedContent.instance.aliases
+        ClusterConfigService.addAliasesToContexts([testMainParsedContent, testDepParsedContent])
+        done()
+      })
+      it('should connect both configs together when they reference each other', function (done) {
+        // make the other connection
+        testDepParsedContent.instance.aliases.dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l.instanceName = testMainParsedContent.metadata.name
+        ClusterConfigService.addAliasesToContexts([testMainParsedContent, testDepParsedContent])
+        expect(testMainParsedContent.instance.aliases.dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l.contextId).to.equal(depContextId)
+        expect(testDepParsedContent.instance.aliases.dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l.contextId).to.equal(mainContextId)
+        done()
+      })
+    })
+  })
   describe('createClusterInstance', () => {
     beforeEach((done) => {
-      sinon.stub(ClusterConfigService, '_createContext')
       sinon.stub(ClusterConfigService, '_createContextVersion')
       sinon.stub(ClusterConfigService, '_createBuild')
       sinon.stub(BuildService, 'buildBuild')
@@ -481,7 +555,6 @@ describe('Cluster Config Service Unit Tests', function () {
       ClusterConfigService._createBuild.restore()
       ClusterConfigService._createContextVersion.restore()
       BuildService.buildBuild.restore()
-      ClusterConfigService._createContext.restore()
       done()
     })
 
@@ -497,13 +570,11 @@ describe('Cluster Config Service Unit Tests', function () {
       ClusterConfigService._createBuild.resolves(testBuild)
       BuildService.buildBuild.resolves(testBuild)
       ClusterConfigService._createContextVersion.resolves(testContextVersion)
-      ClusterConfigService._createContext.resolves(testContext)
+      testMainParsedContent.contextId = testContext._id
 
       ClusterConfigService.createClusterInstance(testSessionUser, testMainParsedContent, testRepoName, isTesting, testTriggeredAction).asCallback((err, instance) => {
         if (err) { return done(err) }
         expect(instance).to.equal(testInstance)
-        sinon.assert.calledOnce(ClusterConfigService._createContext)
-        sinon.assert.calledWithExactly(ClusterConfigService._createContext, testSessionUser, testOrgInfo)
         sinon.assert.calledOnce(ClusterConfigService._createContextVersion)
         sinon.assert.calledWithExactly(ClusterConfigService._createContextVersion, testSessionUser, testContext._id, testOrgInfo, testRepoName, testMainParsedContent)
         sinon.assert.calledOnce(ClusterConfigService._createBuild)
