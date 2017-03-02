@@ -5,7 +5,6 @@ services:
       context: .
       dockerfile: Dockerfile_test
     links:
-      - 'mongo'
       - 'rabbit'
       - 'redis'
     environment:
@@ -13,11 +12,9 @@ services:
       - RABBITMQ_USERNAME=guest
       - RABBITMQ_PASSWORD=guest
       - RABBITMQ_HOSTNAME=rabbit
-      - MONGO=mongodb://mongo:27017/runnable_test
+      - MONGO=mongodb://localhost:27017/runnable_test
       - REDIS_IPADDRESS=redis
   rabbit:
     image: rabbitmq:3.4.3-management
-  mongo:
-    image: mongo:3.2
   redis:
     image: redis:3.2
