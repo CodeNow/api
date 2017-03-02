@@ -20,9 +20,7 @@ services:
       dockerfile: Dockerfile_unit_test
     links:
       - 'redisUnit'
-      - 'mongoUnit'
     environment:
-      - MONGO=mongodb://mongoUnit:27017/runnable_test
       - REDIS_IPADDRESS=redisUnit
   rabbitBdd:
     image: rabbitmq:3.4.3-management
@@ -30,5 +28,3 @@ services:
     image: redis:3.2
   redisUnit:
     image: redis:3.2
-  mongoUnit:
-    image: mongo:3.2

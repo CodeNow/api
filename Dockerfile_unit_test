@@ -16,6 +16,4 @@ RUN npm install
 
 ADD ./ /api
 
-EXPOSE 3000
-
-CMD /wait.sh rabbit:5672 -t 60 && /wait.sh redis:6379 && mongod --fork --logpath /var/log/mongod.log && /wait.sh localhost:27017 && npm run unit
+CMD /wait.sh redis:6379 && npm run unit
