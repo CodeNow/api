@@ -1,6 +1,3 @@
-/**
- * @module unit/workers/instance.deleted
- */
 'use strict'
 
 const Lab = require('lab')
@@ -15,7 +12,7 @@ const Promise = require('bluebird')
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
-const InstanceService = require('models/services/instance-service')
+const Docker = require('models/apis/docker')
 
 const Worker = require('workers/instance.volumes.delete')
 
@@ -49,12 +46,12 @@ describe('Instance Volumes Delete Worker', function () {
       volume: {Name: 'volume hash here'}
     }
     beforeEach(function (done) {
-      sinon.stub(InstanceService, 'deleteInstanceVolumes').resolves()
+      sinon.stub(Docker.prototype, 'deleteInstanceVolume').resolves()
       done()
     })
 
     afterEach(function (done) {
-      InstanceService.deleteInstanceVolumes.restore()
+      Docker.prototype.deleteInstanceVolume.restore()
       done()
     })
     describe('success', function () {
@@ -62,11 +59,11 @@ describe('Instance Volumes Delete Worker', function () {
         Worker._deleteVolumes(testJob).asCallback(done)
       })
 
-      it('should call deleteVolumes with correct args', function (done) {
+      it('should call deleteVolume with correct args', function (done) {
         Worker._deleteVolumes(testJob)
           .tap(function () {
-            sinon.assert.calledOnce(InstanceService.deleteInstanceVolumes)
-            sinon.assert.calledWithExactly(InstanceService.deleteInstanceVolumes, testJob.volume)
+            sinon.assert.calledOnce(Docker.prototype.deleteInstanceVolume)
+            sinon.assert.calledWithExactly(Docker.prototype.deleteInstanceVolume, testJob.volume)
           })
           .asCallback(done)
       })
