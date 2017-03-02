@@ -1,20 +1,34 @@
 version: '2'
 services:
-  test:
+  bdd:
     build:
       context: .
-      dockerfile: Dockerfile_test
+      dockerfile: Dockerfile_bdd_test
     links:
-      - 'rabbit'
-      - 'redis'
+      - 'rabbitBdd'
+      - 'redisBdd'
     environment:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest
       - RABBITMQ_PASSWORD=guest
-      - RABBITMQ_HOSTNAME=rabbit
+      - RABBITMQ_HOSTNAME=rabbitBdd
       - MONGO=mongodb://localhost:27017/runnable_test
-      - REDIS_IPADDRESS=redis
-  rabbit:
+      - REDIS_IPADDRESS=redisBdd
+  bdd:
+    build:
+      context: .
+      dockerfile: Dockerfile_unit_test
+    links:
+      - 'redisUnit'
+      - 'mongoUnit'
+    environment:
+      - MONGO=mongodb://mongoUnit:27017/runnable_test
+      - REDIS_IPADDRESS=redisUnit
+  rabbitBdd:
     image: rabbitmq:3.4.3-management
-  redis:
+  redisBdd:
     image: redis:3.2
+  redisUnit:
+    image: redis:3.2
+  mongoUnit:
+    image: mongo:3.2
