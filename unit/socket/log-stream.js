@@ -80,7 +80,12 @@ describe('log stream: ' + moduleName, function () {
           github: 123
         },
         container: {
-          dockerContainer: ctx.data.containerId
+          dockerContainer: ctx.data.containerId,
+          inspect: {
+            State: {
+              Running: true
+            }
+          }
         }
       }
       writeStream = new ClientStream()
