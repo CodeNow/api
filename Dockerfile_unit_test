@@ -1,0 +1,19 @@
+FROM node:argon
+
+RUN wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh -O /wait.sh
+RUN chmod +x /wait.sh
+
+ENV NPM_TOKEN=c76363e9-78e0-4667-82ac-e2ac01efcfe2
+
+ADD ./keys/runnable-deploy-bot.id_rsa /root/.ssh/id_rsa
+WORKDIR /root/.ssh/
+RUN chmod 0400 id_rsa && echo "IdentityFile /root/.ssh/id_rsa" >> /etc/ssh/ssh_config && ssh-keyscan -H github.com > /etc/ssh/ssh_known_hosts
+
+ADD ./package.json /api/package.json
+WORKDIR /api
+RUN echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+RUN npm install
+
+ADD ./ /api
+
+CMD /wait.sh redis_unit:6379 && npm run unit
