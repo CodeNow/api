@@ -16,4 +16,4 @@ RUN npm install
 
 ADD ./ /api
 
-CMD /wait.sh redisUnit:6379 && npm run unit
+CMD /wait.sh redis_unit:6379 && npm run unit
