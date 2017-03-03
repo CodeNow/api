@@ -24,4 +24,4 @@ ADD ./ /api
 
 EXPOSE 3000
 
-CMD /wait.sh rabbit_bdd:5672 -t 60 && /wait.sh redis_bdd:6379 && mongod --fork --logpath /var/log/mongod.log && /wait.sh localhost:27017 && npm run _bdd
+CMD mongod --fork --logpath /var/log/mongod.log && /wait.sh localhost:27017 && npm run _bdd
