@@ -241,7 +241,8 @@ describe('Cluster Config Service Unit Tests', function () {
             dockerComposeFilePath: filePath,
             repositoryName: newInstanceName,
             ownerUsername: ownerUsername,
-            userContentDomain: process.env.USER_CONTENT_DOMAIN
+            userContentDomain: process.env.USER_CONTENT_DOMAIN,
+            scmDomain: process.env.GITHUB_HOST
           }
           sinon.assert.calledWithExactly(octobear.parse, parserPayload)
         })
@@ -659,7 +660,7 @@ describe('Cluster Config Service Unit Tests', function () {
         .tap((contextVersion) => {
           expect(contextVersion).to.equal(testContextVersion)
           sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
-          sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
+          sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName, null)
           sinon.assert.calledOnce(InfraCodeVersionService.findBlankInfraCodeVersion)
           sinon.assert.calledWithExactly(InfraCodeVersionService.findBlankInfraCodeVersion)
           sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
