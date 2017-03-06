@@ -24,4 +24,4 @@ ADD ./ /api
 
 EXPOSE 3000
 
-CMD /wait.sh apitest-rabbit-bdd-staging-codenow.runnableapp.com:15672 -t 60 && /wait.sh apitest-redis-bdd-staging-codenow.runnableapp.com:6379 && mongod --fork --logpath /var/log/mongod.log && /wait.sh localhost:27017 && npm run _bdd
+CMD /wait.sh api-bdd-rabbit-staging-codenow.runnableapp.com:15672 -t 60 && /wait.sh api-bdd-redis-staging-codenow.runnableapp.com:6379 && mongod --fork --logpath /var/log/mongod.log && /wait.sh localhost:27017 && npm run _bdd

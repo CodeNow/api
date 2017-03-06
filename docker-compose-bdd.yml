@@ -1,0 +1,20 @@
+version: '2'
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile_bdd_test
+    links:
+      - 'rabbit'
+      - 'redis'
+    environment:
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_HOSTNAME=rabbit
+      - MONGO=mongodb://localhost:27017/runnable_test
+      - REDIS_IPADDRESS=redis
+  rabbit:
+    image: rabbitmq:3.4.3-management
+  redis:
+    image: redis:3.2
