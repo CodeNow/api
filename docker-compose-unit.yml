@@ -3,7 +3,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile_unit_test
+      dockerfile: Dockerfile-unit
     links:
       - 'redis'
     environment:

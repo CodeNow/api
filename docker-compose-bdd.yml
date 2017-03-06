@@ -3,7 +3,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile_bdd_test
+      dockerfile: Dockerfile-bdd
     links:
       - 'rabbit'
       - 'redis'
