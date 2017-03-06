@@ -143,11 +143,11 @@ describe('Context Version Unit Test', function () {
       ContextVersion.createAppcodeVersion(testSessionUser, testRepoName).asCallback((err, appCodeVersion) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(Github.prototype.getRepoAsync)
-        sinon.assert.calledWith(Github.prototype.getRepoAsync, testRepoName)
+        sinon.assert.calledWithExactly(Github.prototype.getRepoAsync, testRepoName)
         sinon.assert.calledOnce(Github.prototype.createHooksAndKeys)
-        sinon.assert.calledWith(Github.prototype.createHooksAndKeys, testRepoName)
+        sinon.assert.calledWithExactly(Github.prototype.createHooksAndKeys, testRepoName)
         sinon.assert.calledOnce(Github.prototype.getBranchAsync)
-        sinon.assert.calledWith(Github.prototype.getBranchAsync, testRepoName, testBranch)
+        sinon.assert.calledWithExactly(Github.prototype.getBranchAsync, testRepoName, testBranch)
         expect(appCodeVersion).to.equal({
           repo: testRepoName,
           lowerRepo: testRepoName.toLowerCase(),
