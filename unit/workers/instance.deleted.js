@@ -27,7 +27,12 @@ describe('Instance Deleted Worker', function () {
   describe('worker', function () {
     const testJob = {
       instance: {
-        _id: 'some-id'
+        _id: 'some-id',
+        container: {
+          inspect: {
+            Mounts: []
+          }
+        }
       }
     }
     beforeEach(function (done) {
@@ -95,7 +100,12 @@ describe('Instance Deleted Worker', function () {
       instance: {
         _id: 'some-id',
         isolated: objectId('407f191e810c19729de860ef'),
-        isIsolationGroupMaster: true
+        isIsolationGroupMaster: true,
+        container: {
+          inspect: {
+            Mounts: []
+          }
+        }
       }
     }
     beforeEach(function (done) {
@@ -158,7 +168,12 @@ describe('Instance Deleted Worker', function () {
   describe('_deleteForks', function () {
     const testJob = {
       instance: {
-        _id: 'some-id'
+        _id: 'some-id',
+        container: {
+          inspect: {
+            Mounts: []
+          }
+        }
       }
     }
     beforeEach(function (done) {
