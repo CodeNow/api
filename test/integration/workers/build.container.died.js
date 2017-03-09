@@ -50,12 +50,14 @@ describe('ImageBuilderContainerDied Integration Tests', function () {
 
   before(function (done) {
     sinon.stub(rabbitMQ, 'clearContainerMemory')
+    sinon.stub(rabbitMQ, 'publishContainerLogsStore')
     sinon.stub(rabbitMQ, 'pushImage')
     done()
   })
 
   after(function (done) {
     rabbitMQ.pushImage.restore()
+    rabbitMQ.publishContainerLogsStore.restore()
     rabbitMQ.clearContainerMemory.restore()
     done()
   })
