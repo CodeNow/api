@@ -20,7 +20,7 @@ const Instance = require('models/mongo/instance')
 const Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
 const commonStream = require('socket/common-stream')
-const commonS3 = require('./common-s3')
+const commonS3 = require('socket/common-s3')
 const PermissionService = require('models/services/permission-service')
 
 function ClientStream () {
