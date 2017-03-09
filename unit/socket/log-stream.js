@@ -254,7 +254,7 @@ describe('log stream: ' + moduleName, function () {
         })
         describe('and file does not exist in s3', () => {
           beforeEach((done) => {
-            commonS3.pipeLogsToClient.rejects({})
+            commonS3.pipeLogsToClient.rejects({code: 'NoSuchKey'})
             done()
           })
           it('should stream logs from docker file', (done) => {
