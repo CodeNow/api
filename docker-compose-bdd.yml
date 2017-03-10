@@ -76,29 +76,3 @@ services:
     image: redis:3.2
   mongo2:
     image: mongo:3.2
-
-
-#  api3:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile-bdd
-#    links:
-#      - 'rabbit3'
-#      - 'redis3'
-#      - 'mongo3'
-#    environment:
-#      - RABBITMQ_PORT=5672
-#      - RABBITMQ_USERNAME=guest
-#      - RABBITMQ_PASSWORD=guest
-#      - RABBITMQ_HOSTNAME=rabbit3
-#      - MONGO=mongodb://mongo3:27017/runnable_test
-#      - REDIS_IPADDRESS=redis3
-#      - MONGO_HOST=mongo3
-#      - CIRCLE_NODE_TOTAL=4
-#      - CIRCLE_NODE_INDEX=3
-#  rabbit3:
-#    image: rabbitmq:3.4.3-management
-#  redis3:
-#    image: redis:3.2
-#  mongo3:
-#    image: mongo:3.2
