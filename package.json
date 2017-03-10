@@ -115,7 +115,7 @@
     "function-proxy": "^0.5.2",
     "jsdoc": "^3.2.2",
     "krain": "git+ssh://git@github.com:CodeNow/krain.git#v0.0.9",
-    "lab": "5.8.0",
+    "lab": "^12.1.0",
     "mehpi": "git+ssh://git@github.com:Runnable/mehpi.git#v2.0.1",
     "multiline": "^1.0.2",
     "nock": "^5.2.1",

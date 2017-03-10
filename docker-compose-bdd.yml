@@ -7,14 +7,98 @@ services:
     links:
       - 'rabbit'
       - 'redis'
+      - 'mongo'
     environment:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest
       - RABBITMQ_PASSWORD=guest
       - RABBITMQ_HOSTNAME=rabbit
-      - MONGO=mongodb://localhost:27017/runnable_test
+      - MONGO=mongodb://mongo:27017/runnable_test
       - REDIS_IPADDRESS=redis
+      - MONGO_HOST=mongo
+      - CIRCLE_NODE_TOTAL=3
+      - CIRCLE_NODE_INDEX=0
   rabbit:
     image: rabbitmq:3.4.3-management
   redis:
     image: redis:3.2
+  mongo:
+    image: mongo:3.2
+
+
+  api1:
+    build:
+      context: .
+      dockerfile: Dockerfile-bdd
+    links:
+      - 'rabbit1'
+      - 'redis1'
+      - 'mongo1'
+    environment:
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_HOSTNAME=rabbit1
+      - MONGO=mongodb://mongo1:27017/runnable_test
+      - REDIS_IPADDRESS=redis1
+      - MONGO_HOST=mongo1
+      - CIRCLE_NODE_TOTAL=3
+      - CIRCLE_NODE_INDEX=1
+  rabbit1:
+    image: rabbitmq:3.4.3-management
+  redis1:
+    image: redis:3.2
+  mongo1:
+    image: mongo:3.2
+
+
+  api2:
+    build:
+      context: .
+      dockerfile: Dockerfile-bdd
+    links:
+      - 'rabbit2'
+      - 'redis2'
+      - 'mongo2'
+    environment:
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_HOSTNAME=rabbit2
+      - MONGO=mongodb://mongo2:27017/runnable_test
+      - REDIS_IPADDRESS=redis2
+      - MONGO_HOST=mongo2
+      - CIRCLE_NODE_TOTAL=3
+      - CIRCLE_NODE_INDEX=2
+  rabbit2:
+    image: rabbitmq:3.4.3-management
+  redis2:
+    image: redis:3.2
+  mongo2:
+    image: mongo:3.2
+
+
+#  api3:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile-bdd
+#    links:
+#      - 'rabbit3'
+#      - 'redis3'
+#      - 'mongo3'
+#    environment:
+#      - RABBITMQ_PORT=5672
+#      - RABBITMQ_USERNAME=guest
+#      - RABBITMQ_PASSWORD=guest
+#      - RABBITMQ_HOSTNAME=rabbit3
+#      - MONGO=mongodb://mongo3:27017/runnable_test
+#      - REDIS_IPADDRESS=redis3
+#      - MONGO_HOST=mongo3
+#      - CIRCLE_NODE_TOTAL=4
+#      - CIRCLE_NODE_INDEX=3
+#  rabbit3:
+#    image: rabbitmq:3.4.3-management
+#  redis3:
+#    image: redis:3.2
+#  mongo3:
+#    image: mongo:3.2
