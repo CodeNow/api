@@ -3,13 +3,6 @@ FROM node:argon
 RUN wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh -O /wait.sh
 RUN chmod +x /wait.sh
 
-# This isn't ran, we ensure indexes using the mongo client so we need this to be installed
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
-RUN echo 'deb http://downloads-distro.mongodb.org/repo/debian-sysvinit dist 10gen' | tee /etc/apt/sources.list.d/mongodb.list
-RUN apt-get update
-RUN apt-get install -y mongodb-10gen=2.4.12
-RUN mkdir -p /data/db/
-
 ENV NPM_TOKEN=c76363e9-78e0-4667-82ac-e2ac01efcfe2
 
 ADD ./keys/runnable-deploy-bot.id_rsa /root/.ssh/id_rsa
