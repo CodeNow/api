@@ -15,9 +15,6 @@ services:
       - MONGO_HOST=mongo
       - NODE_ENV=test
       - RABBITMQ_HOSTNAME=rabbit
-      - RABBITMQ_PASSWORD=guest
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USERNAME=guest
       - REDIS_IPADDRESS=redis
   rabbit:
     image: rabbitmq:3.4.3-management
@@ -42,9 +39,6 @@ services:
       - MONGO_HOST=mongo1
       - NODE_ENV=test
       - RABBITMQ_HOSTNAME=rabbit1
-      - RABBITMQ_PASSWORD=guest
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USERNAME=guest
       - REDIS_IPADDRESS=redis1
   rabbit1:
     image: rabbitmq:3.4.3-management
@@ -69,9 +63,6 @@ services:
       - MONGO_HOST=mongo2
       - NODE_ENV=test
       - RABBITMQ_HOSTNAME=rabbit2
-      - RABBITMQ_PASSWORD=guest
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USERNAME=guest
       - REDIS_IPADDRESS=redis2
   rabbit2:
     image: rabbitmq:3.4.3-management
