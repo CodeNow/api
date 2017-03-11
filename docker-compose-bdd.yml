@@ -9,15 +9,16 @@ services:
       - 'redis'
       - 'mongo'
     environment:
+      - CIRCLE_NODE_INDEX=0
+      - CIRCLE_NODE_TOTAL=3
+      - MONGO=mongodb://mongo:27017/runnable_test
+      - MONGO_HOST=mongo
+      - NODE_ENV=test
+      - RABBITMQ_HOSTNAME=rabbit
+      - RABBITMQ_PASSWORD=guest
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest
-      - RABBITMQ_PASSWORD=guest
-      - RABBITMQ_HOSTNAME=rabbit
-      - MONGO=mongodb://mongo:27017/runnable_test
       - REDIS_IPADDRESS=redis
-      - MONGO_HOST=mongo
-      - CIRCLE_NODE_TOTAL=3
-      - CIRCLE_NODE_INDEX=0
   rabbit:
     image: rabbitmq:3.4.3-management
   redis:
@@ -35,15 +36,16 @@ services:
       - 'redis1'
       - 'mongo1'
     environment:
+      - CIRCLE_NODE_INDEX=1
+      - CIRCLE_NODE_TOTAL=3
+      - MONGO=mongodb://mongo1:27017/runnable_test
+      - MONGO_HOST=mongo1
+      - NODE_ENV=test
+      - RABBITMQ_HOSTNAME=rabbit1
+      - RABBITMQ_PASSWORD=guest
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest
-      - RABBITMQ_PASSWORD=guest
-      - RABBITMQ_HOSTNAME=rabbit1
-      - MONGO=mongodb://mongo1:27017/runnable_test
       - REDIS_IPADDRESS=redis1
-      - MONGO_HOST=mongo1
-      - CIRCLE_NODE_TOTAL=3
-      - CIRCLE_NODE_INDEX=1
   rabbit1:
     image: rabbitmq:3.4.3-management
   redis1:
@@ -61,15 +63,16 @@ services:
       - 'redis2'
       - 'mongo2'
     environment:
+      - CIRCLE_NODE_INDEX=2
+      - CIRCLE_NODE_TOTAL=3
+      - MONGO=mongodb://mongo2:27017/runnable_test
+      - MONGO_HOST=mongo2
+      - NODE_ENV=test
+      - RABBITMQ_HOSTNAME=rabbit2
+      - RABBITMQ_PASSWORD=guest
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest
-      - RABBITMQ_PASSWORD=guest
-      - RABBITMQ_HOSTNAME=rabbit2
-      - MONGO=mongodb://mongo2:27017/runnable_test
       - REDIS_IPADDRESS=redis2
-      - MONGO_HOST=mongo2
-      - CIRCLE_NODE_TOTAL=3
-      - CIRCLE_NODE_INDEX=2
   rabbit2:
     image: rabbitmq:3.4.3-management
   redis2:
