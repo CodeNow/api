@@ -69,31 +69,29 @@ describe('Analyze - /actions/analyze', function () {
   })
   afterEach(require('../../fixtures/clean-ctx')(ctx))
 
-  describe('Error conditions', function () {
-    it('should return 400 code without a "repo" query parameter', function (done) {
-      ctx.request.get(
-        hooks.getErrorNoQueryParam,
-        function (err, res) {
-          if (err) { return done(err) }
-          if (err) { return done(err) }
-          expect(res.statusCode).to.equal(400)
-          expect(res.body.message).to.equal('query parameter "repo" must be a string')
-          done()
-        })
-    })
+  it('Error conditions should return 400 code without a "repo" query parameter', function (done) {
+    ctx.request.get(
+      hooks.getErrorNoQueryParam,
+      function (err, res) {
+        if (err) { return done(err) }
+        if (err) { return done(err) }
+        expect(res.statusCode).to.equal(400)
+        expect(res.body.message).to.equal('query parameter "repo" must be a string')
+        done()
+      })
+  })
 
-    it('should return 400 code for repository with no recognized dependency file', function (done) {
-      repoContentsMock.repoContentsDirectory('python', {})
-      ctx.request.get(
-        hooks.getSuccess,
-        function (err, res) {
-          if (err) { return done(err) }
-          if (err) { return done(err) }
-          expect(res.statusCode).to.equal(400)
-          expect(res.body.message).to.equal('unknown language/framework type')
-          done()
-        })
-    })
+  it('Error conditions should return 400 code for repository with no recognized dependency file', function (done) {
+    repoContentsMock.repoContentsDirectory('python', {})
+    ctx.request.get(
+      hooks.getSuccess,
+      function (err, res) {
+        if (err) { return done(err) }
+        if (err) { return done(err) }
+        expect(res.statusCode).to.equal(400)
+        expect(res.body.message).to.equal('unknown language/framework type')
+        done()
+      })
   })
 
   /**
