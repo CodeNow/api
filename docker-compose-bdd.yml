@@ -3,7 +3,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile-bdd
+      dockerfile: Dockerfile-local-bdd
     links:
       - 'rabbit'
       - 'redis'
@@ -30,7 +30,7 @@ services:
   api1:
     build:
       context: .
-      dockerfile: Dockerfile-bdd
+      dockerfile: Dockerfile-local-bdd
     links:
       - 'rabbit1'
       - 'redis1'
@@ -57,7 +57,7 @@ services:
   api2:
     build:
       context: .
-      dockerfile: Dockerfile-bdd
+      dockerfile: Dockerfile-local-bdd
     links:
       - 'rabbit2'
       - 'redis2'
