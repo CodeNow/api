@@ -1,0 +1,72 @@
+version: '2'
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile-local-bdd
+    links:
+      - 'rabbit'
+      - 'redis'
+      - 'mongo'
+    environment:
+      - CIRCLE_NODE_INDEX=0
+      - CIRCLE_NODE_TOTAL=3
+      - MONGO=mongodb://mongo:27017/runnable_test
+      - MONGO_HOST=mongo
+      - NODE_ENV=test
+      - RABBITMQ_HOSTNAME=rabbit
+      - REDIS_IPADDRESS=redis
+  rabbit:
+    image: rabbitmq:3.4.3-management
+  redis:
+    image: redis:3.2
+  mongo:
+    image: mongo:3.2
+
+
+  api1:
+    build:
+      context: .
+      dockerfile: Dockerfile-local-bdd
+    links:
+      - 'rabbit1'
+      - 'redis1'
+      - 'mongo1'
+    environment:
+      - CIRCLE_NODE_INDEX=1
+      - CIRCLE_NODE_TOTAL=3
+      - MONGO=mongodb://mongo1:27017/runnable_test
+      - MONGO_HOST=mongo1
+      - NODE_ENV=test
+      - RABBITMQ_HOSTNAME=rabbit1
+      - REDIS_IPADDRESS=redis1
+  rabbit1:
+    image: rabbitmq:3.4.3-management
+  redis1:
+    image: redis:3.2
+  mongo1:
+    image: mongo:3.2
+
+
+  api2:
+    build:
+      context: .
+      dockerfile: Dockerfile-local-bdd
+    links:
+      - 'rabbit2'
+      - 'redis2'
+      - 'mongo2'
+    environment:
+      - CIRCLE_NODE_INDEX=2
+      - CIRCLE_NODE_TOTAL=3
+      - MONGO=mongodb://mongo2:27017/runnable_test
+      - MONGO_HOST=mongo2
+      - NODE_ENV=test
+      - RABBITMQ_HOSTNAME=rabbit2
+      - REDIS_IPADDRESS=redis2
+  rabbit2:
+    image: rabbitmq:3.4.3-management
+  redis2:
+    image: redis:3.2
+  mongo2:
+    image: mongo:3.2

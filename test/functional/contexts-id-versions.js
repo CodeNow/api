@@ -13,13 +13,11 @@ var expect = Code.expect
 
 var expects = require('./fixtures/expects')
 var api = require('./fixtures/api-control')
-var dock = require('./fixtures/dock')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var exists = require('101/exists')
 var ContextVersions = require('models/mongo/context-version')
 var generateKey = require('./fixtures/key-factory')
-var primus = require('./fixtures/primus')
 var async = require('async')
 var not = require('101/not')
 var equals = require('101/equals')
@@ -28,11 +26,7 @@ describe('Versions - /contexts/:contextid/versions', function () {
   var ctx = {}
 
   before(api.start.bind(ctx))
-  before(dock.start.bind(ctx))
-  beforeEach(primus.connect)
-  afterEach(primus.disconnect)
   after(api.stop.bind(ctx))
-  after(dock.stop.bind(ctx))
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
@@ -313,29 +307,6 @@ describe('Versions - /contexts/:contextid/versions', function () {
         }]
         var query = {
           infraCodeVersion: ctx.contextVersion.json().infraCodeVersion
-        }
-        ctx.context.fetchVersions(query, expects.success(200, expected, done))
-      })
-    })
-    describe('via buildCompleted', function () {
-      it('should not return us our version', function (done) {
-        var expected = []
-        var query = {
-          build: {
-            completed: false
-          }
-        }
-        ctx.context.fetchVersions(query, expects.success(200, expected, done))
-      })
-      it('should return us our version', function (done) {
-        var expected = [{
-          owner: exists,
-          _id: ctx.contextVersion.id()
-        }]
-        var query = {
-          build: {
-            completed: true
-          }
         }
         ctx.context.fetchVersions(query, expects.success(200, expected, done))
       })
