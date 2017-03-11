@@ -514,27 +514,6 @@ module.exports = {
     })
   },
 
-  createAndTailContainer: function (cb) {
-    log.trace({}, 'createAndTailContainer')
-
-    var stub
-    if (!PermissionService.isOwnerOf.isSinonProxy) {
-      // Duck it, we never need to restore this stub anyways right?
-      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
-    }
-    function realCb () {
-      if (stub) {
-        stub.restore()
-      }
-      cb.apply(null, arguments)
-    }
-    this.createAndTailInstance(function (err, instance, build, user, modelsArray, srcArr) {
-      if (err) { return cb(err) }
-      var container = instance.newContainer(instance.json().containers[0])
-      realCb(err, container, instance, build, user, modelsArray, srcArr)
-    })
-  },
-
   createContainer: function (cb) {
     log.trace({}, 'createContainer')
     var _this = this
