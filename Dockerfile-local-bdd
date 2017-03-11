@@ -16,6 +16,4 @@ RUN npm install
 
 ADD ./ /api
 
-EXPOSE 3000
-
 CMD /wait.sh $RABBITMQ_HOSTNAME:15672 -t 60 && /wait.sh $REDIS_IPADDRESS:6379 -t 60  && /wait.sh $MONGO_HOST:27017 -t 60 && ./scripts/npm-bdd-split-files.sh
