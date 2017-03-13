@@ -15,19 +15,13 @@ var optimus = require('optimus/client')
 var last = require('101/last')
 
 var api = require('../fixtures/api-control')
-var dock = require('../fixtures/dock')
 var multi = require('../fixtures/multi-factory')
-var primus = require('../fixtures/primus')
 
 describe('POST /contexts/:id/versions/:id/appCodeVersions/:id/actions/testTransformRule', function () {
   var ctx = {}
 
   before(api.start.bind(ctx))
-  before(dock.start.bind(ctx))
-  beforeEach(primus.connect)
-  afterEach(primus.disconnect)
   after(api.stop.bind(ctx))
-  after(dock.stop.bind(ctx))
   afterEach(require('../fixtures/clean-mongo').removeEverything)
   afterEach(require('../fixtures/clean-ctx')(ctx))
   afterEach(require('../fixtures/clean-nock'))

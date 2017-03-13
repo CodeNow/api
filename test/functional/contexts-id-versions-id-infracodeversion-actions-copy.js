@@ -13,24 +13,18 @@ var expect = Code.expect
 
 var expects = require('./fixtures/expects')
 var api = require('./fixtures/api-control')
-var dock = require('./fixtures/dock')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var createCount = require('callback-count')
 var InfraCodeVersion = require('models/mongo/infra-code-version')
 var hasProps = require('101/has-properties')
 var find = require('101/find')
-var primus = require('./fixtures/primus')
 
 describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/copy', function () {
   var ctx = {}
 
   before(api.start.bind(ctx))
-  before(dock.start.bind(ctx))
-  beforeEach(primus.connect)
-  afterEach(primus.disconnect)
   after(api.stop.bind(ctx))
-  after(dock.stop.bind(ctx))
   // afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
@@ -293,23 +287,6 @@ describe('Version - /contexts/:contextId/versions/:id/infraCodeVersion/actions/c
             .newVersion(ctx.contextVersion.id())
             .fetch(ctx.contextVersion.id(),
               expects.error(403, /denied/, done))
-        })
-      })
-    })
-    describe('built build (contextVersion)', function () {
-      beforeEach(function (done) {
-        multi.createBuiltBuild(function (err, build, user, modelArr) {
-          ctx.user = user
-          ctx.contextVersion = modelArr[0]
-          ctx.context = modelArr[1]
-          done(err)
-        })
-      })
-      describe('owner', function () {
-        it('should not copy the version files', function (done) {
-          var sourceInfraCodeVersionId = ctx.sourceContextVersion.attrs.infraCodeVersion
-          ctx.contextVersion.copyFilesFromSource(sourceInfraCodeVersionId,
-            expects.error(400, /built/, done))
         })
       })
     })

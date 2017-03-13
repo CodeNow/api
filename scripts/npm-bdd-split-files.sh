@@ -35,10 +35,13 @@ then
   npm run _bdd -- $indexes ${extra_args[@]} ${files[@]}
   exit $?
 fi
+echo "Fetching number of tests."
 
 numTests=$(npm run _bdd -- --dry ${all_files[@]} | tail -7 | perl -n -e '/- (\d+)\)/ && print $1')
 if [[ $numTests == "" ]]; then echo "could not get number of tests"; exit 1; fi
-echo $numTests to run
+echo "Found $numTests to run"
+
+numTestToOmit=300
 
 if [[ $indexes == "" ]]
 then
@@ -47,30 +50,16 @@ then
   then
     echo "local testing"
   else
-    if [[ $CIRCLE_NODE_INDEX -eq 0 ]]
-    then
-      len=60
-      s=0
-      n=1
-      e=60
-    elif [[ $CIRCLE_NODE_INDEX -eq 1 ]]
-    then
-      len=70
-      s=60
-      n=61
-      e=130
-    else
-      len=$(expr $(expr $numTests-300) / $CIRCLE_NODE_TOTAL)
-      s=130
-      n=131
-      e=$(expr $numTests )
-    fi
-    if [[ $CIRCLE_NODE_TOTAL -eq $n ]]
+    testCount=$(($numTests - $numTestToOmit))
+    len=$((testCount / ($CIRCLE_NODE_TOTAL - 1)))
+    s=$(($len * $CIRCLE_NODE_INDEX))
+    e=$(($s + $len))
+    if [[ $CIRCLE_NODE_INDEX -eq $(($CIRCLE_NODE_TOTAL - 1)) ]]
     then
       e=$numTests
     fi
     indexes="-i $s-$e"
-    echo "indexes $indexes"
+    echo "Running tests on index:  $indexes"
   fi
 fi
 
