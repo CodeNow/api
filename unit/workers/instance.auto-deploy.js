@@ -76,46 +76,42 @@ describe('Workers: Instance Auto Deploy', function () {
     done()
   })
 
-  it('should fail if findByIdAsync failed', function (done) {
+  it('should fail if findByIdAsync failed', function () {
     var error = new Error('Mongo error')
     Instance.findByIdAsync.rejects(error)
     return Worker.task(job)
-      .asCallback(function (err) {
+      .catch(function (err) {
         expect(err).to.exist()
         expect(err.message).to.equal(error.message)
-        done()
       })
   })
 
-  it('should worker stop if findOneStarting returned no instance', function (done) {
+  it('should worker stop if findOneStarting returned no instance', function () {
     Instance.findByIdAsync.resolves(null)
     return Worker.task(job)
-      .asCallback(function (err) {
+      .catch(function (err) {
         expect(err).to.exist()
         expect(err).to.be.instanceOf(WorkerStopError)
         expect(err.message).to.equal('Instance not found')
-        done()
       })
   })
 
-  it('should fail if BuildService createAndBuildContextVersion failed', function (done) {
+  it('should fail if BuildService createAndBuildContextVersion failed', function () {
     var error = new Error('Docker error')
     BuildService.createAndBuildContextVersion.rejects(error)
     return Worker.task(job)
-      .asCallback(function (err) {
+      .catch(function (err) {
         expect(err).to.exist()
         expect(err).to.equal(error)
-        done()
       })
   })
 
-  it('should call createAndBuildContextVersion with instance and pushInfo', function (done) {
+  it('should call createAndBuildContextVersion with instance and pushInfo', function () {
     return Worker.task(job)
-      .asCallback(function (err) {
+      .catch(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(BuildService.createAndBuildContextVersion)
         sinon.assert.calledWith(BuildService.createAndBuildContextVersion, testInstance, githubPushInfo)
-        done()
       })
   })
 })
