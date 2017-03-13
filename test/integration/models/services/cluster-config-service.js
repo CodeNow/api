@@ -20,7 +20,6 @@ const ClusterConfigService = require('models/services/cluster-config-service')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
 const mongoFactory = require('../../fixtures/factory')
 const mongooseControl = require('models/mongo/mongoose-control.js')
-const BigPoppaClient = require('@runnable/big-poppa-client')
 
 describe('Cluster Config Services Integration Tests', function () {
   before(mongooseControl.start)
