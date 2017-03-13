@@ -1,26 +1,27 @@
 'use strict'
 
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
-var it = lab.it
-var beforeEach = lab.beforeEach
-// var after = lab.after
-var afterEach = lab.afterEach
-var Code = require('code')
-var expect = Code.expect
+const Lab = require('lab')
+const lab = exports.lab = Lab.script()
+const describe = lab.describe
+const it = lab.it
+const beforeEach = lab.beforeEach
+// const after = lab.after
+const afterEach = lab.afterEach
+const Code = require('code')
+const expect = Code.expect
 
-var sinon = require('sinon')
-var EventEmitter = require('events').EventEmitter
-var util = require('util')
+const sinon = require('sinon')
+const EventEmitter = require('events').EventEmitter
+const util = require('util')
 
-var logStream = require('socket/log-stream')
-var Instance = require('models/mongo/instance')
+const logStream = require('socket/log-stream')
+const Instance = require('models/mongo/instance')
 
-var Promise = require('bluebird')
+const Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
-var commonStream = require('socket/common-stream')
-var PermissionService = require('models/services/permission-service')
+const commonStream = require('socket/common-stream')
+const commonS3 = require('socket/common-s3')
+const PermissionService = require('models/services/permission-service')
 
 function ClientStream () {
   EventEmitter.call(this)
@@ -80,7 +81,12 @@ describe('log stream: ' + moduleName, function () {
           github: 123
         },
         container: {
-          dockerContainer: ctx.data.containerId
+          dockerContainer: ctx.data.containerId,
+          inspect: {
+            State: {
+              Running: true
+            }
+          }
         }
       }
       writeStream = new ClientStream()
@@ -219,6 +225,62 @@ describe('log stream: ' + moduleName, function () {
             done()
           })
           .catch(done)
+      })
+
+      describe('When container is stopped', () => {
+        beforeEach((done) => {
+          ctx.instance.container.inspect.State.Running = false
+          sinon.stub(commonS3, 'pipeLogsToClient').resolves({})
+          done()
+        })
+        afterEach((done) => {
+          commonS3.pipeLogsToClient.restore()
+          done()
+        })
+        describe('file exists in s3', () => {
+          it('should stream logs from s3 file', (done) => {
+            logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
+              .then(() => {
+                sinon.assert.notCalled(commonStream.pipeLogsToClient)
+                sinon.assert.calledOnce(commonS3.pipeLogsToClient)
+                sinon.assert.calledWith(
+                  commonS3.pipeLogsToClient,
+                  substream,
+                  ctx.data.containerId
+                )
+              })
+              .asCallback(done)
+          })
+        })
+        describe('and file does not exist in s3', () => {
+          beforeEach((done) => {
+            commonS3.pipeLogsToClient.rejects({code: 'NoSuchKey'})
+            done()
+          })
+          it('should stream logs from docker file', (done) => {
+            logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
+              .then(() => {
+                sinon.assert.calledOnce(commonS3.pipeLogsToClient)
+                sinon.assert.calledWith(
+                  commonS3.pipeLogsToClient,
+                  substream,
+                  ctx.data.containerId
+                )
+                sinon.assert.calledOnce(commonStream.pipeLogsToClient)
+                sinon.assert.calledWith(
+                  commonStream.pipeLogsToClient,
+                  substream,
+                  'api.socket.log',
+                  sinon.match.object,
+                  ctx.data.containerId,
+                  {
+                    tailLimit: process.env.DOCKER_LOG_TAIL_LIMIT
+                  }
+                )
+              })
+              .asCallback(done)
+          })
+        })
       })
     })
   })
