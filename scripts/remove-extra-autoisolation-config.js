@@ -1,7 +1,6 @@
 'use strict'
 /**
- * This script updates all instances to save their hostname (and elasticHostname) to the database.
- * It also saves the name of the owner from github (if it wasn't already there)
+ * This script removes all but the latest AutoIsolationConfig associated with an instance
  */
 require('loadenv')()
 var AutoIsolationConfigs = require('models/mongo/auto-isolation-config')
