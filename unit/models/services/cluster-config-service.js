@@ -1937,7 +1937,7 @@ describe('Cluster Config Service Unit Tests', function () {
       done()
     })
 
-    it('should call `parse`', done => {
+    it('should call `parse`', () => {
       return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
         .then(result => {
           sinon.assert.calledOnce(ClusterConfigService.parseComposeFile)
@@ -1948,19 +1948,17 @@ describe('Cluster Config Service Unit Tests', function () {
             mainInstanceName
           )
         })
-        .asCallback(done)
     })
 
-    it('should not fetch any files if `envFiles` is empty', done => {
+    it('should not fetch any files if `envFiles` is empty', () => {
       parseResult.envFiles = []
       return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
         .then(result => {
           sinon.assert.notCalled(ClusterConfigService.fetchFileFromGithub)
         })
-        .asCallback(done)
     })
 
-    it('should fetch all files in `envFiles`', done => {
+    it('should fetch all files in `envFiles`', () => {
       return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
         .then(result => {
           sinon.assert.called(ClusterConfigService.fetchFileFromGithub)
@@ -1984,10 +1982,9 @@ describe('Cluster Config Service Unit Tests', function () {
             envFiles[2]
           )
         })
-        .asCallback(done)
     })
 
-    it('should call `populateENVsFromFiles`', done => {
+    it('should call `populateENVsFromFiles`', () => {
       return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
         .then(result => {
           sinon.assert.calledOnce(octobear.populateENVsFromFiles)
@@ -2001,16 +1998,14 @@ describe('Cluster Config Service Unit Tests', function () {
             }
           )
         })
-        .asCallback(done)
     })
 
-    it('should return an object with `.results`', done => {
+    it('should return an object with `.results`', () => {
       return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
         .then(res => {
           expect(res.results).to.be.an.array()
           expect(res.results).to.equal(parseResult.results)
         })
-        .asCallback(done)
     })
   })
 })
