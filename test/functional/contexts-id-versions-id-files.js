@@ -14,11 +14,9 @@ var join = require('path').join
 
 var expects = require('./fixtures/expects')
 var api = require('./fixtures/api-control')
-var dock = require('./fixtures/dock')
 var mockGetUserById = require('./fixtures/mocks/github/getByUserId')
 var multi = require('./fixtures/multi-factory')
 var createCount = require('callback-count')
-var primus = require('./fixtures/primus')
 
 function createFile (contextId, path, name, isDir, fileType) {
   var key = (isDir) ? join(contextId, 'source', path, name, '/') : join(contextId, 'source', path, name)
@@ -38,11 +36,7 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
   var ctx = {}
 
   before(api.start.bind(ctx))
-  before(dock.start.bind(ctx))
-  beforeEach(primus.connect)
-  afterEach(primus.disconnect)
   after(api.stop.bind(ctx))
-  after(dock.stop.bind(ctx))
   afterEach(require('./fixtures/clean-mongo').removeEverything)
   afterEach(require('./fixtures/clean-ctx')(ctx))
   afterEach(require('./fixtures/clean-nock'))
@@ -294,28 +288,6 @@ describe('Version Files - /contexts/:contextid/versions/:id/files', function () 
             ctx.contextVersion.rootDir.contents.create(
               json, expects.error(409, /File already exists/, done))
           }))
-      })
-      describe('built build', function () {
-        beforeEach(function (done) {
-          multi.createBuiltBuild(function (err, build, user, modelArr) {
-            if (err) { return done(err) }
-            ctx.contextVersion = modelArr[0]
-            done()
-          })
-        })
-        it('should not allow file creates for built builds', function (done) {
-          var json = {
-            json: {
-              name: 'file2.txt',
-              path: '/',
-              body: 'content'
-            }
-          }
-          require('./fixtures/mocks/s3/put-object')(ctx.context.id(), 'file2.txt')
-          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), '/')
-          require('./fixtures/mocks/s3/get-object')(ctx.context.id(), 'file2.txt')
-          ctx.file = ctx.contextVersion.rootDir.contents.create(json, expects.error(400, /built/, done))
-        })
       })
     })
   })

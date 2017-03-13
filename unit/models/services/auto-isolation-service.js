@@ -36,20 +36,29 @@ describe('AutoIsolationService', () => {
       instance: objectId('207f191e810c19729de860ef')
     }
   ]
-  describe('createAndEmit', () => {
+  describe('createOrUpdateAndEmit', () => {
     let configProps = {
       instance,
       requestedDependencies,
       createdByUser,
       ownedByOrg
     }
+    let notFoundError
+    let autoIsolationConfig
     beforeEach((done) => {
-      sinon.stub(AutoIsolationConfig, 'createAsync').resolves(new AutoIsolationConfig(configProps))
+      notFoundError = new AutoIsolationConfig.NotFoundError('nope')
+      autoIsolationConfig = new AutoIsolationConfig(configProps)
+      done()
+    })
+    beforeEach((done) => {
+      sinon.stub(AutoIsolationConfig, 'createAsync').resolves(autoIsolationConfig)
+      sinon.stub(AutoIsolationConfig, 'findActiveByInstanceId').rejects(notFoundError)
       sinon.stub(rabbitMQ, 'autoIsolationConfigCreated').returns()
       done()
     })
     afterEach((done) => {
       AutoIsolationConfig.createAsync.restore()
+      AutoIsolationConfig.findActiveByInstanceId.restore()
       rabbitMQ.autoIsolationConfigCreated.restore()
       done()
     })
@@ -57,7 +66,7 @@ describe('AutoIsolationService', () => {
       it('should fail if AutoIsolationConfig.createAsync failed', (done) => {
         const error = new Error('Some error')
         AutoIsolationConfig.createAsync.rejects(error)
-        AutoIsolationService.createAndEmit(configProps)
+        AutoIsolationService.createOrUpdateAndEmit(configProps)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -68,7 +77,7 @@ describe('AutoIsolationService', () => {
       it('should fail if rabbit failed', (done) => {
         const error = new Error('Some error')
         rabbitMQ.autoIsolationConfigCreated.throws(error)
-        AutoIsolationService.createAndEmit(configProps)
+        AutoIsolationService.createOrUpdateAndEmit(configProps)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -78,7 +87,7 @@ describe('AutoIsolationService', () => {
     })
     describe('success', () => {
       it('should be successful and return saved model', (done) => {
-        AutoIsolationService.createAndEmit(configProps)
+        AutoIsolationService.createOrUpdateAndEmit(configProps)
         .tap((config) => {
           expect(config._id).to.exist()
           expect(config.created).to.exist()
@@ -91,7 +100,7 @@ describe('AutoIsolationService', () => {
       })
 
       it('should call AutoIsolationConfig.createAsync properly', (done) => {
-        AutoIsolationService.createAndEmit(configProps)
+        AutoIsolationService.createOrUpdateAndEmit(configProps)
         .tap(() => {
           sinon.assert.calledOnce(AutoIsolationConfig.createAsync)
           sinon.assert.calledWithExactly(AutoIsolationConfig.createAsync, configProps)
@@ -100,7 +109,7 @@ describe('AutoIsolationService', () => {
       })
 
       it('should call rabbitMQ.autoIsolationConfigCreated properly', (done) => {
-        AutoIsolationService.createAndEmit(configProps)
+        AutoIsolationService.createOrUpdateAndEmit(configProps)
         .tap((config) => {
           sinon.assert.calledOnce(rabbitMQ.autoIsolationConfigCreated)
           const newEvent = {
@@ -118,11 +127,61 @@ describe('AutoIsolationService', () => {
       })
 
       it('should call in order', (done) => {
-        AutoIsolationService.createAndEmit(configProps)
+        AutoIsolationService.createOrUpdateAndEmit(configProps)
         .tap(() => {
           sinon.assert.callOrder(AutoIsolationConfig.createAsync, rabbitMQ.autoIsolationConfigCreated)
         })
         .asCallback(done)
+      })
+    })
+    describe('Updating', () => {
+      beforeEach((done) => {
+        AutoIsolationConfig.findActiveByInstanceId.resolves(autoIsolationConfig)
+        done()
+      })
+      beforeEach((done) => {
+        sinon.stub(autoIsolationConfig, 'saveAsync').resolves(autoIsolationConfig)
+        sinon.stub(autoIsolationConfig, 'set').returns()
+        done()
+      })
+      it('should update the model if it already exists', (done) => {
+        AutoIsolationService.createOrUpdateAndEmit(configProps)
+          .tap((autoIsolationConfig) => {
+            sinon.assert.calledOnce(AutoIsolationConfig.findActiveByInstanceId)
+            sinon.assert.calledOnce(autoIsolationConfig.set)
+            sinon.assert.calledWithExactly(autoIsolationConfig.set, configProps)
+            sinon.assert.calledOnce(autoIsolationConfig.saveAsync)
+          })
+          .asCallback(done)
+      })
+      it('should call in order', (done) => {
+        AutoIsolationService.createOrUpdateAndEmit(configProps)
+          .tap(() => {
+            sinon.assert.callOrder(
+              AutoIsolationConfig.findActiveByInstanceId,
+              autoIsolationConfig.set,
+              autoIsolationConfig.saveAsync,
+              rabbitMQ.autoIsolationConfigCreated
+            )
+          })
+          .asCallback(done)
+      })
+      it('should call rabbitMQ.autoIsolationConfigCreated properly', (done) => {
+        AutoIsolationService.createOrUpdateAndEmit(configProps)
+          .tap((config) => {
+            sinon.assert.calledOnce(rabbitMQ.autoIsolationConfigCreated)
+            const newEvent = {
+              autoIsolationConfig: { id: config._id.toString() },
+              user: {
+                id: createdByUser
+              },
+              organization: {
+                id: ownedByOrg
+              }
+            }
+            sinon.assert.calledWithExactly(rabbitMQ.autoIsolationConfigCreated, newEvent)
+          })
+          .asCallback(done)
       })
     })
   })

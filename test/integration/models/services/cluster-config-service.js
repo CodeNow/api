@@ -8,8 +8,6 @@ const before = lab.before
 const beforeEach = lab.beforeEach
 const after = lab.after
 const afterEach = lab.afterEach
-const Code = require('code')
-const expect = Code.expect
 const rabbitMQ = require('models/rabbitmq')
 const sinon = require('sinon')
 const Instance = require('models/mongo/instance')
@@ -20,17 +18,13 @@ const ClusterConfigService = require('models/services/cluster-config-service')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
 const mongoFactory = require('../../fixtures/factory')
 const mongooseControl = require('models/mongo/mongoose-control.js')
-const BigPoppaClient = require('@runnable/big-poppa-client')
 
 describe('Cluster Config Services Integration Tests', function () {
   before(mongooseControl.start)
   beforeEach(require('../../../functional/fixtures/clean-mongo').removeEverything)
   afterEach(require('../../../functional/fixtures/clean-mongo').removeEverything)
   after(mongooseControl.stop)
-  const ownerName = 'owner'
-  const repoName = 'repo'
   const clusterName = 'CLUSTER'
-  const repoFullName = ownerName + '/' + repoName
   let mockInstance
   let mockBuild
   let mockCv
@@ -185,7 +179,7 @@ describe('Cluster Config Services Integration Tests', function () {
       })
     })
     beforeEach(function (done) {
-      return AutoIsolationConfig.createAsync({
+      AutoIsolationConfig.createAsync({
           instance: mockInstance._id,
           requestedDependencies: [{ instance: depInstance._id }],
           createdByUser: bigPoppaId,
@@ -198,7 +192,7 @@ describe('Cluster Config Services Integration Tests', function () {
         .asCallback(done)
     })
     beforeEach(function (done) {
-      return InputClusterConfig.createAsync({
+      InputClusterConfig.createAsync({
           autoIsolationConfigId: mockAutoConfig._id,
           filePath: '/docker-compose.yml',
           fileSha: 'asdasdasfasdfasdfsadfadsf3rfsadfasdfsdf',
