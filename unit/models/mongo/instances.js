@@ -1812,6 +1812,53 @@ describe('Instance Model Tests', function () {
     })
   })
 
+  describe('unsetContainer', function () {
+    var mockInstance = {}
+    var instance
+
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'findOneAndUpdate').yieldsAsync(null, mockInstance)
+      instance = mongoFactory.createNewInstance('sample')
+      instance.container = 'deadbeefdeadbeefdeadbeef'
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAndUpdate.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      it('should reject with update errors', function (done) {
+        var error = new Error('Mongo Error')
+        Instance.findOneAndUpdate.yieldsAsync(error)
+        instance.unsetContainer().asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+    })
+
+    it('should update the instance', function (done) {
+      instance.unsetContainer().asCallback(function (err, updatedInstance) {
+        expect(err).to.not.exist()
+        expect(updatedInstance).to.equal(mockInstance)
+        sinon.assert.calledOnce(Instance.findOneAndUpdate)
+        sinon.assert.calledWithExactly(
+          Instance.findOneAndUpdate,
+          { _id: instance._id },
+          {
+            $unset: {
+              container: true
+            }
+          },
+          sinon.match.func
+        )
+        done()
+      })
+    })
+  })
   describe('.deIsolate', function () {
     var mockInstance = {}
     var instance
