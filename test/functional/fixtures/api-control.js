@@ -11,32 +11,11 @@ var Publisher = require('ponos/lib/rabbitmq')
 
 var api = require('../../../app')
 var cleanMongo = require('./clean-mongo')
-var exec = require('child_process').exec
 var rabbitMQ = require('models/rabbitmq')
 
 module.exports = {
   start: startApi,
   stop: stopApi
-}
-
-function ensureIndex (script, cb) {
-  var mongoCmd = [
-    'mongo',
-    '--eval', script,
-    process.env.MONGO.split('/').pop() // db name only
-  ].join(' ')
-  exec(mongoCmd, cb)
-}
-
-// This was added because of circle ci
-// circleci is not applying mongodb indexes immediately for some reason.
-// that break few tests
-function ensureIndexes (cb) {
-  var scripts = [
-    '"db.instances.ensureIndex({\'lowerName\':1,\'owner.github\':1}, {unique:true})"',
-    '"db.settings.ensureIndex({\'owner.github\':1}, {unique:true})"'
-  ]
-  async.each(scripts, ensureIndex, cb)
 }
 
 // we need to setup this before starting api.
@@ -83,7 +62,7 @@ function startApi (done) {
         if (err2) { return done(err2) }
         cleanMongo.removeEverything(function (err3) {
           if (err3) { return done(err3) }
-          ensureIndexes(done)
+          done()
         })
       })
     })
