@@ -582,4 +582,41 @@ describe('Context Version Unit Test', function () {
       })
     })
   })
+  describe('addGithubRepoToVersion', function () {
+    let testSessionUser
+    let repoInfo
+    beforeEach(function (done) {
+      repoInfo = {
+        repo: 'repoName'
+      }
+      testSessionUser = {
+        accounts: {
+          github: {
+            accessToken: '1'
+          }
+        }
+      }
+      sinon.stub(Github.prototype, 'getRepoAsync').resolves({
+        'default_branch': 'not-master' // eslint-disable-line quote-props
+      })
+      sinon.stub(ContextVersion, 'findOneAndUpdateAsync').resolves(testContextVersion)
+      sinon.stub(Github.prototype, 'createHooksAndKeys')
+        .resolves({privateKey: 'private', publicKey: 'public'})
+      done()
+    })
+    afterEach(function (done) {
+      Github.prototype.getRepoAsync.restore()
+      ContextVersion.findOneAndUpdateAsync.restore()
+      Github.prototype.createHooksAndKeys.restore()
+      done()
+    })
+    it('should error with a ContextVersion deploy failure', function (done) {
+      Github.prototype.createHooksAndKeys.resolves()
+      ContextVersion.addGithubRepoToVersion(testSessionUser, testContextVersionId, repoInfo)
+        .asCallback(function (err) {
+          expect(err).to.be.an.instanceOf(ContextVersion.DeployKeyError)
+          done()
+        })
+      })
+    })
 })

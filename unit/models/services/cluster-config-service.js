@@ -325,7 +325,7 @@ describe('Cluster Config Service Unit Tests', function () {
       sinon.stub(ClusterConfigService, 'addAliasesToContexts').resolves()
       sinon.stub(UserService, 'getBpOrgInfoFromRepoName').returns(bigPoppaOwnerObject)
       sinon.stub(InputClusterConfig, 'createAsync').resolves(new InputClusterConfig(composeConfigData))
-      sinon.stub(AutoIsolationService, 'createAndEmit').resolves(new AutoIsolationConfig(autoIsolationConfigData))
+      sinon.stub(AutoIsolationService, 'createOrUpdateAndEmit').resolves(new AutoIsolationConfig(autoIsolationConfigData))
       done()
     })
     afterEach(function (done) {
@@ -333,7 +333,7 @@ describe('Cluster Config Service Unit Tests', function () {
       ClusterConfigService.addAliasesToContexts.restore()
       UserService.getBpOrgInfoFromRepoName.restore()
       InputClusterConfig.createAsync.restore()
-      AutoIsolationService.createAndEmit.restore()
+      AutoIsolationService.createOrUpdateAndEmit.restore()
       ClusterConfigService.createClusterInstance.restore()
       done()
     })
@@ -350,9 +350,9 @@ describe('Cluster Config Service Unit Tests', function () {
         })
       })
 
-      it('should return error if AutoIsolationService.createAndEmit failed', function (done) {
+      it('should return error if AutoIsolationService.createOrUpdateAndEmit failed', function (done) {
         const error = new Error('Some error')
-        AutoIsolationService.createAndEmit.rejects(error)
+        AutoIsolationService.createOrUpdateAndEmit.rejects(error)
         ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting)
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -428,10 +428,10 @@ describe('Cluster Config Service Unit Tests', function () {
         .asCallback(done)
       })
 
-      it('should call AutoIsolationService.createAndEmit correct args', function (done) {
+      it('should call AutoIsolationService.createOrUpdateAndEmit correct args', function (done) {
         ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, composeData, isTesting)
         .tap(function () {
-          sinon.assert.calledOnce(AutoIsolationService.createAndEmit)
+          sinon.assert.calledOnce(AutoIsolationService.createOrUpdateAndEmit)
           const autoIsolationOpts = {
             createdByUser: testSessionUser.bigPoppaUser.id,
             ownedByOrg: testOrg.id,
@@ -442,12 +442,12 @@ describe('Cluster Config Service Unit Tests', function () {
               }
             ]
           }
-          sinon.assert.calledWithExactly(AutoIsolationService.createAndEmit, autoIsolationOpts)
+          sinon.assert.calledWithExactly(AutoIsolationService.createOrUpdateAndEmit, autoIsolationOpts)
         })
         .asCallback(done)
       })
 
-      it('should call AutoIsolationService.createAndEmit correct args and set matchBranch', function (done) {
+      it('should call AutoIsolationService.createOrUpdateAndEmit correct args and set matchBranch', function (done) {
         const depParsedContent = Object.assign({}, testDepParsedContent)
         delete depParsedContent.files
         const parsedContent = {
@@ -455,7 +455,7 @@ describe('Cluster Config Service Unit Tests', function () {
         }
         ClusterConfigService.createFromRunnableConfig(testSessionUser, parsedContent, triggeredAction, repoFullName, filePath, composeData, isTesting)
           .tap(function () {
-            sinon.assert.calledOnce(AutoIsolationService.createAndEmit)
+            sinon.assert.calledOnce(AutoIsolationService.createOrUpdateAndEmit)
             const autoIsolationOpts = {
               createdByUser: testSessionUser.bigPoppaUser.id,
               ownedByOrg: testOrg.id,
@@ -467,7 +467,7 @@ describe('Cluster Config Service Unit Tests', function () {
                 }
               ]
             }
-            sinon.assert.calledWithExactly(AutoIsolationService.createAndEmit, autoIsolationOpts)
+            sinon.assert.calledWithExactly(AutoIsolationService.createOrUpdateAndEmit, autoIsolationOpts)
           })
           .asCallback(done)
       })
@@ -493,7 +493,7 @@ describe('Cluster Config Service Unit Tests', function () {
         .tap(function () {
           sinon.assert.callOrder(
             ClusterConfigService.createClusterInstance,
-            AutoIsolationService.createAndEmit,
+            AutoIsolationService.createOrUpdateAndEmit,
             InputClusterConfig.createAsync)
         })
         .asCallback(done)
@@ -1159,7 +1159,7 @@ describe('Cluster Config Service Unit Tests', function () {
         [{name: '1'}, {name: '2'}]
       )
       expect(out).to.equal([
-        {instance: { name: '1'}, config: {instance: {name: '1'}}},
+        {instance: { name: '1'}, config: {instance: {name: '1'}, contextId: null}},
         {instance: { name: '2'}, config: undefined},
         {config: {instance: {name: '4'}}}
       ])
@@ -1174,7 +1174,7 @@ describe('Cluster Config Service Unit Tests', function () {
         [{name: '1'}, {name: '2'}]
       )
       expect(out).to.equal([
-        { instance: { name: '1'}, config: { instance: { name: '1'}}},
+        { instance: { name: '1'}, config: { instance: { name: '1'}, contextId: null}},
         { instance: { name: '2'}, config: undefined}
       ])
       done()
@@ -1579,7 +1579,7 @@ describe('Cluster Config Service Unit Tests', function () {
     }
     const updateInstanceObj = {
       config: {
-        metadata: {}
+        instance: {}
       },
       instance: updateInstance
     }
@@ -1595,7 +1595,7 @@ describe('Cluster Config Service Unit Tests', function () {
       name: 'web'
     }
     const createInstanceConfig = {
-      metadata: {},
+      instance: {},
       files: {}
     }
     const preCreateInstanceObj = {
@@ -1611,12 +1611,16 @@ describe('Cluster Config Service Unit Tests', function () {
       done()
     })
     beforeEach(function (done) {
+      sinon.stub(ClusterConfigService, 'addAliasesToContexts').returns()
+      sinon.stub(ClusterConfigService, 'createClusterContext').resolves(createInstanceConfig)
       sinon.stub(ClusterConfigService, '_updateInstancesWithConfigs').resolves(updateInstanceObj)
       sinon.stub(ClusterConfigService, '_createNewInstancesForNewConfigs').resolves(postCreateInstanceObj)
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       done()
     })
     afterEach(function (done) {
+      ClusterConfigService.addAliasesToContexts.restore()
+      ClusterConfigService.createClusterContext.restore()
       ClusterConfigService._updateInstancesWithConfigs.restore()
       ClusterConfigService._createNewInstancesForNewConfigs.restore()
       rabbitMQ.deleteInstance.restore()
@@ -1659,6 +1663,8 @@ describe('Cluster Config Service Unit Tests', function () {
           )
           .then(instances => {
             sinon.assert.callOrder(
+              ClusterConfigService.createClusterContext,
+              ClusterConfigService.addAliasesToContexts,
               ClusterConfigService._createNewInstancesForNewConfigs,
               ClusterConfigService._updateInstancesWithConfigs
             )
@@ -1671,7 +1677,7 @@ describe('Cluster Config Service Unit Tests', function () {
           instances,
           mainInstance,
           githubPushInfo
-        )
+          )
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._updateInstancesWithConfigs)
             sinon.assert.calledWithExactly(ClusterConfigService._updateInstancesWithConfigs, testSessionUser, updateInstanceObj)
@@ -1695,6 +1701,22 @@ describe('Cluster Config Service Unit Tests', function () {
               mainInstance.isTesting,
               'autoDeploy'
             )
+          })
+          .asCallback(done)
+      })
+      it('should have given addAliasesToContexts the update and created configs ', function (done) {
+        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
+          testSessionUser,
+          instances,
+          mainInstance,
+          githubPushInfo
+        )
+          .then(() => {
+            sinon.assert.calledOnce(ClusterConfigService.addAliasesToContexts)
+            sinon.assert.calledWith(ClusterConfigService.addAliasesToContexts, [
+              preCreateInstanceObj.config,
+              updateInstanceObj.config
+            ])
           })
           .asCallback(done)
       })
@@ -1924,7 +1946,7 @@ describe('Cluster Config Service Unit Tests', function () {
       done()
     })
 
-    it('should call `parse`', done => {
+    it('should call `parse`', () => {
       return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
         .then(result => {
           sinon.assert.calledOnce(ClusterConfigService.parseComposeFile)
@@ -1935,19 +1957,17 @@ describe('Cluster Config Service Unit Tests', function () {
             mainInstanceName
           )
         })
-        .asCallback(done)
     })
 
-    it('should not fetch any files if `envFiles` is empty', done => {
+    it('should not fetch any files if `envFiles` is empty', () => {
       parseResult.envFiles = []
       return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
         .then(result => {
           sinon.assert.notCalled(ClusterConfigService.fetchFileFromGithub)
         })
-        .asCallback(done)
     })
 
-    it('should fetch all files in `envFiles`', done => {
+    it('should fetch all files in `envFiles`', () => {
       return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
         .then(result => {
           sinon.assert.called(ClusterConfigService.fetchFileFromGithub)
@@ -1971,10 +1991,9 @@ describe('Cluster Config Service Unit Tests', function () {
             envFiles[2]
           )
         })
-        .asCallback(done)
     })
 
-    it('should call `populateENVsFromFiles`', done => {
+    it('should call `populateENVsFromFiles`', () => {
       return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
         .then(result => {
           sinon.assert.calledOnce(octobear.populateENVsFromFiles)
@@ -1988,16 +2007,14 @@ describe('Cluster Config Service Unit Tests', function () {
             }
           )
         })
-        .asCallback(done)
     })
 
-    it('should return an object with `.results`', done => {
+    it('should return an object with `.results`', () => {
       return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
         .then(res => {
           expect(res.results).to.be.an.array()
           expect(res.results).to.equal(parseResult.results)
         })
-        .asCallback(done)
     })
   })
 })
