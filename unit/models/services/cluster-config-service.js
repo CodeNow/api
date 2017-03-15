@@ -1172,7 +1172,7 @@ describe('Cluster Config Service Unit Tests', function () {
         [{name: '1'}, {name: '2'}]
       )
       expect(out).to.equal([
-        {instance: { name: '1'}, config: {instance: {name: '1'}}},
+        {instance: { name: '1'}, config: {instance: {name: '1'}, contextId: null}},
         {instance: { name: '2'}, config: undefined},
         {config: {instance: {name: '4'}}}
       ])
@@ -1187,7 +1187,7 @@ describe('Cluster Config Service Unit Tests', function () {
         [{name: '1'}, {name: '2'}]
       )
       expect(out).to.equal([
-        { instance: { name: '1'}, config: { instance: { name: '1'}}},
+        { instance: { name: '1'}, config: { instance: { name: '1'}, contextId: null}},
         { instance: { name: '2'}, config: undefined}
       ])
       done()
@@ -1592,7 +1592,7 @@ describe('Cluster Config Service Unit Tests', function () {
     }
     const updateInstanceObj = {
       config: {
-        metadata: {}
+        instance: {}
       },
       instance: updateInstance
     }
@@ -1608,7 +1608,7 @@ describe('Cluster Config Service Unit Tests', function () {
       name: 'web'
     }
     const createInstanceConfig = {
-      metadata: {},
+      instance: {},
       files: {}
     }
     const preCreateInstanceObj = {
@@ -1624,12 +1624,16 @@ describe('Cluster Config Service Unit Tests', function () {
       done()
     })
     beforeEach(function (done) {
+      sinon.stub(ClusterConfigService, 'addAliasesToContexts').returns()
+      sinon.stub(ClusterConfigService, 'createClusterContext').resolves(createInstanceConfig)
       sinon.stub(ClusterConfigService, '_updateInstancesWithConfigs').resolves(updateInstanceObj)
       sinon.stub(ClusterConfigService, '_createNewInstancesForNewConfigs').resolves(postCreateInstanceObj)
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       done()
     })
     afterEach(function (done) {
+      ClusterConfigService.addAliasesToContexts.restore()
+      ClusterConfigService.createClusterContext.restore()
       ClusterConfigService._updateInstancesWithConfigs.restore()
       ClusterConfigService._createNewInstancesForNewConfigs.restore()
       rabbitMQ.deleteInstance.restore()
@@ -1672,6 +1676,8 @@ describe('Cluster Config Service Unit Tests', function () {
           )
           .then(instances => {
             sinon.assert.callOrder(
+              ClusterConfigService.createClusterContext,
+              ClusterConfigService.addAliasesToContexts,
               ClusterConfigService._createNewInstancesForNewConfigs,
               ClusterConfigService._updateInstancesWithConfigs
             )
@@ -1684,7 +1690,7 @@ describe('Cluster Config Service Unit Tests', function () {
           instances,
           mainInstance,
           githubPushInfo
-        )
+          )
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._updateInstancesWithConfigs)
             sinon.assert.calledWithExactly(ClusterConfigService._updateInstancesWithConfigs, testSessionUser, updateInstanceObj)
@@ -1708,6 +1714,22 @@ describe('Cluster Config Service Unit Tests', function () {
               mainInstance.isTesting,
               'autoDeploy'
             )
+          })
+          .asCallback(done)
+      })
+      it('should have given addAliasesToContexts the update and created configs ', function (done) {
+        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
+          testSessionUser,
+          instances,
+          mainInstance,
+          githubPushInfo
+        )
+          .then(() => {
+            sinon.assert.calledOnce(ClusterConfigService.addAliasesToContexts)
+            sinon.assert.calledWith(ClusterConfigService.addAliasesToContexts, [
+              preCreateInstanceObj.config,
+              updateInstanceObj.config
+            ])
           })
           .asCallback(done)
       })
