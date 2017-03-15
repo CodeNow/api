@@ -37,6 +37,7 @@ describe('Cluster Config Service Unit Tests', function () {
   const testOrgName = 'Runnable'
   const testContextId = objectId('407f191e810c19729de860ef')
   const isTesting = true
+  const testReporter = ''
   let testOrgInfo
 
   let testMainParsedContent
@@ -267,7 +268,8 @@ describe('Cluster Config Service Unit Tests', function () {
             filePath,
             parsedInput.fileSha,
             newInstanceName,
-            isTesting
+            isTesting,
+            testReporter
           )
         })
         .asCallback(done)
