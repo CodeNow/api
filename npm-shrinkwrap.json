@@ -351,10 +351,15 @@
       }
     },
     "@runnable/clio-client": {
-      "version": "1.0.4",
-      "from": "@runnable/clio-client@1.0.4",
-      "resolved": "https://registry.npmjs.org/@runnable/clio-client/-/clio-client-1.0.4.tgz",
+      "version": "1.0.5",
+      "from": "@runnable/clio-client@1.0.5",
+      "resolved": "https://registry.npmjs.org/@runnable/clio-client/-/clio-client-1.0.5.tgz",
       "dependencies": {
+        "bluebird": {
+          "version": "3.5.0",
+          "from": "bluebird@>=3.5.0 <4.0.0",
+          "resolved": "https://registry.npmjs.org/bluebird/-/bluebird-3.5.0.tgz"
+        },
         "combined-stream": {
           "version": "1.0.5",
           "from": "combined-stream@>=1.0.5 <1.1.0",
@@ -4203,7 +4208,8 @@
     "lodash": {
       "version": "4.17.4",
       "from": "lodash@>=4.0.0 <5.0.0",
-      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.4.tgz"
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.4.tgz",
+      "dev": true
     },
     "lodash._arraycopy": {
       "version": "3.0.0",
@@ -6784,23 +6790,6 @@
           "resolved": "https://registry.npmjs.org/tunnel-agent/-/tunnel-agent-0.4.3.tgz"
         }
       }
-    },
-    "request-promise": {
-      "version": "4.2.0",
-      "from": "request-promise@>=4.1.1 <5.0.0",
-      "resolved": "https://registry.npmjs.org/request-promise/-/request-promise-4.2.0.tgz",
-      "dependencies": {
-        "bluebird": {
-          "version": "3.5.0",
-          "from": "bluebird@>=3.5.0 <4.0.0",
-          "resolved": "https://registry.npmjs.org/bluebird/-/bluebird-3.5.0.tgz"
-        }
-      }
-    },
-    "request-promise-core": {
-      "version": "1.1.1",
-      "from": "request-promise-core@1.1.1",
-      "resolved": "https://registry.npmjs.org/request-promise-core/-/request-promise-core-1.1.1.tgz"
     },
     "require-uncached": {
       "version": "1.0.3",
@@ -10403,11 +10392,6 @@
           }
         }
       }
-    },
-    "stealthy-require": {
-      "version": "1.0.0",
-      "from": "stealthy-require@>=1.0.0 <2.0.0",
-      "resolved": "https://registry.npmjs.org/stealthy-require/-/stealthy-require-1.0.0.tgz"
     },
     "stream-combiner": {
       "version": "0.0.4",
