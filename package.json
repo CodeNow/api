@@ -18,7 +18,7 @@
     "101": "^1.5.0",
     "@runnable/api-client": "^9.1.0",
     "@runnable/big-poppa-client": "^0.5.1",
-    "@runnable/clio-client": "^1.0.3",
+    "@runnable/clio-client": "^1.0.4",
     "@runnable/hostname": "^3.0.0",
     "@runnable/octobear": "^2.2.1",
     "JSONStream": "0.10.x",
