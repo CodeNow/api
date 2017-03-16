@@ -351,9 +351,9 @@
       }
     },
     "@runnable/clio-client": {
-      "version": "1.0.1",
-      "from": "@runnable/clio-client@>=1.0.1 <2.0.0",
-      "resolved": "https://registry.npmjs.org/@runnable/clio-client/-/clio-client-1.0.1.tgz",
+      "version": "1.0.2",
+      "from": "@runnable/clio-client@1.0.2",
+      "resolved": "https://registry.npmjs.org/@runnable/clio-client/-/clio-client-1.0.2.tgz",
       "dependencies": {
         "combined-stream": {
           "version": "1.0.5",
