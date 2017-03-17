@@ -159,7 +159,7 @@ describe('log stream: ' + moduleName, function () {
           PermissionService.ensureModelAccess.rejects(error)
           logStream.logStreamHandler(ctx.socket, ctx.id, {})
             .catch(function (err) {
-              expect(err.message).to.equal('dockHost and containerId are required')
+              expect(err.message).to.equal('containerId are required')
               sinon.assert.calledOnce(ctx.socket.write)
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.id,
