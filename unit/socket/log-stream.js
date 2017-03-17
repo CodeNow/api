@@ -17,6 +17,7 @@ const util = require('util')
 const logStream = require('socket/log-stream')
 const Instance = require('models/mongo/instance')
 
+const clioClient = require('@runnable/clio-client')
 const Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
 const commonStream = require('socket/common-stream')
@@ -47,6 +48,18 @@ describe('log stream: ' + moduleName, function () {
     error = new Error('not owner')
     rejectionPromise = Promise.reject(error)
     rejectionPromise.suppressUnhandledRejections()
+    done()
+  })
+
+  beforeEach((done) => {
+    sinon.stub(clioClient, 'fetchContainerInstance').resolves()
+    sinon.stub(Instance, 'findByIdAsync').resolves()
+    done()
+  })
+
+  afterEach((done) => {
+    clioClient.fetchContainerInstance.restore()
+    Instance.findByIdAsync.restore()
     done()
   })
 
@@ -280,6 +293,42 @@ describe('log stream: ' + moduleName, function () {
               })
               .asCallback(done)
           })
+        })
+      })
+
+      describe('when fetching old instance', () => {
+        const instanceId = 1234
+        const oldContainerId = 'deadbeef'
+
+        beforeEach((done) => {
+          Instance.findOneByContainerIdAsync.resolves()
+          clioClient.fetchContainerInstance.resolves(instanceId)
+          Instance.findByIdAsync.resolves(ctx.instance)
+          ctx.instance.container.inspect.State.Running = false
+          sinon.stub(commonS3, 'pipeLogsToClient').resolves({})
+          ctx.data.containerId = oldContainerId
+          done()
+        })
+        afterEach((done) => {
+          commonS3.pipeLogsToClient.restore()
+          done()
+        })
+        it('should load logs for instance', (done) => {
+          logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
+            .then(() => {
+              sinon.assert.calledOnce(clioClient.fetchContainerInstance)
+              sinon.assert.calledWith(clioClient.fetchContainerInstance, oldContainerId)
+              sinon.assert.calledOnce(Instance.findByIdAsync)
+              sinon.assert.calledWith(Instance.findByIdAsync, instanceId)
+              sinon.assert.notCalled(commonStream.pipeLogsToClient)
+              sinon.assert.calledOnce(commonS3.pipeLogsToClient)
+              sinon.assert.calledWith(
+                commonS3.pipeLogsToClient,
+                substream,
+                ctx.data.containerId
+              )
+            })
+            .asCallback(done)
         })
       })
     })
