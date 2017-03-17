@@ -351,9 +351,9 @@
       }
     },
     "@runnable/clio-client": {
-      "version": "1.0.4",
-      "from": "@runnable/clio-client@1.0.4",
-      "resolved": "https://registry.npmjs.org/@runnable/clio-client/-/clio-client-1.0.4.tgz",
+      "version": "1.0.8",
+      "from": "@runnable/clio-client@1.0.8",
+      "resolved": "https://registry.npmjs.org/@runnable/clio-client/-/clio-client-1.0.8.tgz",
       "dependencies": {
         "combined-stream": {
           "version": "1.0.5",
@@ -6786,9 +6786,16 @@
       }
     },
     "request-promise": {
-      "version": "4.1.1",
+      "version": "4.2.0",
       "from": "request-promise@>=4.1.1 <5.0.0",
-      "resolved": "https://registry.npmjs.org/request-promise/-/request-promise-4.1.1.tgz"
+      "resolved": "https://registry.npmjs.org/request-promise/-/request-promise-4.2.0.tgz",
+      "dependencies": {
+        "bluebird": {
+          "version": "3.5.0",
+          "from": "bluebird@>=3.5.0 <4.0.0",
+          "resolved": "https://registry.npmjs.org/bluebird/-/bluebird-3.5.0.tgz"
+        }
+      }
     },
     "request-promise-core": {
       "version": "1.1.1",
