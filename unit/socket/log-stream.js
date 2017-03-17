@@ -164,7 +164,7 @@ describe('log stream: ' + moduleName, function () {
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.id,
                 error: 'You don\'t have access to this stream',
-                message: 'dockHost and containerId are required'
+                message: 'containerId are required'
               })
               done()
             })
