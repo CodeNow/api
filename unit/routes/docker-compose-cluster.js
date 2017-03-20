@@ -99,6 +99,7 @@ describe('/docker-compose-cluster', function () {
               branchName: branch,
               filePath,
               isTesting,
+              parentInputClusterConfigId: undefined,
               clusterName: name
             })
           })
