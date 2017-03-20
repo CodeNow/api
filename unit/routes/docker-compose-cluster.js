@@ -99,7 +99,7 @@ describe('/docker-compose-cluster', function () {
               branchName: branch,
               filePath,
               isTesting,
-              newInstanceName: name
+              clusterName: name
             })
           })
           .asCallback(done)
