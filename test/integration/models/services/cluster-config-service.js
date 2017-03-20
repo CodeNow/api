@@ -56,7 +56,10 @@ describe('Cluster Config Services Integration Tests', function () {
           }
         },
         bigPoppaUser: {
-          id: bigPoppaId
+          id: bigPoppaId,
+          organizations: [{
+            lowerName: 'codenow'
+          }]
         }
       }
       githubPushInfo = {
