@@ -84,7 +84,7 @@ var factory = module.exports = {
             if (err) {
               return cb(err)
             }
-            cb(null, instance, props.build, props.cv)
+            return cb(null, instance, props.build, props.cv)
           })
         })
       })
