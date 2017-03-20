@@ -2249,12 +2249,12 @@ describe('Instance Model Tests', function () {
         contextId: contextId
       }
       instance._doc.masterPod = true
-      sinon.stub(Instance, 'findOneByAsync').resolves()
+      sinon.stub(Instance, 'findOneAsync').resolves()
       done()
     })
 
     afterEach(function (done) {
-      Instance.findOneByAsync.restore()
+      Instance.findOneAsync.restore()
       done()
     })
     describe('errors', function () {
@@ -2296,7 +2296,7 @@ describe('Instance Model Tests', function () {
       let depInstance
       beforeEach(function (done) {
         depInstance = mongoFactory.createNewInstance('dep')
-        Instance.findOneByAsync.resolves(depInstance)
+        Instance.findOneAsync.resolves(depInstance)
         done()
       })
       describe('masterPod', function () {
@@ -2304,9 +2304,9 @@ describe('Instance Model Tests', function () {
           instance.convertAliasToDependency(key)
             .then(dep => {
               expect(dep._id).to.equal(depInstance._id)
-              sinon.assert.calledOnce(Instance.findOneByAsync)
-              sinon.assert.calledWith(Instance.findOneByAsync, {
-                'contextVersion.context._id': contextId,
+              sinon.assert.calledOnce(Instance.findOneAsync)
+              sinon.assert.calledWith(Instance.findOneAsync, {
+                'contextVersion.context': contextId,
                 masterPod: true
               })
             })
@@ -2323,9 +2323,9 @@ describe('Instance Model Tests', function () {
           instance.convertAliasToDependency(key)
             .then(dep => {
               expect(dep._id).to.equal(depInstance._id)
-              sinon.assert.calledOnce(Instance.findOneByAsync)
-              sinon.assert.calledWith(Instance.findOneByAsync, {
-                'contextVersion.context._id': contextId,
+              sinon.assert.calledOnce(Instance.findOneAsync)
+              sinon.assert.calledWith(Instance.findOneAsync, {
+                'contextVersion.context': contextId,
                 isolated: isolatedId
               })
             })
