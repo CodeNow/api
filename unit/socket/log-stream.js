@@ -1,26 +1,28 @@
 'use strict'
 
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
-var it = lab.it
-var beforeEach = lab.beforeEach
-// var after = lab.after
-var afterEach = lab.afterEach
-var Code = require('code')
-var expect = Code.expect
+const Lab = require('lab')
+const lab = exports.lab = Lab.script()
+const describe = lab.describe
+const it = lab.it
+const beforeEach = lab.beforeEach
+// const after = lab.after
+const afterEach = lab.afterEach
+const Code = require('code')
+const expect = Code.expect
 
-var sinon = require('sinon')
-var EventEmitter = require('events').EventEmitter
-var util = require('util')
+const sinon = require('sinon')
+const EventEmitter = require('events').EventEmitter
+const util = require('util')
 
-var logStream = require('socket/log-stream')
-var Instance = require('models/mongo/instance')
+const logStream = require('socket/log-stream')
+const Instance = require('models/mongo/instance')
 
-var Promise = require('bluebird')
+const clioClient = require('@runnable/clio-client')
+const Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
-var commonStream = require('socket/common-stream')
-var PermissionService = require('models/services/permission-service')
+const commonStream = require('socket/common-stream')
+const commonS3 = require('socket/common-s3')
+const PermissionService = require('models/services/permission-service')
 
 function ClientStream () {
   EventEmitter.call(this)
@@ -46,6 +48,18 @@ describe('log stream: ' + moduleName, function () {
     error = new Error('not owner')
     rejectionPromise = Promise.reject(error)
     rejectionPromise.suppressUnhandledRejections()
+    done()
+  })
+
+  beforeEach((done) => {
+    sinon.stub(clioClient, 'fetchContainerInstance').resolves()
+    sinon.stub(Instance, 'findByIdAsync').resolves()
+    done()
+  })
+
+  afterEach((done) => {
+    clioClient.fetchContainerInstance.restore()
+    Instance.findByIdAsync.restore()
     done()
   })
 
@@ -80,7 +94,12 @@ describe('log stream: ' + moduleName, function () {
           github: 123
         },
         container: {
-          dockerContainer: ctx.data.containerId
+          dockerContainer: ctx.data.containerId,
+          inspect: {
+            State: {
+              Running: true
+            }
+          }
         }
       }
       writeStream = new ClientStream()
@@ -140,12 +159,12 @@ describe('log stream: ' + moduleName, function () {
           PermissionService.ensureModelAccess.rejects(error)
           logStream.logStreamHandler(ctx.socket, ctx.id, {})
             .catch(function (err) {
-              expect(err.message).to.equal('dockHost and containerId are required')
+              expect(err.message).to.equal('containerId are required')
               sinon.assert.calledOnce(ctx.socket.write)
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.id,
                 error: 'You don\'t have access to this stream',
-                message: 'dockHost and containerId are required'
+                message: 'containerId are required'
               })
               done()
             })
@@ -219,6 +238,98 @@ describe('log stream: ' + moduleName, function () {
             done()
           })
           .catch(done)
+      })
+
+      describe('When container is stopped', () => {
+        beforeEach((done) => {
+          ctx.instance.container.inspect.State.Running = false
+          sinon.stub(commonS3, 'pipeLogsToClient').resolves({})
+          done()
+        })
+        afterEach((done) => {
+          commonS3.pipeLogsToClient.restore()
+          done()
+        })
+        describe('file exists in s3', () => {
+          it('should stream logs from s3 file', (done) => {
+            logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
+              .then(() => {
+                sinon.assert.notCalled(commonStream.pipeLogsToClient)
+                sinon.assert.calledOnce(commonS3.pipeLogsToClient)
+                sinon.assert.calledWith(
+                  commonS3.pipeLogsToClient,
+                  substream,
+                  ctx.data.containerId
+                )
+              })
+              .asCallback(done)
+          })
+        })
+        describe('and file does not exist in s3', () => {
+          beforeEach((done) => {
+            commonS3.pipeLogsToClient.rejects({code: 'NoSuchKey'})
+            done()
+          })
+          it('should stream logs from docker file', (done) => {
+            logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
+              .then(() => {
+                sinon.assert.calledOnce(commonS3.pipeLogsToClient)
+                sinon.assert.calledWith(
+                  commonS3.pipeLogsToClient,
+                  substream,
+                  ctx.data.containerId
+                )
+                sinon.assert.calledOnce(commonStream.pipeLogsToClient)
+                sinon.assert.calledWith(
+                  commonStream.pipeLogsToClient,
+                  substream,
+                  'api.socket.log',
+                  sinon.match.object,
+                  ctx.data.containerId,
+                  {
+                    tailLimit: process.env.DOCKER_LOG_TAIL_LIMIT
+                  }
+                )
+              })
+              .asCallback(done)
+          })
+        })
+      })
+
+      describe('when fetching old instance', () => {
+        const instanceId = 1234
+        const oldContainerId = 'deadbeef'
+
+        beforeEach((done) => {
+          Instance.findOneByContainerIdAsync.resolves()
+          clioClient.fetchContainerInstance.resolves(instanceId)
+          Instance.findByIdAsync.resolves(ctx.instance)
+          ctx.instance.container.inspect.State.Running = false
+          sinon.stub(commonS3, 'pipeLogsToClient').resolves({})
+          ctx.data.containerId = oldContainerId
+          done()
+        })
+        afterEach((done) => {
+          commonS3.pipeLogsToClient.restore()
+          done()
+        })
+        it('should load logs for instance', (done) => {
+          logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
+            .then(() => {
+              sinon.assert.calledOnce(clioClient.fetchContainerInstance)
+              sinon.assert.calledWith(clioClient.fetchContainerInstance, oldContainerId)
+              sinon.assert.calledOnce(Instance.findByIdAsync)
+              sinon.assert.calledWith(Instance.findByIdAsync, instanceId)
+              sinon.assert.notCalled(commonStream.pipeLogsToClient)
+              sinon.assert.calledOnce(commonS3.pipeLogsToClient)
+              sinon.assert.calledWith(
+                commonS3.pipeLogsToClient,
+                substream,
+                ctx.data.containerId
+              )
+            })
+            .asCallback(done)
+        })
       })
     })
   })

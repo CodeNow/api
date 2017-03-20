@@ -257,7 +257,7 @@ describe('docker: ' + moduleName, function () {
     it('should return command in array form', (done) => {
       let output = {}
       Docker._addCmdToDataFromInstance(output, {
-        containerRunCommand: 'this command runs'
+        containerStartCommand: 'this command runs'
       })
       expect(output.Cmd).to.equal(['this', 'command', 'runs'])
       done()
@@ -619,6 +619,18 @@ describe('docker: ' + moduleName, function () {
       done()
     })
 
+    it('should return a swarm constraint orgId of 1 for personal account', function (done) {
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        noCache: false,
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: Object.assign({}, ctx.mockSessionUser, { accounts: { github: { id: 'owner' }}})
+    })
+      expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
+        .to.equal('["org==1"]')
+      done()
+    })
+
     it('should add dock constraint if prevDockerHost exist', function (done) {
       ctx.mockContextVersion.prevDockerHost = 'http://10.0.0.1:4242'
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
@@ -692,6 +704,7 @@ describe('docker: ' + moduleName, function () {
           // acv envs
           'RUNNABLE_REPO=' + 'git@github.com:' + appCodeVersions.map(pluck('repo')).join(';git@github.com:'),
           'RUNNABLE_COMMITISH=' + [ appCodeVersions[0].commit, appCodeVersions[1].branch, 'master' ].join(';'),
+          'RUNNABLE_PRS=;;',
           'RUNNABLE_KEYS_BUCKET=' + process.env.GITHUB_DEPLOY_KEYS_BUCKET,
           'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(';'),
           // network envs
@@ -1287,7 +1300,7 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should create a container with run cmd', function (done) {
-        ctx.opts.instance.containerRunCommand = 'keep calm and code on'
+        ctx.opts.instance.containerStartCommand = 'keep calm and code on'
 
         model.createUserContainer(ctx.opts, function (err, container) {
           if (err) { return done(err) }

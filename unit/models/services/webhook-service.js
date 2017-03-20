@@ -709,6 +709,311 @@ describe('Webhook Service Unit Tests', function () {
     })
   })
 
+  describe('parseGitHubPullRequestData', function () {
+    var body
+    var sender
+    beforeEach(function (done) {
+      sender = {
+        login: 'podviaznikov',
+        id: 429706,
+        avatar_url: 'https://avatars.githubusercontent.com/u/429706?v=3',
+        gravatar_id: '',
+        url: 'https://api.github.com/users/podviaznikov',
+        html_url: 'https://github.com/podviaznikov',
+        followers_url: 'https://api.github.com/users/podviaznikov/followers',
+        following_url: 'https://api.github.com/users/podviaznikov/following{/other_user}',
+        gists_url: 'https://api.github.com/users/podviaznikov/gists{/gist_id}',
+        starred_url: 'https://api.github.com/users/podviaznikov/starred{/owner}{/repo}',
+        subscriptions_url: 'https://api.github.com/users/podviaznikov/subscriptions',
+        organizations_url: 'https://api.github.com/users/podviaznikov/orgs',
+        repos_url: 'https://api.github.com/users/podviaznikov/repos',
+        events_url: 'https://api.github.com/users/podviaznikov/events{/privacy}',
+        received_events_url: 'https://api.github.com/users/podviaznikov/received_events',
+        type: 'User',
+        site_admin: false
+      }
+      body = {
+        number: 777,
+        pull_request: {
+          head: {
+            label: 'myorg:mybranch',
+            sha: '77485a1a3c2fcf1a6db52e72bf1c05f40336d244'
+          }
+        },
+        sender: sender,
+        repository: {
+          id: 20736018,
+          name: 'api',
+          full_name: 'CodeNow/api',
+          owner: {
+            id: 890,
+            name: 'CodeNow',
+            email: 'live@codenow.com'
+          },
+          private: true
+        }
+      }
+      done()
+    })
+    it('should parse data', function (done) {
+      WebhookService.parseGitHubPullRequestData(body)
+        .then(function (githubPushInfo) {
+          expect(githubPushInfo.branch).to.equal('myorg:mybranch')
+          expect(githubPushInfo.pullRequest).to.equal(777)
+          expect(githubPushInfo.repo).to.equal('CodeNow/api')
+          expect(githubPushInfo.repoName).to.equal('api')
+          expect(githubPushInfo.repoOwnerOrgName).to.equal('CodeNow')
+          expect(githubPushInfo.commit).to.equal(body.pull_request.head.sha)
+          expect(githubPushInfo.commitLog.length).to.equal(0)
+          expect(githubPushInfo.user).to.equal(sender)
+        })
+        .asCallback(done)
+    })
+  })
+
+  describe('shouldHandlePullRequestEvent', function () {
+    it('should return false if head and base are the same', function (done) {
+      const result = WebhookService.shouldHandlePullRequestEvent({
+        pull_request: {
+          head: {
+            repo: { id: 1 }
+          },
+          base: {
+            repo: { id: 1 }
+          }
+        }
+      })
+      expect(result).to.be.false()
+      done()
+    })
+
+    it('should return true if head and base are the same', function (done) {
+      const result = WebhookService.shouldHandlePullRequestEvent({
+        pull_request: {
+          head: {
+            repo: { id: 1 }
+          },
+          base: {
+            repo: { id: 2 }
+          }
+        }
+      })
+      expect(result).to.be.true()
+      done()
+    })
+  })
+  describe('processGithookPullRequestOpened', function () {
+    beforeEach(function (done) {
+      sinon.stub(WebhookService, '_processGithookPullRequestEvent').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      WebhookService._processGithookPullRequestEvent.restore()
+      done()
+    })
+    it('should call _processGithookPullRequestEvent', function (done) {
+      const payload = {
+        number: 777
+      }
+      WebhookService.processGithookPullRequestOpened(payload)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService._processGithookPullRequestEvent)
+        sinon.assert.calledWith(WebhookService._processGithookPullRequestEvent, payload, WebhookService.autoFork)
+        done()
+      })
+    })
+  })
+  describe('processGithookPullRequestSynced', function () {
+    beforeEach(function (done) {
+      sinon.stub(WebhookService, '_processGithookPullRequestEvent').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      WebhookService._processGithookPullRequestEvent.restore()
+      done()
+    })
+    it('should call _processGithookPullRequestEvent', function (done) {
+      const payload = {
+        number: 777
+      }
+      WebhookService.processGithookPullRequestSynced(payload)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService._processGithookPullRequestEvent)
+        sinon.assert.calledWith(WebhookService._processGithookPullRequestEvent, payload, WebhookService.autoDeploy)
+        done()
+      })
+    })
+  })
+  describe('_processGithookPullRequestEvent', function () {
+    let body
+    let sender
+    let parsedData = {
+      repo: 'CodeNow/api',
+      branch: 'myorg:mybranch'
+    }
+    const instances = [
+      {
+        _id: 1
+      }
+    ]
+    beforeEach(function (done) {
+      sender = {
+        login: 'podviaznikov',
+        id: 429706,
+        avatar_url: 'https://avatars.githubusercontent.com/u/429706?v=3',
+        gravatar_id: '',
+        url: 'https://api.github.com/users/podviaznikov',
+        html_url: 'https://github.com/podviaznikov',
+        followers_url: 'https://api.github.com/users/podviaznikov/followers',
+        following_url: 'https://api.github.com/users/podviaznikov/following{/other_user}',
+        gists_url: 'https://api.github.com/users/podviaznikov/gists{/gist_id}',
+        starred_url: 'https://api.github.com/users/podviaznikov/starred{/owner}{/repo}',
+        subscriptions_url: 'https://api.github.com/users/podviaznikov/subscriptions',
+        organizations_url: 'https://api.github.com/users/podviaznikov/orgs',
+        repos_url: 'https://api.github.com/users/podviaznikov/repos',
+        events_url: 'https://api.github.com/users/podviaznikov/events{/privacy}',
+        received_events_url: 'https://api.github.com/users/podviaznikov/received_events',
+        type: 'User',
+        site_admin: false
+      }
+      body = {
+        number: 777,
+        pull_request: {
+          head: {
+            label: 'myorg:mybranch',
+            sha: '77485a1a3c2fcf1a6db52e72bf1c05f40336d244'
+          }
+        },
+        sender: sender,
+        repository: {
+          id: 20736018,
+          name: 'api',
+          full_name: 'CodeNow/api',
+          owner: {
+            id: 890,
+            name: 'CodeNow',
+            email: 'live@codenow.com'
+          },
+          private: true
+        }
+      }
+      sinon.stub(WebhookService, 'shouldHandlePullRequestEvent').returns(true)
+      sinon.stub(WebhookService, 'parseGitHubPullRequestData').resolves(parsedData)
+      sinon.stub(WebhookService, 'checkRepoOrganizationAgainstWhitelist').resolves()
+      sinon.stub(WebhookService, 'reportMixpanelUserPush').resolves()
+      sinon.stub(Instance, 'findInstancesLinkedToBranchAsync').resolves(instances)
+      sinon.stub(WebhookService, 'autoFork').resolves([])
+      done()
+    })
+    afterEach(function (done) {
+      WebhookService.shouldHandlePullRequestEvent.restore()
+      WebhookService.parseGitHubPullRequestData.restore()
+      WebhookService.checkRepoOrganizationAgainstWhitelist.restore()
+      WebhookService.reportMixpanelUserPush.restore()
+      Instance.findInstancesLinkedToBranchAsync.restore()
+      WebhookService.autoFork.restore()
+      done()
+    })
+    it('should not call anything if shouldHandlePullRequestEvent return false', function (done) {
+      WebhookService.shouldHandlePullRequestEvent.returns(false)
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.notCalled(WebhookService.parseGitHubPullRequestData)
+        done()
+      })
+    })
+    it('should call parseGitHubPullRequestData', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService.parseGitHubPullRequestData)
+        sinon.assert.calledWithExactly(WebhookService.parseGitHubPullRequestData, body)
+        done()
+      })
+    })
+    it('should call checkRepoOrganizationAgainstWhitelist', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService.checkRepoOrganizationAgainstWhitelist)
+        sinon.assert.calledWithExactly(WebhookService.checkRepoOrganizationAgainstWhitelist, parsedData)
+        done()
+      })
+    })
+    it('should call reportMixpanelUserPush', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService.reportMixpanelUserPush)
+        sinon.assert.calledWithExactly(WebhookService.reportMixpanelUserPush, parsedData)
+        done()
+      })
+    })
+    it('should call findInstancesLinkedToBranchAsync', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.calledOnce(Instance.findInstancesLinkedToBranchAsync)
+        sinon.assert.calledWithExactly(Instance.findInstancesLinkedToBranchAsync, parsedData.repo, parsedData.branch)
+        done()
+      })
+    })
+    it('should call autoFork', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.calledOnce(WebhookService.autoFork)
+        sinon.assert.calledWithExactly(WebhookService.autoFork, instances, parsedData)
+        done()
+      })
+    })
+    it('should call in order', function (done) {
+      WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+      .asCallback(function () {
+        sinon.assert.callOrder(
+          WebhookService.parseGitHubPullRequestData,
+          WebhookService.checkRepoOrganizationAgainstWhitelist,
+          WebhookService.reportMixpanelUserPush,
+          Instance.findInstancesLinkedToBranchAsync,
+          WebhookService.autoFork
+        )
+        done()
+      })
+    })
+    describe('errors', function () {
+      it('should return error if parseGitHubPullRequestData faled', function (done) {
+        const error = new Error('My error')
+        WebhookService.parseGitHubPullRequestData.rejects(error)
+        WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+        .asCallback(function (err) {
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+      it('should return error if reportMixpanelUserPush faled', function (done) {
+        const error = new Error('My error')
+        WebhookService.reportMixpanelUserPush.rejects(error)
+        WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+        .asCallback(function (err) {
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+      it('should return error if findInstancesLinkedToBranchAsync faled', function (done) {
+        const error = new Error('My error')
+        Instance.findInstancesLinkedToBranchAsync.rejects(error)
+        WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+        .asCallback(function (err) {
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+      it('should return error if autoFork faled', function (done) {
+        const error = new Error('My error')
+        WebhookService.autoFork.rejects(error)
+        WebhookService._processGithookPullRequestEvent(body, WebhookService.autoFork)
+        .asCallback(function (err) {
+          expect(err.message).to.equal(error.message)
+          done()
+        })
+      })
+    })
+  })
   describe('processGithookEvent', function () {
     var githubPushInfo
     var payload
