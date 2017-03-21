@@ -15,6 +15,9 @@ var Instance = require('models/mongo/instance')
 var mongoFactory = require('../../factories/mongo')
 var pubsub = require('models/redis/pubsub')
 var Version = require('models/mongo/context-version')
+const UserService = require('models/services/user-service')
+const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
+const InputClusterConfig = require('models/mongo/input-cluster-config')
 
 require('sinon-as-promised')(Promise)
 var lab = exports.lab = Lab.script()
@@ -1455,6 +1458,9 @@ describe('Instance Model Tests', function () {
    */
   describe('.populateModels', function () {
     beforeEach(function (done) {
+      ctx.mockOrganization = {
+        id: 1111
+      }
       ctx.mockSessionUser = {
         _id: 1234,
         accounts: {
@@ -1508,15 +1514,21 @@ describe('Instance Model Tests', function () {
       beforeEach(function (done) {
         sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
         sinon.stub(Build, 'findAsync').resolves([ctx.mockBuild])
+        sinon.stub(UserService, 'getBpOrgInfoFromGitHubId').resolves(ctx.mockOrganization)
+        sinon.stub(AutoIsolationConfig, 'findAsync').resolves([])
+        sinon.stub(InputClusterConfig, 'findAsync').resolves([])
         done()
       })
       afterEach(function (done) {
         ContextVersion.findAsync.restore()
         Build.findAsync.restore()
+        UserService.getBpOrgInfoFromGitHubId.restore()
+        AutoIsolationConfig.findAsync.restore()
+        InputClusterConfig.findAsync.restore()
         done()
       })
       it('should fetch build and cv, then update the cv', function (done) {
-        Instance.populateModels([ctx.mockInstance], function (err, instance) {
+        Instance.populateModels([ctx.mockInstance], ctx.mockSessionUser, function (err, instance) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(ContextVersion.findAsync)
           sinon.assert.calledOnce(Build.findAsync)
@@ -1529,7 +1541,7 @@ describe('Instance Model Tests', function () {
           build: ctx.mockBuild._id
         })
 
-        Instance.populateModels([ctx.mockInstance, ctx.mockInstance2], function (err, instances) {
+        Instance.populateModels([ctx.mockInstance, ctx.mockInstance2], ctx.mockSessionUser, function (err, instances) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(ContextVersion.findAsync)
           sinon.assert.calledOnce(Build.findAsync)
@@ -1556,11 +1568,17 @@ describe('Instance Model Tests', function () {
         beforeEach(function (done) {
           sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
           sinon.stub(Build, 'findAsync').resolves([ctx.mockBuild])
+          sinon.stub(UserService, 'getBpOrgInfoFromGitHubId').resolves(ctx.mockOrganization)
+          sinon.stub(AutoIsolationConfig, 'findAsync').resolves([])
+          sinon.stub(InputClusterConfig, 'findAsync').resolves([])
           done()
         })
         afterEach(function (done) {
           ContextVersion.findAsync.restore()
           Build.findAsync.restore()
+          UserService.getBpOrgInfoFromGitHubId.restore()
+          AutoIsolationConfig.findAsync.restore()
+          InputClusterConfig.findAsync.restore()
           done()
         })
         it('should log the bad instance and keep going', function (done) {
@@ -1571,7 +1589,7 @@ describe('Instance Model Tests', function () {
           ctx.mockInstance2.container = {
             dockerContainer: 'asdasdasdsad'
           }
-          Instance.populateModels([ctx.mockInstance, ctx.mockInstance2], function (err, instances) {
+          Instance.populateModels([ctx.mockInstance, ctx.mockInstance2], ctx.mockSessionUser, function (err, instances) {
             expect(err).to.not.exist()
             if (err) {
               done(err)
@@ -1598,17 +1616,23 @@ describe('Instance Model Tests', function () {
         })
         describe('CV.find', function () {
           beforeEach(function (done) {
+            sinon.stub(ContextVersion, 'findAsync').rejects(testErr)
             sinon.stub(Build, 'findAsync').resolves([ctx.mockBuild])
-            sinon.stub(ContextVersion, 'find').yieldsAsync(testErr)
+            sinon.stub(UserService, 'getBpOrgInfoFromGitHubId').resolves(ctx.mockOrganization)
+            sinon.stub(AutoIsolationConfig, 'findAsync').resolves([])
+            sinon.stub(InputClusterConfig, 'findAsync').resolves([])
             done()
           })
           afterEach(function (done) {
-            ContextVersion.find.restore()
+            ContextVersion.findAsync.restore()
             Build.findAsync.restore()
+            UserService.getBpOrgInfoFromGitHubId.restore()
+            AutoIsolationConfig.findAsync.restore()
+            InputClusterConfig.findAsync.restore()
             done()
           })
           it('should return error', function (done) {
-            Instance.populateModels([ctx.mockInstance], function (err) {
+            Instance.populateModels([ctx.mockInstance], ctx.mockSessionUser, function (err) {
               expect(err).to.exist()
               setTimeout(function () {
                 sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
@@ -1619,17 +1643,23 @@ describe('Instance Model Tests', function () {
         })
         describe('Build.find', function () {
           beforeEach(function (done) {
-            sinon.stub(Build, 'find').yieldsAsync(testErr)
             sinon.stub(ContextVersion, 'findAsync').resolves([ctx.mockContextVersion])
+            sinon.stub(Build, 'findAsync').rejects(testErr)
+            sinon.stub(UserService, 'getBpOrgInfoFromGitHubId').resolves(ctx.mockOrganization)
+            sinon.stub(AutoIsolationConfig, 'findAsync').resolves([])
+            sinon.stub(InputClusterConfig, 'findAsync').resolves([])
             done()
           })
           afterEach(function (done) {
             ContextVersion.findAsync.restore()
-            Build.find.restore()
+            Build.findAsync.restore()
+            UserService.getBpOrgInfoFromGitHubId.restore()
+            AutoIsolationConfig.findAsync.restore()
+            InputClusterConfig.findAsync.restore()
             done()
           })
           it('should return error', function (done) {
-            Instance.populateModels([ctx.mockInstance], function (err) {
+            Instance.populateModels([ctx.mockInstance], ctx.mockSessionUser, function (err) {
               expect(err).to.exist()
               setTimeout(function () {
                 sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
