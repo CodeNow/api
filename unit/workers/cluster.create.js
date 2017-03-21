@@ -30,7 +30,7 @@ describe('Cluster Create Worker', function () {
       branchName: 'feature-1',
       filePath: 'compose.yml',
       isTesting: true,
-      newInstanceName: 'api'
+      clusterName: 'api'
     }
     const sessionUser = {
       _id: 'some-id'
