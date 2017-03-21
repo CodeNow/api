@@ -1015,6 +1015,13 @@ describe('Instance Model Integration Tests', function () {
               return done(err)
             }
             ctx.instance = instance
+            ctx.mockSessionUser.bigPoppaUser = {
+              organizations: [
+                {
+                  githubId: instance.owner.github
+                }
+              ]
+            }
             done()
           })
         })
@@ -1050,7 +1057,7 @@ describe('Instance Model Integration Tests', function () {
 
     describe('when instances are not all populated', function () {
       it('should fetch build and cv, then update the cv', function (done) {
-        Instance.populateModels(ctx.instances, function (err, instances) {
+        Instance.populateModels(ctx.instances, ctx.mockSessionUser, function (err, instances) {
           if (err) {
             return done(err)
           }
@@ -1087,7 +1094,7 @@ describe('Instance Model Integration Tests', function () {
             dockerContainer: 'asdasdasd'
           }
 
-          Instance.populateModels(ctx.instances, function (err, instances) {
+          Instance.populateModels(ctx.instances, ctx.mockSessionUser, function (err, instances) {
             if (err) {
               done(err)
             }
@@ -1121,7 +1128,7 @@ describe('Instance Model Integration Tests', function () {
             ctx.instance._doc.contextVersion = {
               _id: 'asdasdasd'
             }
-            Instance.populateModels(ctx.instances, function (err) {
+            Instance.populateModels(ctx.instances, ctx.mockSessionUser, function (err) {
               expect(err).to.exist()
               done()
             })
@@ -1131,7 +1138,7 @@ describe('Instance Model Integration Tests', function () {
           it('should return error', function (done) {
             // This should cause a casting error
             ctx.instance._doc.build = 'asdasdasd'
-            Instance.populateModels(ctx.instances, function (err) {
+            Instance.populateModels(ctx.instances, ctx.mockSessionUser, function (err) {
               expect(err).to.exist()
               done()
             })
