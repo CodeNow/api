@@ -82,10 +82,7 @@ describe('Cluster Config Service Unit Tests', function () {
         isMain: true,
         envFiles: []
       },
-      contextVersion: {
-        advanced: true,
-        buildDockerfilePath: '.'
-      },
+      buildDockerfilePath: '.',
       files: { // Optional
         '/Dockerfile': {
           body: 'FROM node'
@@ -110,10 +107,7 @@ describe('Cluster Config Service Unit Tests', function () {
         isMain: false,
         envFiles: []
       },
-      contextVersion: {
-        advanced: true,
-        buildDockerfilePath: '.'
-      },
+      buildDockerfilePath: '.',
       files: { // Optional
         '/Dockerfile': {
           body: 'FROM node'
@@ -249,7 +243,8 @@ describe('Cluster Config Service Unit Tests', function () {
             dockerComposeFilePath: filePath,
             repositoryName: newInstanceName,
             ownerUsername: ownerUsername,
-            userContentDomain: process.env.USER_CONTENT_DOMAIN
+            userContentDomain: process.env.USER_CONTENT_DOMAIN,
+            scmDomain: process.env.GITHUB_HOST
           }
           sinon.assert.calledWithExactly(octobear.parse, parserPayload)
         })
@@ -663,18 +658,14 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call ContextVersion.createWithNewInfraCode if no Dockerfile was provided', (done) => {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
-        const testParsedContextVersionOpts = {
-          advanced: true,
-          buildDockerfilePath: testDockerfilePath
-        }
         const testParsedComposeData = {
-          contextVersion: testParsedContextVersionOpts
+          buildDockerfilePath: testDockerfilePath
         }
         ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
           expect(contextVersion).to.equal(testContextVersion)
           sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
-          sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
+          sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName, null)
           sinon.assert.calledOnce(InfraCodeVersionService.findBlankInfraCodeVersion)
           sinon.assert.calledWithExactly(InfraCodeVersionService.findBlankInfraCodeVersion)
           sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
@@ -732,12 +723,8 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call all functions in order if Dockerfile was not specified', (done) => {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
-        const testParsedContextVersionOpts = {
-          advanced: true,
-          buildDockerfilePath: testDockerfilePath
-        }
         const testParsedComposeData = {
-          contextVersion: testParsedContextVersionOpts
+          buildDockerfilePath: testDockerfilePath
         }
         ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
