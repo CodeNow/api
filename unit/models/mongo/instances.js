@@ -2199,7 +2199,7 @@ describe('Instance Model Tests', function () {
         testContextVersionId,
         testContainerId,
         testContainerInfo
-      ).asCallback((err) => {
+      ).asCallback(err => {
         expect(err).to.be.an.instanceOf(Instance.NotFoundError)
         done()
       })
@@ -2212,7 +2212,7 @@ describe('Instance Model Tests', function () {
         testContextVersionId,
         testContainerId,
         testContainerInfo
-      ).asCallback((err) => {
+      ).asCallback(err => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
         sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
@@ -2234,4 +2234,104 @@ describe('Instance Model Tests', function () {
       })
     })
   }) // end markAsCreating
+
+  describe('convertAliasToDependency', function () {
+    let instance
+    const key = 'hello'
+    const base64Key = new Buffer(key).toString('base64')
+    const contextId = 'asdasasdasd'
+    const isolatedId = '12312312=321'
+
+    beforeEach(function (done) {
+      instance = mongoFactory.createNewInstance()
+      instance._doc.aliases[base64Key] = {
+        id: key,
+        contextId: contextId
+      }
+      instance._doc.masterPod = true
+      sinon.stub(Instance, 'findOneAsync').resolves()
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findOneAsync.restore()
+      done()
+    })
+    describe('errors', function () {
+      describe('NotFound', function () {
+        it('should throw when no alias given', (done) => {
+          instance.convertAliasToDependency()
+            .catch(err => {
+              expect(err).to.be.an.instanceOf(Instance.NotFoundError)
+            })
+            .asCallback(done)
+        })
+        it('should throw when alias not in instance', (done) => {
+          instance.convertAliasToDependency('asdasdas')
+            .catch(err => {
+              expect(err).to.be.an.instanceOf(Instance.NotFoundError)
+              expect(err.data.aliases).to.equal(instance._doc.aliases)
+            })
+            .asCallback(done)
+        })
+        it('should throw when instance not masterPod nor isolated', (done) => {
+          delete instance._doc.masterPod
+          delete instance._doc.isolated
+          instance.convertAliasToDependency(key)
+            .catch(err => {
+              expect(err).to.be.an.instanceOf(Instance.IncorrectStateError)
+            })
+            .asCallback(done)
+        })
+        it('should throw when instance not returned from Mongo', (done) => {
+          instance.convertAliasToDependency(key)
+            .catch(err => {
+              expect(err).to.be.an.instanceOf(Instance.NotFoundError)
+            })
+            .asCallback(done)
+        })
+      })
+    })
+    describe('Success', function () {
+      let depInstance
+      beforeEach(function (done) {
+        depInstance = mongoFactory.createNewInstance('dep')
+        Instance.findOneAsync.resolves(depInstance)
+        done()
+      })
+      describe('masterPod', function () {
+        it('should return instance when alias matches', (done) => {
+          instance.convertAliasToDependency(key)
+            .then(dep => {
+              expect(dep._id).to.equal(depInstance._id)
+              sinon.assert.calledOnce(Instance.findOneAsync)
+              sinon.assert.calledWith(Instance.findOneAsync, {
+                'contextVersion.context': contextId,
+                masterPod: true
+              })
+            })
+            .asCallback(done)
+        })
+      })
+      describe('isolated', function () {
+        beforeEach(function (done) {
+          delete instance._doc.masterPod
+          instance._doc.isolated = isolatedId
+          done()
+        })
+        it('should return instance when alias matches', (done) => {
+          instance.convertAliasToDependency(key)
+            .then(dep => {
+              expect(dep._id).to.equal(depInstance._id)
+              sinon.assert.calledOnce(Instance.findOneAsync)
+              sinon.assert.calledWith(Instance.findOneAsync, {
+                'contextVersion.context': contextId,
+                isolated: isolatedId
+              })
+            })
+            .asCallback(done)
+        })
+      })
+    })
+  })
 })

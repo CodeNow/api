@@ -160,9 +160,9 @@ describe('Cluster Config Service Unit Tests', function () {
     const repoName = 'api'
     const repoFullName = orgName + '/' + repoName
     const branchName = 'feature-1'
-    const newInstanceName = 'api-unit'
+    const clusterName = 'api-unit'
     const parsedInput = {
-      repositoryName: newInstanceName,
+      repositoryName: clusterName,
       ownerUsername: orgName,
       userContentDomain: process.env.USER_CONTENT_DOMAIN,
       fileSha: dockerComposeContent.sha,
@@ -170,7 +170,7 @@ describe('Cluster Config Service Unit Tests', function () {
     }
 
     const testData = {
-      triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, newInstanceName
+      triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName
     }
 
     beforeEach(function (done) {
@@ -241,7 +241,7 @@ describe('Cluster Config Service Unit Tests', function () {
           const parserPayload = {
             dockerComposeFileString: fileString,
             dockerComposeFilePath: filePath,
-            repositoryName: newInstanceName,
+            repositoryName: clusterName,
             ownerUsername: ownerUsername,
             userContentDomain: process.env.USER_CONTENT_DOMAIN,
             scmDomain: process.env.GITHUB_HOST
@@ -263,7 +263,7 @@ describe('Cluster Config Service Unit Tests', function () {
             repoFullName,
             filePath,
             parsedInput.fileSha,
-            newInstanceName,
+            clusterName,
             isTesting,
             testReporters
           )
@@ -487,6 +487,7 @@ describe('Cluster Config Service Unit Tests', function () {
             createdByUser: testSessionUser.bigPoppaUser.id,
             ownedByOrg: testOrg.id,
             fileSha,
+            isTesting: true,
             clusterName: composeData.repositoryName
           })
         })
