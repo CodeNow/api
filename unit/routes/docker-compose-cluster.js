@@ -100,8 +100,9 @@ describe('/docker-compose-cluster', function () {
               branchName: branch,
               filePath,
               isTesting,
+              parentInputClusterConfigId: undefined,
               testReporters,
-              newInstanceName: name
+              clusterName: name
             })
           })
           .asCallback(done)

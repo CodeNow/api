@@ -7,7 +7,6 @@ const Promise = require('bluebird')
 const sinon = require('sinon')
 const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 
-
 require('sinon-as-promised')(Promise)
 const lab = exports.lab = Lab.script()
 
