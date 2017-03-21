@@ -147,7 +147,7 @@ describe('InputClusterConfig Model Integration Tests', function () {
       invalidData.parentInputClusterConfigId = invalidId
       InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
         expect(err).to.exist()
-        expect(err.message).to.equal(`Cast to ObjectId failed for value "${invalidId}" at path "autoIsolationConfigId"`)
+        expect(err.message).to.equal(`Cast to ObjectId failed for value "${invalidId}" at path "parentInputClusterConfigId"`)
         done()
       })
     })
