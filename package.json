@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "11.31.0",
+  "version": "11.31.1",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "101": "^1.5.0",
-    "@runnable/api-client": "^9.1.0",
+    "@runnable/api-client": "^9.2.8",
     "@runnable/big-poppa-client": "^0.5.1",
     "@runnable/clio-client": "^1.0.8",
     "@runnable/hostname": "^3.0.0",
