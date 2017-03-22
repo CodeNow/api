@@ -15,7 +15,7 @@ var Instance = require('models/mongo/instance')
 var mongoFactory = require('../../factories/mongo')
 var pubsub = require('models/redis/pubsub')
 var Version = require('models/mongo/context-version')
-
+const ClusterDataService = require('models/services/cluster-data-service')
 require('sinon-as-promised')(Promise)
 var lab = exports.lab = Lab.script()
 
@@ -1454,6 +1454,14 @@ describe('Instance Model Tests', function () {
    * when everything is done
    */
   describe('.populateModels', function () {
+    beforeEach(function (done) {
+      sinon.stub(ClusterDataService, 'populateInstancesWithClusterInfo').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      ClusterDataService.populateInstancesWithClusterInfo.restore()
+      done()
+    })
     beforeEach(function (done) {
       ctx.mockSessionUser = {
         _id: 1234,
