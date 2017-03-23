@@ -18,7 +18,7 @@ const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
 const Instance = require('models/mongo/instance')
 const ClusterDataService = require('models/services/cluster-data-service')
-// const UserService = require('models/services/user-service')
+const UserService = require('models/services/user-service')
 
 describe('Cluster Data Service Unit Tests', function () {
   describe('makeClusterData', () => {
@@ -110,6 +110,51 @@ describe('Cluster Data Service Unit Tests', function () {
         sinon.assert.calledWithExactly(AutoIsolationConfig.findActiveByAnyInstanceId, instanceId)
         sinon.assert.calledOnce(InputClusterConfig.findActiveByAutoIsolationId)
         sinon.assert.calledWithExactly(InputClusterConfig.findActiveByAutoIsolationId, aigId)
+        done()
+      })
+    })
+  })
+
+  describe('populateInstancesWithClusterInfo', () => {
+    beforeEach((done) => {
+      sinon.stub(UserService, 'getBpOrgInfoFromGitHubId').returns()
+      sinon.stub(AutoIsolationConfig, 'findAsync').resolves()
+      sinon.stub(InputClusterConfig, 'findAsync').resolves()
+      done()
+    })
+    afterEach((done) => {
+      UserService.getBpOrgInfoFromGitHubId.restore()
+      AutoIsolationConfig.findAsync.restore()
+      InputClusterConfig.findAsync.restore()
+      done()
+    })
+    
+    it('should do nothing if instances are not defined', (done) => {
+      ClusterDataService.populateInstancesWithClusterInfo(null, {})
+      .asCallback((err, result) => {
+        expect(err).to.not.exist()
+        expect(result).to.not.exist()
+        sinon.assert.notCalled(UserService.getBpOrgInfoFromGitHubId)
+        done()
+      })
+    })
+
+    it('should do nothing if instances are empty', (done) => {
+      ClusterDataService.populateInstancesWithClusterInfo([], {})
+      .asCallback((err, result) => {
+        expect(err).to.not.exist()
+        expect(result).to.not.exist()
+        sinon.assert.notCalled(UserService.getBpOrgInfoFromGitHubId)
+        done()
+      })
+    })
+
+    it('should do nothing if sessionUser is not defined', (done) => {
+      ClusterDataService.populateInstancesWithClusterInfo([{_id: 1}, {_id: 2}], null)
+      .asCallback((err, result) => {
+        expect(err).to.not.exist()
+        expect(result).to.not.exist()
+        sinon.assert.notCalled(UserService.getBpOrgInfoFromGitHubId)
         done()
       })
     })
