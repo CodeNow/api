@@ -193,6 +193,48 @@ describe('Cluster Data Service Unit Tests', function () {
       })
     })
 
+    it('should stop if UserService.getBpOrgInfoFromGitHubId failed', (done) => {
+      UserService.getBpOrgInfoFromGitHubId.throws(new Error('Some error'))
+      const instances = [ instance1, instance2]
+      ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
+      .asCallback((err, result) => {
+        expect(err).to.not.exist()
+        expect(result).to.not.exist()
+        sinon.assert.calledOnce(UserService.getBpOrgInfoFromGitHubId)
+        sinon.assert.notCalled(AutoIsolationConfig.findAsync)
+        sinon.assert.notCalled(InputClusterConfig.findAsync)
+        done()
+      })
+    })
+
+    it('should stop if AutoIsolationConfig.findAsync failed', (done) => {
+      AutoIsolationConfig.findAsync.throws(new Error('Some error'))
+      const instances = [ instance1, instance2]
+      ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
+      .asCallback((err, result) => {
+        expect(err).to.not.exist()
+        expect(result).to.not.exist()
+        sinon.assert.calledOnce(UserService.getBpOrgInfoFromGitHubId)
+        sinon.assert.calledOnce(AutoIsolationConfig.findAsync)
+        sinon.assert.notCalled(InputClusterConfig.findAsync)
+        done()
+      })
+    })
+
+    it('should stop if InputClusterConfig.findAsync failed', (done) => {
+      InputClusterConfig.findAsync.throws(new Error('Some error'))
+      const instances = [ instance1, instance2]
+      ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
+      .asCallback((err, result) => {
+        expect(err).to.not.exist()
+        expect(result).to.not.exist()
+        sinon.assert.calledOnce(UserService.getBpOrgInfoFromGitHubId)
+        sinon.assert.calledOnce(AutoIsolationConfig.findAsync)
+        sinon.assert.calledOnce(InputClusterConfig.findAsync)
+        done()
+      })
+    })
+
     it('should call all the chain with correct args', (done) => {
       ClusterDataService.populateInstancesWithClusterInfo([ instance1, instance2], sessionUser)
       .asCallback((err, result) => {
@@ -217,7 +259,7 @@ describe('Cluster Data Service Unit Tests', function () {
       })
     })
 
-    it('should eturn correct result and modify input', (done) => {
+    it('should return correct result and modify input', (done) => {
       const instances = [ instance1, instance2]
       ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
       .asCallback((err, result) => {
