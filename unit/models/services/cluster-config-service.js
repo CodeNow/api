@@ -227,7 +227,7 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
           sinon.assert.calledOnce(GitHub.prototype.getRepoContentAsync)
-          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoFullName, filePath, 'master')
+          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoFullName, filePath, undefined)
         })
         .asCallback(done)
       })
