@@ -153,7 +153,7 @@ describe('Instance Services Integration Tests', function () {
             sinon.assert.calledWith(
               InstanceService.emitInstanceUpdate,
               sinon.match.has('_id', instance._id),
-              sinon.match.object,
+              sinon.match.number,
               'post'
             )
             return instance.getDependenciesAsync()
@@ -281,7 +281,7 @@ describe('Instance Services Integration Tests', function () {
             sinon.assert.calledWith(
               InstanceService.emitInstanceUpdate,
               sinon.match.has('_id', instance._id),
-              sinon.match.object,
+              sinon.match.number,
               'post'
             )
             return instance.getDependenciesAsync()
