@@ -227,7 +227,7 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
           sinon.assert.calledOnce(GitHub.prototype.getRepoContentAsync)
-          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoFullName, filePath)
+          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoFullName, filePath, 'master')
         })
         .asCallback(done)
       })
@@ -1314,6 +1314,7 @@ describe('Cluster Config Service Unit Tests', function () {
     const orgName = 'Runnable'
     const repoName = 'api'
     const repoFullName = orgName + '/' + repoName
+    const commitRef = 'asdasdassdfgasdfwae'
 
     beforeEach(function (done) {
       sinon.stub(GitHub.prototype, 'getRepoContentAsync').resolves(dockerComposeContent)
@@ -1331,7 +1332,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if getRepoContentAsync failed', function (done) {
         const error = new Error('Some error')
         GitHub.prototype.getRepoContentAsync.rejects(error)
-        ClusterConfigService.fetchFileFromGithub(testSessionUser, repoFullName, filePath)
+        ClusterConfigService.fetchFileFromGithub(testSessionUser, repoFullName, filePath, commitRef)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -1341,26 +1342,27 @@ describe('Cluster Config Service Unit Tests', function () {
     })
     describe('success', function () {
       it('should run successfully', function (done) {
-        ClusterConfigService.fetchFileFromGithub(testSessionUser, repoFullName, filePath)
+        ClusterConfigService.fetchFileFromGithub(testSessionUser, repoFullName, filePath, commitRef)
           .asCallback(done)
       })
 
       it('should call getRepoContentAsync with correct args', function (done) {
-        ClusterConfigService.fetchFileFromGithub(testSessionUser, repoFullName, filePath)
+        ClusterConfigService.fetchFileFromGithub(testSessionUser, repoFullName, filePath, commitRef)
           .tap(function () {
             sinon.assert.calledOnce(GitHub.prototype.getRepoContentAsync)
-            sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoFullName, filePath)
+            sinon.assert.calledWithExactly(GitHub.prototype.getRepoContentAsync, repoFullName, filePath, commitRef)
           })
           .asCallback(done)
       })
 
       it('should resolve with correct args', function (done) {
-        ClusterConfigService.fetchFileFromGithub(testSessionUser, repoFullName, filePath)
+        ClusterConfigService.fetchFileFromGithub(testSessionUser, repoFullName, filePath, commitRef)
           .tap(function (parsed) {
             expect(parsed).to.equal({
               fileString,
               fileSha: dockerComposeContent.sha,
-              filePath
+              filePath,
+              commitRef
             })
           })
           .asCallback(done)
@@ -1918,7 +1920,9 @@ describe('Cluster Config Service Unit Tests', function () {
     const mainInstanceName = 'mainInstanceName'
     const bigPoppaUser = {}
     const repoFullName = 'Runnable/octobear'
-    const composeFileData = {}
+    const composeFileData = {
+      commitRef: 'asdasdasdasdsa'
+    }
     const fileString = 'ENV1=hello'
    const envFiles = ['./env', './docker/.env', './wow/.env']
     let parseResult
@@ -1977,19 +1981,22 @@ describe('Cluster Config Service Unit Tests', function () {
             ClusterConfigService.fetchFileFromGithub,
             bigPoppaUser,
             repoFullName,
-            envFiles[0]
+            envFiles[0],
+            composeFileData.commitRef
           )
           sinon.assert.calledWithExactly(
             ClusterConfigService.fetchFileFromGithub,
             bigPoppaUser,
             repoFullName,
-            envFiles[1]
+            envFiles[1],
+            composeFileData.commitRef
           )
           sinon.assert.calledWithExactly(
             ClusterConfigService.fetchFileFromGithub,
             bigPoppaUser,
             repoFullName,
-            envFiles[2]
+            envFiles[2],
+            composeFileData.commitRef
           )
         })
     })
