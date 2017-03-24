@@ -38,6 +38,7 @@ describe('Cluster Config Service Unit Tests', function () {
   const testContextId = objectId('407f191e810c19729de860ef')
   const isTesting = true
   const isTestReporter = false
+  const parentInputClusterConfigId = 'dk2kj3492'
   const testReporters = []
   let testOrgInfo
 
@@ -170,7 +171,7 @@ describe('Cluster Config Service Unit Tests', function () {
     }
 
     const testData = {
-      triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName
+      triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName, parentInputClusterConfigId
     }
 
     beforeEach(function (done) {
@@ -265,7 +266,8 @@ describe('Cluster Config Service Unit Tests', function () {
             parsedInput.fileSha,
             clusterName,
             isTesting,
-            testReporters
+            testReporters,
+            parentInputClusterConfigId
           )
         })
         .asCallback(done)
@@ -478,7 +480,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call InputClusterConfig.createAsync with correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters, parentInputClusterConfigId)
         .tap(function () {
           sinon.assert.calledOnce(InputClusterConfig.createAsync)
           sinon.assert.calledWithExactly(InputClusterConfig.createAsync, {
@@ -488,7 +490,8 @@ describe('Cluster Config Service Unit Tests', function () {
             ownedByOrg: testOrg.id,
             fileSha,
             isTesting: true,
-            clusterName: composeData.repositoryName
+            clusterName: composeData.repositoryName,
+            parentInputClusterConfigId
           })
         })
         .asCallback(done)
