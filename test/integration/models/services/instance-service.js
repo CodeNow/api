@@ -18,7 +18,6 @@ var mongoFactory = require('../../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 var Promise = require('bluebird')
 var rabbitMQ = require('models/rabbitmq')
-var messenger = require('socket/messenger')
 
 describe('Instance Services Integration Tests', function () {
   before(mongooseControl.start)
@@ -31,13 +30,13 @@ describe('Instance Services Integration Tests', function () {
     beforeEach(function (done) {
       sinon.stub(rabbitMQ, 'instanceDeployed')
       sinon.stub(rabbitMQ, 'createInstanceContainer')
-      sinon.stub(messenger, 'emitInstanceUpdate')
+      sinon.stub(InstanceService, 'emitInstanceUpdate')
       done()
     })
     afterEach(function (done) {
       rabbitMQ.instanceDeployed.restore()
       rabbitMQ.createInstanceContainer.restore()
-      messenger.emitInstanceUpdate.restore()
+      InstanceService.emitInstanceUpdate.restore()
       done()
     })
     beforeEach(function (done) {
@@ -152,7 +151,7 @@ describe('Instance Services Integration Tests', function () {
               sessionUserGithubId: 1234
             })
             sinon.assert.calledWith(
-              messenger.emitInstanceUpdate,
+              InstanceService.emitInstanceUpdate,
               sinon.match.has('_id', instance._id),
               'post'
             )
@@ -172,14 +171,14 @@ describe('Instance Services Integration Tests', function () {
       sinon.stub(rabbitMQ, 'instanceDeployed')
       sinon.stub(rabbitMQ, 'createInstanceContainer')
       sinon.stub(rabbitMQ, 'deleteContextVersion')
-      sinon.stub(messenger, 'emitInstanceUpdate')
+      sinon.stub(InstanceService, 'emitInstanceUpdate')
       done()
     })
     afterEach(function (done) {
       rabbitMQ.instanceDeployed.restore()
       rabbitMQ.createInstanceContainer.restore()
       rabbitMQ.deleteContextVersion.restore()
-      messenger.emitInstanceUpdate.restore()
+      InstanceService.emitInstanceUpdate.restore()
       done()
     })
     beforeEach(function (done) {
@@ -279,7 +278,7 @@ describe('Instance Services Integration Tests', function () {
               contextVersionId: ctx.otherCv._id.toString()
             })
             sinon.assert.calledWith(
-              messenger.emitInstanceUpdate,
+              InstanceService.emitInstanceUpdate,
               sinon.match.has('_id', instance._id),
               'post'
             )
