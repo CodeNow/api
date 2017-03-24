@@ -167,7 +167,7 @@ describe('Cluster Data Service Unit Tests', function () {
       ClusterDataService.populateInstancesWithClusterInfo(null, {})
       .asCallback((err, result) => {
         expect(err).to.not.exist()
-        expect(result).to.not.exist()
+        expect(result).to.equal([])
         sinon.assert.notCalled(UserService.getBpOrgInfoFromGitHubId)
         done()
       })
@@ -177,7 +177,7 @@ describe('Cluster Data Service Unit Tests', function () {
       ClusterDataService.populateInstancesWithClusterInfo([], {})
       .asCallback((err, result) => {
         expect(err).to.not.exist()
-        expect(result).to.not.exist()
+        expect(result).to.equal([])
         sinon.assert.notCalled(UserService.getBpOrgInfoFromGitHubId)
         done()
       })
@@ -187,7 +187,7 @@ describe('Cluster Data Service Unit Tests', function () {
       ClusterDataService.populateInstancesWithClusterInfo([{_id: 1}, {_id: 2}], null)
       .asCallback((err, result) => {
         expect(err).to.not.exist()
-        expect(result).to.not.exist()
+        expect(result).to.equal([])
         sinon.assert.notCalled(UserService.getBpOrgInfoFromGitHubId)
         done()
       })
@@ -199,7 +199,7 @@ describe('Cluster Data Service Unit Tests', function () {
       ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
       .asCallback((err, result) => {
         expect(err).to.not.exist()
-        expect(result).to.not.exist()
+        expect(result).to.equal(instances)
         sinon.assert.calledOnce(UserService.getBpOrgInfoFromGitHubId)
         sinon.assert.notCalled(AutoIsolationConfig.findAllActive)
         sinon.assert.notCalled(InputClusterConfig.findAllActive)
@@ -213,7 +213,7 @@ describe('Cluster Data Service Unit Tests', function () {
       ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
       .asCallback((err, result) => {
         expect(err).to.not.exist()
-        expect(result).to.not.exist()
+        expect(result).to.equal(instances)
         sinon.assert.calledOnce(UserService.getBpOrgInfoFromGitHubId)
         sinon.assert.calledOnce(AutoIsolationConfig.findAllActive)
         sinon.assert.notCalled(InputClusterConfig.findAllActive)
@@ -227,7 +227,7 @@ describe('Cluster Data Service Unit Tests', function () {
       ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
       .asCallback((err, result) => {
         expect(err).to.not.exist()
-        expect(result).to.not.exist()
+        expect(result).to.equal(instances)
         sinon.assert.calledOnce(UserService.getBpOrgInfoFromGitHubId)
         sinon.assert.calledOnce(AutoIsolationConfig.findAllActive)
         sinon.assert.calledOnce(InputClusterConfig.findAllActive)
@@ -236,9 +236,11 @@ describe('Cluster Data Service Unit Tests', function () {
     })
 
     it('should call all the chain with correct args', (done) => {
-      ClusterDataService.populateInstancesWithClusterInfo([ instance1, instance2], sessionUser)
+      const instances = [ instance1, instance2 ]
+      ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
       .asCallback((err, result) => {
         expect(err).to.not.exist()
+        expect(result).to.equal(instances)
         sinon.assert.calledOnce(UserService.getBpOrgInfoFromGitHubId)
         sinon.assert.calledWithExactly(UserService.getBpOrgInfoFromGitHubId, sessionUser, ownerGitHubId)
         sinon.assert.calledOnce(AutoIsolationConfig.findAllActive)
@@ -258,7 +260,7 @@ describe('Cluster Data Service Unit Tests', function () {
       ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
       .asCallback((err, result) => {
         expect(err).to.not.exist()
-        expect(result).to.exist()
+        expect(result).to.equal(instances)
         expect(result.length).to.equal(2)
         expect(result[0]._doc.inputClusterConfig).to.exist()
         expect(result[0]._doc.inputClusterConfig._id.toString()).to.equal(clusterConfig1._id.toString())
