@@ -162,8 +162,14 @@ describe('Cluster Data Service Unit Tests', function () {
       done()
     })
     it('should set the cluster on the instance', done => {
-      ClusterDataService._setClustersOnAllInstances(iccsByInstanceId, [instance1])
+      ClusterDataService._setClustersOnAllInstances(iccsByInstanceId, [instance1], [instance1])
       expect(instance1._doc.inputClusterConfig).to.equal(clusterConfig1)
+      done()
+    })
+
+    it('should use the allInstances for finding the shortHash', done => {
+      ClusterDataService._setClustersOnAllInstances(iccsByInstanceId, [instance3], [instance1, instance2, instance3])
+      expect(instance3._doc.inputClusterConfig).to.equal(clusterConfig1)
       done()
     })
   })
@@ -246,6 +252,7 @@ describe('Cluster Data Service Unit Tests', function () {
 
   describe('populateInstancesWithClusterInfo', () => {
     beforeEach((done) => {
+      sinon.stub(ClusterDataService, '_fetchParentsAndAddToArray').resolves([instance1, instance2, instance3])
       sinon.stub(AutoIsolationConfig, 'findActiveByAnyInstanceIds').resolves([aig1, aig2])
       sinon.stub(ClusterDataService, 'fetchInputClusterConfigsByAutoIsolationConfigs')
         .resolves([clusterConfig1, clusterConfig2])
@@ -254,6 +261,7 @@ describe('Cluster Data Service Unit Tests', function () {
       done()
     })
     afterEach((done) => {
+      ClusterDataService._fetchParentsAndAddToArray.restore()
       AutoIsolationConfig.findActiveByAnyInstanceIds.restore()
       ClusterDataService.fetchInputClusterConfigsByAutoIsolationConfigs.restore()
       ClusterDataService._mapIccsByInstanceId.restore()
