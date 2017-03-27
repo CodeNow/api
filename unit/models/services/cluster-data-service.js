@@ -18,113 +18,62 @@ const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
 const Instance = require('models/mongo/instance')
 const ClusterDataService = require('models/services/cluster-data-service')
-const UserService = require('models/services/user-service')
 
 describe('Cluster Data Service Unit Tests', function () {
+  const instanceId1 = '507f1f77bcf86cd799439011'
+  const shortHash1 = 'abc123'
+  const aig1Id = '107f1f77bcf86cd799439012'
+  let instance1
+  let aig1
+  let clusterConfig1
+  const instanceId2 = '007f1f77bcf86cd799439019'
+  const shortHash2 = 'def456'
+  const aig2Id = '007f1f77bcf86cd799439019'
+  let instance2
+  const instanceId3 = '007f1f77bcf86cd799439031'
+  const shortHash3 = 'ghi789'
+  let iccsByInstanceId
+  let instance3
+  let aig2
+  let clusterConfig2
+  let organization
+  let sessionUser
+  let ownerGitHubId
+  beforeEach((done) => {
+    organization = {id: 11111}
+    sessionUser = {
+      _id: 2222
+    }
+    ownerGitHubId = 9999
+    instance1 = new Instance({ _id: instanceId1, shortHash: shortHash1 })
+    aig1 = new AutoIsolationConfig({
+      _id: objectId(aig1Id),
+      instance: objectId(instanceId1)
+    })
+    clusterConfig1 = { autoIsolationConfigId: objectId(aig1Id) }
+    instance2 = new Instance({ _id: instanceId2, shortHash: shortHash2 })
+    aig2 = new AutoIsolationConfig({
+      _id: objectId(aig2Id),
+      instance: objectId(instanceId2)
+    })
+    clusterConfig2 = { autoIsolationConfigId: objectId(aig2Id) }
+    instance3 = new Instance({ _id: instanceId3, shortHash: shortHash3, parent: shortHash1 })
+    iccsByInstanceId = {}
+    iccsByInstanceId[instanceId1] = clusterConfig1
+    iccsByInstanceId[instanceId2] = clusterConfig2
+    done()
+  })
 
-  // describe('populateInstanceWithClusterInfo', () => {
-  //   const instanceId = '507f1f77bcf86cd799439011'
-  //   const aigId = '107f1f77bcf86cd799439012'
-  //   let instance
-  //   let aig
-  //   let clusterConfig
-  //   beforeEach((done) => {
-  //     instance = new Instance({ _id: instanceId })
-  //     aig = new AutoIsolationConfig({
-  //       _id: objectId(aigId),
-  //       instance: objectId(instanceId)
-  //     })
-  //     clusterConfig = new InputClusterConfig({
-  //       autoIsolationConfigId: objectId(aigId)
-  //     })
-  //     sinon.stub(AutoIsolationConfig, 'findActiveByAnyInstanceId').resolves(aig)
-  //     sinon.stub(InputClusterConfig, 'findActiveByAutoIsolationId').resolves(clusterConfig)
-  //     InputClusterConfig.findActiveByAutoIsolationId
-  //     done()
-  //   })
-  //   afterEach((done) => {
-  //     AutoIsolationConfig.findActiveByAnyInstanceId.restore()
-  //     InputClusterConfig.findActiveByAutoIsolationId.restore()
-  //     done()
-  //   })
-
-  //   it('should stop AutoIsolationConfig.findActiveByAnyInstanceId failed', (done) => {
-  //     const error = new Error('Some error')
-  //     AutoIsolationConfig.findActiveByAnyInstanceId.rejects(error)
-  //     ClusterDataService.populateInstanceWithClusterInfo(instance)
-  //     .asCallback((err, result) => {
-  //       expect(err).to.not.exist()
-  //       expect(result).to.not.exist()
-  //       expect(instance._doc.inputClusterConfig).to.not.exist()
-  //       sinon.assert.calledOnce(AutoIsolationConfig.findActiveByAnyInstanceId)
-  //       sinon.assert.notCalled(InputClusterConfig.findActiveByAutoIsolationId)
-  //       done()
-  //     })
-  //   })
-
-  //   it('should stop InputClusterConfig.findActiveByAutoIsolationId failed', (done) => {
-  //     const error = new Error('Some error')
-  //     InputClusterConfig.findActiveByAutoIsolationId.rejects(error)
-  //     ClusterDataService.populateInstanceWithClusterInfo(instance)
-  //     .asCallback((err, result) => {
-  //       expect(err).to.not.exist()
-  //       expect(result).to.not.exist()
-  //       expect(instance._doc.inputClusterConfig).to.not.exist()
-  //       sinon.assert.calledOnce(AutoIsolationConfig.findActiveByAnyInstanceId)
-  //       sinon.assert.calledOnce(InputClusterConfig.findActiveByAutoIsolationId)
-  //       done()
-  //     })
-  //   })
-
-  //   it('should return instance if success and updated original one', (done) => {
-  //     const error = new Error('Some error')
-  //     ClusterDataService.populateInstanceWithClusterInfo(instance)
-  //     .asCallback((err, result) => {
-  //       expect(err).to.not.exist()
-  //       expect(result._doc.inputClusterConfig).to.exist()
-  //       expect(result._doc.inputClusterConfig._id).to.exist(clusterConfig._id.toString())
-  //       expect(result._doc.inputClusterConfig.masterInstanceId).to.exist(instanceId)
-  //       expect(instance._doc.inputClusterConfig).to.exist()
-  //       expect(instance._doc.inputClusterConfig._id).to.exist(clusterConfig._id.toString())
-  //       expect(instance._doc.inputClusterConfig.masterInstanceId).to.exist(instanceId)
-  //       done()
-  //     })
-  //   })
-    
-  //   it('should call functions with correct args', (done) => {
-  //     const error = new Error('Some error')
-  //     ClusterDataService.populateInstanceWithClusterInfo(instance)
-  //     .asCallback((err, result) => {
-  //       sinon.assert.calledOnce(AutoIsolationConfig.findActiveByAnyInstanceId)
-  //       sinon.assert.calledWithExactly(AutoIsolationConfig.findActiveByAnyInstanceId, instanceId)
-  //       sinon.assert.calledOnce(InputClusterConfig.findActiveByAutoIsolationId)
-  //       sinon.assert.calledWithExactly(InputClusterConfig.findActiveByAutoIsolationId, aigId)
-  //       done()
-  //     })
-  //   })
-  // })
-
-  describe('populateInstancesWithClusterInfo', () => {
+  describe('fetchInputClusterConfigsByAutoIsolationConfigs', () => {
     const instance1Id = '507f1f77bcf86cd799439011'
     const aig1Id = '107f1f77bcf86cd799439012'
-    let instance1
-    let aig1
-    let clusterConfig1
     const instance2Id = '007f1f77bcf86cd799439019'
     const aig2Id = '007f1f77bcf86cd799439019'
-    let instance2
+    let aig1
+    let clusterConfig1
     let aig2
     let clusterConfig2
-    let organization
-    let sessionUser
-    let ownerGitHubId
     beforeEach((done) => {
-      organization = { id: 11111}
-      sessionUser = {
-        _id: 2222
-      }
-      ownerGitHubId = 9999
-      instance1 = new Instance({ _id: instance1Id, owner: { github: ownerGitHubId } })
       aig1 = new AutoIsolationConfig({
         _id: objectId(aig1Id),
         instance: objectId(instance1Id)
@@ -132,7 +81,6 @@ describe('Cluster Data Service Unit Tests', function () {
       clusterConfig1 = new InputClusterConfig({
         autoIsolationConfigId: objectId(aig1Id)
       })
-      instance2 = new Instance({ _id: instance2Id, owner: { github: ownerGitHubId } })
       aig2 = new AutoIsolationConfig({
         _id: objectId(aig2Id),
         instance: objectId(instance2Id)
@@ -140,128 +88,222 @@ describe('Cluster Data Service Unit Tests', function () {
       clusterConfig2 = new InputClusterConfig({
         autoIsolationConfigId: objectId(aig2Id)
       })
-      sinon.stub(UserService, 'getBpOrgInfoFromGitHubId').returns(organization)
-      sinon.stub(AutoIsolationConfig, 'findAllActive').resolves([aig1, aig2])
+      done()
+    })
+
+    beforeEach((done) => {
       sinon.stub(InputClusterConfig, 'findAllActive').resolves([clusterConfig1, clusterConfig2])
       done()
     })
     afterEach((done) => {
-      UserService.getBpOrgInfoFromGitHubId.restore()
-      AutoIsolationConfig.findAllActive.restore()
       InputClusterConfig.findAllActive.restore()
       done()
     })
-    
-    it('should do nothing if instances are not defined', (done) => {
-      ClusterDataService.populateInstancesWithClusterInfo(null, {})
-      .asCallback((err, result) => {
-        expect(err).to.not.exist()
-        expect(result).to.equal(null)
-        sinon.assert.notCalled(UserService.getBpOrgInfoFromGitHubId)
-        done()
-      })
-    })
-
-    it('should do nothing if instances are empty', (done) => {
-      ClusterDataService.populateInstancesWithClusterInfo([], {})
-        .asCallback((err, result) => {
-          expect(err).to.not.exist()
-          expect(result).to.equal([])
-          sinon.assert.notCalled(UserService.getBpOrgInfoFromGitHubId)
-          done()
+    it('should return toJSONed versions of the fetched iccs, and have the added fields', () => {
+      return ClusterDataService.fetchInputClusterConfigsByAutoIsolationConfigs([aig1, aig2])
+        .then(iccs => {
+          expect(iccs.length).to.equal(2)
+          expect(iccs[0]._doc).to.be.undefined()
+          expect(iccs[0].masterInstanceId).to.equal(instance1Id)
+          expect(iccs[0].autoIsolation).to.equal(aig1)
+          expect(iccs[1]._doc).to.be.undefined()
+          expect(iccs[1].masterInstanceId).to.equal(instance2Id)
+          expect(iccs[1].autoIsolation).to.equal(aig2)
         })
     })
-
-    it('should return instances if sessionUser is not defined', (done) => {
-      const instances = [{_id: 1}, {_id: 2}]
-      ClusterDataService.populateInstancesWithClusterInfo(instances, null)
-        .asCallback((err, result) => {
-          expect(err).to.not.exist()
-          expect(result).to.equal(instances)
-          sinon.assert.notCalled(UserService.getBpOrgInfoFromGitHubId)
-          done()
-        })
-    })
-
-    it('should stop if UserService.getBpOrgInfoFromGitHubId failed', (done) => {
-      UserService.getBpOrgInfoFromGitHubId.throws(new Error('Some error'))
-      const instances = [ instance1, instance2]
-      ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
-      .asCallback((err, result) => {
-        expect(err).to.not.exist()
-        expect(result).to.equal(instances)
-        sinon.assert.calledOnce(UserService.getBpOrgInfoFromGitHubId)
-        sinon.assert.notCalled(AutoIsolationConfig.findAllActive)
-        sinon.assert.notCalled(InputClusterConfig.findAllActive)
-        done()
-      })
-    })
-
-    it('should stop if AutoIsolationConfig.findAllActive failed', (done) => {
-      AutoIsolationConfig.findAllActive.throws(new Error('Some error'))
-      const instances = [ instance1, instance2]
-      ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
-      .asCallback((err, result) => {
-        expect(err).to.not.exist()
-        expect(result).to.equal(instances)
-        sinon.assert.calledOnce(UserService.getBpOrgInfoFromGitHubId)
-        sinon.assert.calledOnce(AutoIsolationConfig.findAllActive)
-        sinon.assert.notCalled(InputClusterConfig.findAllActive)
-        done()
-      })
-    })
-
-    it('should stop if InputClusterConfig.findAllActive failed', (done) => {
-      InputClusterConfig.findAllActive.throws(new Error('Some error'))
-      const instances = [ instance1, instance2 ]
-      ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
-        .asCallback((err, result) => {
-          expect(err).to.not.exist()
-          expect(result).to.equal(instances)
-          sinon.assert.calledOnce(UserService.getBpOrgInfoFromGitHubId)
-          sinon.assert.calledOnce(AutoIsolationConfig.findAllActive)
-          sinon.assert.calledOnce(InputClusterConfig.findAllActive)
-          done()
-        })
-    })
-
-    it('should call all the chain with correct args', (done) => {
-      const instances = [ instance1, instance2 ]
-      ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
-        .asCallback((err, result) => {
-          expect(err).to.not.exist()
-          expect(result).to.equal(instances)
-          sinon.assert.calledOnce(UserService.getBpOrgInfoFromGitHubId)
-          sinon.assert.calledWithExactly(UserService.getBpOrgInfoFromGitHubId, sessionUser, ownerGitHubId)
-          sinon.assert.calledOnce(AutoIsolationConfig.findAllActive)
-          sinon.assert.calledWithExactly(AutoIsolationConfig.findAllActive, {
-            ownedByOrg: organization.id
+    it('should fetch the iccs with objectIds from the given configs', () => {
+      return ClusterDataService.fetchInputClusterConfigsByAutoIsolationConfigs([aig1, aig2])
+        .then(() => {
+          sinon.assert.calledWith(InputClusterConfig.findAllActive, {
+            autoIsolationConfigId: {
+              $in: [aig1._id, aig2._id]
+            }
           })
-          sinon.assert.calledOnce(InputClusterConfig.findAllActive)
-          sinon.assert.calledWithExactly(InputClusterConfig.findAllActive, {
-            autoIsolationConfigId: { $in: [ objectId(aig1Id), objectId(aig2Id) ] }
-          })
-          done()
         })
     })
+  })
 
-    it('should return correct result and modify input', (done) => {
-      const instances = [ instance1, instance2]
-      ClusterDataService.populateInstancesWithClusterInfo(instances, sessionUser)
-        .asCallback((err, result) => {
-          expect(err).to.not.exist()
-          expect(result).to.equal(instances)
-          expect(result.length).to.equal(2)
-          expect(result[0]._doc.inputClusterConfig).to.exist()
-          expect(result[0]._doc.inputClusterConfig._id.toString()).to.equal(clusterConfig1._id.toString())
-          expect(result[1]._doc.inputClusterConfig).to.exist()
-          expect(result[1]._doc.inputClusterConfig._id.toString()).to.equal(clusterConfig2._id.toString())
-          expect(instances[0]._doc.inputClusterConfig).to.exist()
-          expect(instances[0]._doc.inputClusterConfig._id.toString()).to.equal(clusterConfig1._id.toString())
-          expect(instances[1]._doc.inputClusterConfig).to.exist()
-          expect(instances[1]._doc.inputClusterConfig._id.toString()).to.equal(clusterConfig2._id.toString())
-          done()
-        })
+  describe('_mapIccsByInstanceId', () => {
+    const instance1Id = '507f1f77bcf86cd799439011'
+    const aig1Id = '107f1f77bcf86cd799439012'
+    const instance2Id = '007f1f77bcf86cd799439019'
+    let aig1
+    let clusterConfig1
+    let dep
+    beforeEach((done) => {
+      dep = { instance: objectId(instance2Id) }
+      aig1 = {
+        _id: objectId(aig1Id),
+        instance: objectId(instance1Id),
+        requestedDependencies: [ dep ]
+      }
+      clusterConfig1 = {
+        autoIsolation: aig1,
+        autoIsolationConfigId: objectId(aig1Id),
+        masterInstanceId: instance1Id
+      }
+      done()
+    })
+    it('should put the icc in the dictionary under the main and dep instance id', done => {
+      const given = {}
+      const resultingDictionary = ClusterDataService._mapIccsByInstanceId(given, clusterConfig1)
+      expect(resultingDictionary[instance1Id]).to.equal(clusterConfig1)
+      expect(resultingDictionary[instance2Id]).to.equal(clusterConfig1)
+      done()
+    })
+  })
+
+  describe('_setClustersOnAllInstances', () => {
+    let iccsByInstanceId
+    beforeEach((done) => {
+      iccsByInstanceId = {}
+      iccsByInstanceId[instanceId1] = clusterConfig1
+      iccsByInstanceId[instanceId2] = clusterConfig2
+      done()
+    })
+    it('should set the cluster on the instance', done => {
+      ClusterDataService._setClustersOnAllInstances(iccsByInstanceId, [instance1])
+      expect(instance1._doc.inputClusterConfig).to.equal(clusterConfig1)
+      done()
+    })
+  })
+
+  describe('populateInstanceWithClusterInfo', () => {
+    beforeEach((done) => {
+      sinon.stub(Instance, 'findInstanceIdByShortHash').resolves(instanceId1)
+      sinon.stub(AutoIsolationConfig, 'findActiveByAnyInstanceId').resolves(aig1)
+      sinon.stub(ClusterDataService, 'fetchInputClusterConfigsByAutoIsolationConfigs')
+        .resolves([clusterConfig1])
+      sinon.stub(ClusterDataService, '_setClusterOnInstance').returns()
+      done()
+    })
+    afterEach((done) => {
+      Instance.findInstanceIdByShortHash.restore()
+      AutoIsolationConfig.findActiveByAnyInstanceId.restore()
+      ClusterDataService.fetchInputClusterConfigsByAutoIsolationConfigs.restore()
+      ClusterDataService._setClusterOnInstance.restore()
+      done()
+    })
+    describe('error functions', () => {
+      it('should do nothing if instances are not defined', () => {
+        return ClusterDataService.populateInstanceWithClusterInfo(null)
+          .then(result => {
+            expect(result).to.equal(null)
+          })
+      })
+
+      it('should do nothing if instances are empty', () => {
+        return ClusterDataService.populateInstanceWithClusterInfo([])
+          .then(result => {
+            expect(result).to.equal([])
+          })
+      })
+    })
+    describe('normal unisolated function', () => {
+      beforeEach(() => {
+        return ClusterDataService.populateInstanceWithClusterInfo(instance1)
+      })
+      it('should call everything in order ', done => {
+        sinon.assert.callOrder(
+          AutoIsolationConfig.findActiveByAnyInstanceId,
+          ClusterDataService.fetchInputClusterConfigsByAutoIsolationConfigs,
+          ClusterDataService._setClusterOnInstance
+        )
+        done()
+      })
+      it('should call fetchInputClusterConfigsByAutoIsolationConfigs correctly', done => {
+        sinon.assert.calledWith(
+          ClusterDataService.fetchInputClusterConfigsByAutoIsolationConfigs,
+          [ aig1 ]
+        )
+        done()
+      })
+      it('should call _setClusterOnInstance correctly', done => {
+        sinon.assert.calledWith(
+          ClusterDataService._setClusterOnInstance,
+          instance1,
+          clusterConfig1
+        )
+        done()
+      })
+    })
+    describe('normal isolated function', () => {
+      beforeEach(() => {
+        instance2._doc.isolated = '007f1f77bcf86cd799439019'
+        return ClusterDataService.populateInstanceWithClusterInfo(instance2)
+      })
+      it('should call everything in order ', done => {
+        sinon.assert.callOrder(
+          Instance.findInstanceIdByShortHash,
+          AutoIsolationConfig.findActiveByAnyInstanceId,
+          ClusterDataService.fetchInputClusterConfigsByAutoIsolationConfigs,
+          ClusterDataService._setClusterOnInstance
+        )
+        done()
+      })
+    })
+  })
+
+  describe('populateInstancesWithClusterInfo', () => {
+    beforeEach((done) => {
+      sinon.stub(AutoIsolationConfig, 'findActiveByAnyInstanceIds').resolves([aig1, aig2])
+      sinon.stub(ClusterDataService, 'fetchInputClusterConfigsByAutoIsolationConfigs')
+        .resolves([clusterConfig1, clusterConfig2])
+      sinon.stub(ClusterDataService, '_mapIccsByInstanceId').returnsArg(0)
+      sinon.stub(ClusterDataService, '_setClustersOnAllInstances').returns()
+      done()
+    })
+    afterEach((done) => {
+      AutoIsolationConfig.findActiveByAnyInstanceIds.restore()
+      ClusterDataService.fetchInputClusterConfigsByAutoIsolationConfigs.restore()
+      ClusterDataService._mapIccsByInstanceId.restore()
+      ClusterDataService._setClustersOnAllInstances.restore()
+      done()
+    })
+    describe('error functions', () => {
+      it('should do nothing if instances are not defined', () => {
+        return ClusterDataService.populateInstancesWithClusterInfo(null)
+          .then(result => {
+            expect(result).to.equal(null)
+          })
+      })
+
+      it('should do nothing if instances are empty', () => {
+        return ClusterDataService.populateInstancesWithClusterInfo([])
+          .then(result => {
+            expect(result).to.equal([])
+          })
+      })
+    })
+
+    describe('normal function', () => {
+      let instances
+      beforeEach(() => {
+        instances = [ instance1, instance2 ]
+        return ClusterDataService.populateInstancesWithClusterInfo(instances)
+      })
+      it('should call everything in order ', done => {
+        sinon.assert.callOrder(
+          AutoIsolationConfig.findActiveByAnyInstanceIds,
+          ClusterDataService.fetchInputClusterConfigsByAutoIsolationConfigs,
+          ClusterDataService._mapIccsByInstanceId,
+          ClusterDataService._setClustersOnAllInstances
+        )
+        done()
+      })
+      it('should call _mapIccsByInstanceId on each icc', done => {
+        sinon.assert.calledWith(
+          ClusterDataService._mapIccsByInstanceId,
+          sinon.match.object,
+          clusterConfig1
+        )
+        sinon.assert.calledWith(
+          ClusterDataService._mapIccsByInstanceId,
+          sinon.match.object,
+          clusterConfig2
+        )
+        done()
+      })
     })
   })
 })
