@@ -123,6 +123,25 @@ describe('Cluster Data Service Unit Tests', function () {
     })
   })
 
+  describe('_fetchParentsAndAddToArray', () => {
+    beforeEach((done) => {
+      sinon.stub(Instance, 'fetchParentInstances').resolves([instance1])
+      done()
+    })
+    afterEach((done) => {
+      Instance.fetchParentInstances.restore()
+      done()
+    })
+    it('should put the icc in the dictionary under the main and dep instance id', () => {
+      const given = [instance3]
+      return ClusterDataService._fetchParentsAndAddToArray(given)
+        .then(allInstances => {
+          expect(given.length).to.equal(1) // Make sure the original isn't modified
+          expect(allInstances).to.contains(instance3, instance1)
+        })
+    })
+  })
+
   describe('_mapIccsByInstanceId', () => {
     const instance1Id = '507f1f77bcf86cd799439011'
     const aig1Id = '107f1f77bcf86cd799439012'
