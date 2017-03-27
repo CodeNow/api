@@ -879,6 +879,7 @@ describe('InstanceForkService', function () {
         _id: new ObjectId(),
         env: ['x=1'],
         isTesting: true,
+        isTestReporter: false,
         name: 'inst1',
         owner: { github: { id: 1 } },
         shortHash: 'd1as6213a'
@@ -915,6 +916,7 @@ describe('InstanceForkService', function () {
               masterPod: false,
               autoForked: true,
               isTesting: master.isTesting,
+              isTestReporter: master.isTestReporter,
               containerStartCommand: master.containerStartCommand
             },
             mockSessionUser
@@ -941,6 +943,7 @@ describe('InstanceForkService', function () {
               masterPod: false,
               autoForked: true,
               isTesting: master.isTesting,
+              isTestReporter: master.isTestReporter,
               containerStartCommand: master.containerStartCommand
             },
             mockSessionUser

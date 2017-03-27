@@ -27,6 +27,7 @@ describe('/docker-compose-cluster', function () {
   let validateOrBoomStub
   let nextStub
   let isTesting = false
+  let testReporters = []
   const sessionUserGithubId = 1981198
   const sessionUserBigPoppaId = 8084808
   beforeEach(function (done) {
@@ -100,6 +101,7 @@ describe('/docker-compose-cluster', function () {
               filePath,
               isTesting,
               parentInputClusterConfigId: undefined,
+              testReporters,
               clusterName: name
             })
           })
