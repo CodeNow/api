@@ -3,6 +3,7 @@
 const BuildStream = require('socket/build-stream').BuildStream
 const Code = require('code')
 const commonS3 = require('socket/common-s3')
+const InstanceService = require('models/services/instance-service')
 const commonStream = require('socket/common-stream')
 const EventEmitter = require('events').EventEmitter
 const expect = Code.expect
@@ -81,11 +82,11 @@ describe('build stream: ' + moduleName, function () {
     sinon.stub(commonS3, 'pipeLogsToClient').resolves({})
     sinon.stub(commonStream, 'onValidateFailure').returns(ctx.commonStreamValidateStub)
     sinon.stub(commonStream, 'pipeLogsToClient').returns()
-    sinon.stub(commonStream, 'fetchInstanceByContainerIdAndEnsureAccess').resolves({ instance, isCurrentContainer: true })
+    sinon.stub(InstanceService, 'fetchInstanceByContainerIdAndEnsureAccess').resolves({ instance, isCurrentContainer: true })
     done()
   })
   afterEach(function (done) {
-    commonStream.fetchInstanceByContainerIdAndEnsureAccess.restore()
+    InstanceService.fetchInstanceByContainerIdAndEnsureAccess.restore()
     commonStream.pipeLogsToClient.restore()
     commonStream.onValidateFailure.restore()
     commonS3.pipeLogsToClient.restore()
@@ -95,7 +96,7 @@ describe('build stream: ' + moduleName, function () {
   describe('when the build is running', () => {
     describe('handleStream', function () {
       it('should do nothing if the ownership check fails', function (done) {
-        commonStream.fetchInstanceByContainerIdAndEnsureAccess.rejects(error)
+        InstanceService.fetchInstanceByContainerIdAndEnsureAccess.rejects(error)
         ctx.commonStreamValidateStub.throws(error)
         ctx.buildStream.socket.substream = sinon.spy(function () {
           done(new Error('This shouldn\'t have happened'))
@@ -141,8 +142,8 @@ describe('build stream: ' + moduleName, function () {
         })
         ctx.buildStream.handleStream().asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(commonStream.fetchInstanceByContainerIdAndEnsureAccess)
-          sinon.assert.calledWith(commonStream.fetchInstanceByContainerIdAndEnsureAccess, data.containerId, ctx.sessionUser)
+          sinon.assert.calledOnce(InstanceService.fetchInstanceByContainerIdAndEnsureAccess)
+          sinon.assert.calledWith(InstanceService.fetchInstanceByContainerIdAndEnsureAccess, data.containerId, ctx.sessionUser)
           done()
         })
       })
@@ -175,7 +176,7 @@ describe('build stream: ' + moduleName, function () {
 
   describe('when the build is finished', () => {
     beforeEach((done) => {
-      commonStream.fetchInstanceByContainerIdAndEnsureAccess.resolves({ instance, isCurrentContainer: false })
+      InstanceService.fetchInstanceByContainerIdAndEnsureAccess.resolves({ instance, isCurrentContainer: false })
       commonStream.pipeLogsToClient.resolves({})
 
       ctx.buildStream.socket.substream = sinon.spy(function () {

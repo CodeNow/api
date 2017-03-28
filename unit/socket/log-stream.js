@@ -16,6 +16,7 @@ const util = require('util')
 
 const logStream = require('socket/log-stream')
 const Instance = require('models/mongo/instance')
+const InstanceService = require('models/services/instance-service')
 
 const Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
@@ -106,12 +107,12 @@ describe('log stream: ' + moduleName, function () {
     })
     beforeEach(function (done) {
       sinon.stub(commonStream, 'pipeLogsToClient').resolves(writeStream)
-      sinon.stub(commonStream, 'fetchInstanceByContainerIdAndEnsureAccess').resolves({ instance: ctx.instance, isCurrentContainer: true })
+      sinon.stub(InstanceService, 'fetchInstanceByContainerIdAndEnsureAccess').resolves({ instance: ctx.instance, isCurrentContainer: true })
       done()
     })
 
     afterEach(function (done) {
-      commonStream.fetchInstanceByContainerIdAndEnsureAccess.restore()
+      InstanceService.fetchInstanceByContainerIdAndEnsureAccess.restore()
       commonStream.pipeLogsToClient.restore()
       done()
     })
@@ -119,7 +120,7 @@ describe('log stream: ' + moduleName, function () {
     describe('Failures', function () {
       describe('Instance fetch failures', function () {
         it('should do nothing if the instance fetch returns nothing or there is a fetch error', function (done) {
-          commonStream.fetchInstanceByContainerIdAndEnsureAccess.rejects(new Error('Missing instance'))
+          InstanceService.fetchInstanceByContainerIdAndEnsureAccess.rejects(new Error('Missing instance'))
           logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
             .catch(function (err) {
               expect(err.message).to.equal('Missing instance')
@@ -137,7 +138,7 @@ describe('log stream: ' + moduleName, function () {
 
       describe('Other failures', function () {
         it('should do nothing if the args are invalid', function (done) {
-          commonStream.fetchInstanceByContainerIdAndEnsureAccess.rejects(error)
+          InstanceService.fetchInstanceByContainerIdAndEnsureAccess.rejects(error)
           logStream.logStreamHandler(ctx.socket, ctx.id, {})
             .catch(function (err) {
               expect(err.message).to.equal('containerId are required')
@@ -153,7 +154,7 @@ describe('log stream: ' + moduleName, function () {
         })
 
         it('should do nothing if the ownership check fails', function (done) {
-          commonStream.fetchInstanceByContainerIdAndEnsureAccess.rejects(error)
+          InstanceService.fetchInstanceByContainerIdAndEnsureAccess.rejects(error)
           logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
             .catch(function (err) {
               expect(err).to.equal(error)
@@ -173,8 +174,8 @@ describe('log stream: ' + moduleName, function () {
       it('should allow logs when check ownership passes', function (done) {
         logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
           .then(function () {
-            sinon.assert.calledOnce(commonStream.fetchInstanceByContainerIdAndEnsureAccess)
-            sinon.assert.calledWith(commonStream.fetchInstanceByContainerIdAndEnsureAccess, ctx.data.containerId, ctx.sessionUser)
+            sinon.assert.calledOnce(InstanceService.fetchInstanceByContainerIdAndEnsureAccess)
+            sinon.assert.calledWith(InstanceService.fetchInstanceByContainerIdAndEnsureAccess, ctx.data.containerId, ctx.sessionUser)
             sinon.assert.calledOnce(ctx.socket.substream)
             sinon.assert.calledWith(ctx.socket.substream, ctx.data.containerId)
             sinon.assert.calledOnce(commonStream.pipeLogsToClient)
@@ -293,8 +294,8 @@ describe('log stream: ' + moduleName, function () {
         it('should load logs for instance', (done) => {
           logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
             .then(() => {
-              sinon.assert.calledOnce(commonStream.fetchInstanceByContainerIdAndEnsureAccess)
-              sinon.assert.calledWith(commonStream.fetchInstanceByContainerIdAndEnsureAccess, ctx.data.containerId, ctx.sessionUser)
+              sinon.assert.calledOnce(InstanceService.fetchInstanceByContainerIdAndEnsureAccess)
+              sinon.assert.calledWith(InstanceService.fetchInstanceByContainerIdAndEnsureAccess, ctx.data.containerId, ctx.sessionUser)
               sinon.assert.notCalled(commonStream.pipeLogsToClient)
               sinon.assert.calledOnce(commonS3.pipeLogsToClient)
               sinon.assert.calledWith(
