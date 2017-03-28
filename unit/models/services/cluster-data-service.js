@@ -20,6 +20,8 @@ const Instance = require('models/mongo/instance')
 const ClusterDataService = require('models/services/cluster-data-service')
 
 describe('Cluster Data Service Unit Tests', function () {
+  const contextId1 = '507f1f77bcf86cd7994390df'
+  const contextId2 = '507f1f77bcf86cd7994fdf3c'
   const instanceId1 = '507f1f77bcf86cd799439011'
   const shortHash1 = 'abc123'
   const aig1Id = '107f1f77bcf86cd799439012'
@@ -39,25 +41,29 @@ describe('Cluster Data Service Unit Tests', function () {
   let organization
   let sessionUser
   let ownerGitHubId
+  let contextVersion1
+  let contextVersion2
   beforeEach((done) => {
     organization = {id: 11111}
     sessionUser = {
       _id: 2222
     }
+    contextVersion1 = { context: contextId1 }
     ownerGitHubId = 9999
-    instance1 = new Instance({ _id: instanceId1, shortHash: shortHash1 })
+    instance1 = new Instance({ _id: instanceId1, shortHash: shortHash1, contextVersion: contextVersion1 })
     aig1 = new AutoIsolationConfig({
       _id: objectId(aig1Id),
       instance: objectId(instanceId1)
     })
+    contextVersion2 = { context: contextId2 }
     clusterConfig1 = { autoIsolationConfigId: objectId(aig1Id) }
-    instance2 = new Instance({ _id: instanceId2, shortHash: shortHash2 })
+    instance2 = new Instance({ _id: instanceId2, shortHash: shortHash2, contextVersion: contextVersion2 })
     aig2 = new AutoIsolationConfig({
       _id: objectId(aig2Id),
       instance: objectId(instanceId2)
     })
     clusterConfig2 = { autoIsolationConfigId: objectId(aig2Id) }
-    instance3 = new Instance({ _id: instanceId3, shortHash: shortHash3, parent: shortHash1 })
+    instance3 = new Instance({ _id: instanceId3, shortHash: shortHash3, contextVersion: contextVersion1 })
     iccsByInstanceId = {}
     iccsByInstanceId[instanceId1] = clusterConfig1
     iccsByInstanceId[instanceId2] = clusterConfig2
@@ -123,25 +129,6 @@ describe('Cluster Data Service Unit Tests', function () {
     })
   })
 
-  describe('_fetchParentsAndAddToArray', () => {
-    beforeEach((done) => {
-      sinon.stub(Instance, 'fetchParentInstances').resolves([instance1])
-      done()
-    })
-    afterEach((done) => {
-      Instance.fetchParentInstances.restore()
-      done()
-    })
-    it('should put the icc in the dictionary under the main and dep instance id', () => {
-      const given = [instance3]
-      return ClusterDataService._fetchParentsAndAddToArray(given)
-        .then(allInstances => {
-          expect(given.length).to.equal(1) // Make sure the original isn't modified
-          expect(allInstances).to.contains(instance3, instance1)
-        })
-    })
-  })
-
   describe('_mapIccsByInstanceId', () => {
     const instance1Id = '507f1f77bcf86cd799439011'
     const aig1Id = '107f1f77bcf86cd799439012'
@@ -187,7 +174,7 @@ describe('Cluster Data Service Unit Tests', function () {
     })
 
     it('should use the allInstances for finding the shortHash', done => {
-      ClusterDataService._setClustersOnAllInstances(iccsByInstanceId, [instance3], [instance1, instance2, instance3])
+      ClusterDataService._setClustersOnAllInstances(iccsByInstanceId, [instance3], [instance1])
       expect(instance3._doc.inputClusterConfig).to.equal(clusterConfig1)
       done()
     })
@@ -271,7 +258,7 @@ describe('Cluster Data Service Unit Tests', function () {
 
   describe('populateInstancesWithClusterInfo', () => {
     beforeEach((done) => {
-      sinon.stub(ClusterDataService, '_fetchParentsAndAddToArray').resolves([instance1, instance2, instance3])
+      sinon.stub(Instance, 'fetchParentInstances').resolves([instance1, instance2])
       sinon.stub(AutoIsolationConfig, 'findActiveByAnyInstanceIds').resolves([aig1, aig2])
       sinon.stub(ClusterDataService, 'fetchInputClusterConfigsByAutoIsolationConfigs')
         .resolves([clusterConfig1, clusterConfig2])
@@ -280,7 +267,7 @@ describe('Cluster Data Service Unit Tests', function () {
       done()
     })
     afterEach((done) => {
-      ClusterDataService._fetchParentsAndAddToArray.restore()
+      Instance.fetchParentInstances.restore()
       AutoIsolationConfig.findActiveByAnyInstanceIds.restore()
       ClusterDataService.fetchInputClusterConfigsByAutoIsolationConfigs.restore()
       ClusterDataService._mapIccsByInstanceId.restore()
