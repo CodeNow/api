@@ -40,15 +40,15 @@ describe('Cluster Create Worker', function () {
     }
     beforeEach(function (done) {
       sinon.stub(ClusterConfigService, 'create').resolves({ inputClusterConfig: {_id: '999999' }})
+      sinon.stub(ClusterConfigService, 'sendClusterSockerUpdate').resolves()
       sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(sessionUser)
-      sinon.stub(messenger, 'messageRoom').resolves()
       done()
     })
 
     afterEach(function (done) {
       ClusterConfigService.create.restore()
+      ClusterConfigService.sendClusterSocketUpdate.restore()
       UserService.getCompleteUserByBigPoppaId.restore()
-      messenger.messageRoom.restore()
       done()
     })
 
