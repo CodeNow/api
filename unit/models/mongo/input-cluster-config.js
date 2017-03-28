@@ -3,7 +3,6 @@
 const Code = require('code')
 const Lab = require('lab')
 const Promise = require('bluebird')
-const sinon = require('sinon')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
 
 require('sinon-as-promised')(Promise)

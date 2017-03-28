@@ -37,6 +37,8 @@ describe('Cluster Config Service Unit Tests', function () {
   const testOrgName = 'Runnable'
   const testContextId = objectId('407f191e810c19729de860ef')
   const isTesting = true
+  const isTestReporter = false
+  const testReporters = []
   let testOrgInfo
 
   let testMainParsedContent
@@ -80,10 +82,7 @@ describe('Cluster Config Service Unit Tests', function () {
         isMain: true,
         envFiles: []
       },
-      contextVersion: {
-        advanced: true,
-        buildDockerfilePath: '.'
-      },
+      buildDockerfilePath: '.',
       files: { // Optional
         '/Dockerfile': {
           body: 'FROM node'
@@ -108,10 +107,7 @@ describe('Cluster Config Service Unit Tests', function () {
         isMain: false,
         envFiles: []
       },
-      contextVersion: {
-        advanced: true,
-        buildDockerfilePath: '.'
-      },
+      buildDockerfilePath: '.',
       files: { // Optional
         '/Dockerfile': {
           body: 'FROM node'
@@ -164,9 +160,9 @@ describe('Cluster Config Service Unit Tests', function () {
     const repoName = 'api'
     const repoFullName = orgName + '/' + repoName
     const branchName = 'feature-1'
-    const newInstanceName = 'api-unit'
+    const clusterName = 'api-unit'
     const parsedInput = {
-      repositoryName: newInstanceName,
+      repositoryName: clusterName,
       ownerUsername: orgName,
       userContentDomain: process.env.USER_CONTENT_DOMAIN,
       fileSha: dockerComposeContent.sha,
@@ -174,7 +170,7 @@ describe('Cluster Config Service Unit Tests', function () {
     }
 
     const testData = {
-      triggeredAction, repoFullName, branchName, filePath, isTesting, newInstanceName
+      triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName
     }
 
     beforeEach(function (done) {
@@ -245,9 +241,10 @@ describe('Cluster Config Service Unit Tests', function () {
           const parserPayload = {
             dockerComposeFileString: fileString,
             dockerComposeFilePath: filePath,
-            repositoryName: newInstanceName,
+            repositoryName: clusterName,
             ownerUsername: ownerUsername,
-            userContentDomain: process.env.USER_CONTENT_DOMAIN
+            userContentDomain: process.env.USER_CONTENT_DOMAIN,
+            scmDomain: process.env.GITHUB_HOST
           }
           sinon.assert.calledWithExactly(octobear.parse, parserPayload)
         })
@@ -266,8 +263,9 @@ describe('Cluster Config Service Unit Tests', function () {
             repoFullName,
             filePath,
             parsedInput.fileSha,
-            newInstanceName,
-            isTesting
+            clusterName,
+            isTesting,
+            testReporters
           )
         })
         .asCallback(done)
@@ -292,6 +290,7 @@ describe('Cluster Config Service Unit Tests', function () {
     const parentInstanceId = objectId('507f191e810c19729de860ea')
     const depInstanceId1 = objectId('607f191e810c19729de860eb')
     const filePath = 'config/compose.yml'
+    const triggeredAction = 'webhook'
     const composeConfigData = {
       _id: clusterConfigId,
       filePath: filePath
@@ -310,7 +309,6 @@ describe('Cluster Config Service Unit Tests', function () {
         }
       ]
     }
-    const triggeredAction = 'webhook'
     const orgName = 'Runnable'
     const repoName = 'api'
     const bigPoppaOwnerObject = {
@@ -347,7 +345,7 @@ describe('Cluster Config Service Unit Tests', function () {
         const error = new Error('Some error')
         ClusterConfigService.createClusterInstance.onCall(0).rejects(error)
         ClusterConfigService.createClusterInstance.onCall(1).rejects(error)
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -358,7 +356,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if AutoIsolationService.createOrUpdateAndEmit failed', function (done) {
         const error = new Error('Some error')
         AutoIsolationService.createOrUpdateAndEmit.rejects(error)
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -369,7 +367,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if InputClusterConfig.createAsync failed', function (done) {
         const error = new Error('Some error')
         InputClusterConfig.createAsync.rejects(error)
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(error.message)
@@ -379,10 +377,10 @@ describe('Cluster Config Service Unit Tests', function () {
     })
     describe('success', function () {
       it('should run successfully', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting).asCallback(done)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters).asCallback(done)
       })
       it('should call ClusterConfigService.createClusterContext with correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
           .tap(function () {
             sinon.assert.calledTwice(ClusterConfigService.createClusterInstance)
             sinon.assert.calledWithExactly(ClusterConfigService.createClusterContext,
@@ -403,7 +401,7 @@ describe('Cluster Config Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should call ClusterConfigService.addAliasesToContexts with correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
           .tap(function () {
             sinon.assert.calledOnce(ClusterConfigService.addAliasesToContexts)
             sinon.assert.calledWithExactly(ClusterConfigService.addAliasesToContexts,
@@ -414,7 +412,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call ClusterConfigService.createClusterInstance with correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
         .tap(function () {
           sinon.assert.calledTwice(ClusterConfigService.createClusterInstance)
           sinon.assert.calledWithExactly(ClusterConfigService.createClusterInstance,
@@ -422,11 +420,13 @@ describe('Cluster Config Service Unit Tests', function () {
             testParsedContent.results[0],
             repoFullName,
             isTesting,
+            isTestReporter,
             triggeredAction)
           sinon.assert.calledWithExactly(ClusterConfigService.createClusterInstance,
             testSessionUser,
             testParsedContent.results[1],
             repoFullName,
+            false,
             false,
             triggeredAction)
         })
@@ -434,7 +434,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call AutoIsolationService.createOrUpdateAndEmit correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, composeData, isTesting)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData, isTesting, testReporters)
         .tap(function () {
           sinon.assert.calledOnce(AutoIsolationService.createOrUpdateAndEmit)
           const autoIsolationOpts = {
@@ -458,7 +458,7 @@ describe('Cluster Config Service Unit Tests', function () {
         const parsedContent = {
           results: [testMainParsedContent, depParsedContent]
         }
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, parsedContent, triggeredAction, repoFullName, filePath, composeData, isTesting)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, parsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData, isTesting, testReporters)
           .tap(function () {
             sinon.assert.calledOnce(AutoIsolationService.createOrUpdateAndEmit)
             const autoIsolationOpts = {
@@ -478,7 +478,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call InputClusterConfig.createAsync with correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
         .tap(function () {
           sinon.assert.calledOnce(InputClusterConfig.createAsync)
           sinon.assert.calledWithExactly(InputClusterConfig.createAsync, {
@@ -487,6 +487,7 @@ describe('Cluster Config Service Unit Tests', function () {
             createdByUser: testSessionUser.bigPoppaUser.id,
             ownedByOrg: testOrg.id,
             fileSha,
+            isTesting: true,
             clusterName: composeData.repositoryName
           })
         })
@@ -494,7 +495,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call all the functions in the order', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, composeData, isTesting)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData, isTesting, testReporters)
         .tap(function () {
           sinon.assert.callOrder(
             ClusterConfigService.createClusterInstance,
@@ -572,7 +573,7 @@ describe('Cluster Config Service Unit Tests', function () {
       ClusterConfigService._createContextVersion.resolves(testContextVersion)
       testMainParsedContent.contextId = testContext._id
 
-      ClusterConfigService.createClusterInstance(testSessionUser, testMainParsedContent, testRepoName, isTesting, testTriggeredAction).asCallback((err, instance) => {
+      ClusterConfigService.createClusterInstance(testSessionUser, testMainParsedContent, testRepoName, isTesting, isTestReporter, testTriggeredAction).asCallback((err, instance) => {
         if (err) { return done(err) }
         expect(instance).to.equal(testInstance)
         sinon.assert.calledOnce(ClusterConfigService._createContextVersion)
@@ -589,7 +590,7 @@ describe('Cluster Config Service Unit Tests', function () {
         }
         sinon.assert.calledWithExactly(BuildService.buildBuild, testBuild._id, buildData, testSessionUser)
         sinon.assert.calledOnce(ClusterConfigService._createInstance)
-        sinon.assert.calledWithExactly(ClusterConfigService._createInstance, testSessionUser, testMainParsedContent.instance, testBuild._id.toString(), isTesting)
+        sinon.assert.calledWithExactly(ClusterConfigService._createInstance, testSessionUser, testMainParsedContent.instance, testBuild._id.toString(), isTesting, isTestReporter)
         done()
       })
     })
@@ -658,18 +659,14 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call ContextVersion.createWithNewInfraCode if no Dockerfile was provided', (done) => {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
-        const testParsedContextVersionOpts = {
-          advanced: true,
-          buildDockerfilePath: testDockerfilePath
-        }
         const testParsedComposeData = {
-          contextVersion: testParsedContextVersionOpts
+          buildDockerfilePath: testDockerfilePath
         }
         ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
           expect(contextVersion).to.equal(testContextVersion)
           sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
-          sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName)
+          sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName, null)
           sinon.assert.calledOnce(InfraCodeVersionService.findBlankInfraCodeVersion)
           sinon.assert.calledWithExactly(InfraCodeVersionService.findBlankInfraCodeVersion)
           sinon.assert.calledOnce(ContextVersion.createWithNewInfraCode)
@@ -727,12 +724,8 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call all functions in order if Dockerfile was not specified', (done) => {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
-        const testParsedContextVersionOpts = {
-          advanced: true,
-          buildDockerfilePath: testDockerfilePath
-        }
         const testParsedComposeData = {
-          contextVersion: testParsedContextVersionOpts
+          buildDockerfilePath: testDockerfilePath
         }
         ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
@@ -873,7 +866,7 @@ describe('Cluster Config Service Unit Tests', function () {
       const testInstance = 'build'
       InstanceService.createInstance.resolves(testInstance)
 
-      ClusterConfigService._createInstance(testSessionUser, testParentComposeData, testParentBuildId.toString(), isTesting).asCallback((err, instance) => {
+      ClusterConfigService._createInstance(testSessionUser, testParentComposeData, testParentBuildId.toString(), isTesting, isTestReporter).asCallback((err, instance) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(InstanceService.createInstance)
         sinon.assert.calledWith(InstanceService.createInstance, {
@@ -883,6 +876,7 @@ describe('Cluster Config Service Unit Tests', function () {
           containerStartCommand: testParentComposeData.containerStartCommand,
           name: testParentComposeData.name,
           isTesting,
+          isTestReporter,
           masterPod: true,
           ipWhitelist: {
             enabled: false
@@ -911,7 +905,7 @@ describe('Cluster Config Service Unit Tests', function () {
       const testInstance = 'build'
       InstanceService.createInstance.resolves(testInstance)
 
-      ClusterConfigService._createInstance(testSessionUser, testParentComposeData, testParentBuildId.toString(), isTesting).asCallback((err, instance) => {
+      ClusterConfigService._createInstance(testSessionUser, testParentComposeData, testParentBuildId.toString(), isTesting, isTestReporter).asCallback((err, instance) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(InstanceService.createInstance)
         sinon.assert.calledWith(InstanceService.createInstance, {
@@ -921,6 +915,7 @@ describe('Cluster Config Service Unit Tests', function () {
           containerStartCommand: testParentComposeData.containerStartCommand,
           name: testParentComposeData.name,
           isTesting,
+          isTestReporter,
           masterPod: true,
           ipWhitelist: {
             enabled: false
@@ -1172,7 +1167,7 @@ describe('Cluster Config Service Unit Tests', function () {
         [{name: '1'}, {name: '2'}]
       )
       expect(out).to.equal([
-        {instance: { name: '1'}, config: {instance: {name: '1'}}},
+        {instance: { name: '1'}, config: {instance: {name: '1'}, contextId: null}},
         {instance: { name: '2'}, config: undefined},
         {config: {instance: {name: '4'}}}
       ])
@@ -1187,7 +1182,7 @@ describe('Cluster Config Service Unit Tests', function () {
         [{name: '1'}, {name: '2'}]
       )
       expect(out).to.equal([
-        { instance: { name: '1'}, config: { instance: { name: '1'}}},
+        { instance: { name: '1'}, config: { instance: { name: '1'}, contextId: null}},
         { instance: { name: '2'}, config: undefined}
       ])
       done()
@@ -1592,7 +1587,7 @@ describe('Cluster Config Service Unit Tests', function () {
     }
     const updateInstanceObj = {
       config: {
-        metadata: {}
+        instance: {}
       },
       instance: updateInstance
     }
@@ -1608,7 +1603,7 @@ describe('Cluster Config Service Unit Tests', function () {
       name: 'web'
     }
     const createInstanceConfig = {
-      metadata: {},
+      instance: {},
       files: {}
     }
     const preCreateInstanceObj = {
@@ -1624,12 +1619,16 @@ describe('Cluster Config Service Unit Tests', function () {
       done()
     })
     beforeEach(function (done) {
+      sinon.stub(ClusterConfigService, 'addAliasesToContexts').returns()
+      sinon.stub(ClusterConfigService, 'createClusterContext').resolves(createInstanceConfig)
       sinon.stub(ClusterConfigService, '_updateInstancesWithConfigs').resolves(updateInstanceObj)
       sinon.stub(ClusterConfigService, '_createNewInstancesForNewConfigs').resolves(postCreateInstanceObj)
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       done()
     })
     afterEach(function (done) {
+      ClusterConfigService.addAliasesToContexts.restore()
+      ClusterConfigService.createClusterContext.restore()
       ClusterConfigService._updateInstancesWithConfigs.restore()
       ClusterConfigService._createNewInstancesForNewConfigs.restore()
       rabbitMQ.deleteInstance.restore()
@@ -1672,6 +1671,8 @@ describe('Cluster Config Service Unit Tests', function () {
           )
           .then(instances => {
             sinon.assert.callOrder(
+              ClusterConfigService.createClusterContext,
+              ClusterConfigService.addAliasesToContexts,
               ClusterConfigService._createNewInstancesForNewConfigs,
               ClusterConfigService._updateInstancesWithConfigs
             )
@@ -1684,7 +1685,7 @@ describe('Cluster Config Service Unit Tests', function () {
           instances,
           mainInstance,
           githubPushInfo
-        )
+          )
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._updateInstancesWithConfigs)
             sinon.assert.calledWithExactly(ClusterConfigService._updateInstancesWithConfigs, testSessionUser, updateInstanceObj)
@@ -1708,6 +1709,22 @@ describe('Cluster Config Service Unit Tests', function () {
               mainInstance.isTesting,
               'autoDeploy'
             )
+          })
+          .asCallback(done)
+      })
+      it('should have given addAliasesToContexts the update and created configs ', function (done) {
+        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
+          testSessionUser,
+          instances,
+          mainInstance,
+          githubPushInfo
+        )
+          .then(() => {
+            sinon.assert.calledOnce(ClusterConfigService.addAliasesToContexts)
+            sinon.assert.calledWith(ClusterConfigService.addAliasesToContexts, [
+              preCreateInstanceObj.config,
+              updateInstanceObj.config
+            ])
           })
           .asCallback(done)
       })
