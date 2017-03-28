@@ -2334,4 +2334,74 @@ describe('Instance Model Tests', function () {
       })
     })
   })
+  describe('findParentByChildId', function () {
+    let mockInstance
+    let mockInstance2
+    beforeEach(done => {
+      mockInstance = {
+        _id: '507f1f77bcf86cd799439011',
+        contextVersion: {
+          context: 'asdasd1we132er2dadf'
+        }
+      }
+      mockInstance2 = {
+        _id: 'rewrerh23oh3o3hi333ddfsdfe',
+        contextVersion: {
+          context: 'asdasd1we132er2dadf'
+        }
+      }
+      done()
+    })
+    beforeEach(done => {
+      sinon.stub(Instance, 'findByIdAsync')
+      sinon.stub(Instance, 'findOneAsync')
+      done()
+    })
+    afterEach(done => {
+      Instance.findByIdAsync.restore()
+      Instance.findOneAsync.restore()
+      done()
+    })
+    describe('errors', function () {
+      let error
+      beforeEach(done => {
+        error = new Error('sdasdsa')
+        done()
+      })
+      it('should throw when instance isn\'t found', done => {
+        Instance.findByIdAsync.rejects(error)
+        Instance.findParentByChildId('asdas')
+          .asCallback(err => {
+            expect(err).to.equal(error)
+            done()
+          })
+      })
+      it('should throw when instance isn\'t found', done => {
+        Instance.findByIdAsync.resolves(mockInstance)
+        Instance.findOneAsync.rejects(error)
+        Instance.findParentByChildId('asdas')
+          .asCallback(err => {
+            expect(err).to.equal(error)
+            done()
+          })
+      })
+    })
+    describe('masterPod', function () {
+      it('should call findOneAsync with the contextId from the parent', () => {
+        Instance.findByIdAsync.resolves(mockInstance)
+        Instance.findOneAsync.resolves(mockInstance2)
+        return Instance.findParentByChildId('asdas')
+          .then(parent => {
+            expect(parent).to.equal(mockInstance2)
+            sinon.assert.calledWithExactly(
+              Instance.findOneAsync,
+              {
+                'contextVersion.context': mockInstance.contextVersion.context,
+                masterPod: true
+              }
+            )
+          })
+      })
+    })
+  })
 })
