@@ -15,6 +15,7 @@ require('sinon-as-promised')(require('bluebird'))
 
 const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 const ClusterConfigService = require('models/services/cluster-config-service')
+const InstanceService = require('models/services/instance-service')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
 const mongoFactory = require('../../fixtures/factory')
 const mongooseControl = require('models/mongo/mongoose-control.js')
@@ -213,7 +214,7 @@ describe('Cluster Config Services Integration Tests', function () {
       sinon.stub(rabbitMQ, 'createInstanceContainer').resolves()
       sinon.stub(rabbitMQ, 'instanceDeployed').resolves()
       sinon.spy(rabbitMQ, 'autoDeployInstance')
-      sinon.stub(Instance.prototype, 'emitInstanceUpdateAsync').resolves()
+      sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
       done()
     })
     afterEach(function (done) {
@@ -221,7 +222,7 @@ describe('Cluster Config Services Integration Tests', function () {
       rabbitMQ.createInstanceContainer.restore()
       rabbitMQ.instanceDeployed.restore()
       rabbitMQ.autoDeployInstance.restore()
-      Instance.prototype.emitInstanceUpdateAsync.restore()
+      InstanceService.emitInstanceUpdate.restore()
       done()
     })
     it('should finish successfully', function (done) {
