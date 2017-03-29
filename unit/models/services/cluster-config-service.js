@@ -445,6 +445,7 @@ describe('Cluster Config Service Unit Tests', function () {
             createdByUser: testSessionUser.bigPoppaUser.id,
             ownedByOrg: testOrg.id,
             instance: parentInstanceId,
+            redeployOnKilled: false,
             requestedDependencies: [
               {
                 instance: depInstanceId1
@@ -469,6 +470,7 @@ describe('Cluster Config Service Unit Tests', function () {
               createdByUser: testSessionUser.bigPoppaUser.id,
               ownedByOrg: testOrg.id,
               instance: parentInstanceId,
+              redeployOnKilled: false,
               requestedDependencies: [
                 {
                   instance: depInstanceId1,
