@@ -9,6 +9,7 @@ var beforeEach = lab.beforeEach
 var after = lab.after
 var afterEach = lab.afterEach
 var Code = require('code')
+var error = require('error')
 var expect = Code.expect
 var sinon = require('sinon')
 
@@ -18,7 +19,6 @@ var mongoFactory = require('../../fixtures/factory')
 var mongooseControl = require('models/mongo/mongoose-control.js')
 var Promise = require('bluebird')
 var rabbitMQ = require('models/rabbitmq')
-var messenger = require('socket/messenger')
 
 describe('Instance Services Integration Tests', function () {
   before(mongooseControl.start)
@@ -31,13 +31,13 @@ describe('Instance Services Integration Tests', function () {
     beforeEach(function (done) {
       sinon.stub(rabbitMQ, 'instanceDeployed')
       sinon.stub(rabbitMQ, 'createInstanceContainer')
-      sinon.stub(messenger, 'emitInstanceUpdate')
+      sinon.stub(InstanceService, 'emitInstanceUpdate')
       done()
     })
     afterEach(function (done) {
       rabbitMQ.instanceDeployed.restore()
       rabbitMQ.createInstanceContainer.restore()
-      messenger.emitInstanceUpdate.restore()
+      InstanceService.emitInstanceUpdate.restore()
       done()
     })
     beforeEach(function (done) {
@@ -152,8 +152,9 @@ describe('Instance Services Integration Tests', function () {
               sessionUserGithubId: 1234
             })
             sinon.assert.calledWith(
-              messenger.emitInstanceUpdate,
+              InstanceService.emitInstanceUpdate,
               sinon.match.has('_id', instance._id),
+              sinon.match.number,
               'post'
             )
             return instance.getDependenciesAsync()
@@ -172,14 +173,14 @@ describe('Instance Services Integration Tests', function () {
       sinon.stub(rabbitMQ, 'instanceDeployed')
       sinon.stub(rabbitMQ, 'createInstanceContainer')
       sinon.stub(rabbitMQ, 'deleteContextVersion')
-      sinon.stub(messenger, 'emitInstanceUpdate')
+      sinon.stub(InstanceService, 'emitInstanceUpdate')
       done()
     })
     afterEach(function (done) {
       rabbitMQ.instanceDeployed.restore()
       rabbitMQ.createInstanceContainer.restore()
       rabbitMQ.deleteContextVersion.restore()
-      messenger.emitInstanceUpdate.restore()
+      InstanceService.emitInstanceUpdate.restore()
       done()
     })
     beforeEach(function (done) {
@@ -279,8 +280,9 @@ describe('Instance Services Integration Tests', function () {
               contextVersionId: ctx.otherCv._id.toString()
             })
             sinon.assert.calledWith(
-              messenger.emitInstanceUpdate,
+              InstanceService.emitInstanceUpdate,
               sinon.match.has('_id', instance._id),
+              sinon.match.number,
               'post'
             )
             return instance.getDependenciesAsync()
@@ -292,4 +294,168 @@ describe('Instance Services Integration Tests', function () {
       })
     })
   })
+  describe('PopulateModels', function () {
+    var ctx = {}
+    beforeEach(function (done) {
+       ctx.mockSessionUser = {
+         _id: 1234,
+         findGithubUserByGithubId: sinon.stub().yieldsAsync(null, {
+           login: 'TEST-login',
+           avatar_url: 'TEST-avatar_url'
+         }),
+         accounts: {
+           github: {
+             id: 1234
+           }
+         }
+       }
+       done()
+     })
+     beforeEach(function (done) {
+       // Both of the cvs that are saved to the instance have their build.completed removed
+       // so that they are different after the update
+       mongoFactory.createCompletedCv(ctx.mockSessionUser._id, function (err, cv) {
+         if (err) {
+           return done(err)
+         }
+         ctx.cv = cv
+         mongoFactory.createBuild(ctx.mockSessionUser._id, ctx.cv, function (err, build) {
+           if (err) {
+             return done(err)
+           }
+           ctx.build = build
+           var tempCv = ctx.cv
+           // Delete completed so the cv in the instance is 'out of date'
+           delete tempCv._doc.build.completed
+           mongoFactory.createInstance(ctx.mockSessionUser._id, ctx.build, false, tempCv, function (err, instance) {
+             if (err) {
+               return done(err)
+             }
+             ctx.instance = instance
+             ctx.mockSessionUser.bigPoppaUser = {
+               organizations: [
+                 {
+                   githubId: instance.owner.github
+                 }
+               ]
+             }
+             done()
+           })
+         })
+       })
+     })
+     beforeEach(function (done) {
+       mongoFactory.createCompletedCv(ctx.mockSessionUser._id, function (err, cv) {
+         if (err) {
+           return done(err)
+         }
+         ctx.cv2 = cv
+         mongoFactory.createBuild(ctx.mockSessionUser._id, ctx.cv2, function (err, build) {
+           if (err) {
+             return done(err)
+           }
+           ctx.build2 = build
+           var tempCv = ctx.cv2
+           delete tempCv._doc.build.completed
+           mongoFactory.createInstance(ctx.mockSessionUser._id, ctx.build2, false, tempCv, function (err, instance) {
+             if (err) {
+               return done(err)
+             }
+             ctx.instance2 = instance
+             done()
+           })
+         })
+       })
+     })
+     beforeEach(function (done) {
+       ctx.instances = [ctx.instance, ctx.instance2]
+       done()
+     })
+
+     describe('when instances are not all populated', function () {
+       it('should fetch build and cv, then update the cv', function () {
+         return InstanceService.populateModels(ctx.instances, ctx.mockSessionUser)
+           .then(instances => {
+             expect(instances[0]._id, 'instance._id').to.equal(ctx.instance._id)
+             expect(instances[0].contextVersion, 'cv').to.be.object()
+             expect(instances[0].build, 'build').to.be.object()
+             expect(instances[0].contextVersion._id, 'cv._id').to.equal(ctx.cv._id)
+             expect(instances[0].build._id, 'build._id').to.equal(ctx.build._id)
+
+             expect(instances[1]._id, 'instance 2').to.equal(ctx.instance2._id)
+             expect(instances[1].contextVersion, 'cv2').to.be.object()
+             expect(instances[1].build, 'build2').to.be.object()
+             expect(instances[1].contextVersion._id, 'cv2._id').to.equal(ctx.cv2._id)
+             expect(instances[1].build._id, 'build2._id').to.equal(ctx.build2._id)
+           })
+       })
+     })
+
+     describe('when errors happen', function () {
+       beforeEach(function (done) {
+         sinon.stub(error, 'log')
+         done()
+       })
+       afterEach(function (done) {
+         error.log.restore()
+         done()
+       })
+
+       describe('when an instance is missing its container Inspect', function () {
+         it('should report the bad instance and keep going', function () {
+           ctx.instance2.container = {
+             dockerContainer: 'asdasdasd'
+           }
+
+           return InstanceService.populateModels(ctx.instances, ctx.mockSessionUser)
+             .then(instances => {
+               sinon.assert.calledOnce(error.log)
+               sinon.assert.calledWith(
+                 error.log,
+                 sinon.match.has('message', 'instance missing inspect data' + ctx.instance2._id)
+               )
+
+               expect(instances.length, 'instances length').to.equal(2)
+               expect(instances[0]._id, 'instance._id').to.equal(ctx.instance._id)
+               expect(instances[0].contextVersion, 'cv').to.be.object()
+               expect(instances[0].build, 'build').to.be.object()
+               expect(instances[0].contextVersion._id, 'cv._id').to.equal(ctx.cv._id)
+               expect(instances[0].build._id, 'build._id').to.equal(ctx.build._id)
+
+               expect(instances[1]._id, 'instance 2').to.equal(ctx.instance2._id)
+               expect(instances[1].contextVersion, 'cv2').to.be.object()
+               expect(instances[1].build, 'build2').to.be.object()
+               expect(instances[1].contextVersion._id, 'cv2._id').to.equal(ctx.cv2._id)
+               expect(instances[1].build._id, 'build2._id').to.equal(ctx.build2._id)
+             })
+         })
+       })
+       describe('when a failure happens during a db query', function () {
+         describe('CV.find', function () {
+           it('should return error', function (done) {
+             // This should cause a casting error
+             ctx.instance._doc.contextVersion = {
+               _id: 'asdasdasd'
+             }
+             InstanceService.populateModels(ctx.instances, ctx.mockSessionUser)
+               .asCallback(err => {
+                 expect(err).to.exist()
+                 done()
+               })
+           })
+         })
+         describe('Build.find', function () {
+           it('should return error', function (done) {
+             // This should cause a casting error
+             ctx.instance._doc.build = 'asdasdasd'
+             InstanceService.populateModels(ctx.instances, ctx.mockSessionUser)
+               .asCallback(err => {
+                 expect(err).to.exist()
+                 done()
+               })
+           })
+         })
+       })
+     })
+   })
 })
