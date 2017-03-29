@@ -464,7 +464,9 @@ describe('InstanceForkService', function () {
       mockInstance = {
         name: 'branch-name-repo',
         contextVersion: { _id: '4' },
-        owner: { github: 17 }
+        owner: { github: 17 },
+        isTesting: false,
+        isTestReporter: false
       }
       mockSessionUser = {
         accounts: {
@@ -668,7 +670,9 @@ describe('InstanceForkService', function () {
               owner: { github: mockInstance.owner.github },
               masterPod: false,
               isolated: mockIsolationId,
-              isIsolationGroupMaster: false
+              isIsolationGroupMaster: false,
+              isTesting: false,
+              isTestReporter: false
             },
             mockSessionUser
           )
