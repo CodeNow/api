@@ -18,6 +18,7 @@ var Bunyan = require('bunyan')
 var Github = require('models/apis/github')
 var Instance = require('models/mongo/instance')
 var InstanceForkService = require('models/services/instance-fork-service')
+const InstanceService = require('models/services/instance-service')
 var Isolation = require('models/mongo/isolation')
 var ObjectId = require('mongoose').Types.ObjectId
 var rabbitMQ = require('models/rabbitmq')
@@ -999,17 +1000,18 @@ describe('Isolation Services Model', function () {
   describe('#_emitUpdateForInstances', function () {
     var mockInstance = { _id: 'mockInstanceId' }
     var mockInstances
-    var mockSessionUser = { session: 'user' }
+    var mockSessionUser = { session: 'user', accounts: { github: { id: 1 }} }
 
     beforeEach(function (done) {
       mockInstances = []
-      mockInstance.emitInstanceUpdateAsync = sinon.stub().resolves()
+      sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
       mockInstances.push(mockInstance)
       sinon.stub(Bunyan.prototype, 'warn')
       done()
     })
 
     afterEach(function (done) {
+      InstanceService.emitInstanceUpdate.restore()
       Bunyan.prototype.warn.restore()
       done()
     })
@@ -1035,7 +1037,7 @@ describe('Isolation Services Model', function () {
 
       it('should not reject with emit errors, but log', function (done) {
         var error = new Error('pugsly')
-        mockInstance.emitInstanceUpdateAsync.rejects(error)
+        InstanceService.emitInstanceUpdate.rejects(error)
         IsolationService._emitUpdateForInstances(mockInstances, mockSessionUser).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Bunyan.prototype.warn)
@@ -1052,7 +1054,7 @@ describe('Isolation Services Model', function () {
     it('should emit events for all instances passed in (0)', function (done) {
       IsolationService._emitUpdateForInstances([], mockSessionUser).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.notCalled(mockInstance.emitInstanceUpdateAsync)
+        sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
         done()
       })
     })
@@ -1060,10 +1062,11 @@ describe('Isolation Services Model', function () {
     it('should emit events for all instances passed in (1)', function (done) {
       IsolationService._emitUpdateForInstances(mockInstances, mockSessionUser).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(mockInstance.emitInstanceUpdateAsync)
+        sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledWithExactly(
-          mockInstance.emitInstanceUpdateAsync,
-          mockSessionUser,
+          InstanceService.emitInstanceUpdate,
+          mockInstances[0],
+          mockSessionUser.accounts.github.id,
           'isolation'
         )
         done()
@@ -1074,7 +1077,7 @@ describe('Isolation Services Model', function () {
       mockInstances.push(mockInstance)
       IsolationService._emitUpdateForInstances(mockInstances, mockSessionUser).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledTwice(mockInstance.emitInstanceUpdateAsync)
+        sinon.assert.calledTwice(InstanceService.emitInstanceUpdate)
         done()
       })
     })
