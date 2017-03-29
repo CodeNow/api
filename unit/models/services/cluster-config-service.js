@@ -293,6 +293,8 @@ describe('Cluster Config Service Unit Tests', function () {
     const depInstanceId1 = objectId('607f191e810c19729de860eb')
     const filePath = 'config/compose.yml'
     const triggeredAction = 'webhook'
+    const isTesting = false
+    const isTestReporter = false
     const composeConfigData = {
       _id: clusterConfigId,
       filePath: filePath
@@ -489,7 +491,7 @@ describe('Cluster Config Service Unit Tests', function () {
             createdByUser: testSessionUser.bigPoppaUser.id,
             ownedByOrg: testOrg.id,
             fileSha,
-            isTesting: true,
+            isTesting: false,
             clusterName: composeData.repositoryName,
             parentInputClusterConfigId
           })

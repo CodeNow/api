@@ -40,7 +40,7 @@ describe('Cluster Create Worker', function () {
     }
     beforeEach(function (done) {
       sinon.stub(ClusterConfigService, 'create').resolves({ inputClusterConfig: {_id: '999999' }})
-      sinon.stub(ClusterConfigService, 'sendClusterSockerUpdate').resolves()
+      sinon.stub(ClusterConfigService, 'sendClusterSocketUpdate').resolves()
       sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(sessionUser)
       done()
     })
