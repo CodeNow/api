@@ -3,14 +3,12 @@
 const BuildStream = require('socket/build-stream').BuildStream
 const Code = require('code')
 const commonS3 = require('socket/common-s3')
+const InstanceService = require('models/services/instance-service')
 const commonStream = require('socket/common-stream')
-const ContextVersionService = require('models/services/context-version-service')
 const EventEmitter = require('events').EventEmitter
 const expect = Code.expect
 const Lab = require('lab')
-const objectId = require('objectid')
 const path = require('path')
-const PermissionService = require('models/services/permission-service')
 const Promise = require('bluebird')
 const sinon = require('sinon')
 const util = require('util')
@@ -36,12 +34,13 @@ ClientStream.prototype.end = function () { this.emit('end') }
 
 const id = '507f1f77bcf86cd799439011'
 const data = {
-  id: '507f1f77bcf86cd799439011',
+  containerId: '5a55067519fa111ee833f00820ed032401df044ae8b8057ceaa89369cc9be223',
   streamId: 17
 }
 
 let ctx = {}
 let error
+let instance
 
 describe('build stream: ' + moduleName, function () {
   beforeEach(function (done) {
@@ -64,30 +63,40 @@ describe('build stream: ' + moduleName, function () {
         github: 123
       },
       build: {
-        dockerContainer: 324342342342
+        dockerContainer: '5a55067519fa111ee833f00820ed032401df044ae8b8057ceaa89369cc9be223'
       },
       writeLogsToPrimusStream: sinon.spy()
     }
-    error = new Error('Invalid context version')
+    instance = {
+      container: {
+        inspect: {
+          State: {
+            Running: true
+          }
+        }
+      }
+    }
+    error = new Error('Validation check failed')
     ctx.commonStreamValidateStub = sinon.stub().throws(error)
-    sinon.stub(PermissionService, 'ensureModelAccess').resolves(true)
+
+    sinon.stub(commonS3, 'pipeLogsToClient').resolves({})
     sinon.stub(commonStream, 'onValidateFailure').returns(ctx.commonStreamValidateStub)
-    sinon.stub(ContextVersionService, 'findContextVersion').resolves(ctx.cv)
     sinon.stub(commonStream, 'pipeLogsToClient').returns()
+    sinon.stub(InstanceService, 'fetchInstanceByContainerIdAndEnsureAccess').resolves({ instance, isCurrentContainer: true })
     done()
   })
   afterEach(function (done) {
-    ContextVersionService.findContextVersion.restore()
-    PermissionService.ensureModelAccess.restore()
+    InstanceService.fetchInstanceByContainerIdAndEnsureAccess.restore()
     commonStream.pipeLogsToClient.restore()
     commonStream.onValidateFailure.restore()
+    commonS3.pipeLogsToClient.restore()
     done()
   })
 
   describe('when the build is running', () => {
     describe('handleStream', function () {
       it('should do nothing if the ownership check fails', function (done) {
-        PermissionService.ensureModelAccess.rejects(error)
+        InstanceService.fetchInstanceByContainerIdAndEnsureAccess.rejects(error)
         ctx.commonStreamValidateStub.throws(error)
         ctx.buildStream.socket.substream = sinon.spy(function () {
           done(new Error('This shouldn\'t have happened'))
@@ -115,24 +124,26 @@ describe('build stream: ' + moduleName, function () {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(ctx.buildStream.socket.substream)
           sinon.assert.calledOnce(commonStream.pipeLogsToClient)
-          sinon.assert.calledWith(commonStream.pipeLogsToClient, sinon.match.any, 'api.socket.build-stream', sinon.match.any, ctx.cv.build.dockerContainer, { parseJSON: true })
+          sinon.assert.calledWith(
+            commonStream.pipeLogsToClient,
+            sinon.match.any,
+            'api.socket.build-stream',
+            sinon.match.any,
+            ctx.cv.build.dockerContainer,
+            { parseJSON: true }
+          )
           done()
         })
       })
 
-      it('should use the correct query to find the context version', function (done) {
+      it('should use the correct query to find the container', function (done) {
         ctx.buildStream.socket.substream = sinon.spy(function () {
           return new ClientStream()
         })
         ctx.buildStream.handleStream().asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(ContextVersionService.findContextVersion)
-          sinon.assert.calledWith(ContextVersionService.findContextVersion)
-          var cvId = ContextVersionService.findContextVersion.firstCall.args[0]
-          expect(cvId).to.exist()
-          expect(objectId.isValid(cvId)).to.be.true()
-          expect(cvId).to.be.an.object()
-          expect(cvId.toString()).to.equal(ctx.buildStream.data.id)
+          sinon.assert.calledOnce(InstanceService.fetchInstanceByContainerIdAndEnsureAccess)
+          sinon.assert.calledWith(InstanceService.fetchInstanceByContainerIdAndEnsureAccess, data.containerId, ctx.sessionUser)
           done()
         })
       })
@@ -147,7 +158,7 @@ describe('build stream: ' + moduleName, function () {
       it('should do nothing if the verification fails', function (done) {
         ctx.buildStream.handleStream().asCallback(function (err) {
           expect(err).to.exist()
-          expect(err.message).to.equal('Invalid context version')
+          expect(err.message).to.equal('Validation check failed')
           sinon.assert.calledOnce(ctx.commonStreamValidateStub)
           sinon.assert.calledWith(
             commonStream.onValidateFailure,
@@ -165,31 +176,12 @@ describe('build stream: ' + moduleName, function () {
 
   describe('when the build is finished', () => {
     beforeEach((done) => {
-      ctx.cv = {
-        createdBy: {
-          github: 123
-        },
-        owner: {
-          github: 123
-        },
-        build: {
-          completed: Date.now(),
-          dockerContainer: 324342342342
-        },
-        writeLogsToPrimusStream: sinon.spy()
-      }
-      ContextVersionService.findContextVersion.resolves(ctx.cv)
-
-      sinon.stub(commonS3, 'pipeLogsToClient').resolves({})
+      InstanceService.fetchInstanceByContainerIdAndEnsureAccess.resolves({ instance, isCurrentContainer: false })
       commonStream.pipeLogsToClient.resolves({})
+
       ctx.buildStream.socket.substream = sinon.spy(function () {
         return new ClientStream()
       })
-      done()
-    })
-
-    afterEach((done) => {
-      commonS3.pipeLogsToClient.restore()
       done()
     })
 
@@ -197,7 +189,7 @@ describe('build stream: ' + moduleName, function () {
       ctx.buildStream.handleStream().asCallback(function (err) {
         expect(err).to.not.exist()
         sinon.assert.calledOnce(commonS3.pipeLogsToClient)
-        sinon.assert.calledWith(commonS3.pipeLogsToClient, sinon.match.any, ctx.cv.build.dockerContainer)
+        sinon.assert.calledWith(commonS3.pipeLogsToClient, sinon.match.any, data.containerId)
         sinon.assert.notCalled(commonStream.pipeLogsToClient)
         done()
       })
