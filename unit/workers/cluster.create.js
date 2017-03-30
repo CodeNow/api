@@ -17,6 +17,7 @@ const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
 const ClusterConfigService = require('models/services/cluster-config-service')
+const messenger = require('socket/messenger')
 const UserService = require('models/services/user-service')
 const Worker = require('workers/cluster.create')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
@@ -29,20 +30,24 @@ describe('Cluster Create Worker', function () {
       repoFullName: 'Runnable/api',
       branchName: 'feature-1',
       filePath: 'compose.yml',
+      parentInputClusterConfigId: 'husker du',
       isTesting: true,
-      clusterName: 'api'
+      clusterName: 'api',
+      testReporters: []
     }
     const sessionUser = {
       _id: 'some-id'
     }
     beforeEach(function (done) {
-      sinon.stub(ClusterConfigService, 'create').resolves()
+      sinon.stub(ClusterConfigService, 'create').resolves({ inputClusterConfig: {_id: '999999' }})
+      sinon.stub(ClusterConfigService, 'sendClusterSocketUpdate').resolves()
       sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(sessionUser)
       done()
     })
 
     afterEach(function (done) {
       ClusterConfigService.create.restore()
+      ClusterConfigService.sendClusterSocketUpdate.restore()
       UserService.getCompleteUserByBigPoppaId.restore()
       done()
     })
