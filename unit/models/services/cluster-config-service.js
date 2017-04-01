@@ -872,9 +872,7 @@ describe('Cluster Config Service Unit Tests', function () {
       }
       const composeData = {
         instance: testParentComposeData,
-         code: {
-           repo: 'Nathan219/hello'
-         }
+        buildDockerfilePath: 'Nathan219/hello'
       }
       const testInstance = 'build'
       InstanceService.createInstance.resolves(testInstance)
