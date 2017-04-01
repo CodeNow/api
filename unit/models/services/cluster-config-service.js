@@ -872,8 +872,8 @@ describe('Cluster Config Service Unit Tests', function () {
       }
       const composeData = {
         instance: testParentComposeData,
-         metadata: {
-           isMain: true
+         code: {
+           repo: 'Nathan219/hello'
          }
       }
       const testInstance = 'build'
@@ -916,10 +916,7 @@ describe('Cluster Config Service Unit Tests', function () {
         name: 'name'
       }
       const composeData = {
-        instance: testParentComposeData,
-        metadata: {
-          isMain: true
-        }
+        instance: testParentComposeData
       }
       const testInstance = 'build'
       InstanceService.createInstance.resolves(testInstance)
@@ -933,7 +930,7 @@ describe('Cluster Config Service Unit Tests', function () {
             aliases: testParentComposeData.aliases,
             containerStartCommand: testParentComposeData.containerStartCommand,
             name: testParentComposeData.name,
-            shouldNotAutofork: false,
+            shouldNotAutofork: true,  // doesn't have a repo
             isTesting,
             isTestReporter,
             masterPod: true,
