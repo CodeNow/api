@@ -1523,10 +1523,20 @@ describe('Cluster Config Service Unit Tests', function () {
     describe('success', function () {
       it('should run successfully', function (done) {
         instances = [mainInstanceObj, depInstanceObj]
-        ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances)
+        ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances, mainInstance)
         done()
       })
       it('should return main instance and dep', function (done) {
+        instances = [mainInstanceObj, depInstanceObj]
+        const model = ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances, mainInstance)
+        expect(model).to.exist()
+        expect(model.instance).to.equal(mainInstanceId)
+        expect(model.requestedDependencies.length).to.equal(1)
+        expect(model.requestedDependencies[0].instance).to.equal(depInstanceId)
+        expect(model.requestedDependencies[0].matchBranch).to.be.undefined()
+        done()
+      })
+      it('should return main instance and dep (without giving mainInstance)', function (done) {
         instances = [mainInstanceObj, depInstanceObj]
         const model = ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances)
         expect(model).to.exist()
@@ -1538,7 +1548,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
       it('should return main instance and matched-branched dep', function (done) {
         instances = [mainInstanceObj, depRepoInstanceObj]
-        const model = ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances)
+        const model = ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances, mainInstance)
         expect(model).to.exist()
         expect(model.instance).to.equal(mainInstanceId)
         expect(model.requestedDependencies.length).to.equal(1)
@@ -1548,7 +1558,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
       it('should return main instance and both deps', function (done) {
         instances = [mainInstanceObj, depRepoInstanceObj, depInstanceObj]
-        const model = ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances)
+        const model = ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances, mainInstance)
         expect(model).to.exist()
         expect(model.instance).to.equal(mainInstanceId)
         expect(model.requestedDependencies.length).to.equal(2)
