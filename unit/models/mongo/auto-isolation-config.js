@@ -181,7 +181,8 @@ describe('Auto Isolation Config Model Tests', function () {
           sinon.assert.calledWithExactly(
             AutoIsolationConfig.updateAsync,
             query,
-            $set
+            $set,
+            {}
           )
         })
         .asCallback(done)
