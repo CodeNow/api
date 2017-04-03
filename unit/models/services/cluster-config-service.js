@@ -596,7 +596,7 @@ describe('Cluster Config Service Unit Tests', function () {
         }
         sinon.assert.calledWithExactly(BuildService.buildBuild, testBuild._id, buildData, testSessionUser)
         sinon.assert.calledOnce(ClusterConfigService._createInstance)
-        sinon.assert.calledWithExactly(ClusterConfigService._createInstance, testSessionUser, testMainParsedContent.instance, testBuild._id.toString(), isTesting, isTestReporter)
+        sinon.assert.calledWithExactly(ClusterConfigService._createInstance, testSessionUser, testMainParsedContent, testBuild._id.toString(), isTesting, isTestReporter)
         done()
       })
     })
@@ -856,7 +856,7 @@ describe('Cluster Config Service Unit Tests', function () {
       done()
     })
 
-    it('should create instance', (done) => {
+    it('should create instance', () => {
       const testParentBuildId = objectId('407f191e810c19729de860ef')
       const testParentComposeData = {
         env: 'env',
@@ -869,32 +869,36 @@ describe('Cluster Config Service Unit Tests', function () {
         containerStartCommand: 'containerStartCommand',
         name: 'name'
       }
+      const composeData = {
+        instance: testParentComposeData,
+        buildDockerfilePath: 'Nathan219/hello'
+      }
       const testInstance = 'build'
       InstanceService.createInstance.resolves(testInstance)
 
-      ClusterConfigService._createInstance(testSessionUser, testParentComposeData, testParentBuildId.toString(), isTesting, isTestReporter).asCallback((err, instance) => {
-        if (err) { return done(err) }
-        sinon.assert.calledOnce(InstanceService.createInstance)
-        sinon.assert.calledWith(InstanceService.createInstance, {
-          build: testParentBuildId.toString(),
-          aliases: testParentComposeData.aliases,
-          env: testParentComposeData.env,
-          containerStartCommand: testParentComposeData.containerStartCommand,
-          name: testParentComposeData.name,
-          isTesting,
-          isTestReporter,
-          masterPod: true,
-          ipWhitelist: {
-            enabled: false
-          }
-        })
+      return ClusterConfigService._createInstance(testSessionUser, composeData, testParentBuildId.toString(), isTesting, isTestReporter)
+        .then(instance => {
+          sinon.assert.calledOnce(InstanceService.createInstance)
+          sinon.assert.calledWith(InstanceService.createInstance, {
+            build: testParentBuildId.toString(),
+            aliases: testParentComposeData.aliases,
+            env: testParentComposeData.env,
+            containerStartCommand: testParentComposeData.containerStartCommand,
+            name: testParentComposeData.name,
+            isTesting,
+            isTestReporter,
+            shouldNotAutofork: false,
+            masterPod: true,
+            ipWhitelist: {
+              enabled: false
+            }
+          })
 
-        expect(instance).to.equal(testInstance)
-        done()
-      })
+          expect(instance).to.equal(testInstance)
+        })
     })
 
-    it('should create non-test instance', (done) => {
+    it('should create non-test instance', () => {
       const isTesting = false
       const testParentBuildId = objectId('407f191e810c19729de860ef')
       const testParentComposeData = {
@@ -908,29 +912,32 @@ describe('Cluster Config Service Unit Tests', function () {
         containerStartCommand: 'containerStartCommand',
         name: 'name'
       }
+      const composeData = {
+        instance: testParentComposeData
+      }
       const testInstance = 'build'
       InstanceService.createInstance.resolves(testInstance)
 
-      ClusterConfigService._createInstance(testSessionUser, testParentComposeData, testParentBuildId.toString(), isTesting, isTestReporter).asCallback((err, instance) => {
-        if (err) { return done(err) }
-        sinon.assert.calledOnce(InstanceService.createInstance)
-        sinon.assert.calledWith(InstanceService.createInstance, {
-          build: testParentBuildId.toString(),
-          env: testParentComposeData.env,
-          aliases: testParentComposeData.aliases,
-          containerStartCommand: testParentComposeData.containerStartCommand,
-          name: testParentComposeData.name,
-          isTesting,
-          isTestReporter,
-          masterPod: true,
-          ipWhitelist: {
-            enabled: false
-          }
-        })
+      return ClusterConfigService._createInstance(testSessionUser, composeData, testParentBuildId.toString(), isTesting, isTestReporter)
+        .then(instance => {
+          sinon.assert.calledOnce(InstanceService.createInstance)
+          sinon.assert.calledWith(InstanceService.createInstance, {
+            build: testParentBuildId.toString(),
+            env: testParentComposeData.env,
+            aliases: testParentComposeData.aliases,
+            containerStartCommand: testParentComposeData.containerStartCommand,
+            name: testParentComposeData.name,
+            shouldNotAutofork: true,  // doesn't have a repo
+            isTesting,
+            isTestReporter,
+            masterPod: true,
+            ipWhitelist: {
+              enabled: false
+            }
+          })
 
-        expect(instance).to.equal(testInstance)
-        done()
-      })
+          expect(instance).to.equal(testInstance)
+        })
     })
   }) // end _createInstance
 
