@@ -884,7 +884,7 @@ describe('InstanceForkService', function () {
       master = {
         _id: new ObjectId(),
         env: ['x=1'],
-        ports: ['8080'],
+        ports: [8080],
         isTesting: true,
         isTestReporter: false,
         name: 'inst1',
@@ -917,7 +917,7 @@ describe('InstanceForkService', function () {
               build: 'build1',
               name: 'feature-1-inst1',
               env: master.env,
-              ports: ['8080'],
+              ports: [8080],
               owner: {
                 github: master.owner.github
               },
@@ -945,7 +945,7 @@ describe('InstanceForkService', function () {
               build: 'build1',
               name: 'a1-b2-c3-d4-e5-f6-g7-h7-inst1',
               env: master.env,
-              ports: ['8080'],
+              ports: [8080],
               owner: {
                 github: master.owner.github
               },
