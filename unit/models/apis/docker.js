@@ -259,7 +259,7 @@ describe('docker: ' + moduleName, function () {
       Docker._addCmdAndPortsToDataFromInstance(output, {
         containerStartCommand: 'this command runs'
       })
-      expect(output.Cmd).to.equal(['/bin/sh', '-c', 'echo weave; this command runs'])
+      expect(output.Cmd).to.equal(['/bin/sh', '-c', process.env.RUNNABLE_WAIT_FOR_WEAVE + ' this command runs'])
       done()
     })
 
@@ -1325,7 +1325,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           sinon.assert.calledWith(
             Docker.prototype.createContainer, sinon.match({
-              Cmd: ['/bin/sh', '-c', 'echo weave; keep calm and code on']
+              Cmd: ['/bin/sh', '-c', process.env.RUNNABLE_WAIT_FOR_WEAVE + ' keep calm and code on']
             }), sinon.match.func
           )
 
