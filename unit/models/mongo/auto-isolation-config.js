@@ -7,7 +7,6 @@ const Promise = require('bluebird')
 const sinon = require('sinon')
 const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 
-
 require('sinon-as-promised')(Promise)
 const lab = exports.lab = Lab.script()
 
@@ -40,21 +39,7 @@ describe('Auto Isolation Config Model Tests', function () {
       done()
     })
   })
-  // AutoIsolationSchema.statics.findActiveByInstanceId = function (instanceId) {
-  //   const log = logger.child({
-  //     method: 'findActiveByInstanceId',
-  //     instanceId
-  //   })
-  //   log.info('called')
-  //   const query = {
-  //     instance: objectId(instanceId)
-  //   }
-  //   return AutoIsolationConfig.findOneAsync(query)
-  //     .tap(function (config) {
-  //       if (!config) {
-  //         throw new AutoIsolationConfig.NotFoundError(query)
-  //       }
-  //     })
+
   describe('findActiveByInstanceId', () => {
     const modelId = '507f1f77bcf86cd799439011'
     const model = {
@@ -94,6 +79,60 @@ describe('Auto Isolation Config Model Tests', function () {
 
     it('should throw no error', (done) => {
       AutoIsolationConfig.findActiveByInstanceId(modelId)
+        .asCallback(done)
+    })
+  })
+
+  describe('findActiveByAnyInstanceId', () => {
+    const modelId = '507f1f77bcf86cd799439011'
+    const model = {
+      _id: modelId
+    }
+    beforeEach((done) => {
+      sinon.stub(AutoIsolationConfig, 'findOneActive').resolves(model)
+      done()
+    })
+    afterEach((done) => {
+      AutoIsolationConfig.findOneActive.restore()
+      done()
+    })
+    it('should fail if findOneActive failed', (done) => {
+      const error = new Error('Some error')
+      AutoIsolationConfig.findOneActive.rejects(error)
+      AutoIsolationConfig.findActiveByAnyInstanceId(modelId)
+        .asCallback((err) => {
+          expect(err).to.exist()
+          expect(err.message).to.exist(error.message)
+          done()
+        })
+    })
+
+    it('should call findOneActive with correct args', (done) => {
+      AutoIsolationConfig.findActiveByAnyInstanceId(modelId)
+        .tap((config) => {
+          expect(config).to.equal(model)
+          sinon.assert.calledOnce(AutoIsolationConfig.findOneActive)
+          const query = {
+            $or: [
+              {
+                instance: objectId(modelId)
+              },
+              {
+                requestedDependencies: {
+                  $elemMatch: {
+                    instance: objectId(modelId)
+                  }
+                }
+              }
+            ]
+          }
+          sinon.assert.calledWithExactly(AutoIsolationConfig.findOneActive, query)
+        })
+        .asCallback(done)
+    })
+
+    it('should throw no error', (done) => {
+      AutoIsolationConfig.findActiveByAnyInstanceId(modelId)
         .asCallback(done)
     })
   })

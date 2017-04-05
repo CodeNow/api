@@ -27,8 +27,11 @@ describe('/docker-compose-cluster', function () {
   let validateOrBoomStub
   let nextStub
   let isTesting = false
+  let testReporters = []
   const sessionUserGithubId = 1981198
   const sessionUserBigPoppaId = 8084808
+  const parentInputClusterConfigId = 'funk flex'
+  const githubId = sessionUserGithubId
   beforeEach(function (done) {
     nextStub = sinon.stub()
     resMock = {
@@ -50,7 +53,7 @@ describe('/docker-compose-cluster', function () {
       createClusterStub = sinon.stub(rabbitMQ, 'createCluster')
       validateOrBoomStub = sinon.spy(joi, 'validateOrBoomAsync')
       reqMock = {
-        body: { repo, branch, filePath, name },
+        body: { repo, branch, filePath, name, parentInputClusterConfigId, githubId },
         sessionUser: {
           accounts: {
             github: { id: sessionUserGithubId }
@@ -98,8 +101,11 @@ describe('/docker-compose-cluster', function () {
               repoFullName: repo,
               branchName: branch,
               filePath,
+              githubId,
               isTesting,
-              newInstanceName: name
+              parentInputClusterConfigId,
+              testReporters,
+              clusterName: name
             })
           })
           .asCallback(done)

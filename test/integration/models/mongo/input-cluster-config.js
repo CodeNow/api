@@ -17,13 +17,16 @@ const mongooseControl = require('models/mongo/mongoose-control')
 
 describe('InputClusterConfig Model Integration Tests', function () {
   const autoIsolationConfigId = '507f191e810c19729de860ea'
+  const parentInputClusterConfigId = '607f191e810c19729de860e1'
   const data = {
     filePath: '/config/compose.yml',
     fileSha: 'asdasdsasadasdasdsadsadas',
     autoIsolationConfigId: objectId(autoIsolationConfigId),
     createdByUser: 123123,
     ownedByOrg: 1,
-    clusterName: 'asddasdasd'
+    clusterName: 'asddasdasd',
+    isTesting: true,
+    parentInputClusterConfigId: objectId(parentInputClusterConfigId)
   }
   before(mongooseControl.start)
   afterEach(function (done) {
@@ -40,6 +43,9 @@ describe('InputClusterConfig Model Integration Tests', function () {
         expect(saved.created).to.exist()
         expect(saved.createdByUser).to.equal(data.createdByUser)
         expect(saved.ownerBy).to.equal(data.ownerBy)
+        expect(saved.isTesting).to.equal(data.isTesting)
+        expect(saved.autoIsolationConfigId.toString()).to.equal(data.autoIsolationConfigId.toString())
+        expect(saved.parentInputClusterConfigId.toString()).to.equal(data.parentInputClusterConfigId.toString())
       })
       .asCallback(done)
     })
@@ -81,7 +87,8 @@ describe('InputClusterConfig Model Integration Tests', function () {
         done()
       })
     })
-    it('should fail if fileSha is not valid', function (done) {
+
+    it('should fail if fileSha is not provided', function (done) {
       const invalidData = Object.assign({}, data)
       invalidData.fileSha = null
       InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
@@ -101,6 +108,7 @@ describe('InputClusterConfig Model Integration Tests', function () {
         done()
       })
     })
+
     it('should fail if ownedByOrg is not valid', function (done) {
       const invalidValue = 'some-invalid-value'
       const invalidData = Object.assign({}, data)
@@ -132,6 +140,18 @@ describe('InputClusterConfig Model Integration Tests', function () {
         done()
       })
     })
+
+    it('should fail if parentInputClusterConfigId is not valid object id', function (done) {
+      const invalidId = 'some-invalid-id'
+      const invalidData = Object.assign({}, data)
+      invalidData.parentInputClusterConfigId = invalidId
+      InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.message).to.equal(`Cast to ObjectId failed for value "${invalidId}" at path "parentInputClusterConfigId"`)
+        done()
+      })
+    })
+
     it('should fail if clusterName is missing', function (done) {
       const invalidData = Object.assign({}, data)
       delete invalidData.clusterName

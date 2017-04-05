@@ -143,11 +143,107 @@ describe('Context Version Unit Test', function () {
       ContextVersion.createAppcodeVersion(testSessionUser, testRepoName).asCallback((err, appCodeVersion) => {
         if (err) { return done(err) }
         sinon.assert.calledOnce(Github.prototype.getRepoAsync)
-        sinon.assert.calledWith(Github.prototype.getRepoAsync, testRepoName)
+        sinon.assert.calledWithExactly(Github.prototype.getRepoAsync, testRepoName)
         sinon.assert.calledOnce(Github.prototype.createHooksAndKeys)
-        sinon.assert.calledWith(Github.prototype.createHooksAndKeys, testRepoName)
+        sinon.assert.calledWithExactly(Github.prototype.createHooksAndKeys, testRepoName)
         sinon.assert.calledOnce(Github.prototype.getBranchAsync)
-        sinon.assert.calledWith(Github.prototype.getBranchAsync, testRepoName, testBranch)
+        sinon.assert.calledWithExactly(Github.prototype.getBranchAsync, testRepoName, testBranch)
+        expect(appCodeVersion).to.equal({
+          repo: testRepoName,
+          lowerRepo: testRepoName.toLowerCase(),
+          commit: testCommit,
+          branch: testBranch,
+          publicKey: testPubKey,
+          privateKey: testPrivKey
+        })
+        done()
+      })
+    })
+    it('should return appCodeVersion if branch name was passed', (done) => {
+      const testBranch = 'master'
+      const testRepoName = 'runnable/octorbear'
+      const testCommit = '123123'
+      const testPubKey = 'key.pub'
+      const testPrivKey = 'key.pem'
+      const testSessionUser = {
+        accounts: {
+          github: {
+            accessToken: '1'
+          }
+        }
+      }
+      const testCommitish = 'feature1'
+      Github.prototype.getRepoAsync.resolves({
+        default_branch: testBranch
+      })
+      Github.prototype.createHooksAndKeys.resolves({
+        publicKey: testPubKey,
+        privateKey: testPrivKey
+      })
+      Github.prototype.getBranchAsync.resolves({
+        name: testCommitish,
+        commit: {
+          sha: testCommit
+        }
+      })
+
+      ContextVersion.createAppcodeVersion(testSessionUser, testRepoName, testCommitish).asCallback((err, appCodeVersion) => {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(Github.prototype.getRepoAsync)
+        sinon.assert.calledWithExactly(Github.prototype.getRepoAsync, testRepoName)
+        sinon.assert.calledOnce(Github.prototype.createHooksAndKeys)
+        sinon.assert.calledWithExactly(Github.prototype.createHooksAndKeys, testRepoName)
+        sinon.assert.calledOnce(Github.prototype.getBranchAsync)
+        sinon.assert.calledWithExactly(Github.prototype.getBranchAsync, testRepoName, testCommitish)
+        expect(appCodeVersion).to.equal({
+          repo: testRepoName,
+          lowerRepo: testRepoName.toLowerCase(),
+          commit: testCommit,
+          branch: testCommitish,
+          publicKey: testPubKey,
+          privateKey: testPrivKey
+        })
+        done()
+      })
+    })
+    it('should return appCodeVersion if commit was passed', (done) => {
+      const testBranch = 'master'
+      const testRepoName = 'runnable/octorbear'
+      const testCommit = '123123'
+      const testPubKey = 'key.pub'
+      const testPrivKey = 'key.pem'
+      const testSessionUser = {
+        accounts: {
+          github: {
+            accessToken: '1'
+          }
+        }
+      }
+      const testCommitish = '1111111'
+      Github.prototype.getRepoAsync.resolves({
+        default_branch: testBranch
+      })
+      Github.prototype.createHooksAndKeys.resolves({
+        publicKey: testPubKey,
+        privateKey: testPrivKey
+      })
+      Github.prototype.getBranchAsync
+      .withArgs(testRepoName, testCommitish).resolves(null)
+      .withArgs(testRepoName, testBranch).resolves({
+        commit: {
+          sha: testCommit
+        }
+      })
+
+      ContextVersion.createAppcodeVersion(testSessionUser, testRepoName, testCommitish).asCallback((err, appCodeVersion) => {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(Github.prototype.getRepoAsync)
+        sinon.assert.calledWithExactly(Github.prototype.getRepoAsync, testRepoName)
+        sinon.assert.calledOnce(Github.prototype.createHooksAndKeys)
+        sinon.assert.calledWithExactly(Github.prototype.createHooksAndKeys, testRepoName)
+        sinon.assert.calledTwice(Github.prototype.getBranchAsync)
+        sinon.assert.calledWithExactly(Github.prototype.getBranchAsync, testRepoName, testCommitish)
+        sinon.assert.calledWithExactly(Github.prototype.getBranchAsync, testRepoName, testBranch)
         expect(appCodeVersion).to.equal({
           repo: testRepoName,
           lowerRepo: testRepoName.toLowerCase(),
@@ -486,4 +582,41 @@ describe('Context Version Unit Test', function () {
       })
     })
   })
+  describe('addGithubRepoToVersion', function () {
+    let testSessionUser
+    let repoInfo
+    beforeEach(function (done) {
+      repoInfo = {
+        repo: 'repoName'
+      }
+      testSessionUser = {
+        accounts: {
+          github: {
+            accessToken: '1'
+          }
+        }
+      }
+      sinon.stub(Github.prototype, 'getRepoAsync').resolves({
+        'default_branch': 'not-master' // eslint-disable-line quote-props
+      })
+      sinon.stub(ContextVersion, 'findOneAndUpdateAsync').resolves(testContextVersion)
+      sinon.stub(Github.prototype, 'createHooksAndKeys')
+        .resolves({privateKey: 'private', publicKey: 'public'})
+      done()
+    })
+    afterEach(function (done) {
+      Github.prototype.getRepoAsync.restore()
+      ContextVersion.findOneAndUpdateAsync.restore()
+      Github.prototype.createHooksAndKeys.restore()
+      done()
+    })
+    it('should error with a ContextVersion deploy failure', function (done) {
+      Github.prototype.createHooksAndKeys.resolves()
+      ContextVersion.addGithubRepoToVersion(testSessionUser, testContextVersionId, repoInfo)
+        .asCallback(function (err) {
+          expect(err).to.be.an.instanceOf(ContextVersion.DeployKeyError)
+          done()
+        })
+      })
+    })
 })

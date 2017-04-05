@@ -8,8 +8,6 @@ const before = lab.before
 const beforeEach = lab.beforeEach
 const after = lab.after
 const afterEach = lab.afterEach
-const Code = require('code')
-const expect = Code.expect
 const rabbitMQ = require('models/rabbitmq')
 const sinon = require('sinon')
 const Instance = require('models/mongo/instance')
@@ -17,20 +15,17 @@ require('sinon-as-promised')(require('bluebird'))
 
 const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 const ClusterConfigService = require('models/services/cluster-config-service')
+const InstanceService = require('models/services/instance-service')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
 const mongoFactory = require('../../fixtures/factory')
 const mongooseControl = require('models/mongo/mongoose-control.js')
-const BigPoppaClient = require('@runnable/big-poppa-client')
 
 describe('Cluster Config Services Integration Tests', function () {
   before(mongooseControl.start)
   beforeEach(require('../../../functional/fixtures/clean-mongo').removeEverything)
   afterEach(require('../../../functional/fixtures/clean-mongo').removeEverything)
   after(mongooseControl.stop)
-  const ownerName = 'owner'
-  const repoName = 'repo'
   const clusterName = 'CLUSTER'
-  const repoFullName = ownerName + '/' + repoName
   let mockInstance
   let mockBuild
   let mockCv
@@ -62,7 +57,10 @@ describe('Cluster Config Services Integration Tests', function () {
           }
         },
         bigPoppaUser: {
-          id: bigPoppaId
+          id: bigPoppaId,
+          organizations: [{
+            lowerName: 'codenow'
+          }]
         }
       }
       githubPushInfo = {
@@ -185,7 +183,7 @@ describe('Cluster Config Services Integration Tests', function () {
       })
     })
     beforeEach(function (done) {
-      return AutoIsolationConfig.createAsync({
+      AutoIsolationConfig.createAsync({
           instance: mockInstance._id,
           requestedDependencies: [{ instance: depInstance._id }],
           createdByUser: bigPoppaId,
@@ -198,7 +196,7 @@ describe('Cluster Config Services Integration Tests', function () {
         .asCallback(done)
     })
     beforeEach(function (done) {
-      return InputClusterConfig.createAsync({
+      InputClusterConfig.createAsync({
           autoIsolationConfigId: mockAutoConfig._id,
           filePath: '/docker-compose.yml',
           fileSha: 'asdasdasfasdfasdfsadfadsf3rfsadfasdfsdf',
@@ -216,7 +214,7 @@ describe('Cluster Config Services Integration Tests', function () {
       sinon.stub(rabbitMQ, 'createInstanceContainer').resolves()
       sinon.stub(rabbitMQ, 'instanceDeployed').resolves()
       sinon.spy(rabbitMQ, 'autoDeployInstance')
-      sinon.stub(Instance.prototype, 'emitInstanceUpdateAsync').resolves()
+      sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
       done()
     })
     afterEach(function (done) {
@@ -224,7 +222,7 @@ describe('Cluster Config Services Integration Tests', function () {
       rabbitMQ.createInstanceContainer.restore()
       rabbitMQ.instanceDeployed.restore()
       rabbitMQ.autoDeployInstance.restore()
-      Instance.prototype.emitInstanceUpdateAsync.restore()
+      InstanceService.emitInstanceUpdate.restore()
       done()
     })
     it('should finish successfully', function (done) {

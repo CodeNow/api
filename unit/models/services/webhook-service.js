@@ -712,6 +712,7 @@ describe('Webhook Service Unit Tests', function () {
   describe('parseGitHubPullRequestData', function () {
     var body
     var sender
+    let committer = "hello"
     beforeEach(function (done) {
       sender = {
         login: 'podviaznikov',
@@ -733,6 +734,19 @@ describe('Webhook Service Unit Tests', function () {
         site_admin: false
       }
       body = {
+        head_commit: {
+          id: "63f69a4d399cca74263e9c45169dc3553c66b52d",
+          tree_id: "b6a67d6587e144ba91519d1f8043556f8c144920",
+          distinct: true,
+          message: "is correct user",
+          timestamp: "2017-03-21T12:05:48-07:00",
+          url: "123",
+          committer: {
+            name: 'dude',
+            email: "something@nothing.com",
+            username: committer
+          }
+        },
         number: 777,
         pull_request: {
           head: {
@@ -766,6 +780,21 @@ describe('Webhook Service Unit Tests', function () {
           expect(githubPushInfo.commit).to.equal(body.pull_request.head.sha)
           expect(githubPushInfo.commitLog.length).to.equal(0)
           expect(githubPushInfo.user).to.equal(sender)
+        })
+        .asCallback(done)
+    })
+    it('should parse name from committer', function (done) {
+      WebhookService.parseGitHubPullRequestData(body)
+        .then(function (githubPushInfo) {
+          expect(githubPushInfo.commitPusher).to.equal(committer)
+        })
+        .asCallback(done)
+    })
+    it('should parse name from pusher', function (done) {
+      delete body.head_commit.committer
+      WebhookService.parseGitHubPullRequestData(body)
+        .then(function (githubPushInfo) {
+          expect(githubPushInfo.commitPusher).to.equal(sender.login)
         })
         .asCallback(done)
     })
