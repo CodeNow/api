@@ -1827,8 +1827,11 @@ describe('Instance Model Tests', function () {
     })
   })
 
-  describe('findUnlockedInstancesByContext', function () {
+  describe('findInstancesForBranchAndBuildHash', function () {
+    var repo = 'repoName'
+    var branch = 'branchName'
     var contextId = newObjectId()
+    var buildHash = 'build-hash'
     beforeEach(function (done) {
       sinon.stub(Instance, 'find').yieldsAsync(null)
       done()
@@ -1839,14 +1842,43 @@ describe('Instance Model Tests', function () {
     })
 
     it('should query the database', function (done) {
-      Instance.findUnlockedInstancesByContext(contextId)
+      Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, buildHash)
       .tap(function () {
         sinon.assert.calledOnce(Instance.find)
         sinon.assert.calledWith(
           Instance.find,
           {
             'contextVersion.context': contextId,
-            'locked': { $ne: true }
+            'contextVersion.build.hash': buildHash,
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                lowerBranch: branch.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          }
+        )
+      })
+      .asCallback(done)
+    })
+
+    it('should query the database without build hash if null', function (done) {
+      Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, null)
+      .tap(function () {
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
+          Instance.find,
+          {
+            'contextVersion.context': contextId,
+            'contextVersion.build.hash': { $exists: false },
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                lowerBranch: branch.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
           }
         )
       })
@@ -1856,7 +1888,7 @@ describe('Instance Model Tests', function () {
     it('should throw any database errors', function (done) {
       var dbErr = new Error('MongoErr')
       Instance.find.yieldsAsync(dbErr)
-      Instance.findUnlockedInstancesByContext(contextId)
+      Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, buildHash)
         .asCallback(function (err) {
           expect(err).to.exist()
           expect(err.message).to.equal(dbErr.message)
