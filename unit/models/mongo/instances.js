@@ -1885,6 +1885,27 @@ describe('Instance Model Tests', function () {
       .asCallback(done)
     })
 
+    it('should query the database without build hash if is mirroring Dockerfile', function (done) {
+      Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, buildHash, true)
+      .tap(function () {
+        sinon.assert.calledOnce(Instance.find)
+        sinon.assert.calledWith(
+          Instance.find,
+          {
+            'contextVersion.context': contextId,
+            'contextVersion.appCodeVersions': {
+              $elemMatch: {
+                lowerRepo: repo.toLowerCase(),
+                lowerBranch: branch.toLowerCase(),
+                additionalRepo: { $ne: true }
+              }
+            }
+          }
+        )
+      })
+      .asCallback(done)
+    })
+
     it('should throw any database errors', function (done) {
       var dbErr = new Error('MongoErr')
       Instance.find.yieldsAsync(dbErr)
