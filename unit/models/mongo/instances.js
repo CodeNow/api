@@ -1843,46 +1843,67 @@ describe('Instance Model Tests', function () {
 
     it('should query the database', function (done) {
       Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, buildHash)
-      .tap(function () {
-        sinon.assert.calledOnce(Instance.find)
-        sinon.assert.calledWith(
-          Instance.find,
-          {
-            'contextVersion.context': contextId,
-            'contextVersion.build.hash': buildHash,
-            'contextVersion.appCodeVersions': {
-              $elemMatch: {
-                lowerRepo: repo.toLowerCase(),
-                lowerBranch: branch.toLowerCase(),
-                additionalRepo: { $ne: true }
+        .tap(function () {
+          sinon.assert.calledOnce(Instance.find)
+          sinon.assert.calledWith(
+            Instance.find,
+            {
+              'contextVersion.context': contextId,
+              'contextVersion.build.hash': buildHash,
+              'contextVersion.appCodeVersions': {
+                $elemMatch: {
+                  lowerRepo: repo.toLowerCase(),
+                  lowerBranch: branch.toLowerCase(),
+                  additionalRepo: { $ne: true }
+                }
               }
             }
-          }
-        )
-      })
-      .asCallback(done)
+          )
+        })
+        .asCallback(done)
     })
 
     it('should query the database without build hash if null', function (done) {
       Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, null)
-      .tap(function () {
-        sinon.assert.calledOnce(Instance.find)
-        sinon.assert.calledWith(
-          Instance.find,
-          {
-            'contextVersion.context': contextId,
-            'contextVersion.build.hash': { $exists: false },
-            'contextVersion.appCodeVersions': {
-              $elemMatch: {
-                lowerRepo: repo.toLowerCase(),
-                lowerBranch: branch.toLowerCase(),
-                additionalRepo: { $ne: true }
+        .tap(function () {
+          sinon.assert.calledOnce(Instance.find)
+          sinon.assert.calledWith(
+            Instance.find,
+            {
+              'contextVersion.context': contextId,
+              'contextVersion.build.hash': { $exists: false },
+              'contextVersion.appCodeVersions': {
+                $elemMatch: {
+                  lowerRepo: repo.toLowerCase(),
+                  lowerBranch: branch.toLowerCase(),
+                  additionalRepo: { $ne: true }
+                }
               }
             }
-          }
-        )
-      })
-      .asCallback(done)
+          )
+        })
+        .asCallback(done)
+    })
+
+    it('should query the database without build hash if is mirroring Dockerfile', function (done) {
+      Instance.findInstancesForBranchAndBuildHash(repo, branch, contextId, buildHash, true)
+        .tap(function () {
+          sinon.assert.calledOnce(Instance.find)
+          sinon.assert.calledWith(
+            Instance.find,
+            {
+              'contextVersion.context': contextId,
+              'contextVersion.appCodeVersions': {
+                $elemMatch: {
+                  lowerRepo: repo.toLowerCase(),
+                  lowerBranch: branch.toLowerCase(),
+                  additionalRepo: { $ne: true }
+                }
+              }
+            }
+          )
+        })
+        .asCallback(done)
     })
 
     it('should throw any database errors', function (done) {
