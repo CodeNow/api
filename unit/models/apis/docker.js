@@ -246,23 +246,42 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end _handleCreateContainerError
 
-  describe('_addCmdToDataFromInstance', () => {
+  describe('_addCmdAndPortsToDataFromInstance', () => {
     it('should not add Cmd if command does not exist', (done) => {
       let output = {}
-      Docker._addCmdToDataFromInstance(output, {})
+      Docker._addCmdAndPortsToDataFromInstance(output, {})
       expect(output.Cmd).to.be.undefined()
       done()
     })
 
     it('should return command in array form', (done) => {
       let output = {}
-      Docker._addCmdToDataFromInstance(output, {
+      Docker._addCmdAndPortsToDataFromInstance(output, {
         containerStartCommand: 'this command runs'
       })
-      expect(output.Cmd).to.equal(['this', 'command', 'runs'])
+      expect(output.Cmd).to.equal(['/bin/sh', '-c', process.env.RUNNABLE_WAIT_FOR_WEAVE + ' this command runs'])
       done()
     })
-  }) // end _addCmdToDataFromInstance
+
+    it('should not add ExposedPorts if ports does not exist', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {})
+      expect(output.ExposedPorts).to.be.undefined()
+      done()
+    })
+
+    it('should return ExposedPorts in object form', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {
+        ports: [8080, 9090]
+      })
+      expect(output.ExposedPorts).to.equal({
+        '8080/tcp': {},
+        '9090/tcp': {}
+      })
+      done()
+    })
+  }) // end _addCmdAndPortsToDataFromInstance
 
   describe('_isImageNotFoundErr', function () {
     it('should return true if error matches', function (done) {
@@ -1306,7 +1325,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           sinon.assert.calledWith(
             Docker.prototype.createContainer, sinon.match({
-              Cmd: ['keep', 'calm', 'and', 'code', 'on']
+              Cmd: ['/bin/sh', '-c', process.env.RUNNABLE_WAIT_FOR_WEAVE + ' keep calm and code on']
             }), sinon.match.func
           )
 
