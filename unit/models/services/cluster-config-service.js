@@ -49,6 +49,12 @@ describe('Cluster Config Service Unit Tests', function () {
   const testOrg = {
     id: testOrgBpId
   }
+  const getInstanceMock = (name) => {
+    return {
+      name,
+      getMainBranchName: sinon.stub().returns('a1')
+    }
+  }
 
   beforeEach((done) => {
     testSessionUser = {
@@ -1177,13 +1183,13 @@ describe('Cluster Config Service Unit Tests', function () {
     it('should output list of configs and instances', (done) => {
       const out = ClusterConfigService._mergeConfigsIntoInstances(
         [{instance: {name: '1'}}, {instance: {name: '4'}}],
-        [{name: '1'}, {name: '2'}]
+        [getInstanceMock('1'), getInstanceMock('2')]
       )
-      expect(out).to.equal([
-        {instance: { name: '1'}, config: {instance: {name: '1'}, contextId: null}},
-        {instance: { name: '2'}, config: undefined},
-        {config: {instance: {name: '4'}}}
-      ])
+      expect(out.length).to.equal(3)
+      expect(out[0].instance.name).to.equal('1')
+      expect(out[0].config.instance.name).to.equal('1')
+      expect(out[1].instance.name).to.equal('2')
+      expect(out[1].config).to.equal(undefined)
       done()
     })
   }) // end _mergeConfigsIntoInstances
@@ -1192,24 +1198,27 @@ describe('Cluster Config Service Unit Tests', function () {
     it('should add instances and missing configs into array', (done) => {
       const out = ClusterConfigService._addConfigToInstances(
         [{instance: {name: '1'}}, {instance: {name: '4'}}],
-        [{name: '1'}, {name: '2'}]
+        [getInstanceMock('1'), getInstanceMock('2')]
       )
-      expect(out).to.equal([
-        { instance: { name: '1'}, config: { instance: { name: '1'}, contextId: null}},
-        { instance: { name: '2'}, config: undefined}
-      ])
+      expect(out.length).to.equal(2)
+      expect(out[0].instance.name).to.equal('1')
+      expect(out[0].config.instance.name).to.equal('1')
+      expect(out[1].instance.name).to.equal('2')
+      expect(out[1].config).to.equal(undefined)
       done()
     })
     it('should split the instance/config into separate objects if commitish doesn\'t match', (done) => {
       const out = ClusterConfigService._addConfigToInstances(
         [{instance: {name: '1'}, code: { commitish: 'a2'}}, {instance: {name: '4'}}],
-        [{name: '1', contextVersion: { appCodeVersions : [{ branch: 'a3'}], context: 1}}, {name: '2'}]
+        [getInstanceMock('1'), getInstanceMock('2')]
       )
-      expect(out).to.equal([
-        { instance: null, config: { instance: { name: '1'}, contextId: 1, code: { commitish: 'a2'}}},
-        { instance: { name: '1', contextVersion: { appCodeVersions: [{ branch: 'a3' }], context: 1}}, config: null},
-        { instance: { name: '2'}, config: undefined}
-      ])
+      expect(out.length).to.equal(3)
+      expect(out[0].instance).to.equal(null)
+      expect(out[0].config.instance.name).to.equal('1')
+      expect(out[1].instance.name).to.equal('1')
+      expect(out[1].config).to.equal(null)
+      expect(out[2].instance.name).to.equal('2')
+      expect(out[2].config).to.equal(undefined)
       done()
     })
   }) // end _addConfigToInstances
