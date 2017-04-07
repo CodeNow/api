@@ -1200,6 +1200,18 @@ describe('Cluster Config Service Unit Tests', function () {
       ])
       done()
     })
+    it('should split the instance/config into separate objects if commitish doesn\'t match', (done) => {
+      const out = ClusterConfigService._addConfigToInstances(
+        [{instance: {name: '1'}, code: { commitish: 'a2'}}, {instance: {name: '4'}}],
+        [{name: '1', contextVersion: { appCodeVersions : [{ branch: 'a3'}], context: 1}}, {name: '2'}]
+      )
+      expect(out).to.equal([
+        { instance: null, config: { instance: { name: '1'}, contextId: 1, code: { commitish: 'a2'}}},
+        { instance: { name: '1', contextVersion: { appCodeVersions: [{ branch: 'a3' }], context: 1}}, config: null},
+        { instance: { name: '2'}, config: undefined}
+      ])
+      done()
+    })
   }) // end _addConfigToInstances
 
   describe('_addMissingConfigs', () => {
