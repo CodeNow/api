@@ -64,7 +64,7 @@ describe('ImageBuilderContainerDied', function () {
 
     describe('_handleAutoDeploy', function () {
       beforeEach(function (done) {
-        sinon.stub(InstanceService, 'updateBuildByRepoAndBranch').resolves([
+        sinon.stub(InstanceService, 'updateBuildByRepoAndBranchForAutoDeploy').resolves([
           { _id: 'id-1', contextVersion: { _id: 'cv-1' } },
           { _id: 'id-2', contextVersion: { _id: 'cv-2' } }
         ])
@@ -72,19 +72,19 @@ describe('ImageBuilderContainerDied', function () {
         done()
       })
       afterEach(function (done) {
-        InstanceService.updateBuildByRepoAndBranch.restore()
+        InstanceService.updateBuildByRepoAndBranchForAutoDeploy.restore()
         rabbitMQ.instanceDeployed.restore()
         done()
       })
-      it('should not call updateBuildByRepoAndBranch if no versions were []', function (done) {
+      it('should not call updateBuildByRepoAndBranchForAutoDeploy if no versions were []', function (done) {
         worker._handleAutoDeploy([])
           .asCallback(function (err) {
             expect(err).to.not.exist()
-            sinon.assert.notCalled(InstanceService.updateBuildByRepoAndBranch)
+            sinon.assert.notCalled(InstanceService.updateBuildByRepoAndBranchForAutoDeploy)
             done()
           })
       })
-      it('should call updateBuildByRepoAndBranch for first cv', function (done) {
+      it('should call updateBuildByRepoAndBranchForAutoDeploy for first cv', function (done) {
         var cvs = [
           {
             _id: 'cv1',
@@ -118,9 +118,9 @@ describe('ImageBuilderContainerDied', function () {
         worker._handleAutoDeploy(cvs)
           .asCallback(function (err) {
             expect(err).to.not.exist()
-            sinon.assert.calledOnce(InstanceService.updateBuildByRepoAndBranch)
+            sinon.assert.calledOnce(InstanceService.updateBuildByRepoAndBranchForAutoDeploy)
             sinon.assert.calledWith(
-              InstanceService.updateBuildByRepoAndBranch,
+              InstanceService.updateBuildByRepoAndBranchForAutoDeploy,
               cvs[0],
               'codenow/api',
               'master'
@@ -128,7 +128,7 @@ describe('ImageBuilderContainerDied', function () {
             done()
           })
       })
-      it('should not call updateBuildByRepoAndBranch if manual true', function (done) {
+      it('should not call updateBuildByRepoAndBranchForAutoDeploy if manual true', function (done) {
         var cvs = [
           {
             _id: 'cv1',
@@ -148,7 +148,7 @@ describe('ImageBuilderContainerDied', function () {
         worker._handleAutoDeploy(cvs)
           .asCallback(function (err) {
             expect(err).to.not.exist()
-            sinon.assert.notCalled(InstanceService.updateBuildByRepoAndBranch)
+            sinon.assert.notCalled(InstanceService.updateBuildByRepoAndBranchForAutoDeploy)
             done()
           })
       })
@@ -185,7 +185,7 @@ describe('ImageBuilderContainerDied', function () {
           })
       })
       it('should not create instanceDeployed events if instances were not updated', function (done) {
-        InstanceService.updateBuildByRepoAndBranch.resolves(null)
+        InstanceService.updateBuildByRepoAndBranchForAutoDeploy.resolves(null)
         var cvs = [
           {
             _id: 'cv1',
@@ -209,7 +209,7 @@ describe('ImageBuilderContainerDied', function () {
             done()
           })
       })
-      it('should not call updateBuildByRepoAndBranch if action name != autodeploy', function (done) {
+      it('should not call updateBuildByRepoAndBranchForAutoDeploy if action name != autodeploy', function (done) {
         var cvs = [
           {
             _id: 'cv1',
@@ -229,11 +229,11 @@ describe('ImageBuilderContainerDied', function () {
         worker._handleAutoDeploy(cvs)
           .asCallback(function (err) {
             expect(err).to.not.exist()
-            sinon.assert.notCalled(InstanceService.updateBuildByRepoAndBranch)
+            sinon.assert.notCalled(InstanceService.updateBuildByRepoAndBranchForAutoDeploy)
             done()
           })
       })
-      it('should fail if updateBuildByRepoAndBranch failed', function (done) {
+      it('should fail if updateBuildByRepoAndBranchForAutoDeploy failed', function (done) {
         var cvs = [
           {
             _id: 'cv1',
@@ -251,12 +251,12 @@ describe('ImageBuilderContainerDied', function () {
           }
         ]
         var error = new Error('Mongo error')
-        InstanceService.updateBuildByRepoAndBranch.rejects(error)
+        InstanceService.updateBuildByRepoAndBranchForAutoDeploy.rejects(error)
         worker._handleAutoDeploy(cvs)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
-            sinon.assert.calledOnce(InstanceService.updateBuildByRepoAndBranch)
+            sinon.assert.calledOnce(InstanceService.updateBuildByRepoAndBranchForAutoDeploy)
             done()
           })
       })
