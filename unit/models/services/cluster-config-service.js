@@ -1947,12 +1947,14 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate,
               testSessionUser,
               instanceObjs,
               mainInstance,
-              githubPushInfo)
+              githubPushInfo,
+              clusterOpts
+            )
           })
           .asCallback(done)
       })
