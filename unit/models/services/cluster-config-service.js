@@ -89,7 +89,9 @@ describe('Cluster Config Service Unit Tests', function () {
         isMain: true,
         envFiles: []
       },
-      buildDockerfilePath: '.',
+      build: {
+        dockerFilePath: '.',
+      },
       files: { // Optional
         '/Dockerfile': {
           body: 'FROM node'
@@ -114,7 +116,9 @@ describe('Cluster Config Service Unit Tests', function () {
         isMain: false,
         envFiles: []
       },
-      buildDockerfilePath: '.',
+      build: {
+        dockerFilePath: '.',
+      },
       files: { // Optional
         '/Dockerfile': {
           body: 'FROM node'
@@ -672,7 +676,9 @@ describe('Cluster Config Service Unit Tests', function () {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
         const testParsedComposeData = {
-          buildDockerfilePath: testDockerfilePath
+          build: {
+            dockerFilePath: testDockerfilePath
+          }
         }
         ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
@@ -737,7 +743,9 @@ describe('Cluster Config Service Unit Tests', function () {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
         const testParsedComposeData = {
-          buildDockerfilePath: testDockerfilePath
+          build: {
+            dockerFilePath: testDockerfilePath
+          }
         }
         ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
         .tap((contextVersion) => {
@@ -877,7 +885,9 @@ describe('Cluster Config Service Unit Tests', function () {
       }
       const composeData = {
         instance: testParentComposeData,
-        buildDockerfilePath: 'Nathan219/hello'
+        build: {
+          dockerFilePath: 'Nathan219/hello'
+        }
       }
       const testInstance = 'build'
       InstanceService.createInstance.resolves(testInstance)
