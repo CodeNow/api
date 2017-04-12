@@ -1893,7 +1893,7 @@ describe('Cluster Config Service Unit Tests', function () {
       sinon.stub(ClusterConfigService, '_mergeConfigsIntoInstances').resolves(instanceObjs)
       sinon.stub(ClusterConfigService, '_createUpdateAndDeleteInstancesForClusterUpdate').resolves(instanceObjs)
       sinon.stub(ClusterConfigService, '_createAutoIsolationModelsFromClusterInstances').resolves(autoIsolationModel)
-      sinon.stub(AutoIsolationConfig, 'updateAutoIsolationDependencies').resolves(autoIsolationObject)
+      sinon.stub(AutoIsolationService, 'createOrUpdateAndEmit').resolves(autoIsolationObject)
       sinon.stub(InputClusterConfig, 'updateConfig').resolves()
       sinon.stub(rabbitMQ, 'autoDeployInstance').resolves()
       done()
@@ -1903,7 +1903,7 @@ describe('Cluster Config Service Unit Tests', function () {
       ClusterConfigService._mergeConfigsIntoInstances.restore()
       ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate.restore()
       ClusterConfigService._createAutoIsolationModelsFromClusterInstances.restore()
-      AutoIsolationConfig.updateAutoIsolationDependencies.restore()
+      AutoIsolationService.createOrUpdateAndEmit.restore()
       InputClusterConfig.updateConfig.restore()
       rabbitMQ.autoDeployInstance.restore()
       done()
@@ -1921,7 +1921,7 @@ describe('Cluster Config Service Unit Tests', function () {
               ClusterConfigService._mergeConfigsIntoInstances,
               ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate,
               ClusterConfigService._createAutoIsolationModelsFromClusterInstances,
-              AutoIsolationConfig.updateAutoIsolationDependencies
+              AutoIsolationService.createOrUpdateAndEmit
             )
           })
           .asCallback(done)
@@ -1969,11 +1969,11 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call _createAutoIsolationModelsFromClusterInstances with the right inputs', function (done) {
         ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
-            sinon.assert.calledOnce(AutoIsolationConfig.updateAutoIsolationDependencies)
+            sinon.assert.calledOnce(AutoIsolationService.createOrUpdateAndEmit)
             sinon.assert.calledWith(
-              AutoIsolationConfig.updateAutoIsolationDependencies,
-              autoIsolationModel.instance,
-              autoIsolationModel.requestedDependencies)
+              AutoIsolationService.createOrUpdateAndEmit,
+              autoIsolationModel
+            )
           })
           .asCallback(done)
       })
