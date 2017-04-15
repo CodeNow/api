@@ -272,12 +272,14 @@ describe('Cluster Config Service Unit Tests', function () {
             { results: testParsedContent.results }, // `envFiles` property removed
             triggeredAction,
             repoFullName,
-            filePath,
-            parsedInput.fileSha,
-            clusterName,
-            isTesting,
-            testReporters,
-            parentInputClusterConfigId
+            sinon.match({
+              clusterName,
+              filePath,
+              fileSha: parsedInput.fileSha,
+              isTesting,
+              testReporters,
+              parentInputClusterConfigId
+            })
           )
         })
         .asCallback(done)
@@ -323,6 +325,13 @@ describe('Cluster Config Service Unit Tests', function () {
         }
       ]
     }
+    const clusterData = {
+      filePath,
+      fileSha,
+      clusterName: composeData.repositoryName,
+      isTesting,
+      testReporters: []
+    }
     const orgName = 'Runnable'
     const repoName = 'api'
     const bigPoppaOwnerObject = {
@@ -359,42 +368,42 @@ describe('Cluster Config Service Unit Tests', function () {
         const error = new Error('Some error')
         ClusterConfigService.createClusterInstance.onCall(0).rejects(error)
         ClusterConfigService.createClusterInstance.onCall(1).rejects(error)
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
-        .asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.equal(error.message)
-          done()
-        })
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, clusterData)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
       })
 
       it('should return error if AutoIsolationService.createOrUpdateAndEmit failed', function (done) {
         const error = new Error('Some error')
         AutoIsolationService.createOrUpdateAndEmit.rejects(error)
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
-        .asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.equal(error.message)
-          done()
-        })
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, clusterData)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
       })
 
       it('should return error if InputClusterConfig.createAsync failed', function (done) {
         const error = new Error('Some error')
         InputClusterConfig.createAsync.rejects(error)
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
-        .asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.equal(error.message)
-          done()
-        })
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, clusterData)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
       })
     })
     describe('success', function () {
-      it('should run successfully', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters).asCallback(done)
+      it('should run successfully', function () {
+        return ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, clusterData)
       })
       it('should call ClusterConfigService.createClusterContext with correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, clusterData)
           .tap(function () {
             sinon.assert.calledTwice(ClusterConfigService.createClusterInstance)
             sinon.assert.calledWithExactly(ClusterConfigService.createClusterContext,
@@ -415,7 +424,7 @@ describe('Cluster Config Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should call ClusterConfigService.addAliasesToContexts with correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName,clusterData)
           .tap(function () {
             sinon.assert.calledOnce(ClusterConfigService.addAliasesToContexts)
             sinon.assert.calledWithExactly(ClusterConfigService.addAliasesToContexts,
@@ -426,7 +435,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call ClusterConfigService.createClusterInstance with correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, clusterData)
         .tap(function () {
           sinon.assert.calledTwice(ClusterConfigService.createClusterInstance)
           sinon.assert.calledWithExactly(ClusterConfigService.createClusterInstance,
@@ -448,7 +457,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call AutoIsolationService.createOrUpdateAndEmit correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData, isTesting, testReporters)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, clusterData)
         .tap(function () {
           sinon.assert.calledOnce(AutoIsolationService.createOrUpdateAndEmit)
           const autoIsolationOpts = {
@@ -473,7 +482,7 @@ describe('Cluster Config Service Unit Tests', function () {
         const parsedContent = {
           results: [testMainParsedContent, depParsedContent]
         }
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, parsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData, isTesting, testReporters)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, parsedContent, triggeredAction, repoFullName, clusterData)
           .tap(function () {
             sinon.assert.calledOnce(AutoIsolationService.createOrUpdateAndEmit)
             const autoIsolationOpts = {
@@ -493,7 +502,8 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call InputClusterConfig.createAsync with correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData.repositoryName, isTesting, testReporters, parentInputClusterConfigId)
+        const allOpts = Object.assign(clusterData, { parentInputClusterConfigId })
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, allOpts)
         .tap(function () {
           sinon.assert.calledOnce(InputClusterConfig.createAsync)
           sinon.assert.calledWithExactly(InputClusterConfig.createAsync, {
@@ -511,7 +521,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call all the functions in the order', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, filePath, fileSha, composeData, isTesting, testReporters)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, triggeredAction, repoFullName, clusterData)
         .tap(function () {
           sinon.assert.callOrder(
             ClusterConfigService.createClusterInstance,
@@ -1628,6 +1638,7 @@ describe('Cluster Config Service Unit Tests', function () {
     const githubPushInfo = {
       repo: repoFullName
     }
+    const clusterOpts = {}
     const mainInstanceId = objectId('407f191e810c19729de860ef')
     const updateInstanceId = objectId('407f191e810c19729de860f1')
     const deleteInstanceId = objectId('407f191e810c19729de860f2')
@@ -1695,22 +1706,23 @@ describe('Cluster Config Service Unit Tests', function () {
         instances = [updateInstanceObj, deleteInstanceObj, preCreateInstanceObj]
         done()
       })
-      it('should run successfully', function (done) {
-        ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
+      it('should run successfully', function () {
+        return ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
           testSessionUser,
           instances,
           mainInstance,
-          githubPushInfo
+          githubPushInfo,
+          clusterOpts
         )
-          .asCallback(done)
       })
       it('should resolve with an array with 2 instances in it', function (done) {
         ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
           testSessionUser,
           instances,
           mainInstance,
-          githubPushInfo
-          )
+          githubPushInfo,
+          clusterOpts
+        )
           .then(instances => {
             expect(instances.length).to.equal(2)
             expect(instances).to.contains(updateInstanceObj)
@@ -1723,8 +1735,9 @@ describe('Cluster Config Service Unit Tests', function () {
           testSessionUser,
           instances,
           mainInstance,
-          githubPushInfo
-          )
+          githubPushInfo,
+          clusterOpts
+        )
           .then(instances => {
             sinon.assert.callOrder(
               ClusterConfigService.createClusterContext,
@@ -1740,8 +1753,9 @@ describe('Cluster Config Service Unit Tests', function () {
           testSessionUser,
           instances,
           mainInstance,
-          githubPushInfo
-          )
+          githubPushInfo,
+          clusterOpts
+        )
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._updateInstancesWithConfigs)
             sinon.assert.calledWithExactly(ClusterConfigService._updateInstancesWithConfigs, testSessionUser, updateInstanceObj)
@@ -1753,7 +1767,8 @@ describe('Cluster Config Service Unit Tests', function () {
           testSessionUser,
           instances,
           mainInstance,
-          githubPushInfo
+          githubPushInfo,
+          clusterOpts
         )
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createNewInstancesForNewConfigs)
@@ -1762,7 +1777,7 @@ describe('Cluster Config Service Unit Tests', function () {
               testSessionUser,
               preCreateInstanceObj.config,
               githubPushInfo.repo,
-              mainInstance.isTesting,
+              clusterOpts,
               'autoDeploy'
             )
           })
@@ -1773,7 +1788,8 @@ describe('Cluster Config Service Unit Tests', function () {
           testSessionUser,
           instances,
           mainInstance,
-          githubPushInfo
+          githubPushInfo,
+          clusterOpts
         )
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService.addAliasesToContexts)
@@ -1789,7 +1805,8 @@ describe('Cluster Config Service Unit Tests', function () {
           testSessionUser,
           instances,
           mainInstance,
-          githubPushInfo
+          githubPushInfo,
+          clusterOpts
         )
           .then(() => {
             sinon.assert.calledOnce(rabbitMQ.deleteInstance)
@@ -1872,15 +1889,22 @@ describe('Cluster Config Service Unit Tests', function () {
       instance: mainInstanceId,
       requestedDependencies: [depInstance, depRepoInstance]
     }
+    const autoIsolationObject = {
+      _id: 'asdasdasdasd',
+      instance: mainInstanceId,
+      requestedDependencies: [depInstance, depRepoInstance]
+    }
     const instanceObjs = [mainInstanceObj, depInstanceObj, depRepoInstanceObj]
     const octobearInfo = {}
+    const clusterOpts = {}
     let instances
     beforeEach(function (done) {
       sinon.stub(AutoIsolationService, 'fetchAutoIsolationDependentInstances').resolves([depInstance, depRepoInstance])
       sinon.stub(ClusterConfigService, '_mergeConfigsIntoInstances').resolves(instanceObjs)
       sinon.stub(ClusterConfigService, '_createUpdateAndDeleteInstancesForClusterUpdate').resolves(instanceObjs)
       sinon.stub(ClusterConfigService, '_createAutoIsolationModelsFromClusterInstances').resolves(autoIsolationModel)
-      sinon.stub(AutoIsolationConfig, 'updateAutoIsolationDependencies').resolves()
+      sinon.stub(AutoIsolationService, 'createOrUpdateAndEmit').resolves(autoIsolationObject)
+      sinon.stub(InputClusterConfig, 'updateConfig').resolves()
       sinon.stub(rabbitMQ, 'autoDeployInstance').resolves()
       done()
     })
@@ -1889,30 +1913,31 @@ describe('Cluster Config Service Unit Tests', function () {
       ClusterConfigService._mergeConfigsIntoInstances.restore()
       ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate.restore()
       ClusterConfigService._createAutoIsolationModelsFromClusterInstances.restore()
-      AutoIsolationConfig.updateAutoIsolationDependencies.restore()
+      AutoIsolationService.createOrUpdateAndEmit.restore()
+      InputClusterConfig.updateConfig.restore()
       rabbitMQ.autoDeployInstance.restore()
       done()
     })
     describe('success', function () {
       it('should run successfully', function (done) {
-        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo)
+        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .asCallback(done)
       })
       it('should call all the methods in order', function (done) {
-        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo)
+        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
             sinon.assert.callOrder(
               AutoIsolationService.fetchAutoIsolationDependentInstances,
               ClusterConfigService._mergeConfigsIntoInstances,
               ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate,
               ClusterConfigService._createAutoIsolationModelsFromClusterInstances,
-              AutoIsolationConfig.updateAutoIsolationDependencies
+              AutoIsolationService.createOrUpdateAndEmit
             )
           })
           .asCallback(done)
       })
       it('should call fetchAutoIsolationDependentInstances with the mainInstanceId', function (done) {
-        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo)
+        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
             sinon.assert.calledOnce(AutoIsolationService.fetchAutoIsolationDependentInstances)
             sinon.assert.calledWith(AutoIsolationService.fetchAutoIsolationDependentInstances, mainInstanceId)
@@ -1920,7 +1945,7 @@ describe('Cluster Config Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should call _mergeConfigsIntoInstances with all three instances (including main)', function (done) {
-        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo)
+        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._mergeConfigsIntoInstances)
             sinon.assert.calledWith(ClusterConfigService._mergeConfigsIntoInstances, octobearInfo)
@@ -1929,20 +1954,22 @@ describe('Cluster Config Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should call _createUpdateAndDeleteInstancesForClusterUpdate with the right inputs', function (done) {
-        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo)
+        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate,
               testSessionUser,
               instanceObjs,
               mainInstance,
-              githubPushInfo)
+              githubPushInfo,
+              clusterOpts
+            )
           })
           .asCallback(done)
       })
       it('should call _createAutoIsolationModelsFromClusterInstances with the right inputs', function (done) {
-        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo)
+        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createAutoIsolationModelsFromClusterInstances)
             sinon.assert.calledWith(
@@ -1952,18 +1979,30 @@ describe('Cluster Config Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should call _createAutoIsolationModelsFromClusterInstances with the right inputs', function (done) {
-        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo)
+        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
-            sinon.assert.calledOnce(AutoIsolationConfig.updateAutoIsolationDependencies)
+            sinon.assert.calledOnce(AutoIsolationService.createOrUpdateAndEmit)
             sinon.assert.calledWith(
-              AutoIsolationConfig.updateAutoIsolationDependencies,
-              autoIsolationModel.instance,
-              autoIsolationModel.requestedDependencies)
+              AutoIsolationService.createOrUpdateAndEmit,
+              autoIsolationModel
+            )
+          })
+          .asCallback(done)
+      })
+      it('should call updateConfig with the right inputs', function (done) {
+        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
+          .then(() => {
+            sinon.assert.calledOnce(InputClusterConfig.updateConfig)
+            sinon.assert.calledWith(
+              InputClusterConfig.updateConfig,
+              autoIsolationObject,
+              clusterOpts
+            )
           })
           .asCallback(done)
       })
       it('should call autoDeployInstance with the right inputs', function (done) {
-        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo)
+        ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
             sinon.assert.calledOnce(rabbitMQ.autoDeployInstance)
             sinon.assert.calledWith(

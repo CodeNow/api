@@ -39,6 +39,7 @@ describe('Cluster Config Services Integration Tests', function () {
   const ownerId = 11111
   const bigPoppaId = 123
   const bigPoppaOrgId = 1
+  let clusterOpts
 
   beforeEach(function (done) {
     rabbitMQ.connect().asCallback(done)
@@ -225,14 +226,21 @@ describe('Cluster Config Services Integration Tests', function () {
       InstanceService.emitInstanceUpdate.restore()
       done()
     })
+    beforeEach(function (done) {
+      clusterOpts = {
+        fileSha: 'sdasdasdasdasdasd',
+        filePath: '/docker-compose.yml'
+      }
+      done()
+    })
     it('should finish successfully', function (done) {
       const octobearInfo = [testMainParsedContent, testDepParsedContent]
-      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo)
+      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo, clusterOpts)
         .asCallback(done)
     })
     it('should have created an autoDeploy job', function (done) {
       const octobearInfo = [testMainParsedContent, testDepParsedContent]
-      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo)
+      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo, clusterOpts)
         .then(() => {
           sinon.assert.calledOnce(rabbitMQ.autoDeployInstance)
         })
@@ -240,7 +248,7 @@ describe('Cluster Config Services Integration Tests', function () {
     })
     it('should delete the dependent', function (done) {
       const octobearInfo = [testMainParsedContent]
-      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo)
+      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo, clusterOpts)
         .then(() => {
           sinon.assert.calledOnce(rabbitMQ.deleteInstance)
         })
