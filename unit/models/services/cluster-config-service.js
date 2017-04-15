@@ -90,7 +90,8 @@ describe('Cluster Config Service Unit Tests', function () {
         envFiles: []
       },
       build: {
-        dockerFilePath: '.',
+        dockerFilePath: 'Dockerfile',
+        buildDockerContext: '.'
       },
       files: { // Optional
         '/Dockerfile': {
@@ -117,7 +118,8 @@ describe('Cluster Config Service Unit Tests', function () {
         envFiles: []
       },
       build: {
-        dockerFilePath: '.',
+        dockerFilePath: 'Dockerfile',
+        buildDockerContext: '.'
       },
       files: { // Optional
         '/Dockerfile': {
@@ -685,9 +687,11 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call ContextVersion.createWithNewInfraCode if no Dockerfile was provided', (done) => {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
+        const testBuildDockerContext = '.'
         const testParsedComposeData = {
           build: {
-            dockerFilePath: testDockerfilePath
+            dockerFilePath: testDockerfilePath,
+            dockerBuildContext: testBuildDockerContext
           }
         }
         ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
@@ -710,6 +714,7 @@ describe('Cluster Config Service Unit Tests', function () {
             },
             advanced: true,
             buildDockerfilePath: testDockerfilePath,
+            buildDockerContext: testBuildDockerContext,
             appCodeVersions: [testAppCodeVersion]
           }, { parent: testParentInfraCodeVersion._id, edited: true })
         }).asCallback(done)
@@ -752,9 +757,11 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call all functions in order if Dockerfile was not specified', (done) => {
         const testRepoName = 'runnable/boo'
         const testDockerfilePath = '/Dockerfile'
+        const testBuildDockerContext = '.'
         const testParsedComposeData = {
           build: {
-            dockerFilePath: testDockerfilePath
+            dockerFilePath: testDockerfilePath,
+            dockerBuildContext: testBuildDockerContext
           }
         }
         ClusterConfigService._createContextVersion(testSessionUser, testContextId, testOrgInfo, testRepoName, testParsedComposeData)
