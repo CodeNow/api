@@ -186,44 +186,68 @@ describe('AutoIsolationService', () => {
     })
   })
 
-  describe('fetchAutoIsolationDependentInstances', () => {
+  describe('fetchIsolationInstanceModel', () => {
     let mockAutoIsolationConfig = {
       instance,
       requestedDependencies,
       createdByUser,
       ownedByOrg
     }
+    const mainInstance = {
+      _id: objectId('007f191e810c19729de86011'),
+      isolated: '23e123123sdaqsd'
+    }
+    const mainConfigInstance = {
+      _id: instance,
+      isolated: 'asdasdasdasd'
+    }
+    const depInstance = {
+      _id: objectId('007f191e810c19729de860ef')
+    }
+    const childInstance = {
+      _id: objectId('007f191e810c19729de860ff')
+    }
     beforeEach((done) => {
-      sinon.stub(AutoIsolationConfig, 'findActiveByInstanceId').resolves(mockAutoIsolationConfig)
-      sinon.stub(Instance, 'findByIdAsync', function (instanceId) {
-        return Promise.resolve({
-          _id: instanceId
-        })
-      })
+      sinon.stub(Instance, 'findInstanceById').resolves(depInstance)
+      sinon.stub(Instance, 'findIsolatedChildOfParentInstance').resolves(childInstance)
       done()
     })
     afterEach((done) => {
-      AutoIsolationConfig.findActiveByInstanceId.restore()
-      Instance.findByIdAsync.restore()
+      Instance.findInstanceById.restore()
+      Instance.findIsolatedChildOfParentInstance.restore()
       done()
     })
     describe('errors', () => {
-      it('should fail if AutoIsolationConfig.findActiveByInstanceId failed', (done) => {
+      it('should resolve null if findInstance couldn\'t find the instance', () => {
+        const error = new Instance.NotFoundError('Some error')
+        Instance.findInstanceById.rejects(error)
+        return AutoIsolationService.fetchIsolationInstanceModel(depInstance._id, mainInstance, mockAutoIsolationConfig)
+          .then(instanceValue => {
+            expect(instanceValue).to.be.null()
+          })
+      })
+      it('should fail if findInstance failed for some other reason', (done) => {
         const error = new Error('Some error')
-        AutoIsolationConfig.findActiveByInstanceId.rejects(error)
-        AutoIsolationService.fetchAutoIsolationDependentInstances(instance)
+        Instance.findInstanceById.rejects(error)
+        AutoIsolationService.fetchIsolationInstanceModel(depInstance._id, mainInstance, mockAutoIsolationConfig)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
             done()
           })
       })
-
-      it('should fail if Instance.findByIdAsync failed', (done) => {
+      it('should resolve null if findIsolatedChildOfParentInstance couldn\'t find the instance', () => {
+        const error = new Instance.NotFoundError('Some error')
+        Instance.findIsolatedChildOfParentInstance.rejects(error)
+        return AutoIsolationService.fetchIsolationInstanceModel(depInstance._id, mainInstance, mockAutoIsolationConfig)
+          .then(instanceValue => {
+            expect(instanceValue).to.be.null()
+          })
+      })
+      it('should fail if Instance.findIsolatedChildOfParentInstance failed', (done) => {
         const error = new Error('Some error')
-        Instance.findByIdAsync.restore()
-        sinon.stub(Instance, 'findByIdAsync').rejects(error)
-        AutoIsolationService.fetchAutoIsolationDependentInstances(instance)
+        Instance.findIsolatedChildOfParentInstance.rejects(error)
+        AutoIsolationService.fetchIsolationInstanceModel(depInstance._id, mainInstance, mockAutoIsolationConfig)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -233,38 +257,95 @@ describe('AutoIsolationService', () => {
     })
 
     describe('success', () => {
-      it('should pass without failure', (done) => {
-        AutoIsolationService.fetchAutoIsolationDependentInstances(instance)
-          .asCallback(function (err) {
-            expect(err).to.not.exist()
-            done()
+      it('should pass without failure', () => {
+        return AutoIsolationService.fetchIsolationInstanceModel(depInstance._id, mainInstance, mockAutoIsolationConfig)
+      })
+      it('should resolve with an instance model that contains the dep and the master', () => {
+        return AutoIsolationService.fetchIsolationInstanceModel(depInstance._id, mainInstance, mockAutoIsolationConfig)
+          .then(function (instanceModel) {
+            sinon.assert.calledOnce(Instance.findInstanceById)
+            sinon.assert.calledWith(Instance.findInstanceById, depInstance._id)
+            sinon.assert.calledOnce(Instance.findIsolatedChildOfParentInstance)
+            sinon.assert.calledWith(Instance.findIsolatedChildOfParentInstance, depInstance, mainInstance.isolated)
+            expect(instanceModel).to.equal({
+              instance: childInstance,
+              master: depInstance
+            })
           })
       })
-      it('should resolve with an instance for each dep', (done) => {
-        AutoIsolationService.fetchAutoIsolationDependentInstances(instance)
-          .then(function (instances) {
-            expect(instances.length).to.equal(2)
-            sinon.assert.calledTwice(Instance.findByIdAsync)
-            sinon.assert.calledWith(Instance.findByIdAsync, requestedDependencies[0].instance)
-            sinon.assert.calledWith(Instance.findByIdAsync, requestedDependencies[1].instance)
+      it('should resolve with an instance model that contains just the dep', () => {
+        return AutoIsolationService.fetchIsolationInstanceModel(depInstance._id, mainConfigInstance, mockAutoIsolationConfig)
+          .then(function (instanceModel) {
+            sinon.assert.calledOnce(Instance.findInstanceById)
+            sinon.assert.calledWith(Instance.findInstanceById, depInstance._id)
+            sinon.assert.notCalled(Instance.findIsolatedChildOfParentInstance)
+            expect(instanceModel).to.equal({ instance: depInstance })
           })
-          .asCallback(done)
+      })
+    })
+  })
+  describe('fetchDependentInstances', () => {
+    let mockAutoIsolationConfig = {
+      instance,
+      requestedDependencies,
+      createdByUser,
+      ownedByOrg
+    }
+    const mainInstance = {
+      _id: instance,
+      isolated: '23e123123sdaqsd'
+    }
+    const depInstance = {
+      _id: objectId('007f191e810c19729de860ef')
+    }
+    const childInstance = {
+      _id: objectId('007f191e810c19729de860ff')
+    }
+    beforeEach((done) => {
+      sinon.stub(AutoIsolationService, 'fetchIsolationInstanceModel').resolves(depInstance)
+      done()
+    })
+    afterEach((done) => {
+      AutoIsolationService.fetchIsolationInstanceModel.restore()
+      done()
+    })
+
+    describe('success', () => {
+      it('should pass without failure', () => {
+        return AutoIsolationService.fetchDependentInstances(mainInstance, mockAutoIsolationConfig)
+      })
+      it('should call fetchIsolationInstanceModel for each dep', () => {
+        return AutoIsolationService.fetchDependentInstances(mainInstance, mockAutoIsolationConfig)
+          .then(() => {
+            sinon.assert.calledTwice(AutoIsolationService.fetchIsolationInstanceModel)
+            sinon.assert.calledWith(
+              AutoIsolationService.fetchIsolationInstanceModel,
+              requestedDependencies[0].instance,
+              mainInstance,
+              mockAutoIsolationConfig
+            )
+            sinon.assert.calledWith(
+              AutoIsolationService.fetchIsolationInstanceModel,
+              requestedDependencies[1].instance,
+              mainInstance,
+              mockAutoIsolationConfig
+            )
+          })
       })
       it('should filter out a dep without an instanceId', (done) => {
-        const changedDeps = [
-          { instance: objectId('107f191e810c19729de860ef') }, {}
-        ]
-        AutoIsolationConfig.findActiveByInstanceId.resolves({
-          instance,
-          requestedDependencies: changedDeps
-        })
-        AutoIsolationService.fetchAutoIsolationDependentInstances(instance)
-          .then(function (instances) {
-            expect(instances.length).to.equal(1)
-            sinon.assert.calledOnce(Instance.findByIdAsync)
-            sinon.assert.calledWith(Instance.findByIdAsync, changedDeps[0].instance)
+        mockAutoIsolationConfig.requestedDependencies.push({})
+        return AutoIsolationService.fetchDependentInstances(mainInstance, mockAutoIsolationConfig)
+          .then(instances => {
+            sinon.assert.calledTwice(AutoIsolationService.fetchIsolationInstanceModel)
+            expect(instances.length).to.equal(2)
           })
-          .asCallback(done)
+      })
+      it('should filter out a dep that fails to be found', () => {
+        AutoIsolationService.fetchIsolationInstanceModel.onCall(0).resolves(null) //
+        return AutoIsolationService.fetchDependentInstances(mainInstance, mockAutoIsolationConfig)
+          .then(instances => {
+            expect(instances.length).to.equal(1)
+          })
       })
     })
   })
