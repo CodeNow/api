@@ -2049,17 +2049,20 @@ describe('Cluster Config Service Unit Tests', function () {
       sinon.spy(octobear, 'populateENVsFromFiles')
       sinon.stub(ClusterConfigService, 'parseComposeFile').resolves(parseResult)
       sinon.stub(ClusterConfigService, 'fetchFileFromGithub').resolves({ fileString })
+      sinon.spy(ClusterConfigService, 'updateBuildContextForEachService')
       done()
     })
     afterEach(done => {
       octobear.populateENVsFromFiles.restore()
       ClusterConfigService.parseComposeFile.restore()
       ClusterConfigService.fetchFileFromGithub.restore()
+      ClusterConfigService.updateBuildContextForEachService.restore()
       done()
     })
 
     it('should call `parse`', () => {
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+      const fileName = '/compose.yml'
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, fileName)
         .then(result => {
           sinon.assert.calledOnce(ClusterConfigService.parseComposeFile)
           sinon.assert.calledWithExactly(
@@ -2067,6 +2070,12 @@ describe('Cluster Config Service Unit Tests', function () {
             composeFileData,
             repoFullName,
             mainInstanceName
+          )
+          sinon.assert.calledOnce(ClusterConfigService.updateBuildContextForEachService)
+          sinon.assert.calledWithExactly(
+            ClusterConfigService.updateBuildContextForEachService,
+            fileName,
+            sinon.match.array
           )
         })
     })
