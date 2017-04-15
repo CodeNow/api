@@ -123,7 +123,7 @@
     "server-destroy": "^1.0.0",
     "sinon": "^1.14.1",
     "sinon-as-promised": "^4.0.0",
-    "standard": "https://registry.npmjs.org/standard/-/standard-5.4.1.tgz",
+    "standard": "^5.3.1",
     "through": "^2.3.8"
   },
   "engineStrict": true,
