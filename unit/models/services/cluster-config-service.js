@@ -605,7 +605,6 @@ describe('Cluster Config Service Unit Tests', function () {
         sinon.assert.calledOnce(BuildService.buildBuild)
         const buildData = {
           message: 'Initial Cluster Creation',
-          noCache: true,
           triggeredAction: {
             manual: true
           }
