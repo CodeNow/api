@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "11.34.10",
+  "version": "11.35.0",
   "dependencies": {
     "101": {
       "version": "1.6.2",
@@ -205,6 +205,23 @@
       "version": "1.0.2",
       "from": "agent-base@>=1.0.1 <1.1.0",
       "resolved": "https://registry.npmjs.org/agent-base/-/agent-base-1.0.2.tgz"
+    },
+    "agent-base": {
+      "version": "2.0.1",
+      "from": "agent-base@>=2.0.0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/agent-base/-/agent-base-2.0.1.tgz",
+      "dependencies": {
+        "extend": {
+          "version": "3.0.0",
+          "from": "extend@~3.0.0",
+          "resolved": "https://registry.npmjs.org/extend/-/extend-3.0.0.tgz"
+        },
+        "semver": {
+          "version": "5.0.3",
+          "from": "semver@>=5.0.1 <5.1.0",
+          "resolved": "https://registry.npmjs.org/semver/-/semver-5.0.3.tgz"
+        }
+      }
     },
     "ajv": {
       "version": "4.11.7",
@@ -2292,9 +2309,21 @@
       "resolved": "https://registry.npmjs.org/flat-cache/-/flat-cache-1.2.2.tgz"
     },
     "follow-redirects": {
-      "version": "0.0.3",
-      "from": "follow-redirects@0.0.3",
-      "resolved": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-0.0.3.tgz"
+      "version": "0.0.7",
+      "from": "follow-redirects@0.0.7",
+      "resolved": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-0.0.7.tgz",
+      "dependencies": {
+        "debug": {
+          "version": "2.6.3",
+          "from": "debug@>=2.2.0 <3.0.0",
+          "resolved": "https://registry.npmjs.org/debug/-/debug-2.6.3.tgz"
+        },
+        "ms": {
+          "version": "0.7.2",
+          "from": "ms@0.7.2",
+          "resolved": "https://registry.npmjs.org/ms/-/ms-0.7.2.tgz"
+        }
+      }
     },
     "for-in": {
       "version": "1.0.2",
@@ -3265,9 +3294,9 @@
       }
     },
     "github": {
-      "version": "0.2.4",
-      "from": "git+ssh://git@github.com/podviaznikov/node-github.git#66dc2d069c59585cc166d87472fb22f7573f9ff5",
-      "resolved": "git+ssh://git@github.com/podviaznikov/node-github.git#66dc2d069c59585cc166d87472fb22f7573f9ff5"
+      "version": "5.3.3",
+      "from": "github@5.3.3",
+      "resolved": "https://registry.npmjs.org/github/-/github-5.3.3.tgz"
     },
     "glob": {
       "version": "6.0.4",
@@ -3456,6 +3485,33 @@
         "debug": {
           "version": "2.6.3",
           "from": "debug@>=2.0.0 <3.0.0",
+          "resolved": "https://registry.npmjs.org/debug/-/debug-2.6.3.tgz"
+        },
+        "extend": {
+          "version": "3.0.0",
+          "from": "extend@>=3.0.0 <4.0.0",
+          "resolved": "https://registry.npmjs.org/extend/-/extend-3.0.0.tgz"
+        },
+        "ms": {
+          "version": "0.7.2",
+          "from": "ms@0.7.2",
+          "resolved": "https://registry.npmjs.org/ms/-/ms-0.7.2.tgz"
+        }
+      }
+    },
+    "http-signature": {
+      "version": "1.1.1",
+      "from": "http-signature@>=1.1.0 <1.2.0",
+      "resolved": "https://registry.npmjs.org/http-signature/-/http-signature-1.1.1.tgz"
+    },
+    "https-proxy-agent": {
+      "version": "1.0.0",
+      "from": "https-proxy-agent@>=1.0.0 <2.0.0",
+      "resolved": "https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-1.0.0.tgz",
+      "dependencies": {
+        "debug": {
+          "version": "2.6.3",
+          "from": "debug@2",
           "resolved": "https://registry.npmjs.org/debug/-/debug-2.6.3.tgz"
         },
         "extend": {
@@ -6784,6 +6840,11 @@
       "version": "0.2.2",
       "from": "stream-combiner@>=0.2.1 <0.3.0",
       "resolved": "https://registry.npmjs.org/stream-combiner/-/stream-combiner-0.2.2.tgz"
+    },
+    "stream-consume": {
+      "version": "0.1.0",
+      "from": "stream-consume@>=0.1.0 <0.2.0",
+      "resolved": "https://registry.npmjs.org/stream-consume/-/stream-consume-0.1.0.tgz"
     },
     "stream-shift": {
       "version": "1.0.0",
