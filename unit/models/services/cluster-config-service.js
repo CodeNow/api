@@ -837,7 +837,8 @@ describe('Cluster Config Service Unit Tests', function () {
         isTestReporter
       }
       buildOpts = {
-        isolated: objectId('407f191e810c19729de860e1')
+        isolated: objectId('407f191e810c19729de860e1'),
+        masterShorthash: 'asdasdsad'
       }
       sinon.stub(InstanceService, 'createInstance')
       done()
@@ -876,7 +877,7 @@ describe('Cluster Config Service Unit Tests', function () {
             aliases: testParentComposeData.aliases,
             env: testParentComposeData.env,
             containerStartCommand: testParentComposeData.containerStartCommand,
-            name: testParentComposeData.name,
+            name: buildOpts.masterShorthash + '--' + testParentComposeData.name,
             isTesting,
             isTestReporter,
             isolated: buildOpts.isolated,
@@ -920,7 +921,7 @@ describe('Cluster Config Service Unit Tests', function () {
             env: testParentComposeData.env,
             aliases: testParentComposeData.aliases,
             containerStartCommand: testParentComposeData.containerStartCommand,
-            name: testParentComposeData.name,
+            name: buildOpts.masterShorthash + '--' + testParentComposeData.name,
             shouldNotAutofork: true,  // doesn't have a repo
             isTesting: false,
             isTestReporter,
