@@ -18,6 +18,7 @@ var Bunyan = require('bunyan')
 var Github = require('models/apis/github')
 var Instance = require('models/mongo/instance')
 var InstanceForkService = require('models/services/instance-fork-service')
+const InstanceService = require('models/services/instance-service')
 var Isolation = require('models/mongo/isolation')
 var ObjectId = require('mongoose').Types.ObjectId
 var rabbitMQ = require('models/rabbitmq')
@@ -999,17 +1000,18 @@ describe('Isolation Services Model', function () {
   describe('#_emitUpdateForInstances', function () {
     var mockInstance = { _id: 'mockInstanceId' }
     var mockInstances
-    var mockSessionUser = { session: 'user' }
+    var mockSessionUser = { session: 'user', accounts: { github: { id: 1 }} }
 
     beforeEach(function (done) {
       mockInstances = []
-      mockInstance.emitInstanceUpdateAsync = sinon.stub().resolves()
+      sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
       mockInstances.push(mockInstance)
       sinon.stub(Bunyan.prototype, 'warn')
       done()
     })
 
     afterEach(function (done) {
+      InstanceService.emitInstanceUpdate.restore()
       Bunyan.prototype.warn.restore()
       done()
     })
@@ -1035,7 +1037,7 @@ describe('Isolation Services Model', function () {
 
       it('should not reject with emit errors, but log', function (done) {
         var error = new Error('pugsly')
-        mockInstance.emitInstanceUpdateAsync.rejects(error)
+        InstanceService.emitInstanceUpdate.rejects(error)
         IsolationService._emitUpdateForInstances(mockInstances, mockSessionUser).asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Bunyan.prototype.warn)
@@ -1052,7 +1054,7 @@ describe('Isolation Services Model', function () {
     it('should emit events for all instances passed in (0)', function (done) {
       IsolationService._emitUpdateForInstances([], mockSessionUser).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.notCalled(mockInstance.emitInstanceUpdateAsync)
+        sinon.assert.notCalled(InstanceService.emitInstanceUpdate)
         done()
       })
     })
@@ -1060,10 +1062,11 @@ describe('Isolation Services Model', function () {
     it('should emit events for all instances passed in (1)', function (done) {
       IsolationService._emitUpdateForInstances(mockInstances, mockSessionUser).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledOnce(mockInstance.emitInstanceUpdateAsync)
+        sinon.assert.calledOnce(InstanceService.emitInstanceUpdate)
         sinon.assert.calledWithExactly(
-          mockInstance.emitInstanceUpdateAsync,
-          mockSessionUser,
+          InstanceService.emitInstanceUpdate,
+          mockInstances[0],
+          mockSessionUser.accounts.github.id,
           'isolation'
         )
         done()
@@ -1074,7 +1077,7 @@ describe('Isolation Services Model', function () {
       mockInstances.push(mockInstance)
       IsolationService._emitUpdateForInstances(mockInstances, mockSessionUser).asCallback(function (err) {
         expect(err).to.not.exist()
-        sinon.assert.calledTwice(mockInstance.emitInstanceUpdateAsync)
+        sinon.assert.calledTwice(InstanceService.emitInstanceUpdate)
         done()
       })
     })
@@ -1198,6 +1201,119 @@ describe('Isolation Services Model', function () {
       })
     })
   })
+  describe('#deleteIsolatedChildren', function () {
+    const isolationId = 'deadbeefdeadbeefdeadbeef'
+    let mockChildInstances
+    const mockChildInstance = {
+      _id: 'childInstanceId',
+      removeSelfFromGraph: sinon.stub()
+    }
+
+    beforeEach(function (done) {
+      mockChildInstances = []
+      sinon.stub(Instance, 'findAsync').resolves(mockChildInstances)
+      sinon.stub(rabbitMQ, 'deleteInstance').returns()
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.findAsync.restore()
+      rabbitMQ.deleteInstance.restore()
+      done()
+    })
+
+    describe('errors', function () {
+      it('should require isolationId', function (done) {
+        IsolationService.deleteIsolatedChildren().asCallback(function (err) {
+          expect(err).to.exist()
+          expect(err.message).to.match(/isolationId.+required/i)
+          done()
+        })
+      })
+
+      it('should reject with any findAsync errors', function (done) {
+        const error = new Error('pugsly')
+        Instance.findAsync.rejects(error)
+        IsolationService.deleteIsolatedChildren(isolationId)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should reject with any deleteInstance error', function (done) {
+        mockChildInstances.push(mockChildInstance)
+        const error = new Error('pugsly')
+        rabbitMQ.deleteInstance.throws(error)
+        IsolationService.deleteIsolatedChildren(isolationId)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+    })
+
+    describe('success', function () {
+      it('should return no errors', function (done) {
+        IsolationService.deleteIsolatedChildren(isolationId)
+          .asCallback(done)
+      })
+
+      it('should call findAsync with correct args', function (done) {
+        IsolationService.deleteIsolatedChildren(isolationId)
+        .tap(function () {
+          const findChildrenOpts = {
+            isolated: isolationId,
+            isIsolationGroupMaster: false
+          }
+          sinon.assert.calledOnce(Instance.findAsync)
+          sinon.assert.calledWithExactly(Instance.findAsync, findChildrenOpts)
+        })
+        .asCallback(done)
+      })
+
+      it('should not delete any children instances (0)', function (done) {
+        IsolationService.deleteIsolatedChildren(isolationId)
+        .tap(function () {
+          sinon.assert.notCalled(rabbitMQ.deleteInstance)
+        })
+        .asCallback(done)
+      })
+
+      it('should delete any children instances (1)', function (done) {
+        mockChildInstances.push(mockChildInstance)
+        IsolationService.deleteIsolatedChildren(isolationId)
+        .tap(function () {
+          sinon.assert.calledOnce(rabbitMQ.deleteInstance)
+          sinon.assert.calledWithExactly(
+            rabbitMQ.deleteInstance,
+            { instanceId: mockChildInstance._id }
+          )
+        })
+        .asCallback(done)
+      })
+
+      it('should delete any children instances (2)', function (done) {
+        mockChildInstances.push(mockChildInstance, mockChildInstance)
+        IsolationService.deleteIsolatedChildren(isolationId)
+        .tap(function () {
+          sinon.assert.calledTwice(rabbitMQ.deleteInstance)
+        })
+        .asCallback(done)
+      })
+
+      it('should do all the things in order', function (done) {
+        mockChildInstances.push(mockChildInstance)
+        IsolationService.deleteIsolatedChildren(isolationId)
+        .tap(function () {
+          sinon.assert.callOrder(Instance.findAsync, rabbitMQ.deleteInstance)
+        })
+        .asCallback(done)
+      })
+    })
+  })
 
   describe('#deleteIsolation', function () {
     var isolationId = 'deadbeefdeadbeefdeadbeef'
@@ -1209,21 +1325,18 @@ describe('Isolation Services Model', function () {
       elasticHostname: 'foobar',
       setDependenciesFromEnvironmentAsync: sinon.stub()
     }
-    var mockChildInstances
     var mockChildInstance = {
       _id: 'childInstanceId',
       removeSelfFromGraph: sinon.stub()
     }
 
     beforeEach(function (done) {
-      mockChildInstances = []
       mockInstance.deIsolate = sinon.stub().resolves(mockInstance)
       sinon.stub(IsolationService, '_removeIsolationFromEnv').resolves(mockInstance)
-      sinon.stub(Instance, 'find').yieldsAsync(null, mockChildInstances)
+      sinon.stub(IsolationService, 'deleteIsolatedChildren').resolves([])
       sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
       sinon.stub(Isolation, 'findOneAndRemove').yieldsAsync(null, mockIsolation)
       sinon.stub(IsolationService, '_emitUpdateForInstances').resolves()
-      sinon.stub(rabbitMQ, 'deleteInstance').returns()
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       mockInstance.setDependenciesFromEnvironmentAsync.reset()
       mockChildInstance.removeSelfFromGraph.reset()
@@ -1231,12 +1344,11 @@ describe('Isolation Services Model', function () {
     })
 
     afterEach(function (done) {
-      Instance.find.restore()
+      IsolationService.deleteIsolatedChildren.restore()
       Instance.findOne.restore()
       Isolation.findOneAndRemove.restore()
       IsolationService._emitUpdateForInstances.restore()
       IsolationService._removeIsolationFromEnv.restore()
-      rabbitMQ.deleteInstance.restore()
       rabbitMQ.redeployInstanceContainer.restore()
       done()
     })
@@ -1267,6 +1379,17 @@ describe('Isolation Services Model', function () {
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.match(/no instance found/i)
+            done()
+          })
+      })
+
+      it('should reject with any deleteIsolatedChildren errors', function (done) {
+        var error = new Error('pugsly')
+        IsolationService.deleteIsolatedChildren.rejects(error)
+        IsolationService.deleteIsolation(isolationId)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err).to.equal(error)
             done()
           })
       })
@@ -1333,19 +1456,12 @@ describe('Isolation Services Model', function () {
         })
     })
 
-    it('should find all children in the isolation group', function (done) {
+    it('should delete isolated children', function (done) {
       IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(Instance.find)
-          sinon.assert.calledWithExactly(
-            Instance.find,
-            {
-              isolated: isolationId,
-              isIsolationGroupMaster: false
-            },
-            sinon.match.func
-          )
+          sinon.assert.calledOnce(IsolationService.deleteIsolatedChildren)
+          sinon.assert.calledWithExactly(IsolationService.deleteIsolatedChildren, isolationId)
           done()
         })
     })
@@ -1384,39 +1500,6 @@ describe('Isolation Services Model', function () {
         })
     })
 
-    it('should delete any children instances (0)', function (done) {
-      IsolationService.deleteIsolation(isolationId)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.notCalled(rabbitMQ.deleteInstance)
-          done()
-        })
-    })
-
-    it('should delete any children instances (1)', function (done) {
-      mockChildInstances.push(mockChildInstance)
-      IsolationService.deleteIsolation(isolationId)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledOnce(rabbitMQ.deleteInstance)
-          sinon.assert.calledWithExactly(
-            rabbitMQ.deleteInstance,
-            { instanceId: mockChildInstance._id }
-          )
-          done()
-        })
-    })
-
-    it('should delete any children instances (2)', function (done) {
-      mockChildInstances.push(mockChildInstance, mockChildInstance)
-      IsolationService.deleteIsolation(isolationId)
-        .asCallback(function (err) {
-          expect(err).to.not.exist()
-          sinon.assert.calledTwice(rabbitMQ.deleteInstance)
-          done()
-        })
-    })
-
     it('should enqueue a job to redeploy the container', function (done) {
       IsolationService.deleteIsolation(isolationId)
         .asCallback(function (err) {
@@ -1438,9 +1521,9 @@ describe('Isolation Services Model', function () {
         .asCallback(function (err) {
           expect(err).to.not.exist()
           Instance.findOne.calledBefore(mockInstance.deIsolate)
-          Instance.find.calledBefore(mockInstance.deIsolate)
           sinon.assert.callOrder(
             mockInstance.deIsolate,
+            IsolationService.deleteIsolatedChildren,
             Isolation.findOneAndRemove,
             rabbitMQ.redeployInstanceContainer
           )
@@ -1548,6 +1631,11 @@ describe('Isolation Services Model', function () {
       parent: 'parentId',
       createdBy: { github: 1 }
     }
+    var mockInstance1 = {
+      _id: 'foobar1',
+      parent: 'parentId1',
+      createdBy: { github: 1 }
+    }
     var newInstances = [ mockInstance ]
     var mockAIC = { requestedDependencies: [] }
     var mockInstanceUser = { user: 1 }
@@ -1556,7 +1644,7 @@ describe('Isolation Services Model', function () {
 
     beforeEach(function (done) {
       sinon.stub(Instance, 'findOne').yieldsAsync(null, mockInstance)
-      sinon.stub(AutoIsolationConfig, 'findOne').yieldsAsync(null, mockAIC)
+      sinon.stub(AutoIsolationConfig, 'findActiveByInstanceId').resolves(mockAIC)
       sinon.stub(User, 'findByGithubId').yieldsAsync(new Error('nope'))
         .withArgs(1).yieldsAsync(null, mockInstanceUser)
         .withArgs(2).yieldsAsync(null, mockPushUser)
@@ -1566,7 +1654,7 @@ describe('Isolation Services Model', function () {
 
     afterEach(function (done) {
       Instance.findOne.restore()
-      AutoIsolationConfig.findOne.restore()
+      AutoIsolationConfig.findActiveByInstanceId.restore()
       User.findByGithubId.restore()
       IsolationService.createIsolationAndEmitInstanceUpdates.restore()
       done()
@@ -1590,11 +1678,9 @@ describe('Isolation Services Model', function () {
       IsolationService.autoIsolate(newInstances, pushInfo)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(AutoIsolationConfig.findOne)
+          sinon.assert.calledOnce(AutoIsolationConfig.findActiveByInstanceId)
           sinon.assert.calledWithExactly(
-            AutoIsolationConfig.findOne,
-            { instance: 'foobar' },
-            sinon.match.func
+            AutoIsolationConfig.findActiveByInstanceId, 'foobar'
           )
           done()
         })
@@ -1628,7 +1714,24 @@ describe('Isolation Services Model', function () {
         })
     })
 
-    it('should find a user from the push info', function (done) {
+
+    it('should find a user from the push info for the second aic even if the first one was not found', function (done) {
+      AutoIsolationConfig.findActiveByInstanceId.onCall(0).rejects(new AutoIsolationConfig.NotFoundError('Not found'))
+      IsolationService.autoIsolate([ mockInstance, mockInstance1 ], pushInfo)
+        .asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledTwice(User.findByGithubId)
+          sinon.assert.calledWithExactly(
+            User.findByGithubId,
+            2,
+            sinon.match.func
+          )
+          done()
+        })
+    })
+
+
+    it('should create isolation', function (done) {
       IsolationService.autoIsolate(newInstances, pushInfo)
       .asCallback(function (err) {
         expect(err).to.not.exist()
@@ -1652,7 +1755,7 @@ describe('Isolation Services Model', function () {
         matchBranch: true
       }
       var mockAIC = { requestedDependencies: [ child ] }
-      AutoIsolationConfig.findOne.yieldsAsync(null, mockAIC)
+      AutoIsolationConfig.findActiveByInstanceId.resolves(mockAIC)
 
       IsolationService.autoIsolate(newInstances, pushInfo)
       .asCallback(function (err) {
@@ -1676,7 +1779,7 @@ describe('Isolation Services Model', function () {
 
     it('should copy over redeployOnKilled flag', function (done) {
       mockAIC.redeployOnKilled = true
-      AutoIsolationConfig.findOne.yieldsAsync(null, mockAIC)
+      AutoIsolationConfig.findActiveByInstanceId.resolves(mockAIC)
       IsolationService.autoIsolate(newInstances, pushInfo)
         .asCallback(function (err) {
           expect(err).to.not.exist()

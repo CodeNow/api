@@ -9,13 +9,13 @@ const sinon = require('sinon')
 const ContextVersion = require('models/mongo/context-version')
 const Instance = require('models/mongo/instance')
 const InstanceService = require('models/services/instance-service')
-const Docker = require('models/apis/docker')
+const rabbitMQ = require('models/rabbitmq')
 const User = require('models/mongo/user')
 const ApplicationContainerCreated = require('workers/application.container.created')
-const WorkerStopError = require('error-cat/errors/worker-stop-error')
 
 const lab = exports.lab = Lab.script()
 const Worker = ApplicationContainerCreated._Worker
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
 require('sinon-as-promised')(require('bluebird'))
 
 const afterEach = lab.afterEach
@@ -163,26 +163,25 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
       const testError = new Error('bad')
 
       beforeEach(function (done) {
-        sinon.stub(Docker.prototype, 'removeContainerAsync')
+        sinon.stub(rabbitMQ, 'deleteContainer')
         done()
       })
 
       afterEach(function (done) {
-        Docker.prototype.removeContainerAsync.restore()
+        rabbitMQ.deleteContainer.restore()
         done()
       })
 
       it('should publish container.remove', (done) => {
-        Docker.prototype.removeContainerAsync.resolves()
+        rabbitMQ.deleteContainer.returns()
         worker._removeContainerAndStopWorker(testError).asCallback(() => {
-          sinon.assert.calledOnce(Docker.prototype.removeContainerAsync)
-          sinon.assert.calledWith(Docker.prototype.removeContainerAsync, testId)
+          sinon.assert.calledOnce(rabbitMQ.deleteContainer)
+          sinon.assert.calledWith(rabbitMQ.deleteContainer, { containerId: testId })
           done()
         })
       })
-
       it('should throw worker stop error', (done) => {
-        Docker.prototype.removeContainerAsync.resolves()
+        rabbitMQ.deleteContainer.returns()
         worker._removeContainerAndStopWorker(testError).asCallback((err) => {
           expect(err).to.be.an.instanceOf(WorkerStopError)
           expect(err.message).to.contain(testError.message)
@@ -198,7 +197,7 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
         sinon.stub(InstanceService, 'startInstance')
         sinon.stub(User, 'findByGithubIdAsync')
         testInstance = {
-          shsortHash: '12323'
+          shortHash: '12323'
         }
         done()
       })
@@ -230,7 +229,7 @@ describe('ApplicationContainerCreatedWorker Unit tests', function () {
           sinon.assert.calledWith(User.findByGithubIdAsync, testSessionUserGithubId)
 
           sinon.assert.calledOnce(InstanceService.startInstance)
-          sinon.assert.calledWith(InstanceService.startInstance, testInspect.shsortHash, testUser)
+          sinon.assert.calledWithExactly(InstanceService.startInstance, testInstance.shortHash, testUser)
           done()
         })
       })

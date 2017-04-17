@@ -84,7 +84,7 @@ var factory = module.exports = {
             if (err) {
               return cb(err)
             }
-            cb(null, instance, props.build, props.cv)
+            return cb(null, instance, props.build, props.cv)
           })
         })
       })
@@ -410,8 +410,7 @@ var factory = module.exports = {
       },
       env: opts.env || [],
       isolated: opts.isolated,
-      isIsolationGroupMaster: opts.isIsolationGroupMaster,
-      imagePull: opts.imagePull || null
+      isIsolationGroupMaster: opts.isIsolationGroupMaster
     })
   }
 }

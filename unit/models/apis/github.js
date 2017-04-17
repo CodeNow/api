@@ -1,23 +1,22 @@
-/**
- * @module unit/models/apis/docker
- */
 'use strict'
 require('loadenv')()
 
-var Boom = require('dat-middleware').Boom
-var Code = require('code')
-var Lab = require('lab')
-var path = require('path')
-var sinon = require('sinon')
+const Boom = require('dat-middleware').Boom
+const Code = require('code')
+const Lab = require('lab')
+const path = require('path')
+const sinon = require('sinon')
+require('sinon-as-promised')(require('bluebird'))
 
-var Github = require('models/apis/github')
+const Github = require('models/apis/github')
 
-var lab = exports.lab = Lab.script()
+const lab = exports.lab = Lab.script()
+const moduleName = path.relative(process.cwd(), __filename)
 
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
-var moduleName = path.relative(process.cwd(), __filename)
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
 describe('github: ' + moduleName, function () {
   describe('isOrgMember', function () {
@@ -363,4 +362,34 @@ describe('github: ' + moduleName, function () {
       })
     })
   })
+
+  describe('createHooksAndKeys', () => {
+    var github
+
+    beforeEach((done) => {
+      github = new Github({token: 'some-token'})
+      sinon.stub(github, 'createRepoHookIfNotAlready')
+      sinon.stub(github, 'addDeployKeyIfNotAlreadyAsync')
+      done()
+    })
+
+    it('should return keys', (done) => {
+      const testRepoName = 'runnable/robot'
+      const testKeys = {
+        fire: '0',
+        ice: '1'
+      }
+      github.createRepoHookIfNotAlready.yieldsAsync()
+      github.addDeployKeyIfNotAlreadyAsync.resolves(testKeys)
+      github.createHooksAndKeys(testRepoName)
+        .then((keys) => {
+          sinon.assert.calledOnce(github.createRepoHookIfNotAlready)
+          sinon.assert.calledWith(github.createRepoHookIfNotAlready, testRepoName)
+          sinon.assert.calledOnce(github.addDeployKeyIfNotAlreadyAsync)
+          sinon.assert.calledWith(github.addDeployKeyIfNotAlreadyAsync, testRepoName)
+          expect(keys).to.equal(testKeys)
+          done()
+        })
+    })
+  }) // end createHooksAndKeys
 })

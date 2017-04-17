@@ -34,6 +34,7 @@ describe('/auth/whitelist', function () {
         status: sinon.stub().returns({ json: mockSend })
       }
       mockBody = {
+        prBotEnabled: true,
         metadata: {
           hasConfirmedSetup: true
         }
@@ -83,15 +84,6 @@ describe('/auth/whitelist', function () {
       })
     })
     describe('Errors', function () {
-      it('should throw Boom.notFound when errors.UserNotFoundError', function (done) {
-        OrganizationService.updateFlagsOnOrg.rejects(new errors.UserNotFoundError())
-        whitelist.updateFlags(mockReq, mockRes)
-          .catch(Boom.notFound, function (err) {
-            expect(err.message).to.equal('User could not be found')
-            done()
-          })
-          .catch(done)
-      })
       it('should throw Boom.notFound when errors.OrganizationNotFoundError', function (done) {
         OrganizationService.updateFlagsOnOrg.rejects(new errors.OrganizationNotFoundError())
         whitelist.updateFlags(mockReq, mockRes)

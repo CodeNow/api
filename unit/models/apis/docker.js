@@ -246,6 +246,43 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end _handleCreateContainerError
 
+  describe('_addCmdAndPortsToDataFromInstance', () => {
+    it('should not add Cmd if command does not exist', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {})
+      expect(output.Cmd).to.be.undefined()
+      done()
+    })
+
+    it('should return command in array form', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {
+        containerStartCommand: 'this command runs'
+      })
+      expect(output.Cmd).to.equal(['/bin/sh', '-c', process.env.RUNNABLE_WAIT_FOR_WEAVE + ' this command runs'])
+      done()
+    })
+
+    it('should not add ExposedPorts if ports does not exist', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {})
+      expect(output.ExposedPorts).to.be.undefined()
+      done()
+    })
+
+    it('should return ExposedPorts in object form', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {
+        ports: [8080, 9090]
+      })
+      expect(output.ExposedPorts).to.equal({
+        '8080/tcp': {},
+        '9090/tcp': {}
+      })
+      done()
+    })
+  }) // end _addCmdAndPortsToDataFromInstance
+
   describe('_isImageNotFoundErr', function () {
     it('should return true if error matches', function (done) {
       var result = Docker._isImageNotFoundErr({
@@ -601,6 +638,18 @@ describe('docker: ' + moduleName, function () {
       done()
     })
 
+    it('should return a swarm constraint orgId of 1 for personal account', function (done) {
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        noCache: false,
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        sessionUser: Object.assign({}, ctx.mockSessionUser, { accounts: { github: { id: 'owner' }}})
+    })
+      expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
+        .to.equal('["org==1"]')
+      done()
+    })
+
     it('should add dock constraint if prevDockerHost exist', function (done) {
       ctx.mockContextVersion.prevDockerHost = 'http://10.0.0.1:4242'
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
@@ -674,6 +723,7 @@ describe('docker: ' + moduleName, function () {
           // acv envs
           'RUNNABLE_REPO=' + 'git@github.com:' + appCodeVersions.map(pluck('repo')).join(';git@github.com:'),
           'RUNNABLE_COMMITISH=' + [ appCodeVersions[0].commit, appCodeVersions[1].branch, 'master' ].join(';'),
+          'RUNNABLE_PRS=;;',
           'RUNNABLE_KEYS_BUCKET=' + process.env.GITHUB_DEPLOY_KEYS_BUCKET,
           'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(';'),
           // network envs
@@ -719,6 +769,7 @@ describe('docker: ' + moduleName, function () {
       sinon.stub(model, 'getLogs').yieldsAsync(null, { stream: true })
       done()
     })
+
     afterEach(function (done) {
       model.getLogs.restore()
       done()
@@ -743,7 +794,8 @@ describe('docker: ' + moduleName, function () {
         done()
       })
     })
-    it('should retry ETIMEDOUT error', { timeout: 4000 }, function (done) {
+
+    it('should retry ETIMEDOUT error', function (done) {
       var timeoutError = new Error('Docker error')
       timeoutError.data = {
         err: {
@@ -1018,7 +1070,7 @@ describe('docker: ' + moduleName, function () {
         if (err) { return done(err) }
         expect(resp).to.equal(ctx.resp)
         sinon.assert.calledOnce(model._containerAction)
-        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'remove', {})
+        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'remove', { force: true })
         done()
       })
     })
@@ -1063,7 +1115,7 @@ describe('docker: ' + moduleName, function () {
         done()
       })
     })
-    it('should retry ETIMEDOUT error', { timeout: 4000 }, function (done) {
+    it('should retry ETIMEDOUT error', function (done) {
       var timeoutError = new Error('Docker error')
       timeoutError.data = {
         err: {
@@ -1167,6 +1219,7 @@ describe('docker: ' + moduleName, function () {
         ],
         getUserContainerMemoryLimit: sinon.stub().returns(testMemory)
       }
+
       ctx.opts = {
         instance: ctx.mockInstance,
         contextVersion: ctx.mockContextVersion,
@@ -1178,6 +1231,7 @@ describe('docker: ' + moduleName, function () {
       sinon.stub(Docker.prototype, 'createContainer')
       done()
     })
+
     afterEach(function (done) {
       Docker.prototype._createUserContainerLabels.restore()
       Docker.prototype.createContainer.restore()
@@ -1257,6 +1311,22 @@ describe('docker: ' + moduleName, function () {
           sinon.assert.calledOnce(ctx.mockContextVersion.getUserContainerMemoryLimit)
           sinon.assert.calledWith(
             Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
+          )
+
+          expect(container).to.equal(ctx.mockContainer)
+          done()
+        })
+      })
+
+      it('should create a container with run cmd', function (done) {
+        ctx.opts.instance.containerStartCommand = 'keep calm and code on'
+
+        model.createUserContainer(ctx.opts, function (err, container) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Docker.prototype.createContainer, sinon.match({
+              Cmd: ['/bin/sh', '-c', process.env.RUNNABLE_WAIT_FOR_WEAVE + ' keep calm and code on']
+            }), sinon.match.func
           )
 
           expect(container).to.equal(ctx.mockContainer)

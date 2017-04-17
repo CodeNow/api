@@ -21,7 +21,6 @@ const InstanceService = require('models/services/instance-service')
 const PermissionService = require('models/services/permission-service')
 const Worker = require('workers/dock.removed')
 const WorkerTask = Worker.task
-const WorkerStopError = require('error-cat/errors/worker-stop-error')
 const errors = require('errors')
 
 describe('Worker: dock.removed unit test', function () {
@@ -33,13 +32,13 @@ describe('Worker: dock.removed unit test', function () {
     githubOrgId: testGithubOrgId
   }
   const rebuildInstances = [
-    { _id: '1', owner: { github: '213333' } },
-    { _id: '2', owner: { github: '213333' } }
+    new Instance({ _id: '1', owner: { github: '213333' } }),
+    new Instance({ _id: '2', owner: { github: '213333' } })
   ]
 
   const redeployInstances = [
-    { _id: '3', owner: { github: '213333' } },
-    { _id: '4', owner: { github: '213333' } }
+    new Instance({ _id: '3', owner: { github: '213333' } }),
+    new Instance({ _id: '4', owner: { github: '213333' } })
   ]
 
   describe('worker', function () {
@@ -52,6 +51,7 @@ describe('Worker: dock.removed unit test', function () {
       sinon.stub(rabbitMQ, 'redeployInstanceContainer').returns()
       sinon.stub(rabbitMQ, 'publishInstanceRebuild').returns()
       sinon.stub(PermissionService, 'checkOwnerAllowed').resolves()
+      sinon.stub(Instance.prototype, 'unsetContainer').resolves()
       done()
     })
 
@@ -64,6 +64,7 @@ describe('Worker: dock.removed unit test', function () {
       rabbitMQ.redeployInstanceContainer.restore()
       rabbitMQ.publishInstanceRebuild.restore()
       PermissionService.checkOwnerAllowed.restore()
+      Instance.prototype.unsetContainer.restore()
       done()
     })
 
@@ -111,28 +112,6 @@ describe('Worker: dock.removed unit test', function () {
           done()
         })
       })
-
-      it('should fatally fail if owner is not whitelisted', function (done) {
-        PermissionService.checkOwnerAllowed.onCall(0).rejects(new errors.OrganizationNotFoundError('Organization not found'))
-        testData.deploymentUuid = 'some-unique-uuid'
-        WorkerTask(testData).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.equal('Organization is not whitelisted, no need to redeploy/rebuild')
-          expect(err).to.be.instanceOf(WorkerStopError)
-          done()
-        })
-      })
-
-      it('should fatally fail if owner is not allowed', function (done) {
-        PermissionService.checkOwnerAllowed.onCall(0).rejects(new errors.OrganizationNotAllowedError('Organization is not allowed'))
-        testData.deploymentUuid = 'some-unique-uuid'
-        WorkerTask(testData).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.equal('Organization is not allowed, no need to redeploy/rebuild')
-          expect(err).to.be.instanceOf(WorkerStopError)
-          done()
-        })
-      })
     })
 
     describe('_updateFrontendInstances returns error', function () {
@@ -172,30 +151,46 @@ describe('Worker: dock.removed unit test', function () {
           done()
         })
       })
-
-      it('should fatally fail if owner is not whitelisted', function (done) {
+    })
+    describe('no errors', function () {
+      it('should call instance container cleanup if owner is not whitelisted', function (done) {
         PermissionService.checkOwnerAllowed.onCall(3).rejects(new errors.OrganizationNotFoundError('Organization not found'))
         testData.deploymentUuid = 'some-unique-uuid'
         WorkerTask(testData).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.equal('Organization is not whitelisted, no need to redeploy/rebuild')
-          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.prototype.unsetContainer)
           done()
         })
       })
 
-      it('should fatally fail if owner is not allowed', function (done) {
+      it('should call instance container cleanup if owner is not allowed', function (done) {
         PermissionService.checkOwnerAllowed.onCall(3).rejects(new errors.OrganizationNotAllowedError('Organization is not allowed'))
         testData.deploymentUuid = 'some-unique-uuid'
         WorkerTask(testData).asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.equal('Organization is not allowed, no need to redeploy/rebuild')
-          expect(err).to.be.instanceOf(WorkerStopError)
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.prototype.unsetContainer)
           done()
         })
       })
-    })
-    describe('no errors', function () {
+      it('should call instance container cleanup if owner is not whitelisted', function (done) {
+        PermissionService.checkOwnerAllowed.onCall(0).rejects(new errors.OrganizationNotFoundError('Organization not found'))
+        testData.deploymentUuid = 'some-unique-uuid'
+        WorkerTask(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.prototype.unsetContainer)
+          done()
+        })
+      })
+
+      it('should call instance container cleanup if owner is not allowed', function (done) {
+        PermissionService.checkOwnerAllowed.onCall(0).rejects(new errors.OrganizationNotAllowedError('Organization is not allowed'))
+        testData.deploymentUuid = 'some-unique-uuid'
+        WorkerTask(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(Instance.prototype.unsetContainer)
+          done()
+        })
+      })
       it('should pass', function (done) {
         WorkerTask(testData).asCallback(function (err) {
           expect(err).to.not.exist()
