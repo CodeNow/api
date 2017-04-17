@@ -137,9 +137,9 @@
       }
     },
     "@runnable/octobear": {
-      "version": "3.0.3",
-      "from": "git+ssh://git@github.com/Runnable/octobear.git#support-build-context",
-      "resolved": "git+ssh://git@github.com/Runnable/octobear.git#2cce0b365a9517c6efa1c28f53b517d923dedcc8",
+      "version": "4.0.0",
+      "from": "@runnable/octobear@>=4.0.0 <5.0.0",
+      "resolved": "https://registry.npmjs.org/@runnable/octobear/-/octobear-4.0.0.tgz",
       "dependencies": {
         "dotenv": {
           "version": "4.0.0",
@@ -207,9 +207,9 @@
       "resolved": "https://registry.npmjs.org/agent-base/-/agent-base-1.0.2.tgz"
     },
     "ajv": {
-      "version": "4.11.6",
+      "version": "4.11.7",
       "from": "ajv@>=4.9.1 <5.0.0",
-      "resolved": "https://registry.npmjs.org/ajv/-/ajv-4.11.6.tgz"
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-4.11.7.tgz"
     },
     "ajv-keywords": {
       "version": "1.5.1",
@@ -283,9 +283,9 @@
       "dev": true
     },
     "arr-flatten": {
-      "version": "1.0.1",
+      "version": "1.0.3",
       "from": "arr-flatten@>=1.0.1 <2.0.0",
-      "resolved": "https://registry.npmjs.org/arr-flatten/-/arr-flatten-1.0.1.tgz",
+      "resolved": "https://registry.npmjs.org/arr-flatten/-/arr-flatten-1.0.3.tgz",
       "dev": true
     },
     "array-find": {
@@ -6362,9 +6362,9 @@
       "resolved": "https://registry.npmjs.org/sax/-/sax-1.2.1.tgz"
     },
     "seedrandom": {
-      "version": "2.4.2",
+      "version": "2.4.3",
       "from": "seedrandom@>=2.4.0 <2.5.0",
-      "resolved": "https://registry.npmjs.org/seedrandom/-/seedrandom-2.4.2.tgz",
+      "resolved": "https://registry.npmjs.org/seedrandom/-/seedrandom-2.4.3.tgz",
       "dev": true
     },
     "semver": {
@@ -6710,9 +6710,9 @@
       "resolved": "https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.0.3.tgz"
     },
     "sshpk": {
-      "version": "1.11.0",
+      "version": "1.13.0",
       "from": "sshpk@>=1.7.0 <2.0.0",
-      "resolved": "https://registry.npmjs.org/sshpk/-/sshpk-1.11.0.tgz",
+      "resolved": "https://registry.npmjs.org/sshpk/-/sshpk-1.13.0.tgz",
       "dependencies": {
         "asn1": {
           "version": "0.2.3",
