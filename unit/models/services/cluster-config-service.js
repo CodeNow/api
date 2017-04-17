@@ -1084,7 +1084,7 @@ describe('Cluster Config Service Unit Tests', function () {
   //   })
   // })
 
-  describe('_updateInstancesWithConfigs', () => {
+  describe('_updateInstanceWithConfigs', () => {
     let instanceMock
     let testConfig
     let sessionUser
@@ -1132,7 +1132,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
 
     it('should update instance if it has new config', (done) => {
-      ClusterConfigService._updateInstancesWithConfigs(sessionUser, instanceObj)
+      ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj)
         .then(() => {
           sinon.assert.calledOnce(InstanceService.updateInstance)
           sinon.assert.calledWith(InstanceService.updateInstance,
@@ -1147,7 +1147,7 @@ describe('Cluster Config Service Unit Tests', function () {
         })
         .asCallback(done)
     })
-  }) // end _updateInstancesWithConfigs
+  }) // end _updateInstanceWithConfigs
 
   // describe('_createNewInstancesForNewConfigs', () => {
   //   beforeEach((done) => {
@@ -1677,7 +1677,7 @@ describe('Cluster Config Service Unit Tests', function () {
     beforeEach(function (done) {
       sinon.stub(ClusterConfigService, 'addAliasesToContexts').returns()
       sinon.stub(ClusterConfigService, 'createClusterContext').resolves(createInstanceConfig)
-      sinon.stub(ClusterConfigService, '_updateInstancesWithConfigs').resolves(updateInstanceObj)
+      sinon.stub(ClusterConfigService, '_updateInstanceWithConfigs').resolves(updateInstanceObj)
       sinon.stub(ClusterConfigService, '_createNewInstancesForNewConfigs').resolves(postCreateInstanceObj)
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       done()
@@ -1685,7 +1685,7 @@ describe('Cluster Config Service Unit Tests', function () {
     afterEach(function (done) {
       ClusterConfigService.addAliasesToContexts.restore()
       ClusterConfigService.createClusterContext.restore()
-      ClusterConfigService._updateInstancesWithConfigs.restore()
+      ClusterConfigService._updateInstanceWithConfigs.restore()
       ClusterConfigService._createNewInstancesForNewConfigs.restore()
       rabbitMQ.deleteInstance.restore()
       done()
@@ -1732,7 +1732,7 @@ describe('Cluster Config Service Unit Tests', function () {
               ClusterConfigService.createClusterContext,
               ClusterConfigService.addAliasesToContexts,
               ClusterConfigService._createNewInstancesForNewConfigs,
-              ClusterConfigService._updateInstancesWithConfigs
+              ClusterConfigService._updateInstanceWithConfigs
             )
           })
           .asCallback(done)
@@ -1746,8 +1746,8 @@ describe('Cluster Config Service Unit Tests', function () {
           clusterOpts
         )
           .then(() => {
-            sinon.assert.calledOnce(ClusterConfigService._updateInstancesWithConfigs)
-            sinon.assert.calledWithExactly(ClusterConfigService._updateInstancesWithConfigs, testSessionUser, updateInstanceObj)
+            sinon.assert.calledOnce(ClusterConfigService._updateInstanceWithConfigs)
+            sinon.assert.calledWithExactly(ClusterConfigService._updateInstanceWithConfigs, testSessionUser, updateInstanceObj)
           })
           .asCallback(done)
       })
