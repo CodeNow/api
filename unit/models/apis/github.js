@@ -104,7 +104,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.data.err.code).to.equal(err.code)
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.getHooks.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         done()
       })
@@ -119,7 +119,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.output.payload.message).to.equal('Failed to get github repo hooks for codenow/api')
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.getHooks.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         done()
       })
@@ -147,7 +147,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.output.statusCode).to.equal(404)
         expect(boomErr.output.payload.message).to.equal('Github repo codenow/api not found, because it moved')
         var query = github.repos.getHooks.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         done()
       })
@@ -177,7 +177,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.deleteHook.getCall(0).args[0]
         expect(query.id).to.equal(1)
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         done()
       })
@@ -193,7 +193,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.deleteHook.getCall(0).args[0]
         expect(query.id).to.equal(1)
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         done()
       })
@@ -220,7 +220,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.data.err.code).to.equal(err.code)
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.createHook.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
         var hookUrl = process.env.GITHUB_WEBHOOK_URL
@@ -240,7 +240,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.output.payload.message).to.equal('Failed to create github repo hook for codenow/api')
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.createHook.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
         var hookUrl = process.env.GITHUB_WEBHOOK_URL
@@ -270,7 +270,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.output.payload.message).to.equal('Github repo codenow/api already has a hook.')
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.createHook.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
         var hookUrl = process.env.GITHUB_WEBHOOK_URL
@@ -289,7 +289,7 @@ describe('github: ' + moduleName, function () {
         expect(err).to.not.exist()
         expect(hook._id).to.equal(1)
         var query = github.repos.createHook.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
         var hookUrl = process.env.GITHUB_WEBHOOK_URL
