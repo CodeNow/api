@@ -137,7 +137,7 @@ describe('Cluster Config Services Integration Tests', function () {
             isMain: true
           },
           build: {
-            buildDockerfilePath: '.'
+            dockerfilePath: '.'
           },
           files: { // Optional
             '/Dockerfile': {
@@ -168,7 +168,7 @@ describe('Cluster Config Services Integration Tests', function () {
             isMain: false
           },
           build: {
-            buildDockerfilePath: '.'
+            dockerfilePath: '.'
           },
           files: { // Optional
             '/Dockerfile': {
