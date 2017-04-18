@@ -132,8 +132,7 @@ describe('Cluster Config Services Integration Tests', function () {
             name: instance.name,
             isMain: true
           },
-          contextVersion: {
-            advanced: true,
+          build: {
             buildDockerfilePath: '.'
           },
           files: { // Optional
@@ -164,8 +163,7 @@ describe('Cluster Config Services Integration Tests', function () {
             name: instance.name,
             isMain: false
           },
-          contextVersion: {
-            advanced: true,
+          build: {
             buildDockerfilePath: '.'
           },
           files: { // Optional
