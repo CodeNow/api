@@ -91,7 +91,7 @@ describe('Cluster Config Service Unit Tests', function () {
       },
       build: {
         dockerFilePath: 'Dockerfile',
-        buildDockerContext: '.'
+        dockerBuildContext: '.'
       },
       files: { // Optional
         '/Dockerfile': {
@@ -119,7 +119,7 @@ describe('Cluster Config Service Unit Tests', function () {
       },
       build: {
         dockerFilePath: 'Dockerfile',
-        buildDockerContext: '.'
+        dockerBuildContext: '.'
       },
       files: { // Optional
         '/Dockerfile': {
@@ -1155,7 +1155,7 @@ describe('Cluster Config Service Unit Tests', function () {
         config: {
           instance: testConfig,
           build: {
-            buildDockerfilePath: 'path/to/Dockerfile'
+            dockerFilePath: 'path/to/Dockerfile'
           },
           code: {
             commitish: 'mainBranchName'
@@ -1188,7 +1188,7 @@ describe('Cluster Config Service Unit Tests', function () {
     describe('when dockerfile path changes', () => {
       beforeEach((done) => {
         instanceObj.config.build = {
-          buildDockerfilePath: 'new/path/to/Dockerfile'
+          dockerfilePath: 'new/path/to/Dockerfile'
         }
         done()
       })
