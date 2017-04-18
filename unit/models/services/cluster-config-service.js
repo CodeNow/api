@@ -1181,7 +1181,7 @@ describe('Cluster Config Service Unit Tests', function () {
               orgInfo,
               'org/repoName',
               instanceObj.config,
-              'automatic'
+              'autodeploy'
             )
             sinon.assert.calledOnce(InstanceService.updateInstance)
             sinon.assert.calledWith(InstanceService.updateInstance,
@@ -1219,7 +1219,7 @@ describe('Cluster Config Service Unit Tests', function () {
               orgInfo,
               'org/repoName',
               instanceObj.config,
-              'automatic'
+              'autodeploy'
             )
             sinon.assert.calledOnce(InstanceService.updateInstance)
             sinon.assert.calledWith(InstanceService.updateInstance,
@@ -1257,7 +1257,7 @@ describe('Cluster Config Service Unit Tests', function () {
               orgInfo,
               'org/repoName',
               instanceObj.config,
-              'automatic'
+              'autodeploy'
             )
             sinon.assert.calledOnce(InstanceService.updateInstance)
             sinon.assert.calledWith(InstanceService.updateInstance,
