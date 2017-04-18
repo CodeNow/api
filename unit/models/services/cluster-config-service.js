@@ -1154,7 +1154,9 @@ describe('Cluster Config Service Unit Tests', function () {
         instance: instanceMock,
         config: {
           instance: testConfig,
-          buildDockerfilePath: 'path/to/Dockerfile',
+          build: {
+            buildDockerfilePath: 'path/to/Dockerfile'
+          },
           code: {
             commitish: 'mainBranchName'
           }
@@ -1185,7 +1187,9 @@ describe('Cluster Config Service Unit Tests', function () {
 
     describe('when dockerfile path changes', () => {
       beforeEach((done) => {
-        instanceObj.config.buildDockerfilePath = 'new/path/to/Dockerfile'
+        instanceObj.config.build = {
+          buildDockerfilePath: 'new/path/to/Dockerfile'
+        }
         done()
       })
       it('should create a new build and update the instance', () => {
