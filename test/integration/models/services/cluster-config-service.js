@@ -218,7 +218,6 @@ describe('Cluster Config Services Integration Tests', function () {
       sinon.stub(rabbitMQ, 'instanceDeployed').resolves()
       sinon.spy(rabbitMQ, 'autoDeployInstance')
       sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
-      sinon.stub(ClusterConfigService, '_createCVAndBuildBuild').resolves()
       done()
     })
     afterEach(function (done) {
@@ -227,7 +226,6 @@ describe('Cluster Config Services Integration Tests', function () {
       rabbitMQ.instanceDeployed.restore()
       rabbitMQ.autoDeployInstance.restore()
       InstanceService.emitInstanceUpdate.restore()
-      ClusterConfigService._createCVAndBuildBuild.restore()
       done()
     })
     beforeEach(function (done) {
