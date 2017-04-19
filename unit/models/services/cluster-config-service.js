@@ -889,6 +889,9 @@ describe('Cluster Config Service Unit Tests', function () {
           name: 'a1'
         },
         instance: testParentComposeData,
+        metadata: {
+          isMain: true
+        },
         buildDockerfilePath: 'Nathan219/hello'
       }
       const testInstance = 'build'
