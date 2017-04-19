@@ -55,6 +55,7 @@ describe('InstanceForkService', function () {
     beforeEach(function (done) {
       mockInstance = {
         aliases: mockAliases,
+        shortName: 'web',
         name: 'mockInstanceName',
         shortHash: 'mockInstanceShortHash',
         env: ['env'],
@@ -167,6 +168,7 @@ describe('InstanceForkService', function () {
             {
               aliases: mockAliases,
               build: 'newBuildId',
+              shortName: 'web',
               name: 'mockInstanceShortHash--mockInstanceRepo',
               env: ['env'],
               owner: { github: 'instanceOwnerId' },
