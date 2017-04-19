@@ -59,7 +59,16 @@ Instances.findAsync({})
       } else {
         // if isolated and not isolated master
         if (i.isolated && !i.isIsolationGroupMaster) {
-          let shortName = i.name.split('--')[1]
+          const tokens = i.name.split('--')
+          if (!tokens || tokens.length < 2) {
+            let shortName = i.name
+            console.log('Name does not have -- in the name', i.name, shortName, i.masterPod, clusterName)
+            return {
+              instance: i,
+              shortName
+            }
+          }
+          let shortName = tokens[1]
           console.log('New shortName isolated child', i.name, shortName, i.masterPod, clusterName)
           return {
             instance: i,
