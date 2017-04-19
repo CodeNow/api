@@ -579,7 +579,6 @@ describe('Cluster Config Service Unit Tests', function () {
           sinon.assert.calledOnce(BuildService.buildBuild)
           const buildData = {
             message: 'Initial Cluster Creation',
-            noCache: true,
             triggeredAction: {
               manual: true
             }
@@ -1066,13 +1065,26 @@ describe('Cluster Config Service Unit Tests', function () {
   //   })
   // })
 
-  describe('_updateInstancesWithConfigs', () => {
+  describe('_updateInstanceWithConfigs', () => {
     let instanceMock
     let testConfig
     let sessionUser
     let instanceObj
+    let mainACVMock
+    let orgInfo
+    let buildMock
     beforeEach((done) => {
-      sessionUser = {}
+      orgInfo = {
+        githubOrgId: '1234',
+        bigPoppaOrgId: '5678'
+      }
+      sessionUser = {
+        accounts: {
+          github: {
+            id: 'sessionUserGithubId'
+          }
+        }
+      }
       testConfig = {
         aliases: {
           'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
@@ -1096,40 +1108,186 @@ describe('Cluster Config Service Unit Tests', function () {
       instanceMock = {
         _id: 1,
         updateAsync: sinon.stub().resolves(),
-        name: 'test'
+        name: 'test',
+        getRepoName: sinon.stub().returns('org/repoName'),
+        contextVersion: {
+          context: 'contextId1234'
+        }
       }
       instanceObj = {
         instance: instanceMock,
         config: {
-          instance: testConfig
+          instance: testConfig,
+          buildDockerfilePath: 'path/to/Dockerfile',
+          code: {
+            commitish: 'mainBranchName'
+          }
         }
       }
+      mainACVMock = {
+        buildDockerfilePath: 'path/to/Dockerfile',
+        branch: 'mainBranchName',
+        commit: 'sha1234'
+      }
+      buildMock = {
+        _id: 'foo'
+      }
       sinon.stub(InstanceService, 'updateInstance').resolves(instanceMock)
+      sinon.stub(ClusterConfigService, '_createCVAndBuildBuild').resolves(buildMock)
+      sinon.stub(ContextVersion, 'getMainAppCodeVersion').returns(mainACVMock)
+      sinon.stub(rabbitMQ, 'redeployInstanceContainer')
       done()
     })
 
     afterEach((done) => {
       InstanceService.updateInstance.restore()
+      ClusterConfigService._createCVAndBuildBuild.restore()
+      ContextVersion.getMainAppCodeVersion.restore()
+      rabbitMQ.redeployInstanceContainer.restore()
       done()
     })
 
-    it('should update instance if it has new config', (done) => {
-      ClusterConfigService._updateInstancesWithConfigs(sessionUser, instanceObj)
-        .then(() => {
-          sinon.assert.calledOnce(InstanceService.updateInstance)
-          sinon.assert.calledWith(InstanceService.updateInstance,
-            instanceMock, {
-              aliases: testConfig.aliases,
-              env: testConfig.env,
-              ports: testConfig.ports,
-              containerStartCommand: testConfig.containerStartCommand
-            },
-            sessionUser
-          )
-        })
-        .asCallback(done)
+    describe('when dockerfile path changes', () => {
+      beforeEach((done) => {
+        instanceObj.config.buildDockerfilePath = 'new/path/to/Dockerfile'
+        done()
+      })
+      it('should create a new build and update the instance', () => {
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, orgInfo)
+          .then(() => {
+            sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
+            sinon.assert.calledWith(ClusterConfigService._createCVAndBuildBuild,
+              sessionUser,
+              instanceMock.contextVersion.context,
+              orgInfo,
+              'org/repoName',
+              instanceObj.config,
+              'autodeploy'
+            )
+            sinon.assert.calledOnce(InstanceService.updateInstance)
+            sinon.assert.calledWith(InstanceService.updateInstance,
+              instanceMock, {
+                aliases: testConfig.aliases,
+                env: testConfig.env,
+                ports: testConfig.ports,
+                build: 'foo',
+                containerStartCommand: testConfig.containerStartCommand
+              },
+              sessionUser
+            )
+            sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
+            sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
+              instanceId: '1',
+              sessionUserGithubId: 'sessionUserGithubId'
+            })
+          })
+      })
     })
-  }) // end _updateInstancesWithConfigs
+
+    describe('when commit changes', () => {
+      beforeEach((done) => {
+        instanceObj.config.code.commitish = 'sha4567'
+        done()
+      })
+      it('should create a new build and update the instance', () => {
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, orgInfo)
+          .then(() => {
+            sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
+            sinon.assert.calledWith(
+              ClusterConfigService._createCVAndBuildBuild,
+              sessionUser,
+              instanceMock.contextVersion.context,
+              orgInfo,
+              'org/repoName',
+              instanceObj.config,
+              'autodeploy'
+            )
+            sinon.assert.calledOnce(InstanceService.updateInstance)
+            sinon.assert.calledWith(InstanceService.updateInstance,
+              instanceMock, {
+                aliases: testConfig.aliases,
+                env: testConfig.env,
+                ports: testConfig.ports,
+                build: 'foo',
+                containerStartCommand: testConfig.containerStartCommand
+              },
+              sessionUser
+            )
+            sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
+            sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
+              instanceId: '1',
+              sessionUserGithubId: 'sessionUserGithubId'
+            })
+          })
+      })
+    })
+
+    describe('when branch changes', () => {
+      beforeEach((done) => {
+        instanceObj.config.code.commitish = 'newBranchName'
+        done()
+      })
+      it('should create a new build and update the instance', () => {
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, orgInfo)
+          .then(() => {
+            sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
+            sinon.assert.calledWith(
+              ClusterConfigService._createCVAndBuildBuild,
+              sessionUser,
+              instanceMock.contextVersion.context,
+              orgInfo,
+              'org/repoName',
+              instanceObj.config,
+              'autodeploy'
+            )
+            sinon.assert.calledOnce(InstanceService.updateInstance)
+            sinon.assert.calledWith(InstanceService.updateInstance,
+              instanceMock, {
+                aliases: testConfig.aliases,
+                env: testConfig.env,
+                ports: testConfig.ports,
+                build: 'foo',
+                containerStartCommand: testConfig.containerStartCommand
+              },
+              sessionUser
+            )
+            sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
+            sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
+              instanceId: '1',
+              sessionUserGithubId: 'sessionUserGithubId'
+            })
+          })
+      })
+    })
+
+    describe('when env changes', () => {
+      beforeEach((done) => {
+        testConfig.env = ['newEnv']
+        done()
+      })
+      it('should update the instance and redeploy it', () => {
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, orgInfo)
+          .then(() => {
+            sinon.assert.notCalled(ClusterConfigService._createCVAndBuildBuild)
+            sinon.assert.calledOnce(InstanceService.updateInstance)
+            sinon.assert.calledWith(InstanceService.updateInstance,
+              instanceMock, {
+                aliases: testConfig.aliases,
+                env: testConfig.env,
+                ports: testConfig.ports,
+                containerStartCommand: testConfig.containerStartCommand
+              },
+              sessionUser
+            )
+            sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
+            sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
+              instanceId: '1',
+              sessionUserGithubId: 'sessionUserGithubId'
+            })
+          })
+      })
+    })
+  }) // end _updateInstanceWithConfigs
 
   // describe('_createNewInstanceForNewConfig', () => {
   //   beforeEach((done) => {
@@ -1196,20 +1354,6 @@ describe('Cluster Config Service Unit Tests', function () {
       expect(out[0].config.metadata.name).to.equal('1')
       expect(out[1].instance.name).to.equal('2')
       expect(out[1].config).to.equal(undefined)
-      done()
-    })
-    it('should split the instance/config into separate objects if commitish doesn\'t match', (done) => {
-      const out = ClusterConfigService._addConfigToInstances(
-        [{metadata: {name: '1'}, code: { commitish: 'a2'}}, {metadata: {name: '4'}}],
-        [getInstanceMock('1'), getInstanceMock('2')]
-      )
-      expect(out.length).to.equal(3)
-      expect(out[0].instance).to.equal(null)
-      expect(out[0].config.metadata.name).to.equal('1')
-      expect(out[1].instance.name).to.equal('1')
-      expect(out[1].config).to.equal(null)
-      expect(out[2].instance.name).to.equal('2')
-      expect(out[2].config).to.equal(undefined)
       done()
     })
   }) // end _addConfigToInstances
@@ -1737,8 +1881,11 @@ describe('Cluster Config Service Unit Tests', function () {
           ownerInfo
         )
           .then(() => {
-            sinon.assert.calledOnce(ClusterConfigService._updateInstancesWithConfigs)
-            sinon.assert.calledWithExactly(ClusterConfigService._updateInstancesWithConfigs, testSessionUser, updateInstanceObj)
+            sinon.assert.calledOnce(ClusterConfigService._updateInstanceWithConfigs)
+            sinon.assert.calledWithExactly(ClusterConfigService._updateInstanceWithConfigs, testSessionUser, updateInstanceObj, {
+              githubOrgId: bigPoppaOwnerObject.githubId,
+              bigPoppaOrgId: bigPoppaOwnerObject.id
+            })
           })
           .asCallback(done)
       })
