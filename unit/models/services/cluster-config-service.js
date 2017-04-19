@@ -59,6 +59,7 @@ describe('Cluster Config Service Unit Tests', function () {
     return {
       instance: {
         name,
+        shortName: name,
         getMainBranchName: sinon.stub().returns('a1')
       }
     }
@@ -1172,12 +1173,12 @@ describe('Cluster Config Service Unit Tests', function () {
   describe('_mergeConfigsIntoInstances', () => {
     it('should output list of configs and instances', (done) => {
       const out = ClusterConfigService._mergeConfigsIntoInstances(
-        [{instance: {name: '1'}}, {instance: {name: '4'}}],
+        [{metadata: {name: '1'}}, {metadata: {name: '4'}}],
         [getInstanceMock('1'), getInstanceMock('2')]
       )
       expect(out.length).to.equal(3)
       expect(out[0].instance.name).to.equal('1')
-      expect(out[0].config.instance.name).to.equal('1')
+      expect(out[0].config.metadata.name).to.equal('1')
       expect(out[1].instance.name).to.equal('2')
       expect(out[1].config).to.equal(undefined)
       done()
@@ -1187,24 +1188,24 @@ describe('Cluster Config Service Unit Tests', function () {
   describe('_addConfigToInstances', () => {
     it('should add instances and missing configs into array', (done) => {
       const out = ClusterConfigService._addConfigToInstances(
-        [{instance: {name: '1'}}, {instance: {name: '4'}}],
+        [{metadata: {name: '1'}}, {metadata: {name: '4'}}],
         [getInstanceMock('1'), getInstanceMock('2')]
       )
       expect(out.length).to.equal(2)
       expect(out[0].instance.name).to.equal('1')
-      expect(out[0].config.instance.name).to.equal('1')
+      expect(out[0].config.metadata.name).to.equal('1')
       expect(out[1].instance.name).to.equal('2')
       expect(out[1].config).to.equal(undefined)
       done()
     })
     it('should split the instance/config into separate objects if commitish doesn\'t match', (done) => {
       const out = ClusterConfigService._addConfigToInstances(
-        [{instance: {name: '1'}, code: { commitish: 'a2'}}, {instance: {name: '4'}}],
+        [{metadata: {name: '1'}, code: { commitish: 'a2'}}, {metadata: {name: '4'}}],
         [getInstanceMock('1'), getInstanceMock('2')]
       )
       expect(out.length).to.equal(3)
       expect(out[0].instance).to.equal(null)
-      expect(out[0].config.instance.name).to.equal('1')
+      expect(out[0].config.metadata.name).to.equal('1')
       expect(out[1].instance.name).to.equal('1')
       expect(out[1].config).to.equal(null)
       expect(out[2].instance.name).to.equal('2')
@@ -1216,10 +1217,10 @@ describe('Cluster Config Service Unit Tests', function () {
   describe('_addMissingConfigs', () => {
     it('should add missing configs to array', (done) => {
       const out = ClusterConfigService._addMissingConfigs(
-        [{instance: {name: '1'}}, {instance: {name: '4'}}],
-        [{instance: {name: '1'}}, {instance: {name: '2'}}]
+        [{metadata: {name: '1'}}, {metadata: {name: '4'}}],
+        [{instance: {shortName: '1'}}, {instance: {shortName: '2'}}]
       )
-      expect(out).to.equal([{instance: {name: '1'}}, {instance: {name: '2'}}, {config: {instance: {name: '4'}}}])
+      expect(out).to.equal([{instance: {shortName: '1'}}, {instance: {shortName: '2'}}, {config: {metadata: {name: '4'}}}])
       done()
     })
   }) // end _addMissingConfigs
@@ -1227,8 +1228,8 @@ describe('Cluster Config Service Unit Tests', function () {
   describe('_isConfigMissingInstance', () => {
     it('should return false if config has an instance', (done) => {
       const out = ClusterConfigService._isConfigMissingInstance(
-        [{instance: {name: '1'}}, {instance: {name: '2'}}, {instance: {name: '3'}}],
-        {instance: {name: '1'}}
+        [{instance: {shortName: '1'}}, {instance: {shortName: '2'}}, {instance: {shortName: '3'}}],
+        {metadata: {name: '1'}}
       )
 
       expect(out).to.be.false()
@@ -1237,8 +1238,8 @@ describe('Cluster Config Service Unit Tests', function () {
 
     it('should return true if config does not have an instance', (done) => {
       const out = ClusterConfigService._isConfigMissingInstance(
-        [{instance: {name: '1'}}, {instance: {name: '2'}}, {instance: {name: '3'}}],
-        {instance: {name: '5'}}
+        [{instance: {shortName: '1'}}, {instance: {shortName: '2'}}, {instance: {shortName: '3'}}],
+        {metadata: {name: '5'}}
       )
 
       expect(out).to.be.true()

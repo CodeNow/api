@@ -268,8 +268,7 @@ describe('AutoIsolationService', () => {
             sinon.assert.calledOnce(Instance.findIsolatedChildOfParentInstance)
             sinon.assert.calledWith(Instance.findIsolatedChildOfParentInstance, depInstance, mainInstance.isolated)
             expect(instanceModel).to.equal({
-              instance: childInstance,
-              master: depInstance
+              instance: childInstance
             })
           })
       })
