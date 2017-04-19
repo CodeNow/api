@@ -16,4 +16,4 @@ RUN npm install
 
 ADD ./ /api
 
-CMD /wait.sh api-unit-redis-staging-codenow.runnableapp.com:6379 && npm run unit
+CMD /wait.sh api-unit-redis-staging-codenow.runnableapp.com:6379 && npm run lint && npm run unit
