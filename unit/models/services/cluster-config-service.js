@@ -1073,6 +1073,10 @@ describe('Cluster Config Service Unit Tests', function () {
     let mainACVMock
     let orgInfo
     let buildMock
+    let buildOpts = {
+      repoFullName: 'asdasd/sadasdasd',
+      triggerAction: 'autodeploy'
+    }
     beforeEach((done) => {
       orgInfo = {
         githubOrgId: '1234',
@@ -1081,7 +1085,7 @@ describe('Cluster Config Service Unit Tests', function () {
       sessionUser = {
         accounts: {
           github: {
-            id: 'sessionUserGithubId'
+            id: ownerInfo.githubUserId
           }
         }
       }
@@ -1153,16 +1157,14 @@ describe('Cluster Config Service Unit Tests', function () {
         done()
       })
       it('should create a new build and update the instance', () => {
-        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, orgInfo)
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, orgInfo)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
             sinon.assert.calledWith(ClusterConfigService._createCVAndBuildBuild,
               sessionUser,
-              instanceMock.contextVersion.context,
-              orgInfo,
-              'org/repoName',
-              instanceObj.config,
-              'autodeploy'
+              ownerInfo,
+              buildOpts,
+              instanceObj.config
             )
             sinon.assert.calledOnce(InstanceService.updateInstance)
             sinon.assert.calledWith(InstanceService.updateInstance,
@@ -1178,7 +1180,7 @@ describe('Cluster Config Service Unit Tests', function () {
             sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
             sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
               instanceId: '1',
-              sessionUserGithubId: 'sessionUserGithubId'
+              sessionUserGithubId: testUserGithubId
             })
           })
       })
@@ -1190,17 +1192,15 @@ describe('Cluster Config Service Unit Tests', function () {
         done()
       })
       it('should create a new build and update the instance', () => {
-        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, orgInfo)
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, orgInfo)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
             sinon.assert.calledWith(
               ClusterConfigService._createCVAndBuildBuild,
               sessionUser,
-              instanceMock.contextVersion.context,
-              orgInfo,
-              'org/repoName',
-              instanceObj.config,
-              'autodeploy'
+              ownerInfo,
+              buildOpts,
+              instanceObj.config
             )
             sinon.assert.calledOnce(InstanceService.updateInstance)
             sinon.assert.calledWith(InstanceService.updateInstance,
@@ -1216,7 +1216,7 @@ describe('Cluster Config Service Unit Tests', function () {
             sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
             sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
               instanceId: '1',
-              sessionUserGithubId: 'sessionUserGithubId'
+              sessionUserGithubId: testUserGithubId
             })
           })
       })
@@ -1228,17 +1228,15 @@ describe('Cluster Config Service Unit Tests', function () {
         done()
       })
       it('should create a new build and update the instance', () => {
-        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, orgInfo)
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, orgInfo)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
             sinon.assert.calledWith(
               ClusterConfigService._createCVAndBuildBuild,
               sessionUser,
-              instanceMock.contextVersion.context,
-              orgInfo,
-              'org/repoName',
-              instanceObj.config,
-              'autodeploy'
+              ownerInfo,
+              buildOpts,
+              instanceObj.config
             )
             sinon.assert.calledOnce(InstanceService.updateInstance)
             sinon.assert.calledWith(InstanceService.updateInstance,
@@ -1254,7 +1252,7 @@ describe('Cluster Config Service Unit Tests', function () {
             sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
             sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
               instanceId: '1',
-              sessionUserGithubId: 'sessionUserGithubId'
+              sessionUserGithubId: testUserGithubId
             })
           })
       })
@@ -1266,7 +1264,7 @@ describe('Cluster Config Service Unit Tests', function () {
         done()
       })
       it('should update the instance and redeploy it', () => {
-        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, orgInfo)
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, orgInfo)
           .then(() => {
             sinon.assert.notCalled(ClusterConfigService._createCVAndBuildBuild)
             sinon.assert.calledOnce(InstanceService.updateInstance)
@@ -1282,7 +1280,7 @@ describe('Cluster Config Service Unit Tests', function () {
             sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
             sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
               instanceId: '1',
-              sessionUserGithubId: 'sessionUserGithubId'
+              sessionUserGithubId: testUserGithubId
             })
           })
       })
