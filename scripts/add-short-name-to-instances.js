@@ -49,7 +49,7 @@ Instances.findAsync({})
         shortName
       }
     } else {
-      if (i.masterPod) {
+      if (i.masterPod && !i.isolated) {
         let shortName = i.name
         console.log('New shortName for master instance', i.name, i.masterPod, clusterName)
         return {
