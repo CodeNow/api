@@ -1078,10 +1078,6 @@ describe('Cluster Config Service Unit Tests', function () {
       triggerAction: 'autodeploy'
     }
     beforeEach((done) => {
-      orgInfo = {
-        githubOrgId: '1234',
-        bigPoppaOrgId: '5678'
-      }
       sessionUser = {
         accounts: {
           github: {
@@ -1157,7 +1153,7 @@ describe('Cluster Config Service Unit Tests', function () {
         done()
       })
       it('should create a new build and update the instance', () => {
-        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, orgInfo)
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, ownerInfo)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
             sinon.assert.calledWith(ClusterConfigService._createCVAndBuildBuild,
@@ -1192,7 +1188,7 @@ describe('Cluster Config Service Unit Tests', function () {
         done()
       })
       it('should create a new build and update the instance', () => {
-        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, orgInfo)
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, ownerInfo)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
             sinon.assert.calledWith(
@@ -1228,7 +1224,7 @@ describe('Cluster Config Service Unit Tests', function () {
         done()
       })
       it('should create a new build and update the instance', () => {
-        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, orgInfo)
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, ownerInfo)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
             sinon.assert.calledWith(
@@ -1264,7 +1260,7 @@ describe('Cluster Config Service Unit Tests', function () {
         done()
       })
       it('should update the instance and redeploy it', () => {
-        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, orgInfo)
+        return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, ownerInfo)
           .then(() => {
             sinon.assert.notCalled(ClusterConfigService._createCVAndBuildBuild)
             sinon.assert.calledOnce(InstanceService.updateInstance)
@@ -1806,7 +1802,7 @@ describe('Cluster Config Service Unit Tests', function () {
     beforeEach(function (done) {
       sinon.stub(ClusterConfigService, 'addAliasesToContexts').returns()
       sinon.stub(ClusterConfigService, 'createClusterContext').resolves(createInstanceConfig)
-      sinon.stub(ClusterConfigService, '_updateInstancesWithConfigs').resolves(updateInstanceObj)
+      sinon.stub(ClusterConfigService, '_updateInstanceWithConfigs').resolves(updateInstanceObj)
       sinon.stub(ClusterConfigService, '_createNewInstanceForNewConfig').resolves(postCreateInstanceObj)
       sinon.stub(rabbitMQ, 'deleteInstance').returns()
       done()
@@ -1814,7 +1810,7 @@ describe('Cluster Config Service Unit Tests', function () {
     afterEach(function (done) {
       ClusterConfigService.addAliasesToContexts.restore()
       ClusterConfigService.createClusterContext.restore()
-      ClusterConfigService._updateInstancesWithConfigs.restore()
+      ClusterConfigService._updateInstanceWithConfigs.restore()
       ClusterConfigService._createNewInstanceForNewConfig.restore()
       rabbitMQ.deleteInstance.restore()
       done()
@@ -1859,12 +1855,12 @@ describe('Cluster Config Service Unit Tests', function () {
           buildOpts,
           ownerInfo
         )
-          .then(instances => {
+          .then(() => {
             sinon.assert.callOrder(
               ClusterConfigService.createClusterContext,
               ClusterConfigService.addAliasesToContexts,
               ClusterConfigService._createNewInstanceForNewConfig,
-              ClusterConfigService._updateInstancesWithConfigs
+              ClusterConfigService._updateInstanceWithConfigs
             )
           })
           .asCallback(done)
@@ -1880,10 +1876,13 @@ describe('Cluster Config Service Unit Tests', function () {
         )
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._updateInstanceWithConfigs)
-            sinon.assert.calledWithExactly(ClusterConfigService._updateInstanceWithConfigs, testSessionUser, updateInstanceObj, {
-              githubOrgId: bigPoppaOwnerObject.githubId,
-              bigPoppaOrgId: bigPoppaOwnerObject.id
-            })
+            sinon.assert.calledWithExactly(
+              ClusterConfigService._updateInstanceWithConfigs,
+              testSessionUser,
+              updateInstanceObj,
+              buildOpts,
+              ownerInfo
+            )
           })
           .asCallback(done)
       })
