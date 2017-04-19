@@ -897,6 +897,7 @@ describe('InstanceForkService', function () {
         ports: [8080],
         isTesting: true,
         isTestReporter: false,
+        shortName: 'web',
         name: 'inst1',
         owner: { github: { id: 1 } },
         shortHash: 'd1as6213a'
@@ -926,6 +927,7 @@ describe('InstanceForkService', function () {
               aliases: undefined,
               parent: master.shortHash,
               build: 'build1',
+              shortName: 'web',
               name: 'feature-1-inst1',
               env: master.env,
               ports: [8080],
@@ -955,6 +957,7 @@ describe('InstanceForkService', function () {
               aliases: undefined,
               parent: master.shortHash,
               build: 'build1',
+              shortName: 'web',
               name: 'a1-b2-c3-d4-e5-f6-g7-h7-inst1',
               env: master.env,
               ports: [8080],
