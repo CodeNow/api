@@ -900,9 +900,15 @@ describe('Cluster Config Service Unit Tests', function () {
         name: 'name'
       }
       const composeData = {
+        metadata: {
+          name: 'a1'
+        },
         instance: testParentComposeData,
         build: {
           dockerFilePath: 'Nathan219/hello'
+        },
+        metadata: {
+          isMain: true
         }
       }
       const testInstance = 'build'
@@ -912,6 +918,7 @@ describe('Cluster Config Service Unit Tests', function () {
         .then(instance => {
           sinon.assert.calledOnce(InstanceService.createInstance)
           sinon.assert.calledWith(InstanceService.createInstance, {
+            shortName: composeData.metadata.name,
             build: testParentBuildId.toString(),
             aliases: testParentComposeData.aliases,
             env: testParentComposeData.env,
@@ -945,6 +952,9 @@ describe('Cluster Config Service Unit Tests', function () {
         name: 'name'
       }
       const composeData = {
+        metadata: {
+          name: 'b1'
+        },
         instance: testParentComposeData
       }
       const testInstance = 'build'
@@ -954,6 +964,7 @@ describe('Cluster Config Service Unit Tests', function () {
         .then(instance => {
           sinon.assert.calledOnce(InstanceService.createInstance)
           sinon.assert.calledWith(InstanceService.createInstance, {
+            shortName: composeData.metadata.name,
             build: testParentBuildId.toString(),
             env: testParentComposeData.env,
             aliases: testParentComposeData.aliases,
