@@ -32,6 +32,8 @@
 
 # Application Components
 
+New Database - MySQL
+
 #### Express
 
 `/lib/express-app.js`
