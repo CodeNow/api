@@ -674,9 +674,9 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call ContextVersion.createWithNewInfraCode if no Dockerfile was provided', () => {
         const testDockerfilePath = '/Dockerfile'
         const testBuildDockerContext = '.'
-        testParsedComposeData.build = build: {
+        testParsedComposeData.build = {
           dockerFilePath: testDockerfilePath,
-            dockerBuildContext: testBuildDockerContext
+          dockerBuildContext: testBuildDockerContext
         }
         return ClusterConfigService._createContextVersion(testSessionUser, ownerInfo, buildOpts, testParsedComposeData)
           .tap((contextVersion) => {
