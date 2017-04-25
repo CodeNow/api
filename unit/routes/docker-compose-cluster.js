@@ -14,7 +14,7 @@ const joi = require('utils/joi')
 const rabbitMQ = require('models/rabbitmq')
 const postRoute = require('routes/docker-compose-cluster').postRoute
 const deleteRoute = require('routes/docker-compose-cluster').deleteRoute
-const restartRoute = require('routes/docker-compose-cluster').restartRoute
+const redeployRoute = require('routes/docker-compose-cluster').redeployRoute
 const Instance = require('models/mongo/instance')
 
 const lab = exports.lab = Lab.script()
@@ -192,7 +192,7 @@ describe('/docker-compose-cluster', function () {
     })
   })
 
-  describe('restart', () => {
+  describe('redeploy', () => {
     let reqMock
     let findInstanceStub
     let killIsolationJobStub
@@ -213,7 +213,7 @@ describe('/docker-compose-cluster', function () {
     })
 
     it('should call kill isolation with the isolation id', (done) => {
-      restartRoute(reqMock, resMock, nextStub)
+      redeployRoute(reqMock, resMock, nextStub)
         .then(() => {
           sinon.assert.calledOnce(findInstanceStub)
           sinon.assert.calledWith(findInstanceStub, { _id: 'aaaa' })
