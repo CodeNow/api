@@ -2357,7 +2357,7 @@ describe('Cluster Config Service Unit Tests', function () {
       expect(services[1].build).to.equal(undefined)
       done()
     })
-    describe('unformatted path', () => {
+    describe('unformatted path without /', () => {
       it('should do nothing for services without builds', (done) => {
         const services = [
           { instance: { name: 'a1' } }, { instance: { name: 'a2' } }
@@ -2399,6 +2399,55 @@ describe('Cluster Config Service Unit Tests', function () {
           }
         ]
         ClusterConfigService.updateBuildContextForEachService('src/compose.yml', services)
+        expect(services.length).to.equal(2)
+        expect(services[0].build.dockerBuildContext).to.equal('./')
+        expect(services[1].build).to.equal(undefined)
+        done()
+      })
+    })
+
+    describe('unformatted path with ./', () => {
+      it('should do nothing for services without builds', (done) => {
+        const services = [
+          { instance: { name: 'a1' } }, { instance: { name: 'a2' } }
+        ]
+        ClusterConfigService.updateBuildContextForEachService('./compose.yml', services)
+        expect(services.length).to.equal(2)
+        expect(services[0].build).to.equal(undefined)
+        expect(services[1].build).to.equal(undefined)
+        done()
+      })
+
+      it('should update build context if compose is in the root', (done) => {
+        const services = [
+          {
+            build: {
+              dockerBuildContext: '.'
+            },
+            instance: { name: 'a1' }
+          }, {
+            instance: { name: 'a2' }
+          }
+        ]
+        ClusterConfigService.updateBuildContextForEachService('./compose.yml', services)
+        expect(services.length).to.equal(2)
+        expect(services[0].build.dockerBuildContext).to.equal('./')
+        expect(services[1].build).to.equal(undefined)
+        done()
+      })
+
+      it('should update build context if compose is not in the root', (done) => {
+        const services = [
+          {
+            build: {
+              dockerBuildContext: '..'
+            },
+            instance: { name: 'a1' }
+          }, {
+            instance: { name: 'a2' }
+          }
+        ]
+        ClusterConfigService.updateBuildContextForEachService('./src/compose.yml', services)
         expect(services.length).to.equal(2)
         expect(services[0].build.dockerBuildContext).to.equal('./')
         expect(services[1].build).to.equal(undefined)
