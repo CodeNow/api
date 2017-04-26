@@ -2220,14 +2220,14 @@ describe('Cluster Config Service Unit Tests', function () {
 
     it('should not fetch any files if `envFiles` is empty', () => {
       parseResult.envFiles = []
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, envFiles[0])
         .then(result => {
           sinon.assert.notCalled(ClusterConfigService.fetchFileFromGithub)
         })
     })
 
     it('should fetch all files in `envFiles`', () => {
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, envFiles[0])
         .then(result => {
           sinon.assert.called(ClusterConfigService.fetchFileFromGithub)
           sinon.assert.callCount(ClusterConfigService.fetchFileFromGithub, envFiles.length)
@@ -2256,7 +2256,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
 
     it('should call `populateENVsFromFiles`', () => {
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, envFiles[0])
         .then(result => {
           sinon.assert.calledOnce(octobear.populateENVsFromFiles)
           sinon.assert.calledWithExactly(
@@ -2272,7 +2272,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
 
     it('should return an object with `.results`', () => {
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, envFiles[0])
         .then(res => {
           expect(res.results).to.be.an.array()
           expect(res.results).to.equal(parseResult.results)
