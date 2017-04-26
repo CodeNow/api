@@ -108,7 +108,7 @@ describe('Isolation Services Integration Tests', function () {
   beforeEach(function (done) {
     // create dependency Links
     Promise.each(Object.keys(dependencyMap), function (instanceName) {
-      return makeDependencies(ctx[instanceName], getDependencyInstances(ctx, instanceName))
+      return makeDependecies(ctx[instanceName], getDependencyInstances(ctx, instanceName))
     })
     .asCallback(done)
   })
@@ -147,7 +147,7 @@ describe('Isolation Services Integration Tests', function () {
    * @param {[Instance]} dependents
    * @returns {Promise}
    */
-  function makeDependencies (master, dependents) {
+  function makeDependecies (master, dependents) {
     if (!dependents) { return null }
     return Promise.each(dependents, function (dependentInstance) {
       return master.addDependency(dependentInstance)
@@ -214,14 +214,14 @@ describe('Isolation Services Integration Tests', function () {
         return Promise.each(Object.keys(forked), function (instanceName) {
           // It should take these newly forked instances, and bind them to the original master
           // (ctx) branches.
-          return makeDependencies(forked[instanceName], getDependencyInstances(ctx, instanceName))
+          return makeDependecies(forked[instanceName], getDependencyInstances(ctx, instanceName))
         })
           .return(childInstanceArray)
       })
   }
 
   describe('_updateDependenciesForInstanceWithChildren', function () {
-    describe('Master\'s dependencies', function () {
+    describe('Master\'s dependecies', function () {
       var toFork = ['Api', 'Link', 'MongoDB']
       beforeEach(function (done) {
         createForks('Frontend', toFork)
