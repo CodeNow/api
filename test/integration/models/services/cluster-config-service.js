@@ -60,7 +60,9 @@ describe('Cluster Config Services Integration Tests', function () {
         bigPoppaUser: {
           id: bigPoppaId,
           organizations: [{
-            lowerName: 'codenow'
+            lowerName: 'codenow',
+            id: bigPoppaOrgId,
+            githubId: ownerId
           }]
         }
       }

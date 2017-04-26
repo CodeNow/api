@@ -1148,7 +1148,9 @@ describe('Cluster Config Service Unit Tests', function () {
         name: 'test',
         getRepoName: sinon.stub().returns('org/repoName'),
         contextVersion: {
-          context: 'contextId1234'
+          context: 'contextId1234',
+          buildDockerfilePath: 'path/to/Dockerfile',
+          appCodeVersions: []
         }
       }
       instanceObj = {
@@ -1164,7 +1166,6 @@ describe('Cluster Config Service Unit Tests', function () {
         }
       }
       mainACVMock = {
-        buildDockerfilePath: 'path/to/Dockerfile',
         branch: 'mainBranchName',
         commit: 'sha1234'
       }
