@@ -283,9 +283,9 @@
       }
     },
     "@runnable/octobear": {
-      "version": "4.0.0",
-      "from": "@runnable/octobear@4.0.0",
-      "resolved": "https://registry.npmjs.org/@runnable/octobear/-/octobear-4.0.0.tgz",
+      "version": "3.0.3",
+      "from": "@runnable/octobear@3.0.3",
+      "resolved": "https://registry.npmjs.org/@runnable/octobear/-/octobear-3.0.3.tgz",
       "dependencies": {
         "dotenv": {
           "version": "4.0.0",
