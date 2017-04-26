@@ -117,10 +117,6 @@ describe('Cluster Config Services Integration Tests', function () {
       done()
     })
     beforeEach(function (done) {
-      mongoFactory.createSourceInfraCodeVersion(done)
-    })
-
-    beforeEach(function (done) {
       mongoFactory.createInstanceWithProps(mockSessionUser, {
         name: 'api',
         masterPod: true
@@ -136,8 +132,9 @@ describe('Cluster Config Services Integration Tests', function () {
             name: instance.name,
             isMain: true
           },
-          build: {
-            dockerfilePath: '.'
+          contextVersion: {
+            advanced: true,
+            buildDockerfilePath: '.'
           },
           files: { // Optional
             '/Dockerfile': {
@@ -167,8 +164,9 @@ describe('Cluster Config Services Integration Tests', function () {
             name: instance.name,
             isMain: false
           },
-          build: {
-            dockerfilePath: '.'
+          contextVersion: {
+            advanced: true,
+            buildDockerfilePath: '.'
           },
           files: { // Optional
             '/Dockerfile': {
@@ -187,30 +185,30 @@ describe('Cluster Config Services Integration Tests', function () {
     })
     beforeEach(function (done) {
       AutoIsolationConfig.createAsync({
-        instance: mockInstance._id,
-        requestedDependencies: [{ instance: depInstance._id }],
-        createdByUser: bigPoppaId,
-        ownedByOrg: bigPoppaOrgId,
-        redeployOnKilled: true
-      })
-      .then((config) => {
-        mockAutoConfig = config
-      })
-      .asCallback(done)
+          instance: mockInstance._id,
+          requestedDependencies: [{ instance: depInstance._id }],
+          createdByUser: bigPoppaId,
+          ownedByOrg: bigPoppaOrgId,
+          redeployOnKilled: true
+        })
+        .then((config) => {
+          mockAutoConfig = config
+        })
+        .asCallback(done)
     })
     beforeEach(function (done) {
       InputClusterConfig.createAsync({
-        autoIsolationConfigId: mockAutoConfig._id,
-        filePath: '/docker-compose.yml',
-        fileSha: 'asdasdasfasdfasdfsadfadsf3rfsadfasdfsdf',
-        createdByUser: bigPoppaId,
-        ownedByOrg: bigPoppaOrgId,
-        clusterName: clusterName
-      })
-      .then((config) => {
-        mockClusterConfig = config
-      })
-      .asCallback(done)
+          autoIsolationConfigId: mockAutoConfig._id,
+          filePath: '/docker-compose.yml',
+          fileSha: 'asdasdasfasdfasdfsadfadsf3rfsadfasdfsdf',
+          createdByUser: bigPoppaId,
+          ownedByOrg: bigPoppaOrgId,
+          clusterName: clusterName
+        })
+        .then((config) => {
+          mockClusterConfig = config
+        })
+        .asCallback(done)
     })
     beforeEach(function (done) {
       sinon.stub(rabbitMQ, 'deleteInstance').resolves()
