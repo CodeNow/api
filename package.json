@@ -20,7 +20,7 @@
     "@runnable/big-poppa-client": "^0.5.1",
     "@runnable/clio-client": "^1.0.8",
     "@runnable/hostname": "^3.0.0",
-    "@runnable/octobear": "^4.0.0",
+    "@runnable/octobear": "^3.0.3",
     "JSONStream": "0.10.x",
     "array-subtract": "^2.0.0",
     "async": "^0.9.0",
