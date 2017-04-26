@@ -2220,14 +2220,14 @@ describe('Cluster Config Service Unit Tests', function () {
 
     it('should not fetch any files if `envFiles` is empty', () => {
       parseResult.envFiles = []
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml')
         .then(result => {
           sinon.assert.notCalled(ClusterConfigService.fetchFileFromGithub)
         })
     })
 
     it('should fetch all files in `envFiles`', () => {
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml')
         .then(result => {
           sinon.assert.called(ClusterConfigService.fetchFileFromGithub)
           sinon.assert.callCount(ClusterConfigService.fetchFileFromGithub, envFiles.length)
@@ -2256,7 +2256,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
 
     it('should call `populateENVsFromFiles`', () => {
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml')
         .then(result => {
           sinon.assert.calledOnce(octobear.populateENVsFromFiles)
           sinon.assert.calledWithExactly(
@@ -2272,7 +2272,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
 
     it('should return an object with `.results`', () => {
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser)
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml')
         .then(res => {
           expect(res.results).to.be.an.array()
           expect(res.results).to.equal(parseResult.results)
@@ -2326,6 +2326,103 @@ describe('Cluster Config Service Unit Tests', function () {
       expect(services[0].build.dockerBuildContext).to.equal('./')
       expect(services[1].build).to.equal(undefined)
       done()
+    })
+    describe('unformatted path without /', () => {
+      it('should do nothing for services without builds', (done) => {
+        const services = [
+          { instance: { name: 'a1' } }, { instance: { name: 'a2' } }
+        ]
+        ClusterConfigService.updateBuildContextForEachService('compose.yml', services)
+        expect(services.length).to.equal(2)
+        expect(services[0].build).to.equal(undefined)
+        expect(services[1].build).to.equal(undefined)
+        done()
+      })
+
+      it('should update build context if compose is in the root', (done) => {
+        const services = [
+          {
+            build: {
+              dockerBuildContext: '.'
+            },
+            instance: { name: 'a1' }
+          }, {
+            instance: { name: 'a2' }
+          }
+        ]
+        ClusterConfigService.updateBuildContextForEachService('compose.yml', services)
+        expect(services.length).to.equal(2)
+        expect(services[0].build.dockerBuildContext).to.equal('./')
+        expect(services[1].build).to.equal(undefined)
+        done()
+      })
+
+      it('should update build context if compose is not in the root', (done) => {
+        const services = [
+          {
+            build: {
+              dockerBuildContext: '..'
+            },
+            instance: { name: 'a1' }
+          }, {
+            instance: { name: 'a2' }
+          }
+        ]
+        ClusterConfigService.updateBuildContextForEachService('src/compose.yml', services)
+        expect(services.length).to.equal(2)
+        expect(services[0].build.dockerBuildContext).to.equal('./')
+        expect(services[1].build).to.equal(undefined)
+        done()
+      })
+    })
+
+    describe('unformatted path with ./', () => {
+      it('should do nothing for services without builds', (done) => {
+        const services = [
+          { instance: { name: 'a1' } }, { instance: { name: 'a2' } }
+        ]
+        ClusterConfigService.updateBuildContextForEachService('./compose.yml', services)
+        expect(services.length).to.equal(2)
+        expect(services[0].build).to.equal(undefined)
+        expect(services[1].build).to.equal(undefined)
+        done()
+      })
+
+      it('should update build context if compose is in the root', (done) => {
+        const services = [
+          {
+            build: {
+              dockerBuildContext: '.'
+            },
+            instance: { name: 'a1' }
+          }, {
+            instance: { name: 'a2' }
+          }
+        ]
+        ClusterConfigService.updateBuildContextForEachService('./compose.yml', services)
+        expect(services.length).to.equal(2)
+        expect(services[0].build.dockerBuildContext).to.equal('./')
+        expect(services[1].build).to.equal(undefined)
+        done()
+      })
+
+      it('should update build context if compose is not in the root', (done) => {
+        const services = [
+          {
+            build: {
+              dockerBuildContext: '..'
+            },
+            instance: { name: 'a1' }
+          }, {
+            instance: { name: 'a2' }
+          }
+        ]
+        ClusterConfigService.updateBuildContextForEachService('./src/compose.yml', services)
+        expect(services.length).to.equal(2)
+        expect(services[0].build.dockerBuildContext).to.equal('./')
+        expect(services[1].build).to.equal(undefined)
+        done()
+      })
     })
   })
 })
