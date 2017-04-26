@@ -888,14 +888,12 @@ describe('Cluster Config Service Unit Tests', function () {
       }
       const composeData = {
         metadata: {
-          name: 'a1'
+          name: 'a1',
+          isMain: true
         },
         instance: testParentComposeData,
         build: {
           dockerFilePath: 'Nathan219/hello'
-        },
-        metadata: {
-          isMain: true
         }
       }
       const testInstance = 'build'
@@ -915,7 +913,7 @@ describe('Cluster Config Service Unit Tests', function () {
             isTestReporter,
             isolated: buildOpts.isolated,
             shouldNotAutofork: false,
-            masterPod: true,
+            masterPod: false,
             ipWhitelist: {
               enabled: false
             }
@@ -925,8 +923,9 @@ describe('Cluster Config Service Unit Tests', function () {
         })
     })
 
-    it('should create non-test instance', () => {
+    it('should create non-test non-isolated instance', () => {
       testingOpts.isTesting = false
+      delete buildOpts.isolated
       const testParentBuildId = objectId('407f191e810c19729de860ef')
       const testParentComposeData = {
         env: 'env',
@@ -958,12 +957,12 @@ describe('Cluster Config Service Unit Tests', function () {
             env: testParentComposeData.env,
             aliases: testParentComposeData.aliases,
             containerStartCommand: testParentComposeData.containerStartCommand,
-            name: buildOpts.masterShorthash + '--' + testParentComposeData.name,
+            name: testParentComposeData.name,
             shouldNotAutofork: true,  // doesn't have a repo
             isTesting: false,
             isTestReporter,
             masterPod: true,
-            isolated: buildOpts.isolated,
+            isolated: undefined,
             ipWhitelist: {
               enabled: false
             }
