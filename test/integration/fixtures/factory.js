@@ -63,6 +63,9 @@ var factory = module.exports = {
       : owner.accounts.github.id
     props = props || {}
     props.username = props.username || username
+    if (!props.cv) {
+      props.cv = factory.createNewVersion(props)
+    }
     var count = createCount(1, function () {
       var data = factory.instanceTemplate(ownerGithubId, props)
       Instance.create(data, function (err, instance) {
@@ -177,10 +180,10 @@ var factory = module.exports = {
   },
   createSourceInfraCodeVersion: function (cb) {
     Context.create({
-      name: 'asdasd',
+      name: 'Blank',
+      isSource: true,
       owner: {
-        github: process.env.HELLO_RUNNABLE_GITHUB_ID,
-        isSource: true
+        github: process.env.HELLO_RUNNABLE_GITHUB_ID
       }
     }, function (err, context) {
       if (err) { return cb(err) }
