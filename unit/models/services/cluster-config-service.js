@@ -901,14 +901,12 @@ describe('Cluster Config Service Unit Tests', function () {
       }
       const composeData = {
         metadata: {
-          name: 'a1'
+          name: 'a1',
+          isMain: true
         },
         instance: testParentComposeData,
         build: {
           dockerFilePath: 'Nathan219/hello'
-        },
-        metadata: {
-          isMain: true
         }
       }
       const testInstance = 'build'
