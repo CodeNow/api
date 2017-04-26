@@ -187,34 +187,15 @@ describe('AutoIsolationService', () => {
   })
 
   describe('_fetchIsolationInstanceModel', () => {
-    let mockAutoIsolationConfig = {
-      instance,
-      requestedDependencies,
-      createdByUser,
-      ownedByOrg
-    }
-    const mainInstance = {
-      _id: objectId('007f191e810c19729de86011'),
-      isolated: '23e123123sdaqsd'
-    }
-    const mainConfigInstance = {
-      _id: instance,
-      isolated: 'asdasdasdasd'
-    }
     const depInstance = {
       _id: objectId('007f191e810c19729de860ef')
     }
-    const childInstance = {
-      _id: objectId('007f191e810c19729de860ff')
-    }
     beforeEach((done) => {
       sinon.stub(Instance, 'findInstanceById').resolves(depInstance)
-      sinon.stub(Instance, 'findIsolatedChildOfParentInstance').resolves(childInstance)
       done()
     })
     afterEach((done) => {
       Instance.findInstanceById.restore()
-      Instance.findIsolatedChildOfParentInstance.restore()
       done()
     })
     describe('errors', () => {
@@ -264,9 +245,6 @@ describe('AutoIsolationService', () => {
     }
     const depInstance = {
       _id: objectId('007f191e810c19729de860ef')
-    }
-    const childInstance = {
-      _id: objectId('007f191e810c19729de860ff')
     }
     beforeEach((done) => {
       sinon.stub(AutoIsolationService, '_fetchIsolationInstanceModel').resolves(depInstance)
