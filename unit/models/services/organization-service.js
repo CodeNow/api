@@ -423,4 +423,58 @@ describe('Organization Service', function () {
       })
     })
   })
+
+  describe('updatePrivateRegistryOnOrgBySessionUser', function () {
+    let registryOptions
+    const bpOrgId = '41332'
+    beforeEach(function (done) {
+      sinon.stub(UserService, 'validateSessionUserPartOfOrg').resolves()
+      sinon.stub(BigPoppaClient.prototype, 'updateOrganization').resolves()
+      done()
+    })
+    beforeEach(function (done) {
+      registryOptions = {
+        username: 'username',
+        password: 'password',
+        url: 'http://example.com'
+      }
+      done()
+    })
+    afterEach(function (done) {
+      UserService.validateSessionUserPartOfOrg.restore()
+      BigPoppaClient.prototype.updateOrganization.restore()
+      done()
+    })
+    it('should validate the schema', function (done) {
+      registryOptions.url = 1234
+      OrganizationService.updatePrivateRegistryOnOrgBySessionUser(sessionUser, bpOrgId, registryOptions)
+        .asCallback((err) => {
+          expect(err).to.exist()
+          expect(err.message).to.match(/url/)
+          done()
+        })
+    })
+    it('should validate user is part of the org', function (done) {
+      OrganizationService.updatePrivateRegistryOnOrgBySessionUser(sessionUser, bpOrgId, registryOptions)
+        .asCallback((err) => {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(UserService.validateSessionUserPartOfOrg)
+          sinon.assert.calledWith(UserService.validateSessionUserPartOfOrg, sessionUser, bpOrgId)
+          done()
+        })
+    })
+    it('should update organization in big poppa', function (done) {
+      OrganizationService.updatePrivateRegistryOnOrgBySessionUser(sessionUser, bpOrgId, registryOptions)
+        .asCallback((err) => {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(BigPoppaClient.prototype.updateOrganization)
+          sinon.assert.calledWith(BigPoppaClient.prototype.updateOrganization, bpOrgId, {
+            privateRegistryUrl: registryOptions.url,
+            privateRegistryUsername: registryOptions.username,
+            privateRegistryPassword: registryOptions.privateRegistryPassword
+          })
+          done()
+        })
+    })
+  })
 })
