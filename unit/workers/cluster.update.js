@@ -174,7 +174,8 @@ describe('Cluster Update Worker', function () {
               composeData,
               job.pushInfo.repo,
               config.clusterName,
-              bigPoppaUser
+              bigPoppaUser,
+              config.filePath
             )
           })
           .asCallback(done)
