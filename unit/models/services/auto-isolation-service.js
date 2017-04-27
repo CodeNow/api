@@ -186,52 +186,6 @@ describe('AutoIsolationService', () => {
     })
   })
 
-  describe('_fetchIsolationInstanceModel', () => {
-    const depInstance = {
-      _id: objectId('007f191e810c19729de860ef')
-    }
-    beforeEach((done) => {
-      sinon.stub(Instance, 'findInstanceById').resolves(depInstance)
-      done()
-    })
-    afterEach((done) => {
-      Instance.findInstanceById.restore()
-      done()
-    })
-    describe('errors', () => {
-      it('should resolve null if findInstance couldn\'t find the instance', () => {
-        const error = new Instance.NotFoundError('Some error')
-        Instance.findInstanceById.rejects(error)
-        return AutoIsolationService._fetchIsolationInstanceModel(depInstance._id)
-          .then(instanceValue => {
-            expect(instanceValue).to.be.null()
-          })
-      })
-      it('should fail if findInstance failed for some other reason', (done) => {
-        const error = new Error('Some error')
-        Instance.findInstanceById.rejects(error)
-        AutoIsolationService._fetchIsolationInstanceModel(depInstance._id)
-          .asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.equal(error.message)
-            done()
-          })
-      })
-    })
-    describe('success', () => {
-      it('should pass without failure', () => {
-        return AutoIsolationService._fetchIsolationInstanceModel(depInstance._id)
-      })
-      it('should resolve with an instance model that contains just the dep', () => {
-        return AutoIsolationService._fetchIsolationInstanceModel(depInstance._id)
-          .then(function (instanceModel) {
-            sinon.assert.calledOnce(Instance.findInstanceById)
-            sinon.assert.calledWith(Instance.findInstanceById, depInstance._id)
-            expect(instanceModel).to.equal(depInstance)
-          })
-      })
-    })
-  })
   describe('fetchDependentInstances', () => {
     let mockAutoIsolationConfig = {
       instance,
@@ -247,11 +201,11 @@ describe('AutoIsolationService', () => {
       _id: objectId('007f191e810c19729de860ef')
     }
     beforeEach((done) => {
-      sinon.stub(AutoIsolationService, '_fetchIsolationInstanceModel').resolves(depInstance)
+      sinon.stub(Instance, 'findInstanceById').resolves(depInstance)
       done()
     })
     afterEach((done) => {
-      AutoIsolationService._fetchIsolationInstanceModel.restore()
+      Instance.findInstanceById.restore()
       done()
     })
 
@@ -262,13 +216,13 @@ describe('AutoIsolationService', () => {
       it('should call _fetchIsolationInstanceModel for each dep', () => {
         return AutoIsolationService.fetchDependentInstances(mainInstance, mockAutoIsolationConfig)
           .then(() => {
-            sinon.assert.calledTwice(AutoIsolationService._fetchIsolationInstanceModel)
+            sinon.assert.calledTwice(Instance.findInstanceById)
             sinon.assert.calledWith(
-              AutoIsolationService._fetchIsolationInstanceModel,
+              Instance.findInstanceById,
               requestedDependencies[0].instance
             )
             sinon.assert.calledWith(
-              AutoIsolationService._fetchIsolationInstanceModel,
+              Instance.findInstanceById,
               requestedDependencies[1].instance
             )
           })
@@ -277,12 +231,12 @@ describe('AutoIsolationService', () => {
         mockAutoIsolationConfig.requestedDependencies.push({})
         return AutoIsolationService.fetchDependentInstances(mainInstance, mockAutoIsolationConfig)
           .then(instances => {
-            sinon.assert.calledTwice(AutoIsolationService._fetchIsolationInstanceModel)
+            sinon.assert.calledTwice(Instance.findInstanceById)
             expect(instances.length).to.equal(2)
           })
       })
       it('should filter out a dep that fails to be found', () => {
-        AutoIsolationService._fetchIsolationInstanceModel.onCall(0).resolves(null) //
+        Instance.findInstanceById.onCall(0).resolves(null) //
         return AutoIsolationService.fetchDependentInstances(mainInstance, mockAutoIsolationConfig)
           .then(instances => {
             expect(instances.length).to.equal(1)
