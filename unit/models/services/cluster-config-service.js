@@ -912,6 +912,7 @@ describe('Cluster Config Service Unit Tests', function () {
             isTesting,
             isTestReporter,
             isolated: buildOpts.isolated,
+            isIsolationGroupMaster: false,
             shouldNotAutofork: false,
             masterPod: false,
             ipWhitelist: {
@@ -963,6 +964,7 @@ describe('Cluster Config Service Unit Tests', function () {
             isTestReporter,
             masterPod: true,
             isolated: undefined,
+            isIsolationGroupMaster: false,
             ipWhitelist: {
               enabled: false
             }
