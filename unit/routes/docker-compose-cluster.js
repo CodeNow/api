@@ -14,6 +14,8 @@ const joi = require('utils/joi')
 const rabbitMQ = require('models/rabbitmq')
 const postRoute = require('routes/docker-compose-cluster').postRoute
 const deleteRoute = require('routes/docker-compose-cluster').deleteRoute
+const redeployRoute = require('routes/docker-compose-cluster').redeployRoute
+const Instance = require('models/mongo/instance')
 
 const lab = exports.lab = Lab.script()
 const describe = lab.describe
@@ -187,6 +189,38 @@ describe('/docker-compose-cluster', function () {
             done()
           })
       })
+    })
+  })
+
+  describe('redeploy', () => {
+    let reqMock
+    let findInstanceStub
+    let killIsolationJobStub
+    beforeEach((done) => {
+      reqMock = {
+        body: {
+          instanceId: 'aaaa',
+        }
+      }
+      findInstanceStub = sinon.stub(Instance, 'findOneAsync').resolves({isolated: 'bbbb'})
+      killIsolationJobStub = sinon.stub(rabbitMQ, 'killIsolation').resolves({})
+      done()
+    })
+    afterEach((done) => {
+      findInstanceStub.restore()
+      killIsolationJobStub.restore()
+      done()
+    })
+
+    it('should call kill isolation with the isolation id', (done) => {
+      redeployRoute(reqMock, resMock, nextStub)
+        .then(() => {
+          sinon.assert.calledOnce(findInstanceStub)
+          sinon.assert.calledWith(findInstanceStub, { _id: 'aaaa' })
+          sinon.assert.calledOnce(killIsolationJobStub)
+          sinon.assert.calledWith(killIsolationJobStub, { isolationId: 'bbbb', triggerRedeploy: true })
+        })
+        .asCallback(done)
     })
   })
 })
