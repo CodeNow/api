@@ -837,7 +837,7 @@ describe('Cluster Config Service Unit Tests', function () {
       return ClusterConfigService._createBuild(testSessionUser, testContextVersionId, ownerInfo)
         .then(build => {
           sinon.assert.calledOnce(BuildService.createBuild)
-          sinon.assert.calledWith(BuildService.createBuild, {
+          sinon.assert.calledWithExactly(BuildService.createBuild, {
             contextVersion: testContextVersionId,
             createdBy: {
               github: testUserGithubId
@@ -1199,14 +1199,14 @@ describe('Cluster Config Service Unit Tests', function () {
         return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, ownerInfo)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
-            sinon.assert.calledWith(ClusterConfigService._createCVAndBuildBuild,
+            sinon.assert.calledWithExactly(ClusterConfigService._createCVAndBuildBuild,
               sessionUser,
               ownerInfo,
               buildOpts,
               instanceObj.config
             )
             sinon.assert.calledOnce(InstanceService.updateInstance)
-            sinon.assert.calledWith(InstanceService.updateInstance,
+            sinon.assert.calledWithExactly(InstanceService.updateInstance,
               instanceMock, {
                 aliases: testConfig.aliases,
                 env: testConfig.env,
@@ -1217,7 +1217,7 @@ describe('Cluster Config Service Unit Tests', function () {
               sessionUser
             )
             sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
-            sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
+            sinon.assert.calledWithExactly(rabbitMQ.redeployInstanceContainer, {
               instanceId: '1',
               sessionUserGithubId: testUserGithubId
             })
@@ -1234,7 +1234,7 @@ describe('Cluster Config Service Unit Tests', function () {
         return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, ownerInfo)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               ClusterConfigService._createCVAndBuildBuild,
               sessionUser,
               ownerInfo,
@@ -1242,7 +1242,7 @@ describe('Cluster Config Service Unit Tests', function () {
               instanceObj.config
             )
             sinon.assert.calledOnce(InstanceService.updateInstance)
-            sinon.assert.calledWith(InstanceService.updateInstance,
+            sinon.assert.calledWithExactly(InstanceService.updateInstance,
               instanceMock, {
                 aliases: testConfig.aliases,
                 env: testConfig.env,
@@ -1253,7 +1253,7 @@ describe('Cluster Config Service Unit Tests', function () {
               sessionUser
             )
             sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
-            sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
+            sinon.assert.calledWithExactly(rabbitMQ.redeployInstanceContainer, {
               instanceId: '1',
               sessionUserGithubId: testUserGithubId
             })
@@ -1270,7 +1270,7 @@ describe('Cluster Config Service Unit Tests', function () {
         return ClusterConfigService._updateInstanceWithConfigs(sessionUser, instanceObj, buildOpts, ownerInfo)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._createCVAndBuildBuild)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               ClusterConfigService._createCVAndBuildBuild,
               sessionUser,
               ownerInfo,
@@ -1278,7 +1278,7 @@ describe('Cluster Config Service Unit Tests', function () {
               instanceObj.config
             )
             sinon.assert.calledOnce(InstanceService.updateInstance)
-            sinon.assert.calledWith(InstanceService.updateInstance,
+            sinon.assert.calledWithExactly(InstanceService.updateInstance,
               instanceMock, {
                 aliases: testConfig.aliases,
                 env: testConfig.env,
@@ -1289,7 +1289,7 @@ describe('Cluster Config Service Unit Tests', function () {
               sessionUser
             )
             sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
-            sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
+            sinon.assert.calledWithExactly(rabbitMQ.redeployInstanceContainer, {
               instanceId: '1',
               sessionUserGithubId: testUserGithubId
             })
@@ -1307,7 +1307,7 @@ describe('Cluster Config Service Unit Tests', function () {
           .then(() => {
             sinon.assert.notCalled(ClusterConfigService._createCVAndBuildBuild)
             sinon.assert.calledOnce(InstanceService.updateInstance)
-            sinon.assert.calledWith(InstanceService.updateInstance,
+            sinon.assert.calledWithExactly(InstanceService.updateInstance,
               instanceMock, {
                 aliases: testConfig.aliases,
                 env: testConfig.env,
@@ -1317,7 +1317,7 @@ describe('Cluster Config Service Unit Tests', function () {
               sessionUser
             )
             sinon.assert.calledOnce(rabbitMQ.redeployInstanceContainer)
-            sinon.assert.calledWith(rabbitMQ.redeployInstanceContainer, {
+            sinon.assert.calledWithExactly(rabbitMQ.redeployInstanceContainer, {
               instanceId: '1',
               sessionUserGithubId: testUserGithubId
             })

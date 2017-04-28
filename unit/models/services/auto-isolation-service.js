@@ -217,11 +217,11 @@ describe('AutoIsolationService', () => {
         return AutoIsolationService.fetchDependentInstances(mainInstance, mockAutoIsolationConfig)
           .then(() => {
             sinon.assert.calledTwice(Instance.findInstanceById)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               Instance.findInstanceById,
               requestedDependencies[0].instance
             )
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               Instance.findInstanceById,
               requestedDependencies[1].instance
             )
