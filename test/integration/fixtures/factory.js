@@ -229,7 +229,8 @@ var factory = module.exports = {
       advanced: true,
       appCodeVersions: opts.appCodeVersions || [],
       __v: 0,
-      dockerHost: 'http://127.0.0.1:4242'
+      dockerHost: 'http://127.0.0.1:4242',
+      buildDockerfilePath: opts.buildDockerfilePath
     }
     if (buildExtend) {
       cv.build = assign({
@@ -308,7 +309,8 @@ var factory = module.exports = {
       },
       parent: props.parent || 'sdf',
       shortHash: shortHash.slice(0, 6),
-      shouldNotAutofork: props.shouldNotAutofork
+      shouldNotAutofork: props.shouldNotAutofork,
+      shortName: props.parent || name
     }
   },
   getNextId: function () {
@@ -346,6 +348,7 @@ var factory = module.exports = {
       build: {
         dockerTag: 'adsgasdfgasdf'
       },
+      buildDockerfilePath: opts.buildDockerfilePath,
       appCodeVersions: [
         {
           additionalRepo: false,

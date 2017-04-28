@@ -109,7 +109,8 @@ describe('Instance Services Integration Tests', function () {
           masterPod: true,
           owner: {
             github: ctx.ownerId
-          }
+          },
+          shortName: 'aseda'
         }
         InstanceService.createInstance(body, ctx.mockSessionUser)
           .then(function (instance) {
