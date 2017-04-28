@@ -902,7 +902,7 @@ describe('Cluster Config Service Unit Tests', function () {
       return ClusterConfigService._createInstance(testSessionUser, composeData, testParentBuildId, testingOpts, buildOpts)
         .then(instance => {
           sinon.assert.calledOnce(InstanceService.createInstance)
-          sinon.assert.calledWith(InstanceService.createInstance, {
+          sinon.assert.calledWithExactly(InstanceService.createInstance, {
             shortName: composeData.metadata.name,
             build: testParentBuildId,
             aliases: testParentComposeData.aliases,
@@ -918,7 +918,7 @@ describe('Cluster Config Service Unit Tests', function () {
             ipWhitelist: {
               enabled: false
             }
-          })
+          }, testSessionUser)
 
           expect(instance).to.equal(testInstance)
         })
@@ -952,7 +952,7 @@ describe('Cluster Config Service Unit Tests', function () {
       return ClusterConfigService._createInstance(testSessionUser, composeData, testParentBuildId, testingOpts, buildOpts)
         .then(instance => {
           sinon.assert.calledOnce(InstanceService.createInstance)
-          sinon.assert.calledWith(InstanceService.createInstance, {
+          sinon.assert.calledWithExactly(InstanceService.createInstance, {
             build: testParentBuildId,
             shortName: composeData.metadata.name,
             env: testParentComposeData.env,
@@ -968,7 +968,7 @@ describe('Cluster Config Service Unit Tests', function () {
             ipWhitelist: {
               enabled: false
             }
-          })
+          }, testSessionUser)
 
           expect(instance).to.equal(testInstance)
         })
@@ -2105,7 +2105,7 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
             sinon.assert.calledOnce(AutoIsolationService.fetchAutoIsolationDependentInstances)
-            sinon.assert.calledWith(AutoIsolationService.fetchAutoIsolationDependentInstances, mainInstance)
+            sinon.assert.calledWithExactly(AutoIsolationService.fetchAutoIsolationDependentInstances, mainInstance)
           })
           .asCallback(done)
       })
@@ -2113,7 +2113,7 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService._mergeConfigsIntoInstances)
-            sinon.assert.calledWith(ClusterConfigService._mergeConfigsIntoInstances, octobearInfo, instanceObjs)
+            sinon.assert.calledWithExactly(ClusterConfigService._mergeConfigsIntoInstances, octobearInfo, instanceObjs)
           })
           .asCallback(done)
       })
@@ -2140,7 +2140,7 @@ describe('Cluster Config Service Unit Tests', function () {
         return ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService.createOrUpdateIsolationConfig)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               ClusterConfigService.createOrUpdateIsolationConfig,
               ownerInfo,
               instanceObjs,
@@ -2153,7 +2153,7 @@ describe('Cluster Config Service Unit Tests', function () {
         return ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
             sinon.assert.calledOnce(rabbitMQ.autoDeployInstance)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               rabbitMQ.autoDeployInstance, {
                 instanceId: mainInstance._id.toString(),
                 pushInfo: githubPushInfo
