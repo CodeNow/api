@@ -103,7 +103,7 @@ describe('Input Cluster Config Model Tests', () => {
         return InputClusterConfig.createOrUpdateConfig(autoIsolationConfig, clusterOpts, masterConfig)
           .then(() => {
             sinon.assert.calledOnce(InputClusterConfig.findActiveByAutoIsolationId)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               InputClusterConfig.findActiveByAutoIsolationId,
               autoIsolationConfig._id
             )
@@ -113,7 +113,7 @@ describe('Input Cluster Config Model Tests', () => {
         return InputClusterConfig.createOrUpdateConfig(autoIsolationConfig, clusterOpts, masterConfig)
           .then(() => {
             sinon.assert.calledOnce(iccModel.set)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               iccModel.set,
               {
                 autoIsolationConfigId: autoIsolationConfig._id,
@@ -138,7 +138,7 @@ describe('Input Cluster Config Model Tests', () => {
         return InputClusterConfig.createOrUpdateConfig(autoIsolationConfig, clusterOpts, masterConfig)
           .then(() => {
             sinon.assert.calledOnce(InputClusterConfig.createAsync)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               InputClusterConfig.createAsync,
               {
                 autoIsolationConfigId: autoIsolationConfig._id,
@@ -157,7 +157,7 @@ describe('Input Cluster Config Model Tests', () => {
         return InputClusterConfig.createOrUpdateConfig(autoIsolationConfig, clusterOpts, superMasterConfig)
           .then(() => {
             sinon.assert.calledOnce(InputClusterConfig.createAsync)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               InputClusterConfig.createAsync,
               {
                 autoIsolationConfigId: autoIsolationConfig._id,
