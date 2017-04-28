@@ -915,14 +915,12 @@ describe('Cluster Config Service Unit Tests', function () {
       }
       const composeData = {
         metadata: {
-          name: 'a1'
+          name: 'a1',
+          isMain: true
         },
         instance: testParentComposeData,
         build: {
           dockerFilePath: 'Nathan219/hello'
-        },
-        metadata: {
-          isMain: true
         }
       }
       const testInstance = 'build'
@@ -1172,7 +1170,8 @@ describe('Cluster Config Service Unit Tests', function () {
         name: 'test',
         getRepoName: sinon.stub().returns('org/repoName'),
         contextVersion: {
-          context: 'contextId1234'
+          context: 'contextId1234',
+          buildDockerfilePath: 'path/to/Dockerfile',
         }
       }
       instanceObj = {
@@ -1188,7 +1187,6 @@ describe('Cluster Config Service Unit Tests', function () {
         }
       }
       mainACVMock = {
-        buildDockerfilePath: 'path/to/Dockerfile',
         branch: 'mainBranchName',
         commit: 'sha1234'
       }
