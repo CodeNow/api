@@ -4200,6 +4200,11 @@
       "resolved": "https://registry.npmjs.org/lodash.defaults/-/lodash.defaults-3.1.2.tgz",
       "dev": true
     },
+    "lodash.difference": {
+      "version": "4.5.0",
+      "from": "lodash.difference@latest",
+      "resolved": "https://registry.npmjs.org/lodash.difference/-/lodash.difference-4.5.0.tgz"
+    },
     "lodash.isarguments": {
       "version": "3.1.0",
       "from": "lodash.isarguments@>=3.0.0 <4.0.0",
