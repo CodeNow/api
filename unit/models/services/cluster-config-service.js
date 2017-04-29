@@ -343,8 +343,12 @@ describe('Cluster Config Service Unit Tests', function () {
       clusterName: composeData.repositoryName,
       isTesting,
       testReporters: [],
-      filePath,
-      fileSha
+      files: [
+        {
+          path: filePath,
+          sha: fileSha
+        }
+      ]
     }
     const orgName = 'Runnable'
     const repoName = 'api'
