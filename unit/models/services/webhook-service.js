@@ -386,7 +386,7 @@ describe('Webhook Service Unit Tests', function () {
           .then(function (instances) {
             expect(instances).to.equal(forkedInstances)
             sinon.assert.calledOnce(IsolationService.autoIsolate)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               IsolationService.autoIsolate,
               forkedInstances,
               githubPushInfo
@@ -403,12 +403,12 @@ describe('Webhook Service Unit Tests', function () {
           .then(function (instances) {
             expect(instances).to.equal(forkedInstances)
             sinon.assert.calledTwice(ClusterConfigService.checkIfComposeFileHasChanged)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               ClusterConfigService.checkIfComposeFileHasChanged,
               forkedInstances[0],
               githubPushInfo
             )
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               ClusterConfigService.checkIfComposeFileHasChanged,
               forkedInstances[1],
               githubPushInfo
@@ -425,14 +425,14 @@ describe('Webhook Service Unit Tests', function () {
           .then(function (instances) {
             expect(instances).to.equal(forkedInstances)
             sinon.assert.calledTwice(rabbitMQ.updateCluster)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               rabbitMQ.updateCluster,
               {
                 instanceId: forkedInstances[0]._id.toString(),
                 pushInfo: githubPushInfo
               }
             )
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               rabbitMQ.updateCluster,
               {
                 instanceId: forkedInstances[1]._id.toString(),
