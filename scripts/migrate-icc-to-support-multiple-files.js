@@ -14,24 +14,6 @@ const dryRun = !process.env.ACTUALLY_RUN
 
 console.log('dryRun?', !!dryRun)
 
-function updateShortName(i, shortName) {
-  if (!i || !shortName) {
-    console.log('Nothing to update, data not found', i)
-    return
-  }
-  const clusterName = keypather.get(i, '_doc.inputClusterConfig.clusterName')
-  if (dryRun) {
-    console.log('Skipped instance ' + i.name, shortName, i.masterPod, !!clusterName, !!i.isolated, i.isIsolationGroupMaster)
-    return
-  }
-  const id = i._id.toString()
-  return Instances.findByIdAndUpdateAsync(id, {
-    $set: {
-      shortName
-    }
-  })
-}
-
 InputClusterConfig.findAsync({})
   .map((cluster) => {
     console.log('Processing cluster: ' + cluster.name)
