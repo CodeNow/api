@@ -11,7 +11,7 @@ var isString = require('101/is-string')
 var isObject = require('101/is-object')
 var keypather = require('keypather')()
 var exists = require('101/exists')
-var NaviEntry = require('navi-entry')
+var NaviEntry = require('@runnable/navi-entry')
 NaviEntry.setRedisClient(require('models/redis'))
 
 var expects = module.exports = function (keypath) {
