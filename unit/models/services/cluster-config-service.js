@@ -964,7 +964,6 @@ describe('Cluster Config Service Unit Tests', function () {
             isTestReporter,
             masterPod: true,
             isolated: undefined,
-            isIsolationGroupMaster: false,
             ipWhitelist: {
               enabled: false
             }
