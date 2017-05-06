@@ -94,7 +94,7 @@ describe('common stream: ' + moduleName, function () {
         done()
       })
       it('should parse the json if asked', function (done) {
-        readableStream.on('end', function () {
+        writeStream.on('end', function () {
           expect(writeStream.jsonBuffer).to.equal([
             {type: 'log', content: 'RUN echo hello'},
             {type: 'log', content: 'RUN echo world'}
@@ -109,7 +109,7 @@ describe('common stream: ' + moduleName, function () {
         })
       })
       it('should not parse the json by default', function (done) {
-        readableStream.on('end', function () {
+        writeStream.on('end', function () {
           expect(writeStream.jsonBuffer).to.equal([
             messageHello,
             messageWorld
