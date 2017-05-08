@@ -1645,8 +1645,8 @@
     },
     "docker-stream-cleanser": {
       "version": "1.0.1",
-      "from": "docker-stream-cleanser@>=1.0.1 <2.0.0",
-      "resolved": "https://registry.npmjs.org/docker-stream-cleanser/-/docker-stream-cleanser-1.0.1.tgz",
+      "from": "git://github.com/Nathan219/docker-stream-cleanser.git#version_for_under_6",
+      "resolved": "git://github.com/Nathan219/docker-stream-cleanser.git#78134dbc3376a605a4cf87a323016d576bd91a64",
       "dependencies": {
         "async": {
           "version": "2.4.0",
