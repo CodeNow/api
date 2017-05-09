@@ -266,8 +266,6 @@ describe('Isolation Services Model', function () {
             InstanceForkService.forkRepoInstance,
             mockInstance,
             {
-              name: 'deadbeef--instanceName',
-              env: [ 'foo=bar' ],
               isolated: mockIsolationId,
               isIsolationGroupMaster: false,
               repo: 'someOrg/someRepo',
@@ -435,7 +433,6 @@ describe('Isolation Services Model', function () {
           sinon.assert.calledWithExactly(
             InstanceForkService.forkNonRepoInstance,
             mockInstance,
-            mockMasterName,
             mockIsolationId,
             mockSessionUser
           )
