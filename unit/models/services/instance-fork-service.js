@@ -68,7 +68,8 @@ describe('InstanceForkService', function () {
         commit: 'mockCommit',
         user: { id: 'mockGithubId' },
         isolated: 'mockIsolationId',
-        isIsolationGroupMaster: false
+        isIsolationGroupMaster: false,
+        masterInstanceShortHash: 'masterInstanceShortHash'
       }
       sinon.stub(BuildService, 'createAndBuildContextVersion').resolves({
         contextVersion: mockNewContextVersion,
@@ -168,7 +169,7 @@ describe('InstanceForkService', function () {
               aliases: mockAliases,
               build: 'newBuildId',
               shortName: 'web',
-              name: 'mockInstanceShortHash--' + mockInstance.name,
+              name: 'masterInstanceShortHash--' + mockInstance.name,
               env: ['env'],
               owner: mockInstance.owner,
               masterPod: false,
@@ -530,8 +531,16 @@ describe('InstanceForkService', function () {
           })
         })
 
-        it('should require an isolation ID', function (done) {
+        it('should require a master instance name', function (done) {
           InstanceForkService.forkNonRepoInstance(mockInstance).asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.match(/masterinstanceshorthash.+required/i)
+            done()
+          })
+        })
+
+        it('should require an isolation ID', function (done) {
+          InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName).asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.match(/isolation.+required/i)
             done()
@@ -539,16 +548,17 @@ describe('InstanceForkService', function () {
         })
 
         it('should require a sessionUser', function (done) {
-          InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId).asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.match(/sessionuser.+required/i)
-            done()
-          })
+          InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/sessionuser.+required/i)
+              done()
+            })
         })
 
         it('should require the github ID on the sessionUser', function (done) {
           delete mockSessionUser.accounts.github
-          InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+          InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
             .asCallback(function (err) {
               expect(err).to.exist()
               expect(err.message).to.match(/github\.id.+required/i)
@@ -560,7 +570,7 @@ describe('InstanceForkService', function () {
       it('should reject with any newNonRepoContextVersion error', function (done) {
         var error = new Error('robot')
         InstanceForkService._createNewNonRepoContextVersion.rejects(error)
-        InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err).to.equal(error)
@@ -571,7 +581,7 @@ describe('InstanceForkService', function () {
       it('should reject with any createBuild error', function (done) {
         var error = new Error('robot')
         BuildService.createBuild.rejects(error)
-        InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -582,7 +592,7 @@ describe('InstanceForkService', function () {
       it('should reject with any buildBuild error', function (done) {
         var error = new Error('robot')
         BuildService.buildBuild.rejects(error)
-        InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -593,7 +603,7 @@ describe('InstanceForkService', function () {
       it('should reject with any createInstance error', function (done) {
         var error = new Error('robot')
         InstanceService.createInstance.rejects(error)
-        InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -604,7 +614,7 @@ describe('InstanceForkService', function () {
       it('should reject with any find instance error', function (done) {
         var error = new Error('robot')
         Instance.findByIdAsync.rejects(error)
-        InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+        InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err).to.equal(error)
@@ -614,7 +624,7 @@ describe('InstanceForkService', function () {
     })
 
     it('should create a new context version', function (done) {
-      InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(InstanceForkService._createNewNonRepoContextVersion)
@@ -629,7 +639,7 @@ describe('InstanceForkService', function () {
     })
 
     it('should create a new build with the new context version', function (done) {
-      InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(BuildService.createBuild)
@@ -646,7 +656,7 @@ describe('InstanceForkService', function () {
     })
 
     it('should build the new build', function (done) {
-      InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(BuildService.buildBuild)
@@ -661,7 +671,7 @@ describe('InstanceForkService', function () {
     })
 
     it('should create the new instance w/ isolation information', function (done) {
-      InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(InstanceService.createInstance)
@@ -671,7 +681,7 @@ describe('InstanceForkService', function () {
               aliases: mockAliases,
               autoForked: true,
               build: mockNewBuild._id,
-              name: mockInstance.shortHash + '--' + mockInstance.name,
+              name: mockMasterName + '--' + mockInstance.name,
               env: mockInstance.env,
               owner: mockInstance.owner,
               masterPod: false,
@@ -689,7 +699,7 @@ describe('InstanceForkService', function () {
     })
 
     it('should fetch the instance model that was created', function (done) {
-      InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.calledOnce(Instance.findByIdAsync)
@@ -702,7 +712,7 @@ describe('InstanceForkService', function () {
     })
 
     it('should do all the things in the right order', function (done) {
-      InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err) {
           expect(err).to.not.exist()
           sinon.assert.callOrder(
@@ -717,7 +727,7 @@ describe('InstanceForkService', function () {
     })
 
     it('should return the new updated instance model', function (done) {
-      InstanceForkService.forkNonRepoInstance(mockInstance, mockIsolationId, mockSessionUser)
+      InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId, mockSessionUser)
         .asCallback(function (err, newInstance) {
           expect(err).to.not.exist()
           expect(newInstance).to.equal(mockNewInstanceModel)
@@ -1026,7 +1036,8 @@ describe('InstanceForkService', function () {
       opts = {
         buildId: 'buildId',
         branch: 'branch/branch',
-        isolated: 'isolated'
+        isolated: 'isolated',
+        masterInstanceShortHash: 'masterInstanceShortHash'
       }
       body = InstanceForkService.createForkedInstanceBody(master, opts)
       expect(body).to.equal({
@@ -1038,7 +1049,7 @@ describe('InstanceForkService', function () {
         isTesting: true,
         isTestReporter: false,
         masterPod: false,
-        name: master.shortHash + '--' + master.name,
+        name: opts.masterInstanceShortHash + '--' + master.name,
         owner: master.owner,
         parent: master.shortHash,
         ports: master.ports,
