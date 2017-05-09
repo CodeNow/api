@@ -1000,4 +1000,79 @@ describe('InstanceForkService', function () {
         .asCallback(done)
     })
   })
+  describe('#createForkedInstanceBody', function () {
+    let master
+    let body
+    let opts
+
+    beforeEach(function (done) {
+      master = {
+        _id: new ObjectId(),
+        aliases: ['aliases'],
+        env: ['x=1'],
+        ports: [8080],
+        isTesting: true,
+        isTestReporter: false,
+        shortName: 'web',
+        name: 'inst1',
+        owner: { github: { id: 1 } },
+        shortHash: 'shortHash',
+        containerStartCommand: 'containerStartCommand'
+      }
+      done()
+    })
+
+    it('should create a body with a name based on it\'s isolation', function (done) {
+      opts = {
+        buildId: 'buildId',
+        branch: 'branch/branch',
+        isolated: 'isolated'
+      }
+      body = InstanceForkService.createForkedInstanceBody(master, opts)
+      expect(body).to.equal({
+        aliases: master.aliases,
+        build: opts.buildId,
+        env: master.env,
+        isolated: 'isolated',
+        isIsolationGroupMaster: false,
+        isTesting: true,
+        isTestReporter: false,
+        masterPod: false,
+        name: master.shortHash + '--' + master.name,
+        owner: master.owner,
+        parent: master.shortHash,
+        ports: master.ports,
+        shortName: master.shortName,
+        containerStartCommand: 'containerStartCommand'
+      })
+      expect(body.autoForked).to.be.undefined()
+      done()
+    })
+
+    it('should create a body with a name based on it\'s branch', function (done) {
+      opts = {
+        autoForked: true,
+        buildId: 'buildId',
+        branch: 'branch/branch'
+      }
+      body = InstanceForkService.createForkedInstanceBody(master, opts)
+      expect(body).to.equal({
+        aliases: master.aliases,
+        autoForked: true,
+        build: opts.buildId,
+        env: master.env,
+        isTesting: true,
+        isTestReporter: false,
+        masterPod: false,
+        name: 'branch-branch-' + master.name,
+        owner: master.owner,
+        parent: master.shortHash,
+        ports: master.ports,
+        shortName: master.shortName,
+        containerStartCommand: 'containerStartCommand'
+      })
+      expect(body.isIsolationGroupMaster).to.be.undefined()
+      done()
+    })
+  })
 })
