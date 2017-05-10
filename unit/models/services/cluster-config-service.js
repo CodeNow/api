@@ -1700,9 +1700,9 @@ describe('Cluster Config Service Unit Tests', function () {
           isMain: false
         },
         build: {
-          context: './',
-          dockerfile: '/Dockerfile.server'
-        }
+          dockerFilePath: '/Dockerfile.server'
+        },
+        code: {}
       },
       instance: depRepoInstance
     }
