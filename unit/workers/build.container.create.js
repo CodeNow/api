@@ -81,8 +81,8 @@ describe('ContainerImageBuilderCreate unit test', function () {
     const organization = {
       id: 111,
       githubId: 8888,
-      private_registry_url: 'dockerhub.com',
-      private_registry_username: 'runnabot'
+      privateRegistryUrl: 'dockerhub.com',
+      privateRegistryUsername: 'runnabot'
     }
     beforeEach(function (done) {
       sinon.stub(User, 'findByGithubIdAsync').resolves(mockUser)
@@ -294,8 +294,8 @@ describe('ContainerImageBuilderCreate unit test', function () {
           expect(createOpts.organization.id).to.equal(organization.id)
           expect(createOpts.organization.githubUsername).to.equal(validJob.ownerUsername)
           expect(createOpts.organization.githubId).to.equal(organization.githubId)
-          expect(createOpts.organization.private_registry_url).to.equal(organization.private_registry_url)
-          expect(createOpts.organization.private_registry_username).to.equal(organization.private_registry_username)
+          expect(createOpts.organization.privateRegistryUrl).to.equal(organization.privateRegistryUrl)
+          expect(createOpts.organization.privateRegistryUsername).to.equal(organization.privateRegistryUsername)
           done()
         })
 
