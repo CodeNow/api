@@ -10,7 +10,7 @@ var after = lab.after
 var afterEach = lab.afterEach
 var expect = require('code').expect
 var sinon = require('sinon')
-var optimus = require('optimus/client')
+var optimus = require('@runnable/optimus/client')
 
 var api = require('../fixtures/api-control')
 var multi = require('../fixtures/multi-factory')
