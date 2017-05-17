@@ -170,8 +170,6 @@
       "5.5-apache",
       "5.4.39-apache",
       "5.4-apache",
-      "5.3.29-apache",
-      "5.3-apache",
       "5-apache"
     ],
     "defaultVersion": "7.0-apache",
