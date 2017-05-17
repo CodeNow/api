@@ -22,8 +22,7 @@
       "node index.js"
     ],
     "preEnvMarker": "process.env",
-    "postEnvMarker": "",
-    "dependencyOnly": false
+    "postEnvMarker": ""
   },
   "python": {
     "name": "Python",
@@ -47,8 +46,7 @@
       "python manage.py runserver -b 0.0.0.0"
     ],
     "preEnvMarker": "os.environ['",
-    "postEnvMarker": "']",
-    "dependencyOnly": false
+    "postEnvMarker": "']"
   },
   "ruby": {
     "name": "Ruby",
@@ -93,8 +91,7 @@
       "rails server -b 0.0.0.0"
     ],
     "preEnvMarker": "os.environ['",
-    "postEnvMarker": "']",
-    "dependencyOnly": false
+    "postEnvMarker": "']"
   },
   "rails": {
     "name": "Rails",
@@ -132,8 +129,7 @@
       "rails server -b 0.0.0.0"
     ],
     "preEnvMarker": "<%= ENV[\"",
-    "postEnvMarker": "]%>\"",
-    "dependencyOnly": false
+    "postEnvMarker": "]%>\""
   },
   "go": {
     "name": "Go",
@@ -155,8 +151,7 @@
       "./main"
     ],
     "preEnvMarker": "os.Getenv('",
-    "postEnvMarker": "')",
-    "dependencyOnly": false
+    "postEnvMarker": "')"
   },
   "php": {
     "name": "PHP",
@@ -180,7 +175,42 @@
       "apache2-foreground"
     ],
     "preEnvMarker": "",
-    "postEnvMarker": "",
-    "dependencyOnly": false
+    "postEnvMarker": ""
+  },
+  "java": {
+    "name": "Java",
+    "versions": [
+      "openjdk-6",
+      "openjdk-6-jre",
+      "openjdk-7",
+      "openjdk-7-jre",
+      "openjdk-8",
+      "openjdk-8-jre",
+      "openjdk-9",
+      "openjdk-9-jre"
+    ],
+    "defaultVersion": "openjdk-7",
+    "ports": "",
+    "startCommand": ["java","Main"],
+    "preEnvMarker": "",
+    "postEnvMarker": ""
+  },
+  "wordpress": {
+    "name": "Wordpress",
+    "versions": [
+      "4.6",
+      "4.5",
+      "4.4",
+      "4.3",
+      "4.2",
+      "4.1",
+      "4.0",
+      "3.9"
+    ],
+    "defaultVersion": "4.6",
+    "ports": "80",
+    "startCommand": ["gosu mysql mysqld && apache2-foreground"],
+    "preEnvMarker": "",
+    "postEnvMarker": ""
   }
 }

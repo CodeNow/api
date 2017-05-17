@@ -1,7 +1,9 @@
-FROM java:<java-version>
+FROM runnable/wordpress:<wordpress-version>
+
+RUN /init.sh
 
 <before-main-repo>
-#default run:javac Main.java
+#default dst:/var/www/html/
 <after-main-repo>
 
 # Open up ports on the server

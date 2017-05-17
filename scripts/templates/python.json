@@ -3,7 +3,8 @@
   "ports": [8000],
   "generalCommands": [],
   "defaultMainCommands": [
-    "pip install -r 'requirements.txt'"
+    "pip install -r 'requirements.txt'",
+    "pip install mysqlclient psycopg2 django"
   ],
   "defaultWorkDir": "home",
   "cmd": "",
