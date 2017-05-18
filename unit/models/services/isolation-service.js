@@ -267,10 +267,10 @@ describe('Isolation Services Model', function () {
             mockInstance,
             {
               isolated: mockIsolationId,
-              isIsolationGroupMaster: false,
               repo: 'someOrg/someRepo',
               branch: 'someBranch',
               commit: 'beefisgood',
+              masterInstanceShortHash: mockMasterShortHash,
               user: { id: mockSessionUser.accounts.github.id }
             },
             mockSessionUser
