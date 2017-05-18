@@ -742,7 +742,7 @@ describe('BuildService', function () {
         _id: 21
       }
       sinon.stub(Context, 'findOne').yieldsAsync(null, mockContext)
-      sinon.stub(ContextVersionService, 'handleVersionDeepCopy').yieldsAsync(null, mockContextVersion)
+      sinon.stub(ContextVersionService, 'handleVersionDeepCopy').resolves(mockContextVersion)
       sinon.stub(ContextVersion, 'modifyAppCodeVersionByRepo').yieldsAsync(null, mockContextVersion)
       done()
     })
@@ -847,7 +847,7 @@ describe('BuildService', function () {
       describe('in ContextVersionService.handleVersionDeepCopy', function () {
         beforeEach(function (done) {
           error = new Error('robot')
-          ContextVersionService.handleVersionDeepCopy.yieldsAsync(error)
+          ContextVersionService.handleVersionDeepCopy.rejects(error)
           done()
         })
 
@@ -913,8 +913,7 @@ describe('BuildService', function () {
           mockContext, // returned from `findOne`
           contextVersion, // from the Instance
           { accounts: { github: { id: 7 } } }, // from pushInfo (like sessionUser)
-          { owner: { github: 14 } }, // from mockContext.owner.github (owner object)
-          sinon.match.func
+          { owner: { github: 14 } } // from mockContext.owner.github (owner object)
         )
         sinon.assert.calledOnce(ContextVersion.modifyAppCodeVersionByRepo)
         sinon.assert.calledWithExactly(
