@@ -112,7 +112,7 @@ function main () {
     })
   ])
     .then(() => {
-      return User.findOneAsync({ 'accounts.github.username': 'HelloRunnable' }, null)
+      return User.findOneAsync({ 'accounts.github.id': process.env.HELLO_RUNNABLE_GITHUB_ID }, null)
     })
     .then(user => {
       createdBy = { github: user.accounts.github.id }
@@ -248,6 +248,7 @@ function createOrUpdateInstance (user, data, build) {
       return InstanceService.createInstance({
         build: build._id.toString(),
         name: name,
+        shortName: name,
         masterPod: true,
         owner: createdBy
       }, user)
