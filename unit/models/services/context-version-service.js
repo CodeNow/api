@@ -81,28 +81,31 @@ describe('ContextVersionService', function () {
   })
   describe('handleVersionDeepCopy', function () {
     beforeEach(function (done) {
-      sinon.stub(ContextVersion, 'createDeepCopy').yieldsAsync()
-      sinon.stub(InfraCodeVersionService, 'copyInfraCodeToContextVersion').returns(Promise.resolve())
-      sinon.stub(Context.prototype, 'save').yieldsAsync()
+      sinon.stub(ContextVersion, 'createDeepCopyAsync').resolves()
+      sinon.stub(InfraCodeVersionService, 'copyInfraCodeToContextVersion').resolves()
       ctx.mockContextVersion = {
         infraCodeVersion: 'pizza',
-        owner: { github: 1234 }
+        owner: { github: 1234 },
+        saveAsync: sinon.stub().resolves(),
+        set: sinon.stub()
       }
       ctx.mockContext = {
-        owner: { github: 1234 }
+        owner: { github: 1234 },
+        saveAsync: sinon.stub().resolves()
       }
       ctx.mockUser = {
         accounts: {
           github: { id: 1234 }
         }
       }
+      sinon.stub(Context.prototype, 'saveAsync').resolves(ctx.mockContext)
       done()
     })
 
     afterEach(function (done) {
       InfraCodeVersionService.copyInfraCodeToContextVersion.restore()
-      ContextVersion.createDeepCopy.restore()
-      Context.prototype.save.restore()
+      ContextVersion.createDeepCopyAsync.restore()
+      Context.prototype.saveAsync.restore()
       done()
     })
 
@@ -111,110 +114,131 @@ describe('ContextVersionService', function () {
         ctx.returnedMockedContextVersion = {
           _id: 'deadb33f',
           owner: { github: -1 },
-          // createDeepCopy sets the correct createdBy
           createdBy: { github: 1234 },
           infraCodeVersion: { _id: 'old' },
-          save: sinon.stub().yieldsAsync()
+          saveAsync: sinon.stub().resolves(),
+          set: sinon.stub()
         }
         ctx.mockContextVersion.owner.github = process.env.HELLO_RUNNABLE_GITHUB_ID
-        ContextVersion.createDeepCopy.yieldsAsync(null, ctx.returnedMockedContextVersion)
+        ContextVersion.createDeepCopyAsync.resolves(ctx.returnedMockedContextVersion)
         ctx.mockContext.owner.github = process.env.HELLO_RUNNABLE_GITHUB_ID
         done()
       })
 
-      it('should allow the body of the request to override the owner', function (done) {
-        // save's callback returns [ document, numberAffected ]
-        ctx.returnedMockedContextVersion.save.yields(null, ctx.returnedMockedContextVersion, 1)
+      it('should allow the body of the request to override the owner', function () {
         var opts = {
           owner: { github: 88 }
         }
-        ContextVersionService.handleVersionDeepCopy(
+        return ContextVersionService.handleVersionDeepCopy(
           ctx.mockContext,
           ctx.mockContextVersion,
           ctx.mockUser,
-          opts,
-          function (err, contextVersion) {
-            if (err) { return done(err) }
+          opts
+        )
+          .then(contextVersion => {
             expect(contextVersion).to.equal(ctx.returnedMockedContextVersion)
-            expect(contextVersion.owner.github).to.equal(opts.owner.github)
-            // createdBy should _not_ be overridden
-            expect(contextVersion.createdBy.github).to.not.equal(opts.owner.github)
-            expect(contextVersion.createdBy.github).to.equal(ctx.mockUser.accounts.github.id)
-            done()
+            sinon.assert.calledWith(
+              ctx.returnedMockedContextVersion.set,
+              'context',
+              ctx.mockContext._id
+            )
+            sinon.assert.calledWith(
+              ctx.returnedMockedContextVersion.set,
+              'owner',
+              { github: 88 }
+            )
           })
       })
 
-      it('should do a hello runnable copy', function (done) {
-        // save's callback returns [ document, numberAffected ]
-        ctx.returnedMockedContextVersion.save.yields(null, ctx.returnedMockedContextVersion, 1)
-        ContextVersionService.handleVersionDeepCopy(
+      it('should do a hello runnable copy', function () {
+        return ContextVersionService.handleVersionDeepCopy(
           ctx.mockContext,
           ctx.mockContextVersion,
-          ctx.mockUser,
-          function (err, contextVersion) {
-            if (err) { return done(err) }
+          ctx.mockUser
+        )
+          .then(contextVersion => {
             // the contextVersion that we receive should be the new one we 'creatd'
             expect(contextVersion).to.equal(ctx.returnedMockedContextVersion)
-            sinon.assert.calledOnce(ContextVersion.createDeepCopy)
+            sinon.assert.calledOnce(ContextVersion.createDeepCopyAsync)
             sinon.assert.calledWith(
-              ContextVersion.createDeepCopy,
+              ContextVersion.createDeepCopyAsync,
               ctx.mockUser,
-              ctx.mockContextVersion,
-              sinon.match.func)
-            sinon.assert.calledOnce(ctx.returnedMockedContextVersion.save)
-            expect(ctx.returnedMockedContextVersion.owner.github).to.equal(ctx.mockUser.accounts.github.id)
-            sinon.assert.calledOnce(Context.prototype.save)
+              ctx.mockContextVersion
+            )
+            sinon.assert.calledOnce(ctx.returnedMockedContextVersion.saveAsync)
+            sinon.assert.calledOnce(Context.prototype.saveAsync)
             sinon.assert.calledOnce(InfraCodeVersionService.copyInfraCodeToContextVersion)
             sinon.assert.calledWith(InfraCodeVersionService.copyInfraCodeToContextVersion,
               ctx.returnedMockedContextVersion,
-              ctx.mockContextVersion.infraCodeVersion._id)
-            done()
+              ctx.mockContextVersion.infraCodeVersion
+            )
           })
       })
 
       it('should propogate save contextVersion failures', function (done) {
         var error = new Error('Whoa!')
-        ctx.returnedMockedContextVersion.save.yieldsAsync(error)
-        ContextVersionService.handleVersionDeepCopy(ctx.mockContext, ctx.mockContextVersion, ctx.mockUser, function (err) {
-          expect(err).to.equal(error)
-          sinon.assert.calledOnce(ctx.returnedMockedContextVersion.save)
-          done()
-        })
+        ctx.returnedMockedContextVersion.saveAsync.rejects(error)
+        ContextVersionService.handleVersionDeepCopy(
+          ctx.mockContext,
+          ctx.mockContextVersion,
+          ctx.mockUser
+        )
+          .asCallback(function (err) {
+            expect(err).to.equal(error)
+            sinon.assert.calledOnce(ctx.returnedMockedContextVersion.saveAsync)
+            done()
+          })
       })
 
       it('should propogate contextVersion.createDeepCopy failures', function (done) {
         var error = new Error('Whoa Nelly!')
-        ContextVersion.createDeepCopy.yieldsAsync(error)
-        ContextVersionService.handleVersionDeepCopy(ctx.mockContext, ctx.mockContextVersion, ctx.mockUser, function (err) {
-          expect(err).to.equal(error)
-          sinon.assert.calledOnce(ContextVersion.createDeepCopy)
-          sinon.assert.notCalled(ctx.returnedMockedContextVersion.save)
-          done()
-        })
+        ContextVersion.createDeepCopyAsync.rejects(error)
+        ContextVersionService.handleVersionDeepCopy(
+          ctx.mockContext,
+          ctx.mockContextVersion,
+          ctx.mockUser
+          )
+          .asCallback(function (err) {
+            expect(err).to.equal(error)
+            sinon.assert.calledOnce(ContextVersion.createDeepCopyAsync)
+            sinon.assert.notCalled(ctx.returnedMockedContextVersion.saveAsync)
+            done()
+          })
       })
     })
 
     describe('a CV owned by a any user, not hellorunnable', function () {
       it('should do a regular deep copy', function (done) {
-        ContextVersionService.handleVersionDeepCopy(ctx.mockContext, ctx.mockContextVersion, ctx.mockUser, function (err) {
-          if (err) { return done(err) }
-          sinon.assert.calledOnce(ContextVersion.createDeepCopy)
-          sinon.assert.calledWith(
-            ContextVersion.createDeepCopy,
-            ctx.mockUser,
-            ctx.mockContextVersion,
-            sinon.match.func)
-          done()
-        })
+        ContextVersionService.handleVersionDeepCopy(
+          ctx.mockContext,
+          ctx.mockContextVersion,
+          ctx.mockUser
+        )
+          .asCallback(function (err) {
+            if (err) { return done(err) }
+            sinon.assert.calledOnce(ContextVersion.createDeepCopyAsync)
+            sinon.assert.calledWith(
+            ContextVersion.createDeepCopyAsync,
+              ctx.mockUser,
+              ctx.mockContextVersion
+            )
+            done()
+          })
       })
       it('should propogate copy failures', function (done) {
         var error = new Error('foobar')
-        ContextVersion.createDeepCopy.yieldsAsync(error)
-        ContextVersionService.handleVersionDeepCopy(ctx.mockContext, ctx.mockContextVersion, ctx.mockUser, function (err) {
-          expect(err).to.equal(error)
-          sinon.assert.calledOnce(ContextVersion.createDeepCopy)
-          done()
-        })
+        ContextVersion.createDeepCopyAsync.rejects(error)
+
+        ContextVersionService.handleVersionDeepCopy(
+          ctx.mockContext,
+          ctx.mockContextVersion,
+          ctx.mockUser
+        )
+          .asCallback(function (err) {
+            expect(err).to.equal(error)
+            sinon.assert.calledOnce(ContextVersion.createDeepCopyAsync)
+            done()
+          })
       })
     })
   })
