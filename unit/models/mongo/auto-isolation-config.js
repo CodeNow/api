@@ -39,21 +39,7 @@ describe('Auto Isolation Config Model Tests', function () {
       done()
     })
   })
-  // AutoIsolationSchema.statics.findActiveByInstanceId = function (instanceId) {
-  //   const log = logger.child({
-  //     method: 'findActiveByInstanceId',
-  //     instanceId
-  //   })
-  //   log.info('called')
-  //   const query = {
-  //     instance: objectId(instanceId)
-  //   }
-  //   return AutoIsolationConfig.findOneAsync(query)
-  //     .tap(function (config) {
-  //       if (!config) {
-  //         throw new AutoIsolationConfig.NotFoundError(query)
-  //       }
-  //     })
+
   describe('findActiveByInstanceId', () => {
     const modelId = '507f1f77bcf86cd799439011'
     const model = {
@@ -97,26 +83,23 @@ describe('Auto Isolation Config Model Tests', function () {
     })
   })
 
-  describe('updateAutoIsolationDependencies', () => {
+  describe('findActiveByAnyInstanceId', () => {
     const modelId = '507f1f77bcf86cd799439011'
     const model = {
       _id: modelId
     }
-    const requestedDeps = [
-      { instance: 'asdasdasdasd' }
-    ]
     beforeEach((done) => {
-      sinon.stub(AutoIsolationConfig, 'updateAsync').resolves(model)
+      sinon.stub(AutoIsolationConfig, 'findOneActive').resolves(model)
       done()
     })
     afterEach((done) => {
-      AutoIsolationConfig.updateAsync.restore()
+      AutoIsolationConfig.findOneActive.restore()
       done()
     })
     it('should fail if findOneActive failed', (done) => {
       const error = new Error('Some error')
-      AutoIsolationConfig.updateAsync.rejects(error)
-      AutoIsolationConfig.updateAutoIsolationDependencies(modelId, requestedDeps)
+      AutoIsolationConfig.findOneActive.rejects(error)
+      AutoIsolationConfig.findActiveByAnyInstanceId(modelId)
         .asCallback((err) => {
           expect(err).to.exist()
           expect(err.message).to.exist(error.message)
@@ -125,30 +108,31 @@ describe('Auto Isolation Config Model Tests', function () {
     })
 
     it('should call findOneActive with correct args', (done) => {
-      AutoIsolationConfig.updateAutoIsolationDependencies(modelId, requestedDeps)
+      AutoIsolationConfig.findActiveByAnyInstanceId(modelId)
         .tap((config) => {
           expect(config).to.equal(model)
-          sinon.assert.calledOnce(AutoIsolationConfig.updateAsync)
+          sinon.assert.calledOnce(AutoIsolationConfig.findOneActive)
           const query = {
-            instance: objectId(modelId),
-            deleted: {
-              $exists: false
-            }
+            $or: [
+              {
+                instance: objectId(modelId)
+              },
+              {
+                requestedDependencies: {
+                  $elemMatch: {
+                    instance: objectId(modelId)
+                  }
+                }
+              }
+            ]
           }
-          const $set = {
-            requestedDependencies: requestedDeps
-          }
-          sinon.assert.calledWithExactly(
-            AutoIsolationConfig.updateAsync,
-            query,
-            $set
-          )
+          sinon.assert.calledWithExactly(AutoIsolationConfig.findOneActive, query)
         })
         .asCallback(done)
     })
 
     it('should throw no error', (done) => {
-      AutoIsolationConfig.updateAutoIsolationDependencies(modelId, requestedDeps)
+      AutoIsolationConfig.findActiveByAnyInstanceId(modelId)
         .asCallback(done)
     })
   })

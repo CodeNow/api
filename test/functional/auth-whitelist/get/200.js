@@ -19,6 +19,7 @@ var nock = require('nock')
 const whitelistOrgs = require('../../fixtures/mocks/big-poppa').whitelistOrgs
 const whitelistUserOrgs = require('../../fixtures/mocks/big-poppa').whitelistUserOrgs
 const sessionUser = require('../../fixtures/mocks/big-poppa').sessionUser
+const userMock = require('../../fixtures/mocks/github/user')
 
 var ctx = {}
 describe('GET /auth/whitelist/', function () {
@@ -47,6 +48,7 @@ describe('GET /auth/whitelist/', function () {
     }, function (err, user) {
       ctx.user = user
       whitelistOrgs([runnableOrg, otherOrg])
+      userMock(user)
       done(err)
     })
   })
@@ -86,6 +88,7 @@ describe('GET /auth/whitelist/', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
       nock.cleanAll()
+      userMock(ctx.user)
       Promise.all([
         whitelistUserOrgs(ctx.user, []),
         sessionUser([])
@@ -116,6 +119,7 @@ describe('GET /auth/whitelist/', function () {
     beforeEach(function (done) {
       ctx.name = randStr(5)
       nock.cleanAll()
+      userMock(ctx.user)
       Promise.all([
         whitelistUserOrgs(ctx.user, [otherOrg]),
         sessionUser([otherOrg])

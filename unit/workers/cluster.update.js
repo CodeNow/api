@@ -158,7 +158,8 @@ describe('Cluster Update Worker', function () {
               ClusterConfigService.fetchFileFromGithub,
               bigPoppaUser,
               job.pushInfo.repo,
-              config.filePath
+              config.filePath,
+              githubPushInfo.commit
             )
           })
           .asCallback(done)
@@ -173,7 +174,8 @@ describe('Cluster Update Worker', function () {
               composeData,
               job.pushInfo.repo,
               config.clusterName,
-              bigPoppaUser
+              bigPoppaUser,
+              config.filePath
             )
           })
           .asCallback(done)

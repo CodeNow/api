@@ -15,6 +15,7 @@ require('sinon-as-promised')(require('bluebird'))
 
 const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
 const ClusterConfigService = require('models/services/cluster-config-service')
+const InstanceService = require('models/services/instance-service')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
 const mongoFactory = require('../../fixtures/factory')
 const mongooseControl = require('models/mongo/mongoose-control.js')
@@ -38,6 +39,7 @@ describe('Cluster Config Services Integration Tests', function () {
   const ownerId = 11111
   const bigPoppaId = 123
   const bigPoppaOrgId = 1
+  let clusterOpts
 
   beforeEach(function (done) {
     rabbitMQ.connect().asCallback(done)
@@ -58,7 +60,9 @@ describe('Cluster Config Services Integration Tests', function () {
         bigPoppaUser: {
           id: bigPoppaId,
           organizations: [{
-            lowerName: 'codenow'
+            lowerName: 'codenow',
+            id: bigPoppaOrgId,
+            githubId: ownerId
           }]
         }
       }
@@ -115,6 +119,10 @@ describe('Cluster Config Services Integration Tests', function () {
       done()
     })
     beforeEach(function (done) {
+      mongoFactory.createSourceInfraCodeVersion(done)
+    })
+
+    beforeEach(function (done) {
       mongoFactory.createInstanceWithProps(mockSessionUser, {
         name: 'api',
         masterPod: true
@@ -130,9 +138,8 @@ describe('Cluster Config Services Integration Tests', function () {
             name: instance.name,
             isMain: true
           },
-          contextVersion: {
-            advanced: true,
-            buildDockerfilePath: '.'
+          build: {
+            dockerfilePath: '.'
           },
           files: { // Optional
             '/Dockerfile': {
@@ -162,9 +169,8 @@ describe('Cluster Config Services Integration Tests', function () {
             name: instance.name,
             isMain: false
           },
-          contextVersion: {
-            advanced: true,
-            buildDockerfilePath: '.'
+          build: {
+            dockerfilePath: '.'
           },
           files: { // Optional
             '/Dockerfile': {
@@ -183,37 +189,37 @@ describe('Cluster Config Services Integration Tests', function () {
     })
     beforeEach(function (done) {
       AutoIsolationConfig.createAsync({
-          instance: mockInstance._id,
-          requestedDependencies: [{ instance: depInstance._id }],
-          createdByUser: bigPoppaId,
-          ownedByOrg: bigPoppaOrgId,
-          redeployOnKilled: true
-        })
-        .then((config) => {
-          mockAutoConfig = config
-        })
-        .asCallback(done)
+        instance: mockInstance._id,
+        requestedDependencies: [{ instance: depInstance._id }],
+        createdByUser: bigPoppaId,
+        ownedByOrg: bigPoppaOrgId,
+        redeployOnKilled: true
+      })
+      .then((config) => {
+        mockAutoConfig = config
+      })
+      .asCallback(done)
     })
     beforeEach(function (done) {
       InputClusterConfig.createAsync({
-          autoIsolationConfigId: mockAutoConfig._id,
-          filePath: '/docker-compose.yml',
-          fileSha: 'asdasdasfasdfasdfsadfadsf3rfsadfasdfsdf',
-          createdByUser: bigPoppaId,
-          ownedByOrg: bigPoppaOrgId,
-          clusterName: clusterName
-        })
-        .then((config) => {
-          mockClusterConfig = config
-        })
-        .asCallback(done)
+        autoIsolationConfigId: mockAutoConfig._id,
+        filePath: '/docker-compose.yml',
+        fileSha: 'asdasdasfasdfasdfsadfadsf3rfsadfasdfsdf',
+        createdByUser: bigPoppaId,
+        ownedByOrg: bigPoppaOrgId,
+        clusterName: clusterName
+      })
+      .then((config) => {
+        mockClusterConfig = config
+      })
+      .asCallback(done)
     })
     beforeEach(function (done) {
       sinon.stub(rabbitMQ, 'deleteInstance').resolves()
       sinon.stub(rabbitMQ, 'createInstanceContainer').resolves()
       sinon.stub(rabbitMQ, 'instanceDeployed').resolves()
       sinon.spy(rabbitMQ, 'autoDeployInstance')
-      sinon.stub(Instance.prototype, 'emitInstanceUpdateAsync').resolves()
+      sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
       done()
     })
     afterEach(function (done) {
@@ -221,17 +227,24 @@ describe('Cluster Config Services Integration Tests', function () {
       rabbitMQ.createInstanceContainer.restore()
       rabbitMQ.instanceDeployed.restore()
       rabbitMQ.autoDeployInstance.restore()
-      Instance.prototype.emitInstanceUpdateAsync.restore()
+      InstanceService.emitInstanceUpdate.restore()
+      done()
+    })
+    beforeEach(function (done) {
+      clusterOpts = {
+        fileSha: 'sdasdasdasdasdasd',
+        filePath: '/docker-compose.yml'
+      }
       done()
     })
     it('should finish successfully', function (done) {
       const octobearInfo = [testMainParsedContent, testDepParsedContent]
-      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo)
+      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo, clusterOpts)
         .asCallback(done)
     })
     it('should have created an autoDeploy job', function (done) {
       const octobearInfo = [testMainParsedContent, testDepParsedContent]
-      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo)
+      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo, clusterOpts)
         .then(() => {
           sinon.assert.calledOnce(rabbitMQ.autoDeployInstance)
         })
@@ -239,7 +252,7 @@ describe('Cluster Config Services Integration Tests', function () {
     })
     it('should delete the dependent', function (done) {
       const octobearInfo = [testMainParsedContent]
-      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo)
+      ClusterConfigService.updateCluster(mockSessionUser, mockInstance, githubPushInfo, octobearInfo, clusterOpts)
         .then(() => {
           sinon.assert.calledOnce(rabbitMQ.deleteInstance)
         })

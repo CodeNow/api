@@ -96,7 +96,7 @@ describe('ImageBuilderContainerCreated Integration Tests', function () {
         sinon.spy(ContextVersion, 'updateAsync')
         sinon.spy(ContextVersion, 'findAsync')
 
-        sinon.spy(Instance.prototype, 'emitInstanceUpdate')
+        sinon.spy(InstanceService, 'emitInstanceUpdate')
         sinon.spy(Instance.prototype, 'updateCv')
         sinon.spy(InstanceService, 'emitInstanceUpdateByCvBuildId')
 
@@ -119,7 +119,7 @@ describe('ImageBuilderContainerCreated Integration Tests', function () {
         ContextVersion.updateAsync.restore()
         ContextVersion.findAsync.restore()
 
-        Instance.prototype.emitInstanceUpdate.restore()
+        InstanceService.emitInstanceUpdate.restore()
         Instance.prototype.updateCv.restore()
         InstanceService.emitInstanceUpdateByCvBuildId.restore()
 

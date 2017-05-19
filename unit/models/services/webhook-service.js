@@ -265,15 +265,19 @@ describe('Webhook Service Unit Tests', function () {
       contextIds = ['sadsadasdsad', 'sdgfddfsgdfsgsdfgdsfg']
       sinon.stub(WebhookService, 'checkCommitPusherIsRunnableUser')
       sinon.stub(Instance, 'findMasterPodsToAutoFork')
+      sinon.stub(ClusterConfigService, 'checkIfComposeFileHasChanged').resolves()
       sinon.stub(InstanceForkService, 'autoFork')
       sinon.stub(IsolationService, 'autoIsolate')
+      sinon.stub(rabbitMQ, 'updateCluster').resolves
       done()
     })
     afterEach(function (done) {
       WebhookService.checkCommitPusherIsRunnableUser.restore()
       Instance.findMasterPodsToAutoFork.restore()
+      ClusterConfigService.checkIfComposeFileHasChanged.restore()
       InstanceForkService.autoFork.restore()
       IsolationService.autoIsolate.restore()
+      rabbitMQ.updateCluster.restore()
       done()
     })
     describe('validating errors', function () {
@@ -382,10 +386,58 @@ describe('Webhook Service Unit Tests', function () {
           .then(function (instances) {
             expect(instances).to.equal(forkedInstances)
             sinon.assert.calledOnce(IsolationService.autoIsolate)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               IsolationService.autoIsolate,
               forkedInstances,
               githubPushInfo
+            )
+          })
+          .asCallback(done)
+      })
+      it('should check the compose file for each instance', function (done) {
+        WebhookService.checkCommitPusherIsRunnableUser.resolves()
+        Instance.findMasterPodsToAutoFork.resolves(instances)
+        InstanceForkService.autoFork.resolves(forkedInstances)
+        IsolationService.autoIsolate.resolves()
+        WebhookService.autoFork(contextIds, githubPushInfo)
+          .then(function (instances) {
+            expect(instances).to.equal(forkedInstances)
+            sinon.assert.calledTwice(ClusterConfigService.checkIfComposeFileHasChanged)
+            sinon.assert.calledWithExactly(
+              ClusterConfigService.checkIfComposeFileHasChanged,
+              forkedInstances[0],
+              githubPushInfo
+            )
+            sinon.assert.calledWithExactly(
+              ClusterConfigService.checkIfComposeFileHasChanged,
+              forkedInstances[1],
+              githubPushInfo
+            )
+          })
+          .asCallback(done)
+      })
+      it('should create cluster update jobs', function (done) {
+        WebhookService.checkCommitPusherIsRunnableUser.resolves()
+        Instance.findMasterPodsToAutoFork.resolves(instances)
+        InstanceForkService.autoFork.resolves(forkedInstances)
+        IsolationService.autoIsolate.resolves()
+        WebhookService.autoFork(contextIds, githubPushInfo)
+          .then(function (instances) {
+            expect(instances).to.equal(forkedInstances)
+            sinon.assert.calledTwice(rabbitMQ.updateCluster)
+            sinon.assert.calledWithExactly(
+              rabbitMQ.updateCluster,
+              {
+                instanceId: forkedInstances[0]._id.toString(),
+                pushInfo: githubPushInfo
+              }
+            )
+            sinon.assert.calledWithExactly(
+              rabbitMQ.updateCluster,
+              {
+                instanceId: forkedInstances[1]._id.toString(),
+                pushInfo: githubPushInfo
+              }
             )
           })
           .asCallback(done)
