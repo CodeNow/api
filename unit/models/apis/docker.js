@@ -18,6 +18,7 @@ var path = require('path')
 var pluck = require('101/pluck')
 var sinon = require('sinon')
 var url = require('url')
+const UserService = require('models/services/user-service')
 
 var Docker = require('models/apis/docker')
 
@@ -138,7 +139,8 @@ describe('docker: ' + moduleName, function () {
             id: 12345,
             username: 'username'
           }
-        }
+        },
+        bigPoppaUser: {}
       }
     }
     done()
@@ -327,11 +329,13 @@ describe('docker: ' + moduleName, function () {
       ctx.mockDockerTag = 'mockDockerTag'
       ctx.mockLabels = { label1: 1, label2: 2, label3: 3 }
       ctx.mockEnv = [ 'env1', 'env2', 'env3' ]
+      ctx.mockOrg = { privateRegistryUrl: 'adas', privateRegistryUsername: 'asdasdas'}
       sinon.stub(Docker.prototype, '_createImageBuilderValidateCV')
       sinon.stub(Docker, 'getDockerTag').returns(ctx.mockDockerTag)
       sinon.stub(Docker.prototype, '_createImageBuilderLabels').returns(ctx.mockLabels)
       sinon.stub(Docker.prototype, '_createImageBuilderEnv').returns(ctx.mockEnv)
       sinon.stub(Docker.prototype, 'createContainer').yieldsAsync()
+      sinon.stub(UserService, 'getOrgFromUserByGithubId').returns(ctx.mockOrg)
       done()
     })
 
@@ -341,6 +345,7 @@ describe('docker: ' + moduleName, function () {
       Docker.prototype._createImageBuilderEnv.restore()
       Docker.prototype._createImageBuilderValidateCV.restore()
       Docker.prototype.createContainer.restore()
+      UserService.getOrgFromUserByGithubId.restore()
       done()
     })
 
@@ -388,11 +393,14 @@ describe('docker: ' + moduleName, function () {
             tid: opts.tid,
             dockerTag: ctx.mockDockerTag
           })
-          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
-            dockerTag: ctx.mockDockerTag,
-            noCache: opts.noCache,
-            contextVersion: opts.contextVersion
-          })
+          sinon.assert.calledWith(
+            Docker.prototype._createImageBuilderEnv.firstCall, {
+              dockerTag: ctx.mockDockerTag,
+              noCache: opts.noCache,
+              contextVersion: opts.contextVersion,
+              org: ctx.mockOrg
+            }
+          )
 
           var expected = {
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
@@ -471,11 +479,14 @@ describe('docker: ' + moduleName, function () {
             sessionUser: opts.sessionUser,
             ownerUsername: opts.ownerUsername
           })
-          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
-            dockerTag: ctx.mockDockerTag,
-            noCache: opts.noCache,
-            contextVersion: opts.contextVersion
-          })
+          sinon.assert.calledWith(
+            Docker.prototype._createImageBuilderEnv.firstCall, {
+              dockerTag: ctx.mockDockerTag,
+              noCache: opts.noCache,
+              contextVersion: opts.contextVersion,
+              org: ctx.mockOrg
+            }
+          )
 
           var expected = {
             Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
@@ -758,6 +769,23 @@ describe('docker: ' + moduleName, function () {
           'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
           'DOCKER_IMAGE_BUILDER_LAYER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts)
+        ])
+        done()
+      })
+    })
+    describe('registry', function () {
+      const privateRegistryUrl = 'asdfasdfadsfasdfaefasevavsegaweg'
+      const privateRegistryUsername = 'asdasdsadas'
+      beforeEach(function (done) {
+        ctx.mockOrg = { privateRegistryUrl, privateRegistryUsername }
+        done()
+      })
+      it('should return privateRegistry info in envs', function (done) {
+        ctx.opts.org = ctx.mockOrg
+        var envs = model._createImageBuilderEnv(ctx.opts)
+        expect(envs).to.contain([
+          'RUNNABLE_REGISTRY_URL=' + privateRegistryUrl,
+          'RUNNABLE_REGISTRY_USERNAME=' + privateRegistryUsername
         ])
         done()
       })
