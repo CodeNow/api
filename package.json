@@ -17,7 +17,7 @@
   "dependencies": {
     "101": "^1.5.0",
     "@runnable/api-client": "^9.2.8",
-    "@runnable/big-poppa-client": "1.0.1-beta",
+    "@runnable/big-poppa-client": "1.0.1-beta1",
     "@runnable/clio-client": "^1.0.8",
     "@runnable/hostname": "^3.0.0",
     "@runnable/octobear": "^4.0.1",
