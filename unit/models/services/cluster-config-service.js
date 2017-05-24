@@ -266,17 +266,6 @@ describe('Cluster Config Service Unit Tests', function () {
         .asCallback(done)
       })
 
-      it('should call getRepoContent without commit if no branch is passed', function (done) {
-        const data = Object.assign({}, testData, { branchName: undefined })
-        ClusterConfigService.create(testSessionUser, data)
-        .tap(function () {
-          sinon.assert.notCalled(GitHub.prototype.getBranchAsync)
-          sinon.assert.calledOnce(GitHub.prototype.getRepoContent)
-          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, null)
-        })
-        .asCallback(done)
-      })
-
       it('should call octobear.parse with correct args', function (done) {
         ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
