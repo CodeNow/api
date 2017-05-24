@@ -364,7 +364,9 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          ownerUsername: 'runnable',
+          organization: {
+            githubUsername: 'runnable'
+          },
           noCache: false,
           tid: 'mediocre-tid'
         }
@@ -384,7 +386,7 @@ describe('docker: ' + moduleName, function () {
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername,
+            organization: opts.organization,
             tid: opts.tid,
             dockerTag: ctx.mockDockerTag
           })
@@ -444,11 +446,13 @@ describe('docker: ' + moduleName, function () {
       it('should handle error if createContainer failed', function (done) {
         Docker.prototype.createContainer.yieldsAsync(new Error('boo'))
 
-        var opts = {
+        const opts = {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          ownerUsername: 'runnable',
+          organization: {
+            githubUsername: 'runnable'
+          },
           noCache: false,
           tid: 'mediocre-tid'
         }
@@ -469,7 +473,7 @@ describe('docker: ' + moduleName, function () {
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername
+            organization: opts.organization
           })
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
@@ -599,7 +603,9 @@ describe('docker: ' + moduleName, function () {
         manualBuild: 'manualBuild',
         noCache: 'noCache',
         sessionUser: ctx.mockSessionUser,
-        ownerUsername: 'ownerUsername',
+        organization: {
+          githubUsername: 'ownerUsername'
+        },
         tid: 'mediocre-tid'
       }
       var labels = model._createImageBuilderLabels(opts)
@@ -616,7 +622,7 @@ describe('docker: ' + moduleName, function () {
         sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
         sessionUserGithubId: opts.sessionUser.accounts.github.id.toString(),
         sessionUserUsername: opts.sessionUser.accounts.github.username,
-        ownerUsername: opts.ownerUsername,
+        ownerUsername: opts.organization.githubUsername,
         'com.docker.swarm.constraints': '["org==owner"]',
         type: 'image-builder-container'
       }
@@ -631,7 +637,10 @@ describe('docker: ' + moduleName, function () {
         noCache: false,
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser
+        sessionUser: ctx.mockSessionUser,
+        organization: {
+          githubUsername: 'runnable'
+        }
       })
       expect(imageBuilderContainerLabels['contextVersion._id']).to.equal(ctx.mockContextVersion._id)
       expect(imageBuilderContainerLabels.noCache).to.equal('false')
@@ -643,6 +652,9 @@ describe('docker: ' + moduleName, function () {
         noCache: false,
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
+        organization: {
+          githubUsername: 'runnable'
+        },
         sessionUser: Object.assign({}, ctx.mockSessionUser, { accounts: { github: { id: 'owner' }}})
     })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
@@ -655,7 +667,10 @@ describe('docker: ' + moduleName, function () {
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser
+        sessionUser: ctx.mockSessionUser,
+        organization: {
+          githubUsername: 'runnable'
+        }
       })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
         .to.equal('["org==owner"]')
@@ -667,7 +682,10 @@ describe('docker: ' + moduleName, function () {
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser
+        sessionUser: ctx.mockSessionUser,
+        organization: {
+          githubUsername: 'runnable'
+        }
       })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
         .to.equal('["org==owner"]')

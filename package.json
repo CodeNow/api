@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "11.41.2",
+  "version": "11.42.4",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -17,7 +17,7 @@
   "dependencies": {
     "101": "^1.5.0",
     "@runnable/api-client": "^9.2.8",
-    "@runnable/big-poppa-client": "^0.5.1",
+    "@runnable/big-poppa-client": "^1.0.1-beta1",
     "@runnable/clio-client": "^1.0.8",
     "@runnable/hostname": "^3.0.0",
     "@runnable/keymaker-client": "^1.0.1",
@@ -119,6 +119,7 @@
     "multiline": "^1.0.2",
     "nock": "^5.2.1",
     "nodemon": "^1.2.1",
+    "pre-commit": "^1.2.2",
     "randomstring": "^1.0.5",
     "rewire": "^2.5.1",
     "rimraf": "^2.2.8",
@@ -158,5 +159,8 @@
     "unit-debug": "npm run clear; NODE_PATH=./lib NODE_ENV=test node-debug ./node_modules/.bin/lab -l -e test -vG unit/",
     "unit-watch": "nodemon -w package.json -w unit -w lib -w node_modules/runnable/lib/models --exec 'npm run' unit",
     "watch": "NODE_PATH=./lib nodemon -w lib -w configs index.js"
-  }
+  },
+  "pre-commit": [
+    "lint"
+  ]
 }
