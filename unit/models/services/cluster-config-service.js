@@ -258,8 +258,21 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call getRepoContent with correct args', function (done) {
         ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
+          sinon.assert.calledOnce(GitHub.prototype.getBranch)
+          sinon.assert.calledWithExactly(GitHub.prototype.getBranch, testData.repoFullName, testData.branchName)
           sinon.assert.calledOnce(GitHub.prototype.getRepoContent)
           sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, commitSha)
+        })
+        .asCallback(done)
+      })
+
+      it('should call getRepoContent without commit if no branch is passed', function (done) {
+        const data = Object.assign({}, testData, { branchName: undefined })
+        ClusterConfigService.create(testSessionUser, data)
+        .tap(function () {
+          sinon.assert.notCalled(GitHub.prototype.getBranch)
+          sinon.assert.calledOnce(GitHub.prototype.getRepoContent)
+          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, null)
         })
         .asCallback(done)
       })
@@ -804,6 +817,25 @@ describe('Cluster Config Service Unit Tests', function () {
               InfraCodeVersionService.findBlankInfraCodeVersion,
               ContextVersion.createAppcodeVersion,
               ClusterConfigService._createDockerfileContent)
+          })
+      })
+      it('should call createAppcodeVersion with branch name if provided', () => {
+        const testDockerfilePath = '/Dockerfile'
+        const testBuildDockerContext = '.'
+        const testParsedComposeData = {
+          metadata: {
+            isMain: true,
+            branch: 'hello'
+          },
+          build: {
+            dockerFilePath: testDockerfilePath,
+            dockerBuildContext: testBuildDockerContext
+          }
+        }
+        return ClusterConfigService._createContextVersion(testSessionUser, ownerInfo, buildOpts, testParsedComposeData)
+          .tap((contextVersion) => {
+            sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
+            sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName, 'hello')
           })
       })
       it('should not call  before createAppcodeVersion if the config metadata isMain is false', () => {
