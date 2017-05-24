@@ -393,7 +393,10 @@ describe('docker: ' + moduleName, function () {
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
             noCache: opts.noCache,
-            contextVersion: opts.contextVersion
+            contextVersion: opts.contextVersion,
+            organization: {
+              githubUsername: 'runnable'
+            }
           })
 
           var expected = {
@@ -478,7 +481,10 @@ describe('docker: ' + moduleName, function () {
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
             noCache: opts.noCache,
-            contextVersion: opts.contextVersion
+            contextVersion: opts.contextVersion,
+            organization: {
+              githubUsername: 'runnable'
+            }
           })
 
           var expected = {
