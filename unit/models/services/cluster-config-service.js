@@ -203,14 +203,14 @@ describe('Cluster Config Service Unit Tests', function () {
 
     beforeEach(function (done) {
       sinon.stub(GitHub.prototype, 'getRepoContent').resolves(dockerComposeContent)
-      sinon.stub(GitHub.prototype, 'getBranch').resolves(branchMock)
+      sinon.stub(GitHub.prototype, 'getBranchAsync').resolves(branchMock)
       sinon.stub(octobear, 'parse').resolves(testParsedContent)
       sinon.stub(ClusterConfigService, 'createFromRunnableConfig').resolves()
       done()
     })
     afterEach(function (done) {
       GitHub.prototype.getRepoContent.restore()
-      GitHub.prototype.getBranch.restore()
+      GitHub.prototype.getBranchAsync.restore()
       octobear.parse.restore()
       ClusterConfigService.createFromRunnableConfig.restore()
       done()
@@ -258,8 +258,8 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call getRepoContent with correct args', function (done) {
         ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
-          sinon.assert.calledOnce(GitHub.prototype.getBranch)
-          sinon.assert.calledWithExactly(GitHub.prototype.getBranch, testData.repoFullName, testData.branchName)
+          sinon.assert.calledOnce(GitHub.prototype.getBranchAsync)
+          sinon.assert.calledWithExactly(GitHub.prototype.getBranchAsync, testData.repoFullName, testData.branchName)
           sinon.assert.calledOnce(GitHub.prototype.getRepoContent)
           sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, commitSha)
         })
@@ -270,7 +270,7 @@ describe('Cluster Config Service Unit Tests', function () {
         const data = Object.assign({}, testData, { branchName: undefined })
         ClusterConfigService.create(testSessionUser, data)
         .tap(function () {
-          sinon.assert.notCalled(GitHub.prototype.getBranch)
+          sinon.assert.notCalled(GitHub.prototype.getBranchAsync)
           sinon.assert.calledOnce(GitHub.prototype.getRepoContent)
           sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, null)
         })
