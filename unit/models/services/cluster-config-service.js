@@ -173,7 +173,7 @@ describe('Cluster Config Service Unit Tests', function () {
         self: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/contents/docker-compose.yml?ref=master',
         git: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/git/blobs/13ec49b1014891c7b494126226f95e318e1d3e82',
         html: 'https://github.com/Runnable/compose-test-repo-1.2/blob/master/docker-compose.yml'
-      }
+       }
     }
     const triggeredAction = 'webhook'
     const fileString = 'version: \'2\'\nservices:\n  web:\n    build: \'./src/\'\n    command: [node, index.js]\n    ports:\n      - "5000:5000"\n    environment:\n      - NODE_ENV=development\n      - SHOW=true\n      - HELLO=678\n'
@@ -190,12 +190,6 @@ describe('Cluster Config Service Unit Tests', function () {
       fileSha: dockerComposeContent.sha,
       fileString: fileString
     }
-    const commitSha = 'abcc0b9'
-    const branchMock = {
-      commit: {
-        sha: commitSha
-      }
-    }
 
     const testData = {
       triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName, parentInputClusterConfigId
@@ -203,14 +197,12 @@ describe('Cluster Config Service Unit Tests', function () {
 
     beforeEach(function (done) {
       sinon.stub(GitHub.prototype, 'getRepoContent').resolves(dockerComposeContent)
-      sinon.stub(GitHub.prototype, 'getBranchAsync').resolves(branchMock)
       sinon.stub(octobear, 'parse').resolves(testParsedContent)
       sinon.stub(ClusterConfigService, 'createFromRunnableConfig').resolves()
       done()
     })
     afterEach(function (done) {
       GitHub.prototype.getRepoContent.restore()
-      GitHub.prototype.getBranchAsync.restore()
       octobear.parse.restore()
       ClusterConfigService.createFromRunnableConfig.restore()
       done()
@@ -258,10 +250,8 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call getRepoContent with correct args', function (done) {
         ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
-          sinon.assert.calledOnce(GitHub.prototype.getBranchAsync)
-          sinon.assert.calledWithExactly(GitHub.prototype.getBranchAsync, testData.repoFullName, testData.branchName)
           sinon.assert.calledOnce(GitHub.prototype.getRepoContent)
-          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, commitSha)
+          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, undefined)
         })
         .asCallback(done)
       })
@@ -806,25 +796,6 @@ describe('Cluster Config Service Unit Tests', function () {
               InfraCodeVersionService.findBlankInfraCodeVersion,
               ContextVersion.createAppcodeVersion,
               ClusterConfigService._createDockerfileContent)
-          })
-      })
-      it('should call createAppcodeVersion with branch name if provided', () => {
-        const testDockerfilePath = '/Dockerfile'
-        const testBuildDockerContext = '.'
-        const testParsedComposeData = {
-          metadata: {
-            isMain: true,
-            branch: 'hello'
-          },
-          build: {
-            dockerFilePath: testDockerfilePath,
-            dockerBuildContext: testBuildDockerContext
-          }
-        }
-        return ClusterConfigService._createContextVersion(testSessionUser, ownerInfo, buildOpts, testParsedComposeData)
-          .tap((contextVersion) => {
-            sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
-            sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName, 'hello')
           })
       })
       it('should not call  before createAppcodeVersion if the config metadata isMain is false', () => {
