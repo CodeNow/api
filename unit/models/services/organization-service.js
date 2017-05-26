@@ -471,7 +471,7 @@ describe('Organization Service', function () {
           sinon.assert.calledWith(BigPoppaClient.prototype.updateOrganization, bpOrgId, {
             privateRegistryUrl: registryOptions.url,
             privateRegistryUsername: registryOptions.username,
-            privateRegistryPassword: registryOptions.privateRegistryPassword
+            privateRegistryPassword: registryOptions.password
           })
           done()
         })
