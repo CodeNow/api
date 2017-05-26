@@ -505,15 +505,14 @@ describe('Cluster Config Service Unit Tests', function () {
     })
 
     it('should not add the branch name if it\'s a github repo', done => {
-      instanceDef.code = {} // Code is always an object. No key/values when there is no repo
       ClusterConfigService._addBranchName(instanceDef, clusterOpts)
       expect(instanceDef.metadata.branch).to.be.undefined()
       done()
     })
 
     it('should add the branch name if build is present and not a repo', done => {
+      instanceDef.code = {} // Code is always an object. No key/values when there is no repo
       ClusterConfigService._addBranchName(instanceDef, clusterOpts)
-      console.log(instanceDef.metadata, branchName)
       expect(instanceDef.metadata.branch).to.equal(branchName)
       done()
     })
