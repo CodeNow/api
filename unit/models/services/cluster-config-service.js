@@ -247,13 +247,12 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService.create(testSessionUser, testData).asCallback(done)
       })
 
-      it('should call getRepoContent with correct args', function (done) {
-        ClusterConfigService.create(testSessionUser, testData)
-        .tap(function () {
-          sinon.assert.calledOnce(GitHub.prototype.getRepoContent)
-          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, undefined)
-        })
-        .asCallback(done)
+      it('should call getRepoContent with correct args', function () {
+        return ClusterConfigService.create(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.calledOnce(GitHub.prototype.getRepoContent)
+            sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, branchName)
+          })
       })
 
       it('should call octobear.parse with correct args', function (done) {
@@ -1574,7 +1573,8 @@ describe('Cluster Config Service Unit Tests', function () {
               fileString,
               fileSha: dockerComposeContent.sha,
               filePath,
-              commitRef
+              branch: commitRef,
+              repo: repoFullName
             })
           })
           .asCallback(done)
