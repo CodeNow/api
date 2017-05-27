@@ -143,8 +143,8 @@
     },
     "@runnable/octobear": {
       "version": "4.0.1",
-      "from": "@runnable/octobear@4.0.1",
-      "resolved": "https://registry.npmjs.org/@runnable/octobear/-/octobear-4.0.1.tgz",
+      "from": "git://github.com/Runnable/octobear.git#parse-extends-and-merge-refactor",
+      "resolved": "git://github.com/Runnable/octobear.git#abe7cca9cebf7c2feb506d748ecf2040dc694e5d",
       "dependencies": {
         "dotenv": {
           "version": "4.0.0",
