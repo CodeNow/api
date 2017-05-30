@@ -1675,7 +1675,7 @@ describe('Cluster Config Service Unit Tests', function () {
               fileString,
               fileSha: dockerComposeContent.sha,
               filePath,
-              branch: commitRef,
+              commitRef,
               repo: repoFullName
             })
           })

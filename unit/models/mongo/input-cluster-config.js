@@ -48,6 +48,8 @@ describe('Input Cluster Config Model Tests', () => {
 
     beforeEach(done => {
       clusterOpts = {
+        repo: 'helloRepo',
+        branch: 'helloBranch',
         filePath: 'dasdasd',
         fileSha: '123e12ed',
         createdByUser: 'dfasf3wavf',
@@ -141,6 +143,8 @@ describe('Input Cluster Config Model Tests', () => {
             sinon.assert.calledWithExactly(
               InputClusterConfig.createAsync,
               {
+                repo: 'helloRepo',
+                branch: 'helloBranch',
                 autoIsolationConfigId: autoIsolationConfig._id,
                 parentInputClusterConfigId: masterConfig.parentInputClusterConfigId,
                 clusterName: masterConfig.clusterName,
@@ -160,6 +164,8 @@ describe('Input Cluster Config Model Tests', () => {
             sinon.assert.calledWithExactly(
               InputClusterConfig.createAsync,
               {
+                repo: 'helloRepo',
+                branch: 'helloBranch',
                 autoIsolationConfigId: autoIsolationConfig._id,
                 parentInputClusterConfigId: superMasterConfig._id,
                 clusterName: superMasterConfig.clusterName,
