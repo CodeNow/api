@@ -143,8 +143,8 @@
     },
     "@runnable/octobear": {
       "version": "4.0.1",
-      "from": "git://github.com/Runnable/octobear.git#parse-extends-and-merge-refactor",
-      "resolved": "git://github.com/Runnable/octobear.git#abe7cca9cebf7c2feb506d748ecf2040dc694e5d",
+      "from": "git://github.com/Runnable/octobear.git#5937d83f0bb3731d0155d7a81460cfc1c922ca6f",
+      "resolved": "git://github.com/Runnable/octobear.git#5937d83f0bb3731d0155d7a81460cfc1c922ca6f",
       "dependencies": {
         "dotenv": {
           "version": "4.0.0",
