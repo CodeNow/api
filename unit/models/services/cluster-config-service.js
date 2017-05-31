@@ -173,7 +173,7 @@ describe('Cluster Config Service Unit Tests', function () {
         self: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/contents/docker-compose.yml?ref=master',
         git: 'https://api.github.com/repos/Runnable/compose-test-repo-1.2/git/blobs/13ec49b1014891c7b494126226f95e318e1d3e82',
         html: 'https://github.com/Runnable/compose-test-repo-1.2/blob/master/docker-compose.yml'
-       }
+      }
     }
     const triggeredAction = 'webhook'
     const fileString = 'version: \'2\'\nservices:\n  web:\n    build: \'./src/\'\n    command: [node, index.js]\n    ports:\n      - "5000:5000"\n    environment:\n      - NODE_ENV=development\n      - SHOW=true\n      - HELLO=678\n'
@@ -190,6 +190,12 @@ describe('Cluster Config Service Unit Tests', function () {
       sha: dockerComposeContent.sha,
       fileString: fileString
     }
+    const commitSha = 'abcc0b9'
+    const branchMock = {
+      commit: {
+        sha: commitSha
+      }
+    }
 
     const testData = {
       triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName, parentInputClusterConfigId
@@ -197,12 +203,14 @@ describe('Cluster Config Service Unit Tests', function () {
 
     beforeEach(function (done) {
       sinon.stub(GitHub.prototype, 'getRepoContent').resolves(dockerComposeContent)
+      sinon.stub(GitHub.prototype, 'getBranchAsync').resolves(branchMock)
       sinon.stub(octobear, 'parse').resolves(testParsedContent)
       sinon.stub(ClusterConfigService, 'createFromRunnableConfig').resolves()
       done()
     })
     afterEach(function (done) {
       GitHub.prototype.getRepoContent.restore()
+      GitHub.prototype.getBranchAsync.restore()
       octobear.parse.restore()
       ClusterConfigService.createFromRunnableConfig.restore()
       done()
@@ -250,8 +258,10 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should call getRepoContent with correct args', function (done) {
         ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
+          sinon.assert.calledOnce(GitHub.prototype.getBranchAsync)
+          sinon.assert.calledWithExactly(GitHub.prototype.getBranchAsync, testData.repoFullName, testData.branchName)
           sinon.assert.calledOnce(GitHub.prototype.getRepoContent)
-          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, undefined)
+          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, commitSha)
         })
         .asCallback(done)
       })
@@ -318,32 +328,13 @@ describe('Cluster Config Service Unit Tests', function () {
     const parentInstanceId = objectId('507f191e810c19729de860ea')
     const depInstanceId1 = objectId('607f191e810c19729de860eb')
     const filePath = 'config/compose.yml'
-    const triggeredAction = 'webhook'
     const isTesting = false
-    const isTestReporter = false
-    const composeConfigData = {
-      _id: clusterConfigId,
-      files: [
-        {
-          path: filePath
-        }
-      ]
-    }
     const fileSha = 'asdfasdfadsfase3kj3lkj4qwdfalk3fawhsdfkjsd'
     const composeData = {
       repositoryName: 'sdasdasd',
       files: [
         {
           sha: fileSha
-        }
-      ]
-    }
-    const autoIsolationConfigData = {
-      _id: autoIsolationConfigId,
-      instance: parentInstanceId,
-      requestedDependencies: [
-        {
-          instance: depInstanceId1
         }
       ]
     }
@@ -362,8 +353,6 @@ describe('Cluster Config Service Unit Tests', function () {
       repoFullName: composeData.repositoryName,
       triggeredAction: 'autoDeploy'
     }
-    const orgName = 'Runnable'
-    const repoName = 'api'
 
     beforeEach(function (done) {
       const instanceCreate = sinon.stub(ClusterConfigService, '_createNewInstanceForNewConfig')
@@ -499,6 +488,45 @@ describe('Cluster Config Service Unit Tests', function () {
             )
           })
       })
+    })
+  })
+
+  describe('_addBranchName', () => {
+    let instanceDef
+    let clusterOpts
+    const branchName = 'hello'
+    beforeEach(done => {
+      instanceDef = {
+        metadata: {},
+        build: {},
+        code: {
+          repo: 'repository-name'
+        }
+      }
+      clusterOpts = {
+        branch: branchName
+      }
+      done()
+    })
+
+    it('should not add the branch name if there is none', done => {
+      delete clusterOpts.branch
+      ClusterConfigService._addBranchName(instanceDef, clusterOpts)
+      expect(instanceDef.metadata.branch).to.be.undefined()
+      done()
+    })
+
+    it('should not add the branch name if it\'s a github repo', done => {
+      ClusterConfigService._addBranchName(instanceDef, clusterOpts)
+      expect(instanceDef.metadata.branch).to.be.undefined()
+      done()
+    })
+
+    it('should add the branch name if build is present and not a repo', done => {
+      instanceDef.code = {} // Code is always an object. No key/values when there is no repo
+      ClusterConfigService._addBranchName(instanceDef, clusterOpts)
+      expect(instanceDef.metadata.branch).to.equal(branchName)
+      done()
     })
   })
 
@@ -814,7 +842,26 @@ describe('Cluster Config Service Unit Tests', function () {
               ClusterConfigService._createDockerfileContent)
           })
       })
-      it('should not call  before createAppcodeVersion if the config metadata isMain is false', () => {
+      it('should call createAppcodeVersion with branch name if provided', () => {
+        const testDockerfilePath = '/Dockerfile'
+        const testBuildDockerContext = '.'
+        const testParsedComposeData = {
+          metadata: {
+            isMain: true,
+            branch: 'hello'
+          },
+          build: {
+            dockerFilePath: testDockerfilePath,
+            dockerBuildContext: testBuildDockerContext
+          }
+        }
+        return ClusterConfigService._createContextVersion(testSessionUser, ownerInfo, buildOpts, testParsedComposeData)
+          .tap((contextVersion) => {
+            sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
+            sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testRepoName, 'hello')
+          })
+      })
+      it('should not call before createAppcodeVersion if the config metadata isMain is false', () => {
         testParsedComposeData.contextVersion = {
           advanced: true
         }
@@ -827,6 +874,56 @@ describe('Cluster Config Service Unit Tests', function () {
           .tap((contextVersion) => {
             expect(contextVersion).to.equal(testContextVersion)
             sinon.assert.notCalled(ContextVersion.createAppcodeVersion)
+          })
+      })
+
+      it('should call createAppcodeVersion with repo from `code` without a commit or branch', () => {
+        const testDockerfilePath = '/Dockerfile'
+        const testBuildDockerContext = '.'
+        const testCodeRepoName = 'Runnable/octobear'
+        const testParsedComposeData = {
+          metadata: {
+            isMain: false,
+            branch: 'hello'
+          },
+          build: {
+            dockerFilePath: testDockerfilePath,
+            dockerBuildContext: testBuildDockerContext
+          },
+          code: {
+            repo: testCodeRepoName
+          }
+        }
+        return ClusterConfigService._createContextVersion(testSessionUser, ownerInfo, buildOpts, testParsedComposeData)
+          .tap((contextVersion) => {
+            sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
+            sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testCodeRepoName, null)
+          })
+      })
+
+      it('should call createAppcodeVersion with repo and branch from `code`', () => {
+        const testDockerfilePath = '/Dockerfile'
+        const testBuildDockerContext = '.'
+        const testCodeRepoName = 'Runnable/octobear'
+        const testCodeRepoCommit = '7f3d086'
+        const testParsedComposeData = {
+          metadata: {
+            isMain: false,
+            branch: 'hello'
+          },
+          build: {
+            dockerFilePath: testDockerfilePath,
+            dockerBuildContext: testBuildDockerContext
+          },
+          code: {
+            repo: testCodeRepoName,
+            commitish: testCodeRepoCommit
+          }
+        }
+        return ClusterConfigService._createContextVersion(testSessionUser, ownerInfo, buildOpts, testParsedComposeData)
+          .tap((contextVersion) => {
+            sinon.assert.calledOnce(ContextVersion.createAppcodeVersion)
+            sinon.assert.calledWithExactly(ContextVersion.createAppcodeVersion, testSessionUser, testCodeRepoName, testCodeRepoCommit)
           })
       })
     })
