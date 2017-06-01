@@ -204,14 +204,14 @@ describe('Cluster Config Service Unit Tests', function () {
     beforeEach(function (done) {
       sinon.stub(GitHub.prototype, 'getRepoContent').resolves(dockerComposeContent)
       sinon.stub(GitHub.prototype, 'getBranchAsync').resolves(branchMock)
-      sinon.stub(octobear, 'parse').resolves(testParsedContent)
+      sinon.stub(ClusterConfigService, 'parseComposeFileAndPopulateENVs').resolves(testParsedContent)
       sinon.stub(ClusterConfigService, 'createFromRunnableConfig').resolves()
       done()
     })
     afterEach(function (done) {
       GitHub.prototype.getRepoContent.restore()
       GitHub.prototype.getBranchAsync.restore()
-      octobear.parse.restore()
+      ClusterConfigService.parseComposeFileAndPopulateENVs.restore()
       ClusterConfigService.createFromRunnableConfig.restore()
       done()
     })
@@ -227,9 +227,9 @@ describe('Cluster Config Service Unit Tests', function () {
         })
       })
 
-      it('should return error if octobear.parse failed', function (done) {
+      it('should return error if ClusterConfigService.parseComposeFileAndPopulateENVs failed', function (done) {
         const error = new Error('Some error')
-        octobear.parse.throws(error)
+        ClusterConfigService.parseComposeFileAndPopulateENVs.throws(error)
         ClusterConfigService.create(testSessionUser, testData)
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -266,19 +266,10 @@ describe('Cluster Config Service Unit Tests', function () {
         .asCallback(done)
       })
 
-      it('should call octobear.parse with correct args', function (done) {
+      it('should call ClusterConfigService.parseComposeFileAndPopulateENVs with correct args', function (done) {
         ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
-          sinon.assert.calledOnce(octobear.parse)
-          const parserPayload = {
-            dockerComposeFileString: fileString,
-            dockerComposeFilePath: filePath,
-            repositoryName: clusterName,
-            ownerUsername: ownerUsername,
-            userContentDomain: process.env.USER_CONTENT_DOMAIN,
-            scmDomain: process.env.GITHUB_HOST
-          }
-          sinon.assert.calledWithExactly(octobear.parse, parserPayload)
+          sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
         })
         .asCallback(done)
       })
@@ -290,7 +281,7 @@ describe('Cluster Config Service Unit Tests', function () {
           sinon.assert.calledWithExactly(
             ClusterConfigService.createFromRunnableConfig,
             testSessionUser,
-            { results: testParsedContent.results }, // `envFiles` property removed
+            { results: testParsedContent.results, envFiles: [] },
             { triggeredAction, repoFullName },
             sinon.match({
               clusterName,
@@ -314,7 +305,7 @@ describe('Cluster Config Service Unit Tests', function () {
         .tap(function () {
           sinon.assert.callOrder(
             GitHub.prototype.getRepoContent,
-            octobear.parse,
+            ClusterConfigService.parseComposeFileAndPopulateENVs,
             ClusterConfigService.createFromRunnableConfig)
         })
         .asCallback(done)
@@ -1643,13 +1634,13 @@ describe('Cluster Config Service Unit Tests', function () {
 
     beforeEach(function (done) {
       sinon.stub(GitHub.prototype, 'getRepoContent').resolves(dockerComposeContent)
-      sinon.stub(octobear, 'parse').resolves(testParsedContent)
+      sinon.stub(ClusterConfigService, 'parseComposeFileAndPopulateENVs').resolves(testParsedContent)
       sinon.stub(ClusterConfigService, 'createFromRunnableConfig').resolves()
       done()
     })
     afterEach(function (done) {
       GitHub.prototype.getRepoContent.restore()
-      octobear.parse.restore()
+      ClusterConfigService.parseComposeFileAndPopulateENVs.restore()
       ClusterConfigService.createFromRunnableConfig.restore()
       done()
     })
