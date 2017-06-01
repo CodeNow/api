@@ -143,8 +143,8 @@
     },
     "@runnable/octobear": {
       "version": "4.0.1",
-      "from": "git://github.com/Runnable/octobear.git#89e1483591273213ba4d412d361cbf377e1e3640",
-      "resolved": "git://github.com/Runnable/octobear.git#89e1483591273213ba4d412d361cbf377e1e3640",
+      "from": "git://github.com/Runnable/octobear.git#3dacec5dd1b2ac94a6d99087c3653509e00e1ccf",
+      "resolved": "git://github.com/Runnable/octobear.git#3dacec5dd1b2ac94a6d99087c3653509e00e1ccf",
       "dependencies": {
         "dotenv": {
           "version": "4.0.0",
