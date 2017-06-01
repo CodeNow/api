@@ -6,12 +6,9 @@ var describe = lab.describe
 var it = lab.it
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
-var expect = require('code').expect
 var sinon = require('sinon')
 
-const Promise = require('bluebird')
 const rabbitMQ = require('models/rabbitmq')
-
 const UserService = require('models/services/user-service')
 
 require('sinon-as-promised')(require('bluebird'))
@@ -34,11 +31,14 @@ describe('sshKeyService', function () {
           }
         ]
       })
+
+      sinon.stub(rabbitMQ, 'publishOrgUserSshKeyRequested').resolves()
       done()
     })
 
     afterEach(function (done) {
       UserService.getByGithubId.restore()
+      rabbitMQ.publishOrgUserSshKeyRequested.restore()
       done()
     })
 
@@ -46,8 +46,6 @@ describe('sshKeyService', function () {
       let orgId = 123
       let sessionUser = 'schrodinger'
       let githubAccessToken = 'cat'
-
-      sinon.spy(rabbitMQ, 'publishOrgUserSshKeyRequested')
 
       SshKeyService.saveSshKey(orgId, sessionUser, githubAccessToken)
         .tap(() => {
