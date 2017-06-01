@@ -2550,4 +2550,308 @@ describe('Cluster Config Service Unit Tests', function () {
       })
     })
   })
+
+  describe('fetchClusterInfoByInstanceId', function () {
+    const filePath = 'config/compose.yml'
+    const fileString = 'version: \'2\'\nservices:\n  web:\n    build: \'./src/\'\n    command: [node, index.js]\n    ports:\n      - "5000:5000"\n    environment:\n      - NODE_ENV=development\n      - SHOW=true\n      - HELLO=678\n'
+    const orgName = 'runnable'
+    const ownerUsername = orgName.toLowerCase()
+    const repoName = 'api'
+    const repoFullName = orgName + '/' + repoName
+    const branchName = 'feature-1'
+    const clusterName = 'api-unit'
+    const dockerComposeContent = {
+      fileString: fileString,
+      filePath: filePath,
+      fileSha: '13ec49b1014891c7b494126226f95e318e1d3e82',
+      repo: repoFullName,
+      commitRef: 'asdasdasdsadasdasd'
+    }
+    const instanceId = 'asdfas34arfw3fwdasafsdf'
+    const commitSha = 'abcc0b9'
+    const branchMock = {
+      commit: {
+        sha: commitSha
+      }
+    }
+    let testData = {}
+    let config = {}
+
+    beforeEach(done =>{
+      testData = {
+        repo: repoFullName,
+        branch: branchName,
+        clusterName,
+        filePath,
+        isTesting,
+        testReporters,
+        parentInputClusterConfigId
+      }
+      config = {
+        repo: repoFullName,
+        branch: branchName,
+        clusterName,
+        filePath,
+        fileSha: 'filesha',
+        isTesting,
+        testReporters,
+        parentInputClusterConfigId
+      }
+      done()
+    })
+
+    beforeEach(function (done) {
+      sinon.stub(ClusterConfigService, '_fetchComposeInfoForConfig').resolves()
+      sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(config)
+      done()
+    })
+    afterEach(function (done) {
+      ClusterConfigService._fetchComposeInfoForConfig.restore()
+      ClusterConfigService.fetchConfigByInstanceId.restore()
+      done()
+    })
+    describe('errors', function () {
+      it('should return error if _fetchComposeInfoForConfig failed', function (done) {
+        const error = new Error('Some error')
+        ClusterConfigService._fetchComposeInfoForConfig.rejects(error)
+        ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should return error if fetchConfigByInstanceId failed', function (done) {
+        const error = new Error('Some error')
+        ClusterConfigService.fetchConfigByInstanceId.throws(error)
+        ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData, instanceId)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+    })
+
+    describe('success', function () {
+      it('should run successfully without instanceId', function () {
+        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData)
+      })
+      it('should run successfully without clusterInfo, but with instanceId', function () {
+        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, null, instanceId)
+      })
+
+      it('should call fetchConfigByInstanceId when an instanceId is not given', function () {
+        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData)
+          .tap(() => {
+            sinon.assert.calledWith(
+              ClusterConfigService._fetchComposeInfoForConfig,
+              testSessionUser,
+              testData
+            )
+          })
+      })
+
+      it('should call fetchConfigByInstanceId when an instanceId is given', function () {
+        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData, instanceId)
+          .tap(() => {
+            sinon.assert.calledWith(
+              ClusterConfigService._fetchComposeInfoForConfig,
+              testSessionUser,
+              config
+            )
+          })
+      })
+
+      it('should call fetchConfigByInstanceId when an instanceId is not given', function () {
+        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData)
+          .tap(() => {
+            sinon.assert.notCalled(ClusterConfigService.fetchConfigByInstanceId)
+          })
+      })
+
+      it('should set the config.commit when the repo and branch matches the gitPushInfo ', function () {
+        const commit = 'asdasdasdasd'
+        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData, instanceId, {
+          repo: testData.repo,
+          branch: testData.branch,
+          commit
+        })
+          .tap(() => {
+            expect(config.commit).to.equal(commit)
+          })
+      })
+      it('should not the config.commit when the repo and branch don\'t match the gitPushInfo ', function () {
+        const commit = 'asdasdasdasd'
+        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData, instanceId, {
+          repo: testData.repo,
+          branch: 'sadasdasdasd',
+          commit
+        })
+          .tap(() => {
+            expect(testData.commit).to.be.undefined()
+          })
+      })
+    })
+  })
+
+  describe('_fetchComposeInfoForConfig', function () {
+    const filePath = 'config/compose.yml'
+    const fileString = 'version: \'2\'\nservices:\n  web:\n    build: \'./src/\'\n    command: [node, index.js]\n    ports:\n      - "5000:5000"\n    environment:\n      - NODE_ENV=development\n      - SHOW=true\n      - HELLO=678\n'
+    const orgName = 'runnable'
+    const ownerUsername = orgName.toLowerCase()
+    const repoName = 'api'
+    const repoFullName = orgName + '/' + repoName
+    const branchName = 'feature-1'
+    const clusterName = 'api-unit'
+    const dockerComposeContent = {
+      fileString: fileString,
+      filePath: filePath,
+      fileSha: '13ec49b1014891c7b494126226f95e318e1d3e82',
+      repo: repoFullName,
+      commitRef: 'asdasdasdsadasdasd'
+    }
+    const commitSha = 'abcc0b9'
+    const branchMock = {
+      commit: {
+        sha: commitSha
+      }
+    }
+    let testData = {}
+
+    beforeEach(done =>{
+      testData = {
+        repo: repoFullName,
+        branch: branchName,
+        clusterName,
+        filePath,
+        fileSha: 'filesha',
+        isTesting,
+        testReporters,
+        parentInputClusterConfigId
+      }
+      done()
+    })
+
+    beforeEach(function (done) {
+      sinon.stub(ClusterConfigService, 'fetchFileFromGithub').resolves(dockerComposeContent)
+      sinon.stub(GitHub.prototype, 'getBranchAsync').resolves(branchMock)
+      sinon.stub(ClusterConfigService, 'parseComposeFileAndPopulateENVs').resolves(testParsedContent)
+      done()
+    })
+    afterEach(function (done) {
+      ClusterConfigService.fetchFileFromGithub.restore()
+      GitHub.prototype.getBranchAsync.restore()
+      ClusterConfigService.parseComposeFileAndPopulateENVs.restore()
+      done()
+    })
+    describe('errors', function () {
+      it('should return error if fetchFileFromGithub failed', function (done) {
+        const error = new Error('Some error')
+        ClusterConfigService.fetchFileFromGithub.rejects(error)
+        ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should return error if ClusterConfigService.parseComposeFileAndPopulateENVs failed', function (done) {
+        const error = new Error('Some error')
+        ClusterConfigService.parseComposeFileAndPopulateENVs.throws(error)
+        ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+    })
+
+    describe('success', function () {
+      it('should run successfully', function () {
+        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+      })
+
+      it('should return a model with clusterOpts and octobearInfo', function () {
+        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+          .tap(results => {
+            expect(results).to.be.object()
+            expect(results.clusterOpts).to.equal(testData)
+            expect(results.octobearInfo).to.equal(testParsedContent)
+          })
+      })
+
+      it('should add filesha from composeContent to clusterOpts if testData didn\'t include it', function () {
+        delete testData.fileSha
+        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+          .tap(results => {
+            expect(results.clusterOpts.fileSha).to.equal(dockerComposeContent.fileSha)
+          })
+      })
+
+      it('should call getBranchAsync when a commit is not given', function () {
+        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.calledOnce(GitHub.prototype.getBranchAsync)
+            sinon.assert.calledWithExactly(GitHub.prototype.getBranchAsync, testData.repo, testData.branch)
+          })
+      })
+
+      it('should not call getBranchAsync when a commit is given', function () {
+        testData.commit = 'asdadasdasdasd'
+        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.notCalled(GitHub.prototype.getBranchAsync)
+          })
+      })
+
+      it('should call fetchFileFromGithub with the commit from testData if it\'s given', function () {
+        testData.commit = 'asdadasdasdasd'
+        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.calledOnce(ClusterConfigService.fetchFileFromGithub)
+            sinon.assert.calledWithExactly(ClusterConfigService.fetchFileFromGithub,
+              testSessionUser.bigPoppaUser, repoFullName, filePath, 'asdadasdasdasd')
+          })
+      })
+
+      it('should call fetchFileFromGithub with correct args', function () {
+        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.calledOnce(ClusterConfigService.fetchFileFromGithub)
+            sinon.assert.calledWithExactly(ClusterConfigService.fetchFileFromGithub,
+              testSessionUser.bigPoppaUser, repoFullName, filePath, commitSha)
+          })
+      })
+
+      it('should call parseComposeFileAndPopulateENVs with correct args', function () {
+        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
+            sinon.assert.calledWithExactly(
+              ClusterConfigService.parseComposeFileAndPopulateENVs,
+              dockerComposeContent,
+              repoFullName,
+              clusterName,
+              testSessionUser.bigPoppaUser,
+              filePath
+            )
+          })
+      })
+
+      it('should call all the functions in the order', function () {
+        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.callOrder(
+              GitHub.prototype.getBranchAsync,
+              ClusterConfigService.fetchFileFromGithub,
+              ClusterConfigService.parseComposeFileAndPopulateENVs
+            )
+          })
+      })
+    })
+  })
 })
