@@ -40,6 +40,8 @@ describe('Cluster Update Worker', function () {
       user: user
     }
     const config = {
+      repo: user.login + '/repo',
+      branch: 'branch',
       filePath: 'github.com',
       clusterName: 'asdasd'
     }
