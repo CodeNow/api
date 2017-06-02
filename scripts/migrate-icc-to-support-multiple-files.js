@@ -16,22 +16,25 @@ console.log('dryRun?', !!dryRun)
 
 InputClusterConfig.findAsync({})
   .map((cluster) => {
-    console.log('Processing cluster: ' + cluster.name)
-    if (cluster.filePath) {
+    const clusterAttrs = cluster.toJSON()
+    console.log('Processing cluster: ' + cluster.clusterName)
+    if (clusterAttrs.filePath && clusterAttrs.fileSha) {
       if (dryRun) {
-        console.log('Skipped cluster: ' + cluster.name)
+        console.log('Skipped cluster update: ' + cluster.clusterName)
         return
       }
-      cluster.set({
-        $push: {
-          files: {
-            path: cluster.filePath,
-            sha: cluster.fileSha
-          }
-        }
-      })
+      console.log('Updating cluster: ' + cluster.clusterName)
+      cluster.set('files', [{
+        path: clusterAttrs.filePath,
+        sha: clusterAttrs.fileSha
+      }])
       return cluster.saveAsync()
+        .catch(function (err) {
+          console.error('failed to update the cluster', err, cluster)
+          return process.exit(1)
+        })
     }
+    console.log('Skipped cluster: ' + cluster.clusterName)
     return
   })
   .then(() => {
