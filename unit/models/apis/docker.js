@@ -421,6 +421,82 @@ describe('docker: ' + moduleName, function () {
         })
       })
 
+      it('should pass ssh keys to an image builder container', function (done) {
+        var opts = {
+          manualBuild: true,
+          sessionUser: ctx.mockSessionUser,
+          contextVersion: ctx.mockContextVersion,
+          organization: {
+            githubUsername: 'runnable',
+            sshKeys: [{
+              keyName: 'f#%& up some commas',
+              userId: 1000000
+            },{
+              keyName: 'smashing pumpkins',
+              userId: 1979
+            }
+            ]
+          },
+          noCache: false,
+          tid: 'mediocre-tid'
+        }
+        model.createImageBuilder(opts, function (err) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Docker.prototype._createImageBuilderValidateCV,
+            opts.contextVersion
+          )
+          sinon.assert.calledWith(
+            Docker.getDockerTag,
+            opts.contextVersion
+          )
+
+          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
+            contextVersion: opts.contextVersion,
+            manualBuild: opts.manualBuild,
+            noCache: opts.noCache,
+            sessionUser: opts.sessionUser,
+            organization: opts.organization,
+            tid: opts.tid,
+            dockerTag: ctx.mockDockerTag
+          })
+          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
+            dockerTag: ctx.mockDockerTag,
+            noCache: opts.noCache,
+            contextVersion: opts.contextVersion,
+            organization: {
+              githubUsername: 'runnable',
+              sshKeys: [{
+                keyName: 'f#%& up some commas',
+                userId: 1000000
+              },{
+                keyName: 'smashing pumpkins',
+                userId: 1979
+              }]
+            },
+            keyNames: 'f#%& up some commas,smashing pumpkins',
+            keyUserIds: '1000000,1979'
+          })
+
+          var expected = {
+            Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
+            Env: ctx.mockEnv,
+            HostConfig: {
+              Binds: ['/var/run/docker.sock:/var/run/docker.sock','/opt/runnable/dock-init/user-private-registry-token:/opt/runnable/dock-init/user-private-registry-token'],
+              CapDrop: process.env.CAP_DROP.split(','),
+              Memory: process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES,
+              MemoryReservation: testMemory
+            },
+            Labels: ctx.mockLabels,
+            Volumes: { '/opt/runnable/dock-init/user-private-registry-token': {  } }
+          }
+
+          sinon.assert.calledOnce(Docker.prototype.createContainer)
+          sinon.assert.calledWith(Docker.prototype.createContainer, expected)
+          done()
+        })
+      })
+
       it('should create an image builder container with more memory than the max memory', function (done) {
         var newMemory = process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES + 10000
         ctx.mockContextVersion.getUserContainerMemoryLimit.returns(newMemory)
@@ -811,6 +887,41 @@ describe('docker: ' + moduleName, function () {
           'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
           'DOCKER_IMAGE_BUILDER_LAYER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts)
+        ])
+        done()
+      })
+    })
+    describe('adding ssh keys', () => {
+      beforeEach(function (done) {
+        ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = '/cache'
+        ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = '/layer-cache'
+        done()
+      })
+      afterEach(function (done) {
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        done()
+      })
+
+      it('should add ssh_key_id env', function (done) {
+        let opts = ctx.opts
+        opts.organization = {
+          id: 55
+        }
+        opts.keyNames = 'yzerman,fedorov'
+        opts.keyUserIds = '19,91'
+        var envs = model._createImageBuilderEnv(opts)
+        var buildOpts = {
+          forcerm: true
+        }
+        expect(envs).to.contain([
+          'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
+          'DOCKER_IMAGE_BUILDER_LAYER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE,
+          'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
+          'SSH_KEY_IDS=' + opts.keyUserIds,
+          'SSH_KEY_NAMES=' + opts.keyNames
         ])
         done()
       })
