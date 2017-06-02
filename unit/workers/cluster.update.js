@@ -87,7 +87,7 @@ describe('Cluster Update Worker', function () {
       sinon.stub(InstanceService, 'findInstanceById').resolves(testInstance)
       sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(config)
       sinon.stub(ClusterConfigService, 'fetchFilesFromGithub').resolves([composeData])
-      sinon.stub(ClusterConfigService, 'parseComposeFileAndPopulateENVs').resolves(octobearInfo)
+      sinon.stub(ClusterConfigService, 'parseComposeFilesIntoServices').resolves(octobearInfo)
       sinon.stub(ClusterConfigService, 'updateCluster').resolves()
       done()
     })
@@ -97,7 +97,7 @@ describe('Cluster Update Worker', function () {
       InstanceService.findInstanceById.restore()
       ClusterConfigService.fetchConfigByInstanceId.restore()
       ClusterConfigService.fetchFilesFromGithub.restore()
-      ClusterConfigService.parseComposeFileAndPopulateENVs.restore()
+      ClusterConfigService.parseComposeFilesIntoServices.restore()
       ClusterConfigService.updateCluster.restore()
       done()
     })
@@ -173,16 +173,17 @@ describe('Cluster Update Worker', function () {
           .asCallback(done)
       })
 
-      it('should parse the compose file', function (done) {
+      it('should parse the compose files', function (done) {
         Worker.task(job)
           .then(() => {
-            sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
+            sinon.assert.calledOnce(ClusterConfigService.parseComposeFilesIntoServices)
             sinon.assert.calledWithExactly(
-              ClusterConfigService.parseComposeFileAndPopulateENVs,
-              composeData,
+              ClusterConfigService.parseComposeFilesIntoServices,
+              sinon.match.array,
               job.pushInfo.repo,
               config.clusterName,
               bigPoppaUser,
+              githubPushInfo.commit,
               config.files[0].path
             )
           })
@@ -197,7 +198,7 @@ describe('Cluster Update Worker', function () {
               InstanceService.findInstanceById,
               ClusterConfigService.fetchConfigByInstanceId,
               ClusterConfigService.fetchFilesFromGithub,
-              ClusterConfigService.parseComposeFileAndPopulateENVs,
+              ClusterConfigService.parseComposeFilesIntoServices,
               ClusterConfigService.updateCluster
             )
           })
