@@ -18,13 +18,13 @@ InputClusterConfig.findAsync({})
   .map((cluster) => {
     const clusterAttrs = cluster.toJSON()
     console.log('Processing cluster: ' + cluster.clusterName)
-    if (clusterAttrs.filePath) {
+    if (clusterAttrs.filePath && clusterAttrs.fileSha) {
       if (dryRun) {
         console.log('Skipped cluster update: ' + cluster.clusterName)
         return
       }
       console.log('Updating cluster: ' + cluster.clusterName)
-      cluster.set(files, [{
+      cluster.set('files', [{
         path: clusterAttrs.filePath,
         sha: clusterAttrs.fileSha
       }])
