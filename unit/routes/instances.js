@@ -10,6 +10,7 @@ const BuildService = require('models/services/build-service')
 const InstanceForkService = require('models/services/instance-fork-service')
 const instances = require('routes/instances')
 const IsolationService = require('models/services/isolation-service')
+const ClusterConfigService = require('models/services/cluster-config-service')
 
 const lab = exports.lab = Lab.script()
 const afterEach = lab.afterEach
@@ -55,6 +56,7 @@ describe('/instances', () => {
       sinon.stub(BuildService, 'createAndBuildContextVersion').resolves(mockBuildAndCv)
       sinon.stub(InstanceForkService, 'forkMasterInstance').resolves(mockForkedInstance)
       sinon.stub(IsolationService, 'autoIsolate').resolves(mockForkedInstance)
+      sinon.stub(ClusterConfigService, 'checkFileChangeAndCreateUpdateJob').resolves(mockForkedInstance)
       done()
     })
 
@@ -62,6 +64,7 @@ describe('/instances', () => {
       BuildService.createAndBuildContextVersion.restore()
       InstanceForkService.forkMasterInstance.restore()
       IsolationService.autoIsolate.restore()
+      ClusterConfigService.checkFileChangeAndCreateUpdateJob.restore()
       done()
     })
     it('should call createAndBuildContextVersion with the right parameters', done => {
@@ -102,6 +105,24 @@ describe('/instances', () => {
           sinon.assert.calledOnce(IsolationService.autoIsolate)
           sinon.assert.calledWith(IsolationService.autoIsolate,
             [mockForkedInstance],
+            {
+              repo: 'repoName',
+              branch: 'branch12',
+              commit: 'sha12',
+              user: {
+                id: '1234'
+              }
+            }
+          )
+        })
+        .asCallback(done)
+    })
+    it('should call updateCluster with the right params', function (done) {
+      instances.forkInstance(mockReq)
+        .then(function () {
+          sinon.assert.calledOnce(ClusterConfigService.checkFileChangeAndCreateUpdateJob)
+          sinon.assert.calledWith(ClusterConfigService.checkFileChangeAndCreateUpdateJob,
+            mockForkedInstance,
             {
               repo: 'repoName',
               branch: 'branch12',
