@@ -24,15 +24,15 @@ InputClusterConfig.findAsync({})
         return
       }
       console.log('Updating cluster: ' + cluster.clusterName)
-      cluster.set({
-        $push: {
-          files: {
-            path: cluster.filePath,
-            sha: cluster.fileSha
-          }
-        }
-      })
+      cluster.set(files, [{
+        path: clusterAttrs.filePath,
+        sha: clusterAttrs.fileSha
+      }])
       return cluster.saveAsync()
+        .catch(function (err) {
+          console.error('failed to update the cluster', err, cluster)
+          return process.exit(1)
+        })
     }
     console.log('Skipped cluster: ' + cluster.clusterName)
     return
