@@ -2361,8 +2361,7 @@ describe('Cluster Config Service Unit Tests', function () {
           sinon.assert.calledWithExactly(
             octobear.parseAndMergeMultiple,
             {
-              dockerComposeFilePath: 'compose1.yml',
-              dockerComposeFileString: 'compose-file-content',
+              dockerComposeFilePath: '/compose.yml',
               ownerUsername: 'runnable',
               repositoryName: 'mainInstanceName',
               scmDomain: 'github.com',
