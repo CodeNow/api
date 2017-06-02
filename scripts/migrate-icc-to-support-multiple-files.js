@@ -16,12 +16,14 @@ console.log('dryRun?', !!dryRun)
 
 InputClusterConfig.findAsync({})
   .map((cluster) => {
-    console.log('Processing cluster: ' + cluster.name)
-    if (cluster.filePath) {
+    const clusterAttrs = cluster.toJSON()
+    console.log('Processing cluster: ' + cluster.clusterName)
+    if (clusterAttrs.filePath) {
       if (dryRun) {
-        console.log('Skipped cluster: ' + cluster.name)
+        console.log('Skipped cluster update: ' + cluster.clusterName)
         return
       }
+      console.log('Updating cluster: ' + cluster.clusterName)
       cluster.set({
         $push: {
           files: {
@@ -32,6 +34,7 @@ InputClusterConfig.findAsync({})
       })
       return cluster.saveAsync()
     }
+    console.log('Skipped cluster: ' + cluster.clusterName)
     return
   })
   .then(() => {
