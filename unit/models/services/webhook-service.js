@@ -189,13 +189,13 @@ describe('Webhook Service Unit Tests', function () {
         _id: 'sdasdsaddgfasdfgasdfasdf'
       }
       sinon.stub(BuildService, 'createAndBuildContextVersion')
-      sinon.stub(ClusterConfigService, 'checkIfComposeFileHasChanged').rejects(new Error())
+      sinon.stub(ClusterConfigService, 'checkIfComposeFilesChanged').rejects(new Error())
       sinon.stub(rabbitMQ, 'updateCluster').resolves()
       done()
     })
     afterEach(function (done) {
       BuildService.createAndBuildContextVersion.restore()
-      ClusterConfigService.checkIfComposeFileHasChanged.restore()
+      ClusterConfigService.checkIfComposeFilesChanged.restore()
       rabbitMQ.updateCluster.restore()
       done()
     })
@@ -225,15 +225,15 @@ describe('Webhook Service Unit Tests', function () {
           })
           .asCallback(done)
       })
-      it('should checkIfComposeFileHasChanged for each instance', function (done) {
+      it('should checkIfComposeFilesChanged for each instance', function (done) {
         WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
           .then(function () {
-            sinon.assert.calledOnce(ClusterConfigService.checkIfComposeFileHasChanged)
+            sinon.assert.calledOnce(ClusterConfigService.checkIfComposeFilesChanged)
           })
           .asCallback(done)
       })
-      it('should updateCluster for instance that resolves checkIfComposeFileHasChanged', function (done) {
-        ClusterConfigService.checkIfComposeFileHasChanged.resolves()
+      it('should updateCluster for instance that resolves checkIfComposeFilesChanged', function (done) {
+        ClusterConfigService.checkIfComposeFilesChanged.resolves()
         WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
           .then(function () {
             sinon.assert.calledOnce(rabbitMQ.updateCluster)
@@ -265,7 +265,7 @@ describe('Webhook Service Unit Tests', function () {
       contextIds = ['sadsadasdsad', 'sdgfddfsgdfsgsdfgdsfg']
       sinon.stub(WebhookService, 'checkCommitPusherIsRunnableUser')
       sinon.stub(Instance, 'findMasterPodsToAutoFork')
-      sinon.stub(ClusterConfigService, 'checkIfComposeFileHasChanged').resolves()
+      sinon.stub(ClusterConfigService, 'checkIfComposeFilesChanged').resolves()
       sinon.stub(InstanceForkService, 'autoFork')
       sinon.stub(IsolationService, 'autoIsolate')
       sinon.stub(rabbitMQ, 'updateCluster').resolves
@@ -274,7 +274,7 @@ describe('Webhook Service Unit Tests', function () {
     afterEach(function (done) {
       WebhookService.checkCommitPusherIsRunnableUser.restore()
       Instance.findMasterPodsToAutoFork.restore()
-      ClusterConfigService.checkIfComposeFileHasChanged.restore()
+      ClusterConfigService.checkIfComposeFilesChanged.restore()
       InstanceForkService.autoFork.restore()
       IsolationService.autoIsolate.restore()
       rabbitMQ.updateCluster.restore()
@@ -402,14 +402,14 @@ describe('Webhook Service Unit Tests', function () {
         WebhookService.autoFork(contextIds, githubPushInfo)
           .then(function (instances) {
             expect(instances).to.equal(forkedInstances)
-            sinon.assert.calledTwice(ClusterConfigService.checkIfComposeFileHasChanged)
+            sinon.assert.calledTwice(ClusterConfigService.checkIfComposeFilesChanged)
             sinon.assert.calledWithExactly(
-              ClusterConfigService.checkIfComposeFileHasChanged,
+              ClusterConfigService.checkIfComposeFilesChanged,
               forkedInstances[0],
               githubPushInfo
             )
             sinon.assert.calledWithExactly(
-              ClusterConfigService.checkIfComposeFileHasChanged,
+              ClusterConfigService.checkIfComposeFilesChanged,
               forkedInstances[1],
               githubPushInfo
             )
