@@ -365,7 +365,8 @@ describe('docker: ' + moduleName, function () {
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
           organization: {
-            githubUsername: 'runnable'
+            githubUsername: 'runnable',
+            sshKeys: []
           },
           noCache: false,
           tid: 'mediocre-tid'
@@ -395,8 +396,11 @@ describe('docker: ' + moduleName, function () {
             noCache: opts.noCache,
             contextVersion: opts.contextVersion,
             organization: {
-              githubUsername: 'runnable'
-            }
+              githubUsername: 'runnable',
+              sshKeys: []
+            },
+            keyNames: undefined,
+            keyUserIds: undefined
           })
 
           var expected = {
@@ -424,7 +428,10 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false
+          noCache: false,
+          organization: {
+            sshKeys: []
+          }
         }
         model.createImageBuilder(opts, function (err) {
           if (err) { return done(err) }
@@ -454,7 +461,8 @@ describe('docker: ' + moduleName, function () {
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
           organization: {
-            githubUsername: 'runnable'
+            githubUsername: 'runnable',
+            sshKeys: []
           },
           noCache: false,
           tid: 'mediocre-tid'
@@ -483,8 +491,11 @@ describe('docker: ' + moduleName, function () {
             noCache: opts.noCache,
             contextVersion: opts.contextVersion,
             organization: {
-              githubUsername: 'runnable'
-            }
+              githubUsername: 'runnable',
+              sshKeys: []
+            },
+            keyNames: undefined,
+            keyUserIds: undefined
           })
 
           var expected = {
@@ -496,7 +507,7 @@ describe('docker: ' + moduleName, function () {
               Memory: process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES,
               MemoryReservation: testMemory
             },
-            Labels: ctx.mockLabels
+            Labels: ctx.mockLabels,
           }
 
           sinon.assert.calledWith(
@@ -528,7 +539,10 @@ describe('docker: ' + moduleName, function () {
             sessionUser: ctx.mockSessionUser,
             contextVersion: ctx.mockContextVersion,
             network: ctx.mockNetwork,
-            noCache: false
+            noCache: false,
+            organization: {
+              sshKeys: []
+            }
           }
           model.createImageBuilder(opts, function (err) {
             if (err) { return done(err) }
@@ -547,7 +561,7 @@ describe('docker: ' + moduleName, function () {
                 Memory: process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES,
                 MemoryReservation: testMemory
               },
-              Labels: ctx.mockLabels
+              Labels: ctx.mockLabels,
             })
             done()
           })
@@ -610,7 +624,8 @@ describe('docker: ' + moduleName, function () {
         noCache: 'noCache',
         sessionUser: ctx.mockSessionUser,
         organization: {
-          githubUsername: 'ownerUsername'
+          githubUsername: 'ownerUsername',
+          sshKeys: []
         },
         tid: 'mediocre-tid'
       }
@@ -645,7 +660,8 @@ describe('docker: ' + moduleName, function () {
         network: ctx.mockNetwork,
         sessionUser: ctx.mockSessionUser,
         organization: {
-          githubUsername: 'runnable'
+          githubUsername: 'runnable',
+          sshKeys: []
         }
       })
       expect(imageBuilderContainerLabels['contextVersion._id']).to.equal(ctx.mockContextVersion._id)
@@ -659,7 +675,8 @@ describe('docker: ' + moduleName, function () {
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
         organization: {
-          githubUsername: 'runnable'
+          githubUsername: 'runnable',
+          sshKeys: []
         },
         sessionUser: Object.assign({}, ctx.mockSessionUser, { accounts: { github: { id: 'owner' }}})
     })
@@ -675,7 +692,8 @@ describe('docker: ' + moduleName, function () {
         network: ctx.mockNetwork,
         sessionUser: ctx.mockSessionUser,
         organization: {
-          githubUsername: 'runnable'
+          githubUsername: 'runnable',
+          sshKeys: []
         }
       })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
@@ -690,7 +708,8 @@ describe('docker: ' + moduleName, function () {
         network: ctx.mockNetwork,
         sessionUser: ctx.mockSessionUser,
         organization: {
-          githubUsername: 'runnable'
+          githubUsername: 'runnable',
+          sshKeys: []
         }
       })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
@@ -726,6 +745,9 @@ describe('docker: ' + moduleName, function () {
 
       it('should return an array of ENV for image builder container', function (done) {
         var opts = ctx.opts
+        opts.organization = {
+          id: 55
+        }
         var buildOpts = {
           forcerm: true,
           nocache: true
@@ -744,6 +766,9 @@ describe('docker: ' + moduleName, function () {
           'RUNNABLE_IMAGE_BUILDER_NAME=' + process.env.DOCKER_IMAGE_BUILDER_NAME,
           'RUNNABLE_IMAGE_BUILDER_TAG=' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
           'RUNNABLE_PREFIX=' + path.join(cv.infraCodeVersion.bucket().sourcePath, '/'),
+          'RUNNABLE_VAULT_TOKEN_FILE_PATH=' + process.env.RUNNABLE_VAULT_TOKEN_FILE_PATH,
+          'RUNNABLE_VAULT_ENDPOINT=' + process.env.USER_VAULT_ENDPOINT,
+          'RUNNABLE_ORG_ID=' + opts.organization.id,
           // acv envs
           'RUNNABLE_REPO=' + 'git@github.com:' + appCodeVersions.map(pluck('repo')).join(';git@github.com:'),
           'RUNNABLE_COMMITISH=' + [ appCodeVersions[0].commit, appCodeVersions[1].branch, 'master' ].join(';'),
@@ -774,7 +799,11 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should return conditional container env', function (done) {
-        var envs = model._createImageBuilderEnv(ctx.opts)
+        let opts = ctx.opts
+        opts.organization = {
+          id: 55
+        }
+        var envs = model._createImageBuilderEnv(opts)
         var buildOpts = {
           forcerm: true
         }
