@@ -42,10 +42,18 @@ describe('Cluster Update Worker', function () {
     const config = {
       repo: user.login + '/repo',
       branch: 'branch',
-      filePath: 'github.com',
+      files: [{
+        path: 'github.com',
+        sha: 'ab17haa9a'
+      }],
       clusterName: 'asdasd'
     }
-    const composeData = {}
+    const composeData = {
+      files: [{
+        path: 'github.com',
+        sha: 'ab17haa9a'
+      }]
+    }
     const octobearInfo = {}
     var testInstance
     const job = {
@@ -80,7 +88,7 @@ describe('Cluster Update Worker', function () {
       sinon.stub(UserService, 'getCompleteUserByGithubId').resolves(user)
       sinon.stub(InstanceService, 'findInstanceById').resolves(testInstance)
       sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(config)
-      sinon.stub(ClusterConfigService, 'fetchFileFromGithub').resolves(composeData)
+      sinon.stub(ClusterConfigService, 'fetchFilesFromGithub').resolves([composeData])
       sinon.stub(ClusterConfigService, 'parseComposeFileAndPopulateENVs').resolves(octobearInfo)
       sinon.stub(ClusterConfigService, 'updateCluster').resolves()
       done()
@@ -90,7 +98,7 @@ describe('Cluster Update Worker', function () {
       UserService.getCompleteUserByGithubId.restore()
       InstanceService.findInstanceById.restore()
       ClusterConfigService.fetchConfigByInstanceId.restore()
-      ClusterConfigService.fetchFileFromGithub.restore()
+      ClusterConfigService.fetchFilesFromGithub.restore()
       ClusterConfigService.parseComposeFileAndPopulateENVs.restore()
       ClusterConfigService.updateCluster.restore()
       done()
@@ -155,12 +163,12 @@ describe('Cluster Update Worker', function () {
       it('should fetch the compose file', function (done) {
         Worker.task(job)
           .then(() => {
-            sinon.assert.calledOnce(ClusterConfigService.fetchFileFromGithub)
+            sinon.assert.calledOnce(ClusterConfigService.fetchFilesFromGithub)
             sinon.assert.calledWithExactly(
-              ClusterConfigService.fetchFileFromGithub,
+              ClusterConfigService.fetchFilesFromGithub,
               bigPoppaUser,
               job.pushInfo.repo,
-              config.filePath,
+              [ config.files[0].path ],
               githubPushInfo.commit
             )
           })
@@ -177,7 +185,7 @@ describe('Cluster Update Worker', function () {
               job.pushInfo.repo,
               config.clusterName,
               bigPoppaUser,
-              config.filePath
+              config.files[0].path
             )
           })
           .asCallback(done)
@@ -190,7 +198,7 @@ describe('Cluster Update Worker', function () {
               UserService.getCompleteUserByGithubId,
               InstanceService.findInstanceById,
               ClusterConfigService.fetchConfigByInstanceId,
-              ClusterConfigService.fetchFileFromGithub,
+              ClusterConfigService.fetchFilesFromGithub,
               ClusterConfigService.parseComposeFileAndPopulateENVs,
               ClusterConfigService.updateCluster
             )

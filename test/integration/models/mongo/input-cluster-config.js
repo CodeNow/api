@@ -19,9 +19,13 @@ describe('InputClusterConfig Model Integration Tests', function () {
   const autoIsolationConfigId = '507f191e810c19729de860ea'
   const parentInputClusterConfigId = '607f191e810c19729de860e1'
   const data = {
+    files: [
+      {
+        path: '/config/compose.yml',
+        sha: 'asdasdsasadasdasdsadsadas'
+      }
+    ],
     branch: 'helloBranch',
-    filePath: '/config/compose.yml',
-    fileSha: 'asdasdsasadasdasdsadsadas',
     autoIsolationConfigId: objectId(autoIsolationConfigId),
     createdByUser: 123123,
     ownedByOrg: 1,
@@ -41,7 +45,9 @@ describe('InputClusterConfig Model Integration Tests', function () {
     it('should be possible to save input cluster config', function (done) {
       InputClusterConfig.createAsync(data)
       .tap(function (saved) {
-        expect(saved.filePath).to.equal(data.filePath)
+        expect(saved.files.length).to.equal(1)
+        expect(saved.files[0].path).to.equal(data.files[0].path)
+        expect(saved.files[0].sha).to.equal(data.files[0].sha)
         expect(saved.created).to.exist()
         expect(saved.createdByUser).to.equal(data.createdByUser)
         expect(saved.ownerBy).to.equal(data.ownerBy)
@@ -58,7 +64,9 @@ describe('InputClusterConfig Model Integration Tests', function () {
     beforeEach(function (done) {
       InputClusterConfig.createAsync(data)
       .tap(function (saved) {
-        expect(saved.filePath).to.equal(data.filePath)
+        expect(saved.files.length).to.equal(1)
+        expect(saved.files[0].path).to.equal(data.files[0].path)
+        expect(saved.files[0].sha).to.equal(data.files[0].sha)
         expect(saved.autoIsolationConfigId.toString()).to.equal(data.autoIsolationConfigId.toString())
         expect(saved.created).to.exist()
         expect(saved.deleted).to.not.exist()
@@ -80,26 +88,6 @@ describe('InputClusterConfig Model Integration Tests', function () {
   })
 
   describe('validation', function () {
-    it('should fail if filePath is not provided', function (done) {
-      const invalidData = Object.assign({}, data)
-      invalidData.filePath = null
-      InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.errors.filePath.message).to.equal('Input Cluster Config requires file path')
-        done()
-      })
-    })
-
-    it('should fail if fileSha is not provided', function (done) {
-      const invalidData = Object.assign({}, data)
-      invalidData.fileSha = null
-      InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
-        expect(err).to.exist()
-        expect(err.errors.fileSha.message).to.equal('Input Cluster Config requires a sha')
-        done()
-      })
-    })
-
     it('should fail if createdByUser is not valid', function (done) {
       const invalidValue = 'some-invalid-value'
       const invalidData = Object.assign({}, data)

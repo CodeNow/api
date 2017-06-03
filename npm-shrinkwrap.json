@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "11.42.9",
+  "version": "12.0.0",
   "dependencies": {
     "101": {
       "version": "1.6.2",
@@ -4070,6 +4070,11 @@
       "from": "lodash.defaults@>=3.1.2 <4.0.0",
       "resolved": "https://registry.npmjs.org/lodash.defaults/-/lodash.defaults-3.1.2.tgz",
       "dev": true
+    },
+    "lodash.difference": {
+      "version": "4.5.0",
+      "from": "lodash.difference@latest",
+      "resolved": "https://registry.npmjs.org/lodash.difference/-/lodash.difference-4.5.0.tgz"
     },
     "lodash.isarguments": {
       "version": "3.1.0",
