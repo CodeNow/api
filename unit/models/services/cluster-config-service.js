@@ -1686,7 +1686,7 @@ describe('Cluster Config Service Unit Tests', function () {
             expect(parsed).to.equal({
               fileString,
               commitRef,
-              repo: repoFullName
+              repo: repoFullName,
               sha: dockerComposeContent.sha,
               path: filePath,
             })
