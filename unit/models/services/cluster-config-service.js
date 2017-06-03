@@ -187,7 +187,7 @@ describe('Cluster Config Service Unit Tests', function () {
       repositoryName: clusterName,
       ownerUsername: orgName,
       userContentDomain: process.env.USER_CONTENT_DOMAIN,
-      fileSha: dockerComposeContent.sha,
+      sha: dockerComposeContent.sha,
       fileString: fileString
     }
     const commitSha = 'abcc0b9'
@@ -294,8 +294,12 @@ describe('Cluster Config Service Unit Tests', function () {
             { triggeredAction, repoFullName },
             sinon.match({
               clusterName,
-              filePath,
-              fileSha: parsedInput.fileSha,
+              files: [
+                {
+                  path: filePath,
+                  sha: parsedInput.sha,
+                }
+              ],
               isTesting,
               testReporters,
               parentInputClusterConfigId
@@ -328,14 +332,22 @@ describe('Cluster Config Service Unit Tests', function () {
     const fileSha = 'asdfasdfadsfase3kj3lkj4qwdfalk3fawhsdfkjsd'
     const composeData = {
       repositoryName: 'sdasdasd',
-      fileSha: fileSha
+      files: [
+        {
+          sha: fileSha
+        }
+      ]
     }
     const clusterOpts = {
-      filePath,
-      fileSha,
       clusterName: composeData.repositoryName,
       isTesting,
-      testReporters: []
+      testReporters: [],
+      files: [
+        {
+          path: filePath,
+          sha: fileSha
+        }
+      ]
     }
     const buildOpts = {
       repoFullName: composeData.repositoryName,
@@ -1673,25 +1685,32 @@ describe('Cluster Config Service Unit Tests', function () {
           .tap(function (parsed) {
             expect(parsed).to.equal({
               fileString,
-              fileSha: dockerComposeContent.sha,
-              filePath,
               commitRef,
               repo: repoFullName
+              sha: dockerComposeContent.sha,
+              path: filePath,
             })
           })
           .asCallback(done)
       })
     })
   })
-  describe('checkIfComposeFileHasChanged', function () {
-    const filePath = 'config/compose.yml'
+  describe('checkIfComposeFilesChanged', function () {
+    const path = 'config/compose.yml'
+    const clusterConfigFiles = [
+      {
+        path,
+        sha: '13ec49b1014891c7b494126226f95e318e1d3e82'
+      }
+    ]
+    const changedClusterConfigFiles = [
+      {
+        path,
+        sha: 'dfasdf3qaf3afa3wfa3faw3weas3asfa2eqdqd2q2'
+      }
+    ]
     const clusterConfig = {
-      filePath: filePath,
-      fileSha: '13ec49b1014891c7b494126226f95e318e1d3e82'
-    }
-    const changedClusterConfig = {
-      filePath: filePath,
-      fileSha: 'dfasdf3qaf3afa3wfa3faw3weas3asfa2eqdqd2q2'
+      files: clusterConfigFiles
     }
     const orgName = 'Runnable'
     const userId = 2
@@ -1709,20 +1728,20 @@ describe('Cluster Config Service Unit Tests', function () {
     beforeEach(function (done) {
       sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(clusterConfig)
       sinon.stub(UserService, 'getByGithubId').resolves(userModel)
-      sinon.stub(ClusterConfigService, 'fetchFileFromGithub').resolves(changedClusterConfig)
+      sinon.stub(ClusterConfigService, 'fetchFilesFromGithub').resolves(changedClusterConfigFiles)
       done()
     })
     afterEach(function (done) {
       ClusterConfigService.fetchConfigByInstanceId.restore()
       UserService.getByGithubId.restore()
-      ClusterConfigService.fetchFileFromGithub.restore()
+      ClusterConfigService.fetchFilesFromGithub.restore()
       done()
     })
     describe('errors', function () {
       it('should return error if fetchConfigByInstanceId failed', function (done) {
         const error = new Error('Some error')
         ClusterConfigService.fetchConfigByInstanceId.rejects(error)
-        ClusterConfigService.checkIfComposeFileHasChanged(instanceId, githubPushInfo)
+        ClusterConfigService.checkIfComposeFilesChanged(instanceId, githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -1732,17 +1751,17 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if UserService.getByGithubId failed', function (done) {
         const error = new Error('Some error')
         UserService.getByGithubId.rejects(error)
-        ClusterConfigService.checkIfComposeFileHasChanged(instanceId, githubPushInfo)
+        ClusterConfigService.checkIfComposeFilesChanged(instanceId, githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
             done()
           })
       })
-      it('should return error if ClusterConfigService.fetchFileFromGithub failed', function (done) {
+      it('should return error if ClusterConfigService.fetchFilesFromGithub failed', function (done) {
         const error = new Error('Some error')
-        ClusterConfigService.fetchFileFromGithub.rejects(error)
-        ClusterConfigService.checkIfComposeFileHasChanged(instanceId, githubPushInfo)
+        ClusterConfigService.fetchFilesFromGithub.rejects(error)
+        ClusterConfigService.checkIfComposeFilesChanged(instanceId, githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -1752,13 +1771,13 @@ describe('Cluster Config Service Unit Tests', function () {
     })
     describe('success', function () {
       it('should run successfully', function (done) {
-        ClusterConfigService.fetchFileFromGithub.resolves(changedClusterConfig)
-        ClusterConfigService.checkIfComposeFileHasChanged(instanceId, githubPushInfo)
+        ClusterConfigService.fetchFilesFromGithub.resolves(changedClusterConfigFiles)
+        ClusterConfigService.checkIfComposeFilesChanged(instanceId, githubPushInfo)
           .asCallback(done)
       })
       it('should return InputClusterConfig.NotChangedError if shas match', function (done) {
-        ClusterConfigService.fetchFileFromGithub.resolves(clusterConfig)
-        ClusterConfigService.checkIfComposeFileHasChanged(instanceId, githubPushInfo)
+        ClusterConfigService.fetchFilesFromGithub.resolves(clusterConfigFiles)
+        ClusterConfigService.checkIfComposeFilesChanged(instanceId, githubPushInfo)
           .then(function () {
             done(new Error('Expecting NotChangedError'))
           })
