@@ -142,9 +142,9 @@
       }
     },
     "@runnable/octobear": {
-      "version": "5.0.0",
-      "from": "git://github.com/Runnable/octobear.git#1f7dc7a03762371b7ff234f050ac51805810af98",
-      "resolved": "git://github.com/Runnable/octobear.git#1f7dc7a03762371b7ff234f050ac51805810af98",
+      "version": "5.1.0",
+      "from": "@runnable/octobear@5.1.0",
+      "resolved": "https://registry.npmjs.org/@runnable/octobear/-/octobear-5.1.0.tgz",
       "dependencies": {
         "dotenv": {
           "version": "4.0.0",
