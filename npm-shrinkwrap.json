@@ -1,6 +1,6 @@
 {
   "name": "api",
-  "version": "12.0.1",
+  "version": "12.1.0",
   "dependencies": {
     "101": {
       "version": "1.6.2",
@@ -142,9 +142,9 @@
       }
     },
     "@runnable/octobear": {
-      "version": "4.0.1",
-      "from": "@runnable/octobear@4.0.1",
-      "resolved": "https://registry.npmjs.org/@runnable/octobear/-/octobear-4.0.1.tgz",
+      "version": "5.1.0",
+      "from": "@runnable/octobear@5.1.0",
+      "resolved": "https://registry.npmjs.org/@runnable/octobear/-/octobear-5.1.0.tgz",
       "dependencies": {
         "dotenv": {
           "version": "4.0.0",
