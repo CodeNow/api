@@ -366,7 +366,7 @@ describe('docker: ' + moduleName, function () {
           contextVersion: ctx.mockContextVersion,
           organization: {
             githubUsername: 'runnable',
-            sshKeys: []
+            sshKeys: undefined
           },
           noCache: false,
           tid: 'mediocre-tid'
@@ -397,10 +397,8 @@ describe('docker: ' + moduleName, function () {
             contextVersion: opts.contextVersion,
             organization: {
               githubUsername: 'runnable',
-              sshKeys: []
-            },
-            keyNames: undefined,
-            keyUserIds: undefined
+              sshKeys: undefined
+            }
           })
 
           var expected = {
@@ -466,16 +464,8 @@ describe('docker: ' + moduleName, function () {
             contextVersion: opts.contextVersion,
             organization: {
               githubUsername: 'runnable',
-              sshKeys: [{
-                keyName: 'f#%& up some commas',
-                userId: 1000000
-              },{
-                keyName: 'smashing pumpkins',
-                userId: 1979
-              }]
-            },
-            keyNames: 'f#%& up some commas,smashing pumpkins',
-            keyUserIds: '1000000,1979'
+              sshKeys: '1000000,1979'
+              }
           })
 
           var expected = {
@@ -538,7 +528,7 @@ describe('docker: ' + moduleName, function () {
           contextVersion: ctx.mockContextVersion,
           organization: {
             githubUsername: 'runnable',
-            sshKeys: []
+            sshKeys: undefined
           },
           noCache: false,
           tid: 'mediocre-tid'
@@ -568,10 +558,8 @@ describe('docker: ' + moduleName, function () {
             contextVersion: opts.contextVersion,
             organization: {
               githubUsername: 'runnable',
-              sshKeys: []
-            },
-            keyNames: undefined,
-            keyUserIds: undefined
+              sshKeys: undefined
+            }
           })
 
           var expected = {
@@ -908,10 +896,9 @@ describe('docker: ' + moduleName, function () {
       it('should add ssh_key_id env', function (done) {
         let opts = ctx.opts
         opts.organization = {
-          id: 55
+          id: 55,
+          sshKeys: '19,91'
         }
-        opts.keyNames = 'yzerman,fedorov'
-        opts.keyUserIds = '19,91'
         var envs = model._createImageBuilderEnv(opts)
         var buildOpts = {
           forcerm: true
@@ -920,8 +907,7 @@ describe('docker: ' + moduleName, function () {
           'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
           'DOCKER_IMAGE_BUILDER_LAYER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
-          'SSH_KEY_IDS=' + opts.keyUserIds,
-          'SSH_KEY_NAMES=' + opts.keyNames
+          'RUNNABLE_SSH_KEY_IDS=19,91'
         ])
         done()
       })
@@ -1182,6 +1168,14 @@ describe('docker: ' + moduleName, function () {
         sinon.assert.calledOnce(model._containerAction)
         done()
       })
+    })
+  })
+
+  describe('addSshKeysToOrgHelper', function () {
+    it('should call addSshKeyEnvs and return a string', function (done) {
+      let keyIds = model.addSshKeyEnvs([{ userId: 99 }])
+      expect(keyIds).to.equal('99')
+      done()
     })
   })
 
