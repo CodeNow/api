@@ -1,13 +1,15 @@
-'use strict';
+'use strict'
 
-module.exports.id = "add_icc_repo_and_branch";
+module.exports.id = 'CREATE_SOURCE_FILES'
+
+const seedVersions = require('../../scripts/seed-version')
 
 module.exports.up = function (done) {
   // use this.db for MongoDB communication, and this.log() for logging
-  done();
-};
+  seedVersions().asCallback(done)
+}
 
 module.exports.down = function (done) {
   // use this.db for MongoDB communication, and this.log() for logging
-  done();
-};
+  done()
+}

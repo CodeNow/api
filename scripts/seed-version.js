@@ -104,6 +104,8 @@ var createdBy
  */
 main()
 
+module.exports.seedVersions = main
+
 function main () {
   return Promise.all([
     rabbitMQ.connect(),
