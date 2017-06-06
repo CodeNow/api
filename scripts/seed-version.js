@@ -99,11 +99,6 @@ sinon.stub(messenger)
 var ctx = {}
 var createdBy
 
-/*
- * START SCRIPT
- */
-main()
-
 module.exports.seedVersions = main
 
 function main () {
