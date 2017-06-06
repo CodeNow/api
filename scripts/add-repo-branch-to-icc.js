@@ -8,11 +8,15 @@ const AutoIsolationService = require('models/services/auto-isolation-service')
 const InputClusterConfig = require('models/mongo/input-cluster-config')
 const mongoose = require('mongoose')
 const Promise = require('bluebird')
+const logger = require('logger')
+const log = logger.child({
+  module: 'Migrator-up'
+})
 mongoose.connect(process.env.MONGO)
 
 const dryRun = !process.env.ACTUALLY_RUN
 
-console.log('dryRun?', !!dryRun)
+log.trace('dryRun?', !!dryRun)
 
 AutoIsolationConfigs.findAsync({})
   .map(config => InputClusterConfig.findActiveByAutoIsolationId(config._id)
@@ -22,9 +26,8 @@ AutoIsolationConfigs.findAsync({})
         .then(instance => {
           return { instance, config, icc }
         })
-      }
-    )
-    .catch(() => {})
+    })
+    .catch(() => {}) // Ignore errors, like ICC not found, since we don't care
   )
   .filter(model => !!model)
   .map(model => {
@@ -33,15 +36,15 @@ AutoIsolationConfigs.findAsync({})
     icc.set('repo', instance.getRepoName())
     icc.set('branch', instance.getMainBranchName())
     if (dryRun) {
-      return console.log(' Saving New Values on ICC ', icc)
+      return log.trace('Saving New Values on ICC ', icc)
     }
     return icc.save()
   })
   .then(function () {
-    console.log('done.')
+    log.trace('done.')
     Promise.fromCallback(cb => mongoose.disconnect(cb))
   })
   .catch(function (err) {
-    console.error('error happened', err)
+    log.error('error happened', err)
     throw err
   })
