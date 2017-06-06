@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "11.42.9",
+  "version": "12.1.0",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -20,8 +20,8 @@
     "@runnable/big-poppa-client": "^1.0.1-beta1",
     "@runnable/clio-client": "^1.0.8",
     "@runnable/hostname": "^3.0.0",
+    "@runnable/octobear": "^5.1.0",
     "@runnable/keymaker-client": "^1.0.1",
-    "@runnable/octobear": "^4.0.1",
     "JSONStream": "0.10.x",
     "array-subtract": "^2.0.0",
     "async": "^0.9.0",
@@ -59,6 +59,7 @@
     "json-hash": "0.0.4",
     "json-stable-stringify": "^1.0.0",
     "keypather": "^1.10.1",
+    "lodash.difference": "^4.5.0",
     "middleware-flow": "^0.7.0",
     "middlewarize": "0.0.1",
     "mixpanel": "^0.1.0",
