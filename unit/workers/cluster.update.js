@@ -40,10 +40,18 @@ describe('Cluster Update Worker', function () {
       user: user
     }
     const config = {
-      filePath: 'github.com',
+      files: [{
+        path: 'github.com',
+        sha: 'ab17haa9a'
+      }],
       clusterName: 'asdasd'
     }
-    const composeData = {}
+    const composeData = {
+      files: [{
+        path: 'github.com',
+        sha: 'ab17haa9a'
+      }]
+    }
     const octobearInfo = {}
     var testInstance
     const job = {
@@ -78,7 +86,6 @@ describe('Cluster Update Worker', function () {
       sinon.stub(UserService, 'getCompleteUserByGithubId').resolves(user)
       sinon.stub(InstanceService, 'findInstanceById').resolves(testInstance)
       sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(config)
-      sinon.stub(ClusterConfigService, 'fetchFileFromGithub').resolves(composeData)
       sinon.stub(ClusterConfigService, 'parseComposeFileAndPopulateENVs').resolves(octobearInfo)
       sinon.stub(ClusterConfigService, 'updateCluster').resolves()
       done()
@@ -88,7 +95,6 @@ describe('Cluster Update Worker', function () {
       UserService.getCompleteUserByGithubId.restore()
       InstanceService.findInstanceById.restore()
       ClusterConfigService.fetchConfigByInstanceId.restore()
-      ClusterConfigService.fetchFileFromGithub.restore()
       ClusterConfigService.parseComposeFileAndPopulateENVs.restore()
       ClusterConfigService.updateCluster.restore()
       done()
@@ -150,32 +156,17 @@ describe('Cluster Update Worker', function () {
           .asCallback(done)
       })
 
-      it('should fetch the compose file', function (done) {
-        Worker.task(job)
-          .then(() => {
-            sinon.assert.calledOnce(ClusterConfigService.fetchFileFromGithub)
-            sinon.assert.calledWithExactly(
-              ClusterConfigService.fetchFileFromGithub,
-              bigPoppaUser,
-              job.pushInfo.repo,
-              config.filePath,
-              githubPushInfo.commit
-            )
-          })
-          .asCallback(done)
-      })
-
-      it('should parse the compose file', function (done) {
+      it('should parse the compose files', function (done) {
         Worker.task(job)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
             sinon.assert.calledWithExactly(
               ClusterConfigService.parseComposeFileAndPopulateENVs,
-              composeData,
               job.pushInfo.repo,
               config.clusterName,
               bigPoppaUser,
-              config.filePath
+              config.files[0].path,
+              githubPushInfo.commit
             )
           })
           .asCallback(done)
@@ -188,7 +179,6 @@ describe('Cluster Update Worker', function () {
               UserService.getCompleteUserByGithubId,
               InstanceService.findInstanceById,
               ClusterConfigService.fetchConfigByInstanceId,
-              ClusterConfigService.fetchFileFromGithub,
               ClusterConfigService.parseComposeFileAndPopulateENVs,
               ClusterConfigService.updateCluster
             )
