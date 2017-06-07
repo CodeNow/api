@@ -1508,6 +1508,18 @@
         }
       }
     },
+    "docker-stream-cleanser": {
+      "version": "1.0.1",
+      "from": "docker-stream-cleanser@latest",
+      "resolved": "https://registry.npmjs.org/docker-stream-cleanser/-/docker-stream-cleanser-1.0.1.tgz",
+      "dependencies": {
+        "async": {
+          "version": "2.4.0",
+          "from": "async@>=2.3.0 <3.0.0",
+          "resolved": "https://registry.npmjs.org/async/-/async-2.4.0.tgz"
+        }
+      }
+    },
     "dockerode": {
       "version": "2.3.1",
       "from": "dockerode@>=2.2.8 <3.0.0",
