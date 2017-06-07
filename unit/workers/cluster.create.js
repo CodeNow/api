@@ -21,6 +21,7 @@ const messenger = require('socket/messenger')
 const UserService = require('models/services/user-service')
 const Worker = require('workers/cluster.create')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
+const rabbitMQ = require('models/rabbitmq')
 
 describe('Cluster Create Worker', function () {
   describe('worker', function () {
@@ -42,6 +43,7 @@ describe('Cluster Create Worker', function () {
       sinon.stub(ClusterConfigService, 'create').resolves({ inputClusterConfig: {_id: '999999' }})
       sinon.stub(ClusterConfigService, 'sendClusterSocketUpdate').resolves()
       sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(sessionUser)
+      sinon.stub(rabbitMQ, 'cleanupCluster')
       done()
     })
 
@@ -49,6 +51,7 @@ describe('Cluster Create Worker', function () {
       ClusterConfigService.create.restore()
       ClusterConfigService.sendClusterSocketUpdate.restore()
       UserService.getCompleteUserByBigPoppaId.restore()
+      rabbitMQ.cleanupCluster.restore()
       done()
     })
 
@@ -68,6 +71,14 @@ describe('Cluster Create Worker', function () {
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.be.an.instanceof(WorkerStopError)
+          done()
+        })
+      })
+      it('should enqueue a cluster.cleanup task on failure', function (done) {
+        ClusterConfigService.create.rejects(new Error('bad luck'))
+        Worker.task(testData).asCallback(function (err) {
+          expect(err).to.exist()
+          sinon.assert.calledOnce(rabbitMQ.cleanupCluster)
           done()
         })
       })
