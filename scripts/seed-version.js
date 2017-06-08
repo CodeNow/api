@@ -24,6 +24,7 @@ const messenger = require('socket/messenger')
 const mongoose = require('mongoose')
 const Promise = require('bluebird')
 const rabbitMQ = require('models/rabbitmq/index')
+const sinon = require('sinon')
 const User = require('models/mongo/user')
 
 const sources = [{
@@ -93,6 +94,7 @@ const sources = [{
   name: 'RethinkDB',
   body: fs.readFileSync('./scripts/sourceDockerfiles/rethinkdb').toString()
 }]
+sinon.stub(messenger)
 
 var ctx = {}
 var createdBy
