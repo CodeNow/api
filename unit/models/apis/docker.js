@@ -728,7 +728,8 @@ describe('docker: ' + moduleName, function () {
         var opts = ctx.opts
         var buildOpts = {
           forcerm: true,
-          nocache: true
+          nocache: true,
+          pull: true
         }
         var envs = model._createImageBuilderEnv(opts)
         var cv = ctx.mockContextVersion
@@ -776,7 +777,8 @@ describe('docker: ' + moduleName, function () {
       it('should return conditional container env', function (done) {
         var envs = model._createImageBuilderEnv(ctx.opts)
         var buildOpts = {
-          forcerm: true
+          forcerm: true,
+          pull: true
         }
         expect(envs).to.contain([
           'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
