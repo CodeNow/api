@@ -138,7 +138,6 @@ function main () {
       throw err
     })
     .finally(() => {
-      messenger.restore()
       return Promise.all([
         rabbitMQ.disconnect(),
         Promise.fromCallback(cb => {
