@@ -728,8 +728,8 @@ describe('docker: ' + moduleName, function () {
         var opts = ctx.opts
         var buildOpts = {
           forcerm: true,
-          nocache: true,
-          pull: true
+          pull: true,
+          nocache: true
         }
         var envs = model._createImageBuilderEnv(opts)
         var cv = ctx.mockContextVersion
