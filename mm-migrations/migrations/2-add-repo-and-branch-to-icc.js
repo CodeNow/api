@@ -31,15 +31,16 @@ module.exports.up = function (done) {
     .tap(() => logStuff('Found AICs'))
     .map(config => {
       return InputClusterConfig.findActiveByAutoIsolationId(config._id)
+        .tap(icc => logStuff('Found icc', icc))
         .then(icc => {
-          logStuff('Found icc', icc)
           if (icc.repo) { return }
           return AutoIsolationService.fetchMainInstance(config)
             .then(instance => {
               return { instance, config, icc }
             })
         })
-        .catch(() => {}) // Ignore errors, like ICC not found, since we don't care
+        // Ignore errors, like ICC not found, since we don't care
+        .catch(() => {})
     })
     .filter(model => !!model)
     .map(model => {
@@ -50,17 +51,13 @@ module.exports.up = function (done) {
       icc.set('branch', instance.getMainBranchName())
       return icc.save()
     })
-    .then(function () {
-      logStuff('done.')
-      return Promise.fromCallback(cb => mongoose.disconnect(cb))
-    })
-    .catch(function (err) {
+    .tap(() => logStuff('done'))
+    .then(() => Promise.fromCallback(cb => mongoose.disconnect(cb)))
+    .catch(err => {
       logError('error happened', err)
       throw err
     })
-    .asCallback(() => {
-      done()
-    })
+    .asCallback(done)
 }
 
 module.exports.down = function (done) {
