@@ -13,9 +13,6 @@ function traceEnd (id, result) {
   log.trace(`Finished id ${id}, migrating ${result}`)
 }
 
-if (!process.env.IS_QUEUE_WORKER) {
-  Promise.fromCallback(cb => migrator.runFromDir(migrationPath, cb, traceEnd))
-    .tap(result => log.trace('successfully migrated', result))
-    .catch(err => log.error('failed to migrate', err))
-}
-
+Promise.fromCallback(cb => migrator.runFromDir(migrationPath, cb, traceEnd))
+  .tap(result => log.trace('successfully migrated', result))
+  .catch(err => log.error('failed to migrate', err))
