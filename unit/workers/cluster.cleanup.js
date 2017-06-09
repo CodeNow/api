@@ -16,7 +16,6 @@ const Promise = require('bluebird')
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
-const delayAsync = require('utils/delay-promise')
 const logger = require('logger')
 const joi = require('utils/joi')
 const Instance = require('models/mongo/instance')
@@ -44,7 +43,7 @@ describe('Cluster Cleanup Worker', () => {
     }
 
     beforeEach((done) => {
-      sinon.stub(delayAsync, 'sleep').resolves()
+      sinon.stub(Promise, 'delay').resolves()
       sinon.stub(Instance, 'aggregateAsync').resolves([
         mockInstance1,
         mockInstance2
@@ -58,7 +57,7 @@ describe('Cluster Cleanup Worker', () => {
     })
 
     afterEach((done) => {
-      delayAsync.sleep.restore()
+      Promise.delay.restore()
       Instance.aggregateAsync.restore()
       ClusterDataService.populateInstanceWithClusterInfo.restore()
       rabbitMQ.deleteInstance.restore()
