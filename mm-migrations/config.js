@@ -20,7 +20,7 @@ if (process.env.MONGO_REPLSET_NAME) {
   })
   config.db = process.env.MONGO_DB
   if (process.env.MONGO_AUTH) {
-    const usernameAndPassword = process.env.MONGO_PASSWORD.split(':')
+    const usernameAndPassword = process.env.MONGO_AUTH.split(':')
     config.password = usernameAndPassword[0]
     config.user = usernameAndPassword[1]
   }
