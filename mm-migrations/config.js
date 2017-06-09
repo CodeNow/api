@@ -21,8 +21,8 @@ if (process.env.MONGO_REPLSET_NAME) {
   config.db = process.env.MONGO_DB
   if (process.env.MONGO_AUTH) {
     const usernameAndPassword = process.env.MONGO_AUTH.split(':')
-    config.password = usernameAndPassword[0]
-    config.user = usernameAndPassword[1]
+    config.user = usernameAndPassword[0]
+    config.password = usernameAndPassword[1]
   }
 } else {
   config.url = process.env.MONGO
