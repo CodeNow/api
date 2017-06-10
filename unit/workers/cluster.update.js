@@ -88,7 +88,6 @@ describe('Cluster Update Worker', function () {
       sinon.stub(UserService, 'getCompleteUserByGithubId').resolves(user)
       sinon.stub(InstanceService, 'findInstanceById').resolves(testInstance)
       sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(config)
-      sinon.stub(ClusterConfigService, 'fetchFilesFromGithub').resolves([composeData])
       sinon.stub(ClusterConfigService, 'parseComposeFileAndPopulateENVs').resolves(octobearInfo)
       sinon.stub(ClusterConfigService, 'updateCluster').resolves()
       done()
@@ -98,7 +97,6 @@ describe('Cluster Update Worker', function () {
       UserService.getCompleteUserByGithubId.restore()
       InstanceService.findInstanceById.restore()
       ClusterConfigService.fetchConfigByInstanceId.restore()
-      ClusterConfigService.fetchFilesFromGithub.restore()
       ClusterConfigService.parseComposeFileAndPopulateENVs.restore()
       ClusterConfigService.updateCluster.restore()
       done()
@@ -160,32 +158,17 @@ describe('Cluster Update Worker', function () {
           .asCallback(done)
       })
 
-      it('should fetch the compose file', function (done) {
-        Worker.task(job)
-          .then(() => {
-            sinon.assert.calledOnce(ClusterConfigService.fetchFilesFromGithub)
-            sinon.assert.calledWithExactly(
-              ClusterConfigService.fetchFilesFromGithub,
-              bigPoppaUser,
-              job.pushInfo.repo,
-              [ config.files[0].path ],
-              githubPushInfo.commit
-            )
-          })
-          .asCallback(done)
-      })
-
-      it('should parse the compose file', function (done) {
+      it('should parse the compose files', function (done) {
         Worker.task(job)
           .then(() => {
             sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
             sinon.assert.calledWithExactly(
               ClusterConfigService.parseComposeFileAndPopulateENVs,
-              composeData,
               job.pushInfo.repo,
               config.clusterName,
               bigPoppaUser,
-              config.files[0].path
+              config.files[0].path,
+              githubPushInfo.commit
             )
           })
           .asCallback(done)
@@ -198,7 +181,6 @@ describe('Cluster Update Worker', function () {
               UserService.getCompleteUserByGithubId,
               InstanceService.findInstanceById,
               ClusterConfigService.fetchConfigByInstanceId,
-              ClusterConfigService.fetchFilesFromGithub,
               ClusterConfigService.parseComposeFileAndPopulateENVs,
               ClusterConfigService.updateCluster
             )

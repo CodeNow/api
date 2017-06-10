@@ -150,7 +150,12 @@ describe('Cluster Config Service Unit Tests', function () {
     }
     testParsedContent = {
       results: [testMainParsedContent, testDepParsedContent],
-      envFiles: []
+      envFiles: [],
+      files: [{
+        path: '/docker-compose.extended.yml',
+        sha: '5de165f117827881f929b5456ad4081e0445885e',
+        _id:  '5930e9d37d9b580e009ce4d2'
+      }]
     }
     done()
   })
@@ -202,34 +207,21 @@ describe('Cluster Config Service Unit Tests', function () {
     }
 
     beforeEach(function (done) {
-      sinon.stub(GitHub.prototype, 'getRepoContent').resolves(dockerComposeContent)
       sinon.stub(GitHub.prototype, 'getBranchAsync').resolves(branchMock)
-      sinon.stub(octobear, 'parse').resolves(testParsedContent)
+      sinon.stub(ClusterConfigService, 'parseComposeFileAndPopulateENVs').resolves(testParsedContent)
       sinon.stub(ClusterConfigService, 'createFromRunnableConfig').resolves()
       done()
     })
     afterEach(function (done) {
-      GitHub.prototype.getRepoContent.restore()
       GitHub.prototype.getBranchAsync.restore()
-      octobear.parse.restore()
+      ClusterConfigService.parseComposeFileAndPopulateENVs.restore()
       ClusterConfigService.createFromRunnableConfig.restore()
       done()
     })
     describe('errors', function () {
-      it('should return error if getRepoContent failed', function (done) {
+      it('should return error if ClusterConfigService.parseComposeFileAndPopulateENVs failed', function (done) {
         const error = new Error('Some error')
-        GitHub.prototype.getRepoContent.rejects(error)
-        ClusterConfigService.create(testSessionUser, testData)
-        .asCallback(function (err) {
-          expect(err).to.exist()
-          expect(err.message).to.equal(error.message)
-          done()
-        })
-      })
-
-      it('should return error if octobear.parse failed', function (done) {
-        const error = new Error('Some error')
-        octobear.parse.throws(error)
+        ClusterConfigService.parseComposeFileAndPopulateENVs.throws(error)
         ClusterConfigService.create(testSessionUser, testData)
         .asCallback(function (err) {
           expect(err).to.exist()
@@ -255,30 +247,10 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService.create(testSessionUser, testData).asCallback(done)
       })
 
-      it('should call getRepoContent with correct args', function (done) {
+      it('should call ClusterConfigService.parseComposeFileAndPopulateENVs with correct args', function (done) {
         ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
-          sinon.assert.calledOnce(GitHub.prototype.getBranchAsync)
-          sinon.assert.calledWithExactly(GitHub.prototype.getBranchAsync, testData.repoFullName, testData.branchName)
-          sinon.assert.calledOnce(GitHub.prototype.getRepoContent)
-          sinon.assert.calledWithExactly(GitHub.prototype.getRepoContent, repoFullName, filePath, commitSha)
-        })
-        .asCallback(done)
-      })
-
-      it('should call octobear.parse with correct args', function (done) {
-        ClusterConfigService.create(testSessionUser, testData)
-        .tap(function () {
-          sinon.assert.calledOnce(octobear.parse)
-          const parserPayload = {
-            dockerComposeFileString: fileString,
-            dockerComposeFilePath: filePath,
-            repositoryName: clusterName,
-            ownerUsername: ownerUsername,
-            userContentDomain: process.env.USER_CONTENT_DOMAIN,
-            scmDomain: process.env.GITHUB_HOST
-          }
-          sinon.assert.calledWithExactly(octobear.parse, parserPayload)
+          sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
         })
         .asCallback(done)
       })
@@ -287,19 +259,15 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
           sinon.assert.calledOnce(ClusterConfigService.createFromRunnableConfig)
+          const args = ClusterConfigService.createFromRunnableConfig.getCall(0).args
           sinon.assert.calledWithExactly(
             ClusterConfigService.createFromRunnableConfig,
             testSessionUser,
-            { results: testParsedContent.results }, // `envFiles` property removed
+            { results: testParsedContent.results, envFiles: [], files: testParsedContent.files },
             { triggeredAction, repoFullName },
             sinon.match({
               clusterName,
-              files: [
-                {
-                  path: filePath,
-                  sha: parsedInput.sha,
-                }
-              ],
+              files: testParsedContent.files,
               isTesting,
               testReporters,
               parentInputClusterConfigId
@@ -313,8 +281,7 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService.create(testSessionUser, testData)
         .tap(function () {
           sinon.assert.callOrder(
-            GitHub.prototype.getRepoContent,
-            octobear.parse,
+            ClusterConfigService.parseComposeFileAndPopulateENVs,
             ClusterConfigService.createFromRunnableConfig)
         })
         .asCallback(done)
@@ -1643,13 +1610,13 @@ describe('Cluster Config Service Unit Tests', function () {
 
     beforeEach(function (done) {
       sinon.stub(GitHub.prototype, 'getRepoContent').resolves(dockerComposeContent)
-      sinon.stub(octobear, 'parse').resolves(testParsedContent)
+      sinon.stub(ClusterConfigService, 'parseComposeFileAndPopulateENVs').resolves(testParsedContent)
       sinon.stub(ClusterConfigService, 'createFromRunnableConfig').resolves()
       done()
     })
     afterEach(function (done) {
       GitHub.prototype.getRepoContent.restore()
-      octobear.parse.restore()
+      ClusterConfigService.parseComposeFileAndPopulateENVs.restore()
       ClusterConfigService.createFromRunnableConfig.restore()
       done()
     })
@@ -2307,13 +2274,17 @@ describe('Cluster Config Service Unit Tests', function () {
 
   describe('parseComposeFileAndPopulateENVs', () => {
     const mainInstanceName = 'mainInstanceName'
-    const bigPoppaUser = {}
-    const repoFullName = 'Runnable/octobear'
-    const composeFileData = {
-      commitRef: 'asdasdasdasdsa'
+    const bigPoppaUser = {
+      _id: 'user-id'
     }
-    const fileString = 'ENV1=hello'
-   const envFiles = ['./env', './docker/.env', './wow/.env']
+    const repoFullName = 'Runnable/octobear'
+    const commit = 'asdasdasdasdsa'
+
+    const fileString = 'compose-file'
+    const envFiles = ['./env', './docker/.env', './wow/.env']
+    const composeFiles = [
+        'compose1.yml'
+      ]
     let parseResult
     beforeEach(done => {
       parseResult = {
@@ -2328,30 +2299,61 @@ describe('Cluster Config Service Unit Tests', function () {
         }],
         envFiles
       }
-      sinon.spy(octobear, 'populateENVsFromFiles')
-      sinon.stub(ClusterConfigService, 'parseComposeFile').resolves(parseResult)
-      sinon.stub(ClusterConfigService, 'fetchFileFromGithub').resolves({ fileString })
-      sinon.spy(ClusterConfigService, 'updateBuildContextForEachService')
+      sinon.stub(octobear, 'populateENVsFromFiles').resolves(parseResult.results)
+      sinon.stub(octobear, 'findExtendedFiles').resolves(composeFiles)
+      sinon.stub(octobear, 'parseAndMergeMultiple').resolves(parseResult)
+      sinon.stub(ClusterConfigService, 'fetchFilesFromGithub').resolves([{ fileString, path: './main-compose.yml' }])
+      sinon.stub(ClusterConfigService, 'fetchFileFromGithub').resolves({ fileString, path: './compose1.yml' })
+      sinon.stub(ClusterConfigService, 'updateBuildContextForEachService').resolves({})
       done()
     })
     afterEach(done => {
+      octobear.parseAndMergeMultiple.restore()
       octobear.populateENVsFromFiles.restore()
-      ClusterConfigService.parseComposeFile.restore()
+      octobear.findExtendedFiles.restore()
+      ClusterConfigService.fetchFilesFromGithub.restore()
       ClusterConfigService.fetchFileFromGithub.restore()
       ClusterConfigService.updateBuildContextForEachService.restore()
       done()
     })
 
-    it('should call `parse`', () => {
+    it('should call `parseAndMergeMultiple`', () => {
       const fileName = '/compose.yml'
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, fileName)
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(repoFullName, mainInstanceName, bigPoppaUser, fileName, commit)
         .then(result => {
-          sinon.assert.calledOnce(ClusterConfigService.parseComposeFile)
+          sinon.assert.calledOnce(octobear.findExtendedFiles)
           sinon.assert.calledWithExactly(
-            ClusterConfigService.parseComposeFile,
-            composeFileData,
-            repoFullName,
-            mainInstanceName
+            octobear.findExtendedFiles,
+            fileString
+          )
+          sinon.assert.calledOnce(ClusterConfigService.fetchFilesFromGithub)
+          sinon.assert.calledWithExactly(
+            ClusterConfigService.fetchFilesFromGithub,
+            bigPoppaUser, repoFullName, composeFiles
+          )
+          sinon.assert.calledOnce(octobear.parseAndMergeMultiple)
+          sinon.assert.calledWithExactly(
+            octobear.parseAndMergeMultiple,
+            {
+              dockerComposeFilePath: '/compose.yml',
+              ownerUsername: 'runnable',
+              repositoryName: 'mainInstanceName',
+              scmDomain: 'github.com',
+              userContentDomain: 'runnableapp.com'
+            },
+            [{
+              dockerComposeFilePath: './compose1.yml',
+              dockerComposeFileString: 'compose-file'
+            }, {
+              dockerComposeFilePath: './main-compose.yml',
+              dockerComposeFileString: 'compose-file'
+            }]
+          )
+          sinon.assert.calledOnce(octobear.populateENVsFromFiles)
+          sinon.assert.callCount(ClusterConfigService.fetchFileFromGithub, 4)
+          sinon.assert.calledWithExactly(
+            ClusterConfigService.fetchFileFromGithub,
+            bigPoppaUser, repoFullName, './env', commit
           )
           sinon.assert.calledOnce(ClusterConfigService.updateBuildContextForEachService)
           sinon.assert.calledWithExactly(
@@ -2362,45 +2364,47 @@ describe('Cluster Config Service Unit Tests', function () {
         })
     })
 
-    it('should not fetch any files if `envFiles` is empty', () => {
+    it('should not fetch any files for `envFiles` if they are empty', () => {
       parseResult.envFiles = []
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml')
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml', commit)
         .then(result => {
-          sinon.assert.notCalled(ClusterConfigService.fetchFileFromGithub)
+          // called only for fetching main compose file
+          sinon.assert.calledOnce(ClusterConfigService.fetchFileFromGithub)
         })
     })
 
     it('should fetch all files in `envFiles`', () => {
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml')
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml', commit)
         .then(result => {
           sinon.assert.called(ClusterConfigService.fetchFileFromGithub)
-          sinon.assert.callCount(ClusterConfigService.fetchFileFromGithub, envFiles.length)
+          // skip first call that fetch compose file
+          sinon.assert.callCount(ClusterConfigService.fetchFileFromGithub, envFiles.length + 1)
           sinon.assert.calledWithExactly(
-            ClusterConfigService.fetchFileFromGithub,
+            ClusterConfigService.fetchFileFromGithub.getCall(1),
             bigPoppaUser,
             repoFullName,
             envFiles[0],
-            composeFileData.commitRef
+            commit
           )
           sinon.assert.calledWithExactly(
-            ClusterConfigService.fetchFileFromGithub,
+            ClusterConfigService.fetchFileFromGithub.getCall(2),
             bigPoppaUser,
             repoFullName,
             envFiles[1],
-            composeFileData.commitRef
+            commit
           )
           sinon.assert.calledWithExactly(
-            ClusterConfigService.fetchFileFromGithub,
+            ClusterConfigService.fetchFileFromGithub.getCall(3),
             bigPoppaUser,
             repoFullName,
             envFiles[2],
-            composeFileData.commitRef
+            commit
           )
         })
     })
 
     it('should call `populateENVsFromFiles`', () => {
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml')
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml', commit)
         .then(result => {
           sinon.assert.calledOnce(octobear.populateENVsFromFiles)
           sinon.assert.calledWithExactly(
@@ -2416,7 +2420,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
 
     it('should return an object with `.results`', () => {
-      return ClusterConfigService.parseComposeFileAndPopulateENVs(composeFileData, repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml')
+      return ClusterConfigService.parseComposeFileAndPopulateENVs(repoFullName, mainInstanceName, bigPoppaUser, '/compose.yml', commit)
         .then(res => {
           expect(res.results).to.be.an.array()
           expect(res.results).to.equal(parseResult.results)
