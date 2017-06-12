@@ -398,4 +398,57 @@ describe('PermissionService', function () {
         })
     })
   })
+
+  describe('isInOrgOrModerator', function () {
+    var sessionUser = {
+      accounts: {
+        github: {
+          id: '1'
+        }
+      }
+    }
+
+    beforeEach(function (done) {
+      sinon.spy(PermissionService, 'isInOrg')
+      done()
+    })
+
+    afterEach(function (done) {
+      PermissionService.isInOrg.restore();
+      UserService.validateSessionUserPartOfOrg.restore()
+      PermissionService.isModerator.restore()
+      done()
+    })
+
+    it('should reject if user is not moderator or in org', function (done) {
+      sinon.stub(UserService, 'validateSessionUserPartOfOrg').rejects()
+      sinon.stub(PermissionService, 'isModerator').rejects()
+
+      PermissionService.isInOrgOrModerator(sessionUser,123)
+        .then(function () {
+          done(new Error('Should fail'))
+        })
+        .catch(function (err) {
+          sinon.assert.calledOnce(PermissionService.isInOrg)
+          sinon.assert.calledOnce(PermissionService.isModerator)
+          done()
+        })
+    })
+
+    it('should resolve if user is moderator', function (done) {
+      sinon.stub(UserService, 'validateSessionUserPartOfOrg').rejects()
+      sinon.stub(PermissionService, 'isModerator').resolves()
+
+      PermissionService.isInOrgOrModerator(sessionUser,123)
+        .asCallback(done)
+    })
+
+    it('should resolve if user is in org', function (done) {
+      sinon.stub(UserService, 'validateSessionUserPartOfOrg').resolves()
+      sinon.stub(PermissionService, 'isModerator').rejects()
+
+      PermissionService.isInOrgOrModerator(sessionUser,123)
+        .asCallback(done)
+    })
+  })
 })
