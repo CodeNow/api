@@ -18,4 +18,4 @@ function traceEnd (err, result) {
   log.trace('successfully migrated', result)
   process.exit()
 }
-migrator.runFromDir(migrationPath, traceProgress, traceEnd)
+migrator.runFromDir(migrationPath, traceEnd, traceProgress)
