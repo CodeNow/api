@@ -2816,11 +2816,10 @@ describe('Cluster Config Service Unit Tests', function () {
           })
       })
 
-      it('should add filesha from composeContent to clusterOpts if testData didn\'t include it', function () {
-        delete testData.fileSha
+      it('should add files from testParsedContent to clusterOpts', function () {
         return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
           .tap(results => {
-            expect(results.clusterOpts.files[0].sha).to.equal(dockerComposeContent.fileSha)
+            expect(results.clusterOpts.files).to.equal(testParsedContent.files)
           })
       })
 
