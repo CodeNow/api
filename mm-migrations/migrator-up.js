@@ -12,10 +12,12 @@ function traceProgress (id, result) {
   log.trace(`Finished id ${id}, migrating ${result}`)
 }
 function traceEnd (err, result) {
-  if (err) {
-    return log.error('failed to migrate', err)
-  }
-  log.trace('successfully migrated', result)
-  process.exit()
+  migrator.dispose(() => {
+    if (err) {
+      return log.error('failed to migrate', err)
+    }
+    log.trace('successfully migrated', result)
+    process.exit()
+  })
 }
 migrator.runFromDir(migrationPath, traceEnd, traceProgress)
