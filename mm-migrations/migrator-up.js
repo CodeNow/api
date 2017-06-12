@@ -10,6 +10,7 @@ const migrationPath = path.resolve('./mm-migrations/migrations')
 
 function traceEnd (id, result) {
   log.trace(`Finished id ${id}, migrating ${result}`)
+  process.exit()
 }
 function traceProgress (err, result) {
   if (err) {
@@ -17,4 +18,4 @@ function traceProgress (err, result) {
   }
   log.trace('successfully migrated', result)
 }
-migrator.runFromDir(migrationPath, traceProgress, traceEnd)
+migrator.runFromDir(migrationPath, traceEnd, traceProgress)
