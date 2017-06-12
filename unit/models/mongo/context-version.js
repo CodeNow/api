@@ -309,7 +309,7 @@ describe('Context Version Unit Test', function () {
       done()
     })
 
-    it('should save a successful build', (done) => {
+    it('should save a successful build with no image data', (done) => {
       const buildId = 12341
 
       ContextVersion.updateAndGetSuccessfulBuild(buildId).asCallback(() => {
@@ -321,6 +321,36 @@ describe('Context Version Unit Test', function () {
               'build.failed': false,
               'build.completed': sinon.match.number,
               'state': ContextVersion.states.buildSucceeded
+            }
+          })
+
+        sinon.assert.calledOnce(ContextVersion.findByAsync)
+        sinon.assert.calledWith(ContextVersion.findByAsync, 'build._id', buildId)
+        done()
+      })
+    })
+
+    it('should save a successful build with image data', (done) => {
+      const buildId = 12341
+      const imageData = {
+        ports: [{
+          protocol: 'Omega',
+          port: '13'
+        }],
+        cmd: ['cmd 1'],
+        entryPoint: ['entry 1']
+      }
+
+      ContextVersion.updateAndGetSuccessfulBuild(buildId, imageData).asCallback(() => {
+        sinon.assert.calledOnce(ContextVersion.updateByAsync)
+        sinon.assert.calledWith(ContextVersion.updateByAsync,
+          'build._id',
+          buildId, {
+            $set: {
+              'build.failed': false,
+              'build.completed': sinon.match.number,
+              'state': ContextVersion.states.buildSucceeded,
+              'imageData': imageData
             }
           })
 
