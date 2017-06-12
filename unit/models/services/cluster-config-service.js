@@ -260,12 +260,28 @@ describe('Cluster Config Service Unit Tests', function () {
         .tap(function () {
           sinon.assert.calledOnce(ClusterConfigService.createFromRunnableConfig)
           const args = ClusterConfigService.createFromRunnableConfig.getCall(0).args
+          expect(args[0]).to.equal(testSessionUser)
+          expect(args[1]).to.equal({ results: testParsedContent.results, envFiles: [], files: testParsedContent.files })
+          expect(args[2]).to.equal( { triggeredAction, repoFullName })
+          expect(args[3]).to.equal({
+            branch: branchName,
+            commit: commitSha,
+            repo: repoFullName,
+            clusterName,
+            files: testParsedContent.files,
+            isTesting,
+            testReporters,
+            parentInputClusterConfigId
+          })
           sinon.assert.calledWithExactly(
             ClusterConfigService.createFromRunnableConfig,
             testSessionUser,
             { results: testParsedContent.results, envFiles: [], files: testParsedContent.files },
             { triggeredAction, repoFullName },
             sinon.match({
+              branch: branchName,
+              commit: commitSha,
+              repo: repoFullName,
               clusterName,
               files: testParsedContent.files,
               isTesting,
