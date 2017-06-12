@@ -903,7 +903,8 @@ describe('docker: ' + moduleName, function () {
         }
         var envs = model._createImageBuilderEnv(opts)
         var buildOpts = {
-          forcerm: true
+          forcerm: true,
+          pull: true
         }
         expect(envs).to.contain([
           'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
