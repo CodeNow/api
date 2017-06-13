@@ -8,13 +8,16 @@ const log = logger.child({
 })
 const migrationPath = path.resolve('./mm-migrations/migrations')
 
-function traceEnd (id, result) {
+function traceProgress (id, result) {
   log.trace(`Finished id ${id}, migrating ${result}`)
 }
-function traceProgress (err, result) {
-  if (err) {
-    return log.error('failed to migrate', err)
-  }
-  log.trace('successfully migrated', result)
+function traceEnd (err, result) {
+  migrator.dispose(() => {
+    if (err) {
+      return log.error('failed to migrate', err)
+    }
+    log.trace('successfully migrated', result)
+    process.exit()
+  })
 }
-migrator.runFromDir(migrationPath, traceProgress, traceEnd)
+migrator.runFromDir(migrationPath, traceEnd, traceProgress)
