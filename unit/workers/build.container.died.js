@@ -2,24 +2,25 @@
  * @module unit/workers/build.container.died
  */
 'use strict'
-var Code = require('code')
-var Lab = require('lab')
-var sinon = require('sinon')
+const Code = require('code')
+const Lab = require('lab')
+const sinon = require('sinon')
 
-var InstanceService = require('models/services/instance-service')
-var Isolation = require('models/mongo/isolation')
-var BuildContainerDied = require('workers/build.container.died')
-var rabbitMQ = require('models/rabbitmq')
+const BuildContainerDied = require('workers/build.container.died')
+const Instance = require('models/mongo/instance')
+const InstanceService = require('models/services/instance-service')
+const Isolation = require('models/mongo/isolation')
+const rabbitMQ = require('models/rabbitmq')
 
 require('sinon-as-promised')(require('bluebird'))
-var lab = exports.lab = Lab.script()
-var Worker = BuildContainerDied._Worker
+const lab = exports.lab = Lab.script()
+const Worker = BuildContainerDied._Worker
 
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
 describe('ImageBuilderContainerDied', function () {
   describe('Worker methods', () => {
@@ -458,5 +459,58 @@ describe('ImageBuilderContainerDied', function () {
         done()
       })
     }) // end _clearBuildResources
+
+    describe('_updatePortsOnInstance', () => {
+      let testInstance
+
+      beforeEach((done) => {
+        sinon.stub(Instance, 'findOneAndUpdateAsync')
+        testInstance = {
+          _id: '123123'
+        }
+        done()
+      })
+
+      afterEach((done) => {
+        Instance.findOneAndUpdateAsync.restore()
+        done()
+      })
+
+      it('should not call update if no export', (done) => {
+        worker._updatePortsOnInstance(testInstance)
+        sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
+        done()
+      })
+
+      it('should not call user defined ports', (done) => {
+        testInstance.ports = [10,1]
+        worker._updatePortsOnInstance(testInstance)
+        sinon.assert.notCalled(Instance.findOneAndUpdateAsync)
+        done()
+      })
+
+      it('should update exposed ports', () => {
+        const port = 80
+        let ExposedPorts = {}
+        ExposedPorts[`${port}/tcp`] = {}
+
+        worker.inspectImageData = {
+          Config: {
+            ExposedPorts
+          }
+        }
+        Instance.findOneAndUpdateAsync.resolves()
+        return worker._updatePortsOnInstance(testInstance).then(() => {
+          sinon.assert.calledOnce(Instance.findOneAndUpdateAsync)
+          sinon.assert.calledWith(Instance.findOneAndUpdateAsync, {
+            _id: testInstance._id
+          }, {
+            $set: {
+              ports: [port]
+            }
+          })
+        })
+      })
+    }) // end _updatePortsOnInstance
   }) // end Worker methods
 })
