@@ -1652,9 +1652,10 @@ describe('Cluster Config Service Unit Tests', function () {
           .tap(function (parsed) {
             expect(parsed).to.equal({
               fileString,
+              commitRef,
+              repo: repoFullName,
               sha: dockerComposeContent.sha,
               path: filePath,
-              commitRef
             })
           })
           .asCallback(done)
