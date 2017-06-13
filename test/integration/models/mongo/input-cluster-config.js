@@ -25,12 +25,14 @@ describe('InputClusterConfig Model Integration Tests', function () {
         sha: 'asdasdsasadasdasdsadsadas'
       }
     ],
+    branch: 'helloBranch',
     autoIsolationConfigId: objectId(autoIsolationConfigId),
     createdByUser: 123123,
     ownedByOrg: 1,
     clusterName: 'asddasdasd',
     isTesting: true,
-    parentInputClusterConfigId: objectId(parentInputClusterConfigId)
+    parentInputClusterConfigId: objectId(parentInputClusterConfigId),
+    repo: 'hello/Repo'
   }
   before(mongooseControl.start)
   afterEach(function (done) {
@@ -146,6 +148,26 @@ describe('InputClusterConfig Model Integration Tests', function () {
       InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
         expect(err).to.exist()
         expect(err.errors.clusterName.message).to.equal('Input Cluster Config requires a clusterName')
+        done()
+      })
+    })
+
+    it('should fail if repo is missing', function (done) {
+      const invalidData = Object.assign({}, data)
+      delete invalidData.repo
+      InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.errors.repo.message).to.equal('Input Cluster Config requires a repo to which it belongs')
+        done()
+      })
+    })
+
+    it('should fail if branch is missing', function (done) {
+      const invalidData = Object.assign({}, data)
+      delete invalidData.branch
+      InputClusterConfig.createAsync(invalidData).asCallback(function (err) {
+        expect(err).to.exist()
+        expect(err.errors.branch.message).to.equal('Input Cluster Config requires a branch')
         done()
       })
     })
