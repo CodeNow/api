@@ -205,6 +205,8 @@ describe('Cluster Config Services Integration Tests', function () {
         autoIsolationConfigId: mockAutoConfig._id,
         filePath: '/docker-compose.yml',
         fileSha: 'asdasdasfasdfasdfsadfadsf3rfsadfasdfsdf',
+        repo: 'hello/node',
+        branch: 'thisIsABranch',
         createdByUser: bigPoppaId,
         ownedByOrg: bigPoppaOrgId,
         clusterName: clusterName
