@@ -72,7 +72,7 @@ module.exports = function (userId, username, token, callback) {
     if (err) { return callback(err) }
     // console.log('this is the raw data to a string', dataZip.toString())
     var urlRegExp = new RegExp('\/user[?]access_token=' + token)
-    nock('https://api.github.com:443')
+    nock(`${process.env.GITHUB_PROTOCOL}://${process.env.GITHUB_VARNISH_HOST}:${process.env.GITHUB_VARNISH_PORT}`)
       .filteringPath(urlRegExp, '/user')
       .get('/user')
       .twice()

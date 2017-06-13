@@ -10,6 +10,7 @@ var after = lab.after
 var beforeEach = lab.beforeEach
 var afterEach = lab.afterEach
 
+var moment = require('moment')
 var isObject = require('101/is-object')
 var keypather = require('keypather')()
 var assign = require('101/assign')
@@ -102,8 +103,8 @@ describe('ContextVersion ModelIntegration Tests', function () {
       beforeEach(function (done) {
         function createCv (i, cb) {
           var props = put(ctx.props, {
-            'build.started': new Date('Mon Jan 1 2015 ' + i + ':00:00 GMT-0700 (PDT)'),
-            'build.completed': new Date('Mon Jan 1 2015 ' + i + ':00:30 GMT-0700 (PDT)')
+            'build.started': moment().subtract('minutes', 10).add('minutes', i).toDate(),
+            'build.completed': moment().subtract('minutes', 10).add('minutes', i).toDate()
           })
           createCompletedCv(props, cb)
         }
@@ -125,7 +126,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       beforeEach(function (done) {
         function createCv (i, cb) {
           var props = put(ctx.props, {
-            'build.started': new Date('Mon Jan 1 2015 12:00:0' + i + ' GMT-0700 (PDT)')
+            'build.started': moment().subtract('minutes', 10).add('minutes', i).toDate()
           })
           createStartedCv(props, cb)
         }
@@ -166,8 +167,8 @@ describe('ContextVersion ModelIntegration Tests', function () {
       beforeEach(function (done) {
         function createCv (i, cb) {
           var props = put(ctx.props, {
-            'build.started': new Date('Mon Jan 1 2015 ' + i + ':00:00 GMT-0700 (PDT)'),
-            'build.completed': new Date('Mon Jan 1 2015 ' + i + ':00:30 GMT-0700 (PDT)')
+            'build.started': moment().subtract('minutes', 10).add('minutes', i).toDate(),
+            'build.completed': moment().subtract('minutes', 10).add('minutes', i).toDate()
           })
           createCompletedCv(props, cb)
         }
@@ -189,7 +190,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       beforeEach(function (done) {
         function createCv (i, cb) {
           var props = put(ctx.props, {
-            'build.started': new Date('Mon Jan 1 2015 12:00:0' + i + ' GMT-0700 (PDT)')
+            'build.started': moment().subtract('minutes', 10).add('minutes', i).toDate()
           })
           createStartedCv(props, cb)
         }
@@ -768,7 +769,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
         sinon.stub(Github.prototype, 'addDeployKeyIfNotAlready', function (repo, cb) {
           cb(null, {privateKey: 'private', publicKey: 'public'})
         })
-        ContextVersion.addGithubRepoToVersion(user, ctx.cv.id, repoInfo, function (err) {
+        ContextVersion.addGithubRepoToVersion(user, ctx.cv.id, repoInfo).asCallback(function (err) {
           if (err) {
             return done(err)
           }
@@ -1003,12 +1004,14 @@ describe('ContextVersion ModelIntegration Tests', function () {
         var repo = 'CodeNow'
         var branch = 'SAN-master'
         var commit = 'deadbeef'
+        const pullRequest = 1
         ContextVersion.findOneAndUpdate.yieldsAsync(null, ctx.mockContextVersion)
         ContextVersion.modifyAppCodeVersionByRepo(
           ctx.mockContextVersion._id,
           repo,
           branch,
           commit,
+          pullRequest,
           function (err, doc) {
             if (err) {
               return done(err)
@@ -1024,7 +1027,8 @@ describe('ContextVersion ModelIntegration Tests', function () {
                 $set: {
                   'appCodeVersions.$.branch': branch,
                   'appCodeVersions.$.lowerBranch': branch.toLowerCase(),
-                  'appCodeVersions.$.commit': commit
+                  'appCodeVersions.$.commit': commit,
+                  'appCodeVersions.$.pullRequest': pullRequest
                 }
               },
               sinon.match.func
@@ -1037,7 +1041,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       it('should bubble update errors', function (done) {
         var error = new Error('KAAAHHHNNN')
         ContextVersion.findOneAndUpdate.yieldsAsync(error)
-        ContextVersion.modifyAppCodeVersionByRepo('hi', 'hi', 'hi', 'hi', function (err) {
+        ContextVersion.modifyAppCodeVersionByRepo('hi', 'hi', 'hi', 'hi', 0, function (err) {
           expect(err).to.equal(error)
           done()
         })
@@ -1055,7 +1059,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       ]
 
       beforeEach(function (done) {
-        query = {infraCodeVersion: infraCodeVersion}
+        query = {infraCodeVersion: infraCodeVersion, $and: [{hello: 'bar'}]}
         cv = new ContextVersion({appCodeVersions: appCodeVersions, context: contextId})
         cvNoAppCodeVersions = new ContextVersion({appCodeVersions: [], context: contextId})
         done()
@@ -1077,6 +1081,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       it('should preserve original query conditions', function (done) {
         var result = ContextVersion.addAppCodeVersionQuery(cv, query)
         expect(result.infraCodeVersion).to.equal(infraCodeVersion)
+        expect(result.$and[0]).to.equal({hello: 'bar'})
         done()
       })
 
@@ -1084,17 +1089,20 @@ describe('ContextVersion ModelIntegration Tests', function () {
         var result = ContextVersion.addAppCodeVersionQuery(cv, query)
         expect(result.$and).to.be.an.array()
         expect(result.$and.every(isObject)).to.be.true()
-        expect(result.$and.length).to.equal(appCodeVersions.length + 1)
+        expect(result.$and.length).to.equal(appCodeVersions.length + 2)
         done()
       })
 
       it('should add the correct clause for each app code version', function (done) {
         var result = ContextVersion.addAppCodeVersionQuery(cv, query)
-        for (var i = 0; i < 2; i++) {
+        for (var i = 1; i < 3; i++) {
           expect(result.$and[i].appCodeVersions).to.be.an.object()
           expect(result.$and[i].appCodeVersions.$elemMatch).to.be.an.object()
-          var $elemMatch = result.$and[i].appCodeVersions.$elemMatch
-          expect($elemMatch).to.equal(appCodeVersions[i])
+          expect(result.$and).to.include({
+            appCodeVersions: {
+              $elemMatch: appCodeVersions[i]
+            }
+          })
         }
         done()
       })
@@ -1209,9 +1217,24 @@ describe('ContextVersion ModelIntegration Tests', function () {
           'build.hash': cv.build.hash,
           'build._id': {$ne: cv.build._id},
           advanced: false,
-          $or: [
-            { 'buildDockerfilePath': { $exists: false } },
-            { 'buildDockerfilePath': null }
+          $and: [
+            {
+              $or: [
+                { 'buildDockerfilePath': { $exists: false } },
+                { 'buildDockerfilePath': null }
+              ]
+            },
+            {
+              $or: [
+                {
+                  'build.dockerContainer': { $exists: false },
+                  'build.started': { $gte: sinon.match.date }
+                },
+                {
+                  'build.dockerContainer': { $exists: true }
+                }
+              ]
+            }
           ]
         })
 
@@ -1220,8 +1243,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
             return done(err)
           }
           expect(ContextVersion.find.calledOnce).to.be.true()
-          expect(ContextVersion.find.firstCall.args[0])
-            .to.equal(expectedQuery)
+          ContextVersion.find.firstCall.calledWith(expectedQuery)
           done()
         })
       })
@@ -1896,4 +1918,3 @@ describe('ContextVersion ModelIntegration Tests', function () {
     return cv
   }
 })
-

@@ -13,7 +13,6 @@ var sinon = require('sinon')
 
 var _removeExtraKeys = require('logger/serializer-extra-keys')._removeExtraKeys
 var logger = require('logger')
-var removeEnvsAtPropertyPath = require('logger/serializer-env').removeEnvsAtPropertyPath
 
 var lab = exports.lab = Lab.script()
 
@@ -288,45 +287,4 @@ describe('lib/logger.js unit test', function () {
       done()
     })
   }) // end _removeExtraKeys
-  describe('removeEnvsAtPropertyPath', function () {
-    it('should remove envs in a property', function (done) {
-      var originalObj = {
-        instance: {
-          env: [
-            'RUNNABLE_ID=1',
-            'SECRET_KEY=2'
-          ]
-        }
-      }
-      var obj = removeEnvsAtPropertyPath(['instance'])(originalObj)
-      expect(obj.instance.env).to.equal([ 'RUNNABLE_ID=1' ])
-      done()
-    })
-
-    it('should remove envs in a property when uppercase', function (done) {
-      var originalObj = {
-        instance: {
-          ENV: [
-            'RUNNABLE_ID=1',
-            'SECRET_KEY=2'
-          ]
-        }
-      }
-      var obj = removeEnvsAtPropertyPath(['instance'])(originalObj)
-      expect(obj.instance.ENV).to.equal([ 'RUNNABLE_ID=1' ])
-      done()
-    })
-
-    it('should remove envs at the top level', function (done) {
-      var originalObj = {
-        Env: [
-          'RUNNABLE_ID=1',
-          'SECRET_KEY=2'
-        ]
-      }
-      var obj = removeEnvsAtPropertyPath([''])(originalObj)
-      expect(obj.Env).to.equal([ 'RUNNABLE_ID=1' ])
-      done()
-    })
-  })
 })

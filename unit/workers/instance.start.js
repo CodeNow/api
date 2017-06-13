@@ -97,12 +97,12 @@ describe('Workers: Instance Start', function () {
   })
 
   it('should stop and not call instanceContainerErrored IncorrectStateError', function (done) {
-    Instance.findOneStarting.rejects(new Instance.IncorrectStateError('interpolating'))
+    Instance.findOneStarting.rejects(new Instance.IncorrectStateError('interpolating', 'not'))
     Worker.task(testData).asCallback(function (err) {
       expect(err).to.exist()
       sinon.assert.notCalled(rabbitMQ.instanceContainerErrored)
       expect(err).to.be.instanceOf(WorkerStopError)
-      expect(err.message).to.equal('Instance not in correct state')
+      expect(err.message).to.match(/Instance.*interpolating.*not/gi)
       done()
     })
   })

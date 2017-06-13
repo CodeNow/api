@@ -15,7 +15,7 @@ var sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
 var Context = require('models/mongo/context')
-var ContextService = require('models/services/context-service')
+var ContextVersionService = require('models/services/context-version-service')
 var Instance = require('models/mongo/instance')
 var BuildService = require('models/services/build-service')
 var InstanceForkService = require('models/services/instance-fork-service')
@@ -48,23 +48,28 @@ describe('InstanceForkService', function () {
     var mockNewBuild = {
       _id: 'newBuildId'
     }
+    var mockAliases = {
+      'asdo8234239': {}
+    }
 
     beforeEach(function (done) {
       mockInstance = {
+        aliases: mockAliases,
+        shortName: 'web',
         name: 'mockInstanceName',
         shortHash: 'mockInstanceShortHash',
         env: ['env'],
         owner: { github: 'instanceOwnerId' }
       }
       mockOpts = {
-        name: 'mockInstanceShortHash--mockInstanceRepo',
         env: mockInstance.env,
         repo: 'mockRepo',
         branch: 'mockBranch',
         commit: 'mockCommit',
         user: { id: 'mockGithubId' },
         isolated: 'mockIsolationId',
-        isIsolationGroupMaster: false
+        isIsolationGroupMaster: false,
+        masterInstanceShortHash: 'masterInstanceShortHash'
       }
       sinon.stub(BuildService, 'createAndBuildContextVersion').resolves({
         contextVersion: mockNewContextVersion,
@@ -161,13 +166,16 @@ describe('InstanceForkService', function () {
           sinon.assert.calledWithExactly(
             InstanceService.createInstance,
             {
+              aliases: mockAliases,
               build: 'newBuildId',
-              name: 'mockInstanceShortHash--mockInstanceRepo',
+              shortName: 'web',
+              name: 'masterInstanceShortHash--' + mockInstance.name,
               env: ['env'],
-              owner: { github: 'instanceOwnerId' },
+              owner: mockInstance.owner,
               masterPod: false,
               isolated: 'mockIsolationId',
-              isIsolationGroupMaster: false
+              isIsolationGroupMaster: false,
+              parent: mockInstance.shortHash
             },
             mockSessionUser
           )
@@ -299,13 +307,13 @@ describe('InstanceForkService', function () {
       mockNewContextVersion = {}
       mockNewContextVersion.update = sinon.stub().yieldsAsync(null, mockNewContextVersion)
       sinon.stub(Context, 'findOne').yieldsAsync(null, mockFoundContext)
-      sinon.stub(ContextService, 'handleVersionDeepCopy').yieldsAsync(null, mockNewContextVersion)
+      sinon.stub(ContextVersionService, 'handleVersionDeepCopy').yieldsAsync(null, mockNewContextVersion)
       done()
     })
 
     afterEach(function (done) {
       Context.findOne.restore()
-      ContextService.handleVersionDeepCopy.restore()
+      ContextVersionService.handleVersionDeepCopy.restore()
       done()
     })
 
@@ -362,7 +370,7 @@ describe('InstanceForkService', function () {
 
       it('should reject with any context version copy error', function (done) {
         var error = new Error('robot')
-        ContextService.handleVersionDeepCopy.yieldsAsync(error)
+        ContextVersionService.handleVersionDeepCopy.yieldsAsync(error)
         InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -401,9 +409,9 @@ describe('InstanceForkService', function () {
       InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
         .asCallback(function (err) {
           expect(err).to.not.exist()
-          sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+          sinon.assert.calledOnce(ContextVersionService.handleVersionDeepCopy)
           sinon.assert.calledWithExactly(
-            ContextService.handleVersionDeepCopy,
+            ContextVersionService.handleVersionDeepCopy,
             mockFoundContext,
             mockContextVersion,
             { accounts: { github: { id: mockCreatedById } } },
@@ -434,7 +442,7 @@ describe('InstanceForkService', function () {
           expect(err).to.not.exist()
           sinon.assert.callOrder(
             Context.findOne,
-            ContextService.handleVersionDeepCopy,
+            ContextVersionService.handleVersionDeepCopy,
             mockNewContextVersion.update
           )
           done()
@@ -459,12 +467,19 @@ describe('InstanceForkService', function () {
     var mockNewBuild = { _id: 'mockBuildId' }
     var mockNewInstanceModel = { _id: 'mockInstanceId', isModel: true } // for diff
     var mockMasterName = 'foo-repo'
+    var mockAliases = { '239482342': {} }
 
     beforeEach(function (done) {
       mockInstance = {
+        aliases: mockAliases,
         name: 'branch-name-repo',
+        env: ['asdasdsad'],
         contextVersion: { _id: '4' },
-        owner: { github: 17 }
+        owner: { github: 17 },
+        isTesting: false,
+        isTestReporter: false,
+        shortHash: 'hello',
+        shortName: 'name-repo'
       }
       mockSessionUser = {
         accounts: {
@@ -533,11 +548,12 @@ describe('InstanceForkService', function () {
         })
 
         it('should require a sessionUser', function (done) {
-          InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId).asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.match(/sessionuser.+required/i)
-            done()
-          })
+          InstanceForkService.forkNonRepoInstance(mockInstance, mockMasterName, mockIsolationId)
+            .asCallback(function (err) {
+              expect(err).to.exist()
+              expect(err.message).to.match(/sessionuser.+required/i)
+              done()
+            })
         })
 
         it('should require the github ID on the sessionUser', function (done) {
@@ -662,13 +678,19 @@ describe('InstanceForkService', function () {
           sinon.assert.calledWithExactly(
             InstanceService.createInstance,
             {
+              aliases: mockAliases,
+              autoForked: true,
               build: mockNewBuild._id,
               name: mockMasterName + '--' + mockInstance.name,
               env: mockInstance.env,
-              owner: { github: mockInstance.owner.github },
+              owner: mockInstance.owner,
               masterPod: false,
               isolated: mockIsolationId,
-              isIsolationGroupMaster: false
+              isIsolationGroupMaster: false,
+              isTesting: false,
+              isTestReporter: false,
+              parent: mockInstance.shortHash,
+              shortName: mockInstance.shortName
             },
             mockSessionUser
           )
@@ -877,11 +899,16 @@ describe('InstanceForkService', function () {
       }
       master = {
         _id: new ObjectId(),
+        aliases: ['sadfasdf'],
         env: ['x=1'],
+        ports: [8080],
         isTesting: true,
+        isTestReporter: false,
+        shortName: 'web',
         name: 'inst1',
         owner: { github: { id: 1 } },
-        shortHash: 'd1as6213a'
+        shortHash: 'd1as6213a',
+        containerStartCommand: 'sdqasdasd'
       }
       mockUpdatedInstance = {
         _id: 'mockUpdatedInstanceId',
@@ -905,16 +932,21 @@ describe('InstanceForkService', function () {
           sinon.assert.calledWith(
             InstanceService.createInstance,
             {
+              aliases: master.aliases,
               parent: master.shortHash,
               build: 'build1',
+              shortName: 'web',
               name: 'feature-1-inst1',
               env: master.env,
+              ports: [8080],
               owner: {
                 github: master.owner.github
               },
               masterPod: false,
               autoForked: true,
-              isTesting: master.isTesting
+              isTesting: master.isTesting,
+              isTestReporter: master.isTestReporter,
+              containerStartCommand: master.containerStartCommand
             },
             mockSessionUser
           )
@@ -930,16 +962,21 @@ describe('InstanceForkService', function () {
           sinon.assert.calledWith(
             InstanceService.createInstance,
             {
+              aliases: master.aliases,
               parent: master.shortHash,
               build: 'build1',
+              shortName: 'web',
               name: 'a1-b2-c3-d4-e5-f6-g7-h7-inst1',
               env: master.env,
+              ports: [8080],
               owner: {
                 github: master.owner.github
               },
               masterPod: false,
               autoForked: true,
-              isTesting: master.isTesting
+              isTesting: master.isTesting,
+              isTestReporter: master.isTestReporter,
+              containerStartCommand: master.containerStartCommand
             },
             mockSessionUser
           )
@@ -971,6 +1008,82 @@ describe('InstanceForkService', function () {
           )
         })
         .asCallback(done)
+    })
+  })
+  describe('#createForkedInstanceBody', function () {
+    let master
+    let body
+    let opts
+
+    beforeEach(function (done) {
+      master = {
+        _id: new ObjectId(),
+        aliases: ['aliases'],
+        env: ['x=1'],
+        ports: [8080],
+        isTesting: true,
+        isTestReporter: false,
+        shortName: 'web',
+        name: 'inst1',
+        owner: { github: { id: 1 } },
+        shortHash: 'shortHash',
+        containerStartCommand: 'containerStartCommand'
+      }
+      done()
+    })
+
+    it('should create a body with a name based on it\'s isolation', function (done) {
+      opts = {
+        buildId: 'buildId',
+        branch: 'branch/branch',
+        isolated: 'isolated',
+        masterInstanceShortHash: 'masterInstanceShortHash'
+      }
+      body = InstanceForkService.createForkedInstanceBody(master, opts)
+      expect(body).to.equal({
+        aliases: master.aliases,
+        build: opts.buildId,
+        env: master.env,
+        isolated: 'isolated',
+        isIsolationGroupMaster: false,
+        isTesting: true,
+        isTestReporter: false,
+        masterPod: false,
+        name: opts.masterInstanceShortHash + '--' + master.name,
+        owner: master.owner,
+        parent: master.shortHash,
+        ports: master.ports,
+        shortName: master.shortName,
+        containerStartCommand: 'containerStartCommand'
+      })
+      expect(body.autoForked).to.be.undefined()
+      done()
+    })
+
+    it('should create a body with a name based on it\'s branch', function (done) {
+      opts = {
+        autoForked: true,
+        buildId: 'buildId',
+        branch: 'branch/branch'
+      }
+      body = InstanceForkService.createForkedInstanceBody(master, opts)
+      expect(body).to.equal({
+        aliases: master.aliases,
+        autoForked: true,
+        build: opts.buildId,
+        env: master.env,
+        isTesting: true,
+        isTestReporter: false,
+        masterPod: false,
+        name: 'branch-branch-' + master.name,
+        owner: master.owner,
+        parent: master.shortHash,
+        ports: master.ports,
+        shortName: master.shortName,
+        containerStartCommand: 'containerStartCommand'
+      })
+      expect(body.isIsolationGroupMaster).to.be.undefined()
+      done()
     })
   })
 })

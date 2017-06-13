@@ -13,21 +13,15 @@ var expect = Code.expect
 var find = require('101/find')
 
 var api = require('../../fixtures/api-control')
-var dock = require('../../fixtures/dock')
 var expects = require('../../fixtures/expects')
 var multi = require('../../fixtures/multi-factory')
 var uuid = require('uuid')
-var primus = require('../../fixtures/primus')
 
 describe('200 PATCH /contexts/:id/versions/:id/appCodeVersions/:id', function () {
   var ctx = {}
 
   before(api.start.bind(ctx))
-  before(dock.start.bind(ctx))
-  beforeEach(primus.connect)
-  afterEach(primus.disconnect)
   after(api.stop.bind(ctx))
-  after(dock.stop.bind(ctx))
   afterEach(require('../../fixtures/clean-mongo').removeEverything)
   afterEach(require('../../fixtures/clean-ctx')(ctx))
   afterEach(require('../../fixtures/clean-nock'))

@@ -58,11 +58,11 @@ describe('/users/:id/routes/:id', function () {
         ctx.user.destroyRoute(testHost, function (err, body, code) {
           if (err) { return done(err) }
           expect(code).to.equal(204)
-          ctx.user.fetch(function (err, body) {
-            if (err) { return done(err) }
-            expect(body.routes.length).to.equal(1)
-            expect(body.routes[0].srcHostname).to.equal(testHost2)
-            expect(body.routes[0].destInstanceId).to.equal(testDest2)
+          ctx.user.fetchRoutes(function (err, body) {
+            if (err) return done(err)
+            expect(body.length).to.equal(1)
+            expect(body[0].srcHostname).to.equal(testHost2)
+            expect(body[0].destInstanceId).to.equal(testDest2)
             done()
           })
         })

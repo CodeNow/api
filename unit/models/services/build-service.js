@@ -1,29 +1,30 @@
 'use strict'
-var clone = require('101/clone')
-var Code = require('code')
-var Lab = require('lab')
-var omit = require('101/omit')
-var pick = require('101/pick')
-var Promise = require('bluebird')
-var sinon = require('sinon')
+const clone = require('101/clone')
+const Code = require('code')
+const Lab = require('lab')
+const omit = require('101/omit')
+const pick = require('101/pick')
+const Promise = require('bluebird')
+const sinon = require('sinon')
 
-var Build = require('models/mongo/build')
-var BuildService = require('models/services/build-service')
-var Context = require('models/mongo/context')
-var Instance = require('models/mongo/instance')
-var ContextService = require('models/services/context-service')
-var ContextVersion = require('models/mongo/context-version')
-var PermissionService = require('models/services/permission-service')
-var User = require('models/mongo/user')
+const Build = require('models/mongo/build')
+const BuildService = require('models/services/build-service')
+const Context = require('models/mongo/context')
+const ContextVersionService = require('models/services/context-version-service')
+const ContextVersion = require('models/mongo/context-version')
+const Instance = require('models/mongo/instance')
+const PermissionService = require('models/services/permission-service')
+const publisher = require('models/rabbitmq/index.js')
+const User = require('models/mongo/user')
 
 require('sinon-as-promised')(Promise)
-var lab = exports.lab = Lab.script()
+const lab = exports.lab = Lab.script()
 
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
 describe('BuildService', function () {
   var ctx = {}
@@ -217,94 +218,25 @@ describe('BuildService', function () {
     })
   })
 
-  describe('#findBuild', function () {
-    beforeEach(function (done) {
-      ctx.build = new Build({
-        _id: '507f1f77bcf86cd799439011'
-      })
-      sinon.stub(Build, 'findByIdAsync').resolves(ctx.build)
-      done()
-    })
-
-    afterEach(function (done) {
-      ctx = {}
-      Build.findByIdAsync.restore()
-      done()
-    })
-
-    it('should fail if build is is not valid', function (done) {
-      BuildService.findBuild('1111')
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err.message).to.equal('Invalid build id')
-        done()
-      })
-    })
-
-    it('should fail build lookup failed', function (done) {
-      Build.findByIdAsync.rejects(new Error('Mongo error'))
-      BuildService.findBuild('507f1f77bcf86cd799439011')
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err.message).to.equal('Mongo error')
-        done()
-      })
-    })
-
-    it('should fail if build was not found', function (done) {
-      Build.findByIdAsync.resolves(null)
-      BuildService.findBuild('507f1f77bcf86cd799439011')
-      .then(function () {
-        done(new Error('Should never happen'))
-      })
-      .catch(function (err) {
-        expect(err.isBoom).to.equal(true)
-        expect(err.output.statusCode).to.equal(404)
-        expect(err.output.payload.message).to.equal('Build not found')
-        done()
-      })
-    })
-
-    it('should return build', function (done) {
-      BuildService.findBuild('507f1f77bcf86cd799439011')
-      .then(function (build) {
-        expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
-      })
-      .asCallback(done)
-    })
-
-    it('should call Build.findByIdAsync with correct params', function (done) {
-      BuildService.findBuild('507f1f77bcf86cd799439011')
-      .then(function (build) {
-        sinon.assert.calledOnce(Build.findByIdAsync)
-        sinon.assert.calledWith(Build.findByIdAsync, '507f1f77bcf86cd799439011')
-      })
-      .asCallback(done)
-    })
-  })
   describe('#findBuildAndAssertAccess', function () {
     beforeEach(function (done) {
       ctx.build = new Build({
         _id: '507f1f77bcf86cd799439011'
       })
-      sinon.stub(BuildService, 'findBuild').resolves(ctx.build)
+      sinon.stub(Build, 'findBuildById').resolves(ctx.build)
       sinon.stub(PermissionService, 'ensureModelAccess').resolves()
       done()
     })
 
     afterEach(function (done) {
       ctx = {}
-      BuildService.findBuild.restore()
+      Build.findBuildById.restore()
       PermissionService.ensureModelAccess.restore()
       done()
     })
 
     it('should fail build lookup failed', function (done) {
-      BuildService.findBuild.rejects(new Error('Mongo error'))
+      Build.findBuildById.rejects(new Error('Mongo error'))
       BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function () {
         done(new Error('Should never happen'))
@@ -338,8 +270,8 @@ describe('BuildService', function () {
     it('should call BuildService.findBuild with correct params', function (done) {
       BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', {})
       .then(function (build) {
-        sinon.assert.calledOnce(BuildService.findBuild)
-        sinon.assert.calledWith(BuildService.findBuild, '507f1f77bcf86cd799439011')
+        sinon.assert.calledOnce(Build.findBuildById)
+        sinon.assert.calledWith(Build.findBuildById, '507f1f77bcf86cd799439011')
       })
       .asCallback(done)
     })
@@ -359,12 +291,13 @@ describe('BuildService', function () {
       BuildService.findBuildAndAssertAccess('507f1f77bcf86cd799439011', sessionUser)
       .then(function (build) {
         sinon.assert.callOrder(
-          BuildService.findBuild,
+          Build.findBuildById,
           PermissionService.ensureModelAccess)
       })
       .asCallback(done)
     })
   })
+
   describe('#buildBuild', function () {
     beforeEach(function (done) {
       ctx.cv = new ContextVersion({
@@ -379,27 +312,29 @@ describe('BuildService', function () {
       })
       ctx.sessionUser = { _id: 'user-id' }
       sinon.stub(Build, 'findByIdAsync').resolves(ctx.build)
-      sinon.stub(BuildService, 'findBuild').resolves(ctx.build)
+      sinon.stub(Build, 'findBuildById').resolves(ctx.build)
       sinon.stub(ContextVersion, 'buildSelf').resolves(ctx.newCv)
       sinon.stub(ContextVersion, 'findByIdAsync').resolves(ctx.cv)
       sinon.stub(ctx.build, 'setInProgressAsync').resolves(ctx.build)
       sinon.stub(ctx.build, 'modifyCompletedIfFinishedAsync').resolves(ctx.build)
       sinon.stub(ctx.build, 'replaceContextVersionAsync').resolves(ctx.build)
       sinon.stub(ctx.build, 'modifyErroredAsync').resolves(ctx.build)
+      sinon.stub(publisher, 'publishBuildRequested')
       done()
     })
 
     afterEach(function (done) {
       ctx = {}
+      publisher.publishBuildRequested.restore()
       Build.findByIdAsync.restore()
-      BuildService.findBuild.restore()
+      Build.findBuildById.restore()
       ContextVersion.buildSelf.restore()
       ContextVersion.findByIdAsync.restore()
       done()
     })
 
     it('should fail if build was not found', function (done) {
-      BuildService.findBuild.rejects(new Error('Access denied'))
+      Build.findBuildById.rejects(new Error('Access denied'))
       BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -412,7 +347,7 @@ describe('BuildService', function () {
 
     it('should fail if build completed', function (done) {
       ctx.build.completed = new Date()
-      BuildService.findBuild.resolves(ctx.build)
+      Build.findBuildById.resolves(ctx.build)
       BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -427,7 +362,7 @@ describe('BuildService', function () {
 
     it('should fail if build started', function (done) {
       ctx.build.started = new Date()
-      BuildService.findBuild.resolves(ctx.build)
+      Build.findBuildById.resolves(ctx.build)
       BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -436,6 +371,22 @@ describe('BuildService', function () {
         expect(err.isBoom).to.equal(true)
         expect(err.output.statusCode).to.equal(409)
         expect(err.output.payload.message).to.equal('Build is already in progress')
+        done()
+      })
+    })
+
+    it('should publishBuildRequested job', (done) => {
+      const testBuildId = '507f1f77bcf86cd799439011'
+      const testMessage = 'autodeploy'
+
+      Build.findBuildById.resolves(ctx.build)
+      BuildService.buildBuild(testBuildId, { message: testMessage }, ctx.sessionUser).asCallback((err) => {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(publisher.publishBuildRequested)
+        sinon.assert.calledWith(publisher.publishBuildRequested, {
+          buildObjectId: testBuildId,
+          reasonTriggered: testMessage
+        })
         done()
       })
     })
@@ -469,7 +420,7 @@ describe('BuildService', function () {
     it('should fail if build has no cvs', function (done) {
       var build = clone(ctx.build)
       build.contextVersions = []
-      BuildService.findBuild.resolves(build)
+      Build.findBuildById.resolves(build)
       BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -485,7 +436,7 @@ describe('BuildService', function () {
     it('should fail if more than 1 cvs were found', function (done) {
       var build = clone(ctx.build)
       build.contextVersions.push('507f1f77bcf86cd799439011')
-      BuildService.findBuild.resolves(build)
+      Build.findBuildById.resolves(build)
       BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
       .then(function () {
         done(new Error('Should never happen'))
@@ -544,8 +495,8 @@ describe('BuildService', function () {
       it('should call findBuild with correct args', function (done) {
         BuildService.buildBuild('507f1f77bcf86cd799439011', { message: 'new build' }, ctx.sessionUser)
         .tap(function () {
-          sinon.assert.calledOnce(BuildService.findBuild)
-          sinon.assert.calledWith(BuildService.findBuild, '507f1f77bcf86cd799439011')
+          sinon.assert.calledOnce(Build.findBuildById)
+          sinon.assert.calledWith(Build.findBuildById, '507f1f77bcf86cd799439011')
         })
         .asCallback(done)
       })
@@ -633,7 +584,7 @@ describe('BuildService', function () {
         .then(function (build) {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(
-            BuildService.findBuild,
+            Build.findBuildById,
             ContextVersion.findByIdAsync,
             ctx.build.setInProgressAsync,
             ctx.build.modifyCompletedIfFinishedAsync,
@@ -649,7 +600,7 @@ describe('BuildService', function () {
         .then(function (build) {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(
-            BuildService.findBuild,
+            Build.findBuildById,
             ContextVersion.findByIdAsync,
             ctx.build.setInProgressAsync,
             ContextVersion.buildSelf,
@@ -667,7 +618,7 @@ describe('BuildService', function () {
         .then(function (build) {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(
-            BuildService.findBuild,
+            Build.findBuildById,
             ContextVersion.findByIdAsync,
             ctx.build.setInProgressAsync,
             ContextVersion.buildSelf,
@@ -686,7 +637,7 @@ describe('BuildService', function () {
         .then(function (build) {
           expect(build._id.toString()).to.equal('507f1f77bcf86cd799439011')
           sinon.assert.callOrder(
-            BuildService.findBuild,
+            Build.findBuildById,
             ContextVersion.findByIdAsync,
             ctx.build.setInProgressAsync,
             ContextVersion.buildSelf,
@@ -779,7 +730,8 @@ describe('BuildService', function () {
         commit: 'mockCommit',
         user: {
           id: 7
-        }
+        },
+        pullRequest: 1
       }
       mockContext = {
         owner: {
@@ -790,14 +742,14 @@ describe('BuildService', function () {
         _id: 21
       }
       sinon.stub(Context, 'findOne').yieldsAsync(null, mockContext)
-      sinon.stub(ContextService, 'handleVersionDeepCopy').yieldsAsync(null, mockContextVersion)
+      sinon.stub(ContextVersionService, 'handleVersionDeepCopy').yieldsAsync(null, mockContextVersion)
       sinon.stub(ContextVersion, 'modifyAppCodeVersionByRepo').yieldsAsync(null, mockContextVersion)
       done()
     })
 
     afterEach(function (done) {
       Context.findOne.restore()
-      ContextService.handleVersionDeepCopy.restore()
+      ContextVersionService.handleVersionDeepCopy.restore()
       ContextVersion.modifyAppCodeVersionByRepo.restore()
       done()
     })
@@ -885,17 +837,17 @@ describe('BuildService', function () {
           BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             sinon.assert.calledOnce(Context.findOne)
-            sinon.assert.notCalled(ContextService.handleVersionDeepCopy)
+            sinon.assert.notCalled(ContextVersionService.handleVersionDeepCopy)
             sinon.assert.notCalled(ContextVersion.modifyAppCodeVersionByRepo)
             done()
           })
         })
       })
 
-      describe('in ContextService.handleVersionDeepCopy', function () {
+      describe('in ContextVersionService.handleVersionDeepCopy', function () {
         beforeEach(function (done) {
           error = new Error('robot')
-          ContextService.handleVersionDeepCopy.yieldsAsync(error)
+          ContextVersionService.handleVersionDeepCopy.yieldsAsync(error)
           done()
         })
 
@@ -911,7 +863,7 @@ describe('BuildService', function () {
           BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             sinon.assert.calledOnce(Context.findOne)
-            sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+            sinon.assert.calledOnce(ContextVersionService.handleVersionDeepCopy)
             sinon.assert.notCalled(ContextVersion.modifyAppCodeVersionByRepo)
             done()
           })
@@ -937,7 +889,7 @@ describe('BuildService', function () {
           BuildService.createNewContextVersion(instance, pushInfo, 'autolaunch').asCallback(function (err) {
             expect(err).to.exist()
             sinon.assert.calledOnce(Context.findOne)
-            sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+            sinon.assert.calledOnce(ContextVersionService.handleVersionDeepCopy)
             sinon.assert.calledOnce(ContextVersion.modifyAppCodeVersionByRepo)
             done()
           })
@@ -955,9 +907,9 @@ describe('BuildService', function () {
           { _id: 'mockContextId' },
           sinon.match.func
         )
-        sinon.assert.calledOnce(ContextService.handleVersionDeepCopy)
+        sinon.assert.calledOnce(ContextVersionService.handleVersionDeepCopy)
         sinon.assert.calledWithExactly(
-          ContextService.handleVersionDeepCopy,
+          ContextVersionService.handleVersionDeepCopy,
           mockContext, // returned from `findOne`
           contextVersion, // from the Instance
           { accounts: { github: { id: 7 } } }, // from pushInfo (like sessionUser)
@@ -971,6 +923,7 @@ describe('BuildService', function () {
           pushInfo.repo,
           pushInfo.branch,
           pushInfo.commit,
+          pushInfo.pullRequest,
           sinon.match.func
         )
         done()
@@ -1004,7 +957,8 @@ describe('BuildService', function () {
         commit: 'mockCommit',
         user: {
           id: 'pushUserId'
-        }
+        },
+        pullRequest: 1
       }
       mockInstanceUser = { accounts: { github: { accessToken: 'instanceUserGithubToken' } } }
       mockPushUser = { accounts: { github: { accessToken: 'pushUserGithubToken' } } }
@@ -1251,7 +1205,7 @@ describe('BuildService', function () {
       }
       sinon.stub(BuildService, 'validateOpts').resolves()
       sinon.stub(PermissionService, 'isOwnerOf').resolves()
-      sinon.stub(ContextVersion, 'findByIdAsync').resolves(mockContextVersion)
+      sinon.stub(ContextVersion, 'findContextVersionById').resolves(mockContextVersion)
       sinon.stub(Build, 'createAsync').resolves(mockBuild)
       done()
     })
@@ -1259,7 +1213,7 @@ describe('BuildService', function () {
     afterEach(function (done) {
       BuildService.validateOpts.restore()
       PermissionService.isOwnerOf.restore()
-      ContextVersion.findByIdAsync.restore()
+      ContextVersion.findContextVersionById.restore()
       Build.createAsync.restore()
       done()
     })
@@ -1286,23 +1240,13 @@ describe('BuildService', function () {
           })
       })
 
-      it('should reject when ContextVersion.findByIdAsync fails', function (done) {
+      it('should reject when ContextVersion.findContextVersionById fails', function (done) {
         var error = new Error('Validator Fail')
-        ContextVersion.findByIdAsync.rejects(error)
+        ContextVersion.findContextVersionById.rejects(error)
         BuildService.createBuild(opts, mockUser)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err).to.equal(error)
-            done()
-          })
-      })
-
-      it('should reject when ContextVersion.findByIdAsync doesn\'t return anything', function (done) {
-        ContextVersion.findByIdAsync.resolves()
-        BuildService.createBuild(opts, mockUser)
-          .asCallback(function (err) {
-            expect(err).to.exist()
-            expect(err.message).to.equal('contextVersion not found')
             done()
           })
       })
@@ -1334,7 +1278,7 @@ describe('BuildService', function () {
             .asCallback(function (err) {
               expect(err).to.not.exist()
               sinon.assert.calledWithExactly(
-                ContextVersion.findByIdAsync,
+                ContextVersion.findContextVersionById,
                 mockContextVersion._id
               )
               done()
@@ -1350,7 +1294,7 @@ describe('BuildService', function () {
             .asCallback(function (err) {
               expect(err).to.not.exist()
               sinon.assert.calledWithExactly(
-                ContextVersion.findByIdAsync,
+                ContextVersion.findContextVersionById,
                 mockContextVersion._id
               )
               done()
@@ -1364,7 +1308,7 @@ describe('BuildService', function () {
           }, mockUser)
             .asCallback(function (err) {
               expect(err).to.not.exist()
-              sinon.assert.notCalled(ContextVersion.findByIdAsync)
+              sinon.assert.notCalled(ContextVersion.findContextVersionById)
               done()
             })
         })

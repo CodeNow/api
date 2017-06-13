@@ -246,6 +246,43 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end _handleCreateContainerError
 
+  describe('_addCmdAndPortsToDataFromInstance', () => {
+    it('should not add Cmd if command does not exist', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {})
+      expect(output.Cmd).to.be.undefined()
+      done()
+    })
+
+    it('should return command in array form', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {
+        containerStartCommand: 'this command runs'
+      })
+      expect(output.Cmd).to.equal(['/bin/sh', '-c', process.env.RUNNABLE_WAIT_FOR_WEAVE + ' this command runs'])
+      done()
+    })
+
+    it('should not add ExposedPorts if ports does not exist', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {})
+      expect(output.ExposedPorts).to.be.undefined()
+      done()
+    })
+
+    it('should return ExposedPorts in object form', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {
+        ports: [8080, 9090]
+      })
+      expect(output.ExposedPorts).to.equal({
+        '8080/tcp': {},
+        '9090/tcp': {}
+      })
+      done()
+    })
+  }) // end _addCmdAndPortsToDataFromInstance
+
   describe('_isImageNotFoundErr', function () {
     it('should return true if error matches', function (done) {
       var result = Docker._isImageNotFoundErr({
@@ -327,7 +364,11 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false
+          organization: {
+            githubUsername: 'runnable'
+          },
+          noCache: false,
+          tid: 'mediocre-tid'
         }
         model.createImageBuilder(opts, function (err) {
           if (err) { return done(err) }
@@ -339,18 +380,23 @@ describe('docker: ' + moduleName, function () {
             Docker.getDockerTag,
             opts.contextVersion
           )
+
           expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
             contextVersion: opts.contextVersion,
-            dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername
+            organization: opts.organization,
+            tid: opts.tid,
+            dockerTag: ctx.mockDockerTag
           })
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
             noCache: opts.noCache,
-            contextVersion: opts.contextVersion
+            contextVersion: opts.contextVersion,
+            organization: {
+              githubUsername: 'runnable'
+            }
           })
 
           var expected = {
@@ -403,11 +449,15 @@ describe('docker: ' + moduleName, function () {
       it('should handle error if createContainer failed', function (done) {
         Docker.prototype.createContainer.yieldsAsync(new Error('boo'))
 
-        var opts = {
+        const opts = {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false
+          organization: {
+            githubUsername: 'runnable'
+          },
+          noCache: false,
+          tid: 'mediocre-tid'
         }
         model.createImageBuilder(opts, function (err) {
           expect(err).to.exist()
@@ -420,17 +470,21 @@ describe('docker: ' + moduleName, function () {
             opts.contextVersion
           )
           expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
+            tid: opts.tid,
             contextVersion: opts.contextVersion,
             dockerTag: ctx.mockDockerTag,
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername
+            organization: opts.organization
           })
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
             noCache: opts.noCache,
-            contextVersion: opts.contextVersion
+            contextVersion: opts.contextVersion,
+            organization: {
+              githubUsername: 'runnable'
+            }
           })
 
           var expected = {
@@ -555,13 +609,18 @@ describe('docker: ' + moduleName, function () {
         manualBuild: 'manualBuild',
         noCache: 'noCache',
         sessionUser: ctx.mockSessionUser,
-        ownerUsername: 'ownerUsername'
+        organization: {
+          githubUsername: 'ownerUsername'
+        },
+        tid: 'mediocre-tid'
       }
       var labels = model._createImageBuilderLabels(opts)
       var expectedLabels = {
+        tid: opts.tid,
         githubOrgId: 'owner',
         'contextVersion.build._id': ctx.mockContextVersion.build._id,
         'contextVersion._id': ctx.mockContextVersion._id,
+        contextVersionId: ctx.mockContextVersion._id,
         'contextVersion.context': ctx.mockContextVersion.context,
         dockerTag: opts.dockerTag,
         manualBuild: opts.manualBuild,
@@ -569,7 +628,7 @@ describe('docker: ' + moduleName, function () {
         sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
         sessionUserGithubId: opts.sessionUser.accounts.github.id.toString(),
         sessionUserUsername: opts.sessionUser.accounts.github.username,
-        ownerUsername: opts.ownerUsername,
+        ownerUsername: opts.organization.githubUsername,
         'com.docker.swarm.constraints': '["org==owner"]',
         type: 'image-builder-container'
       }
@@ -584,10 +643,28 @@ describe('docker: ' + moduleName, function () {
         noCache: false,
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser
+        sessionUser: ctx.mockSessionUser,
+        organization: {
+          githubUsername: 'runnable'
+        }
       })
       expect(imageBuilderContainerLabels['contextVersion._id']).to.equal(ctx.mockContextVersion._id)
       expect(imageBuilderContainerLabels.noCache).to.equal('false')
+      done()
+    })
+
+    it('should return a swarm constraint orgId of 1 for personal account', function (done) {
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        noCache: false,
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        organization: {
+          githubUsername: 'runnable'
+        },
+        sessionUser: Object.assign({}, ctx.mockSessionUser, { accounts: { github: { id: 'owner' }}})
+    })
+      expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
+        .to.equal('["org==1"]')
       done()
     })
 
@@ -596,7 +673,10 @@ describe('docker: ' + moduleName, function () {
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser
+        sessionUser: ctx.mockSessionUser,
+        organization: {
+          githubUsername: 'runnable'
+        }
       })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
         .to.equal('["org==owner"]')
@@ -608,7 +688,10 @@ describe('docker: ' + moduleName, function () {
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser
+        sessionUser: ctx.mockSessionUser,
+        organization: {
+          githubUsername: 'runnable'
+        }
       })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
         .to.equal('["org==owner"]')
@@ -645,6 +728,7 @@ describe('docker: ' + moduleName, function () {
         var opts = ctx.opts
         var buildOpts = {
           forcerm: true,
+          pull: true,
           nocache: true
         }
         var envs = model._createImageBuilderEnv(opts)
@@ -664,6 +748,7 @@ describe('docker: ' + moduleName, function () {
           // acv envs
           'RUNNABLE_REPO=' + 'git@github.com:' + appCodeVersions.map(pluck('repo')).join(';git@github.com:'),
           'RUNNABLE_COMMITISH=' + [ appCodeVersions[0].commit, appCodeVersions[1].branch, 'master' ].join(';'),
+          'RUNNABLE_PRS=;;',
           'RUNNABLE_KEYS_BUCKET=' + process.env.GITHUB_DEPLOY_KEYS_BUCKET,
           'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(';'),
           // network envs
@@ -692,7 +777,8 @@ describe('docker: ' + moduleName, function () {
       it('should return conditional container env', function (done) {
         var envs = model._createImageBuilderEnv(ctx.opts)
         var buildOpts = {
-          forcerm: true
+          forcerm: true,
+          pull: true
         }
         expect(envs).to.contain([
           'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
@@ -709,6 +795,7 @@ describe('docker: ' + moduleName, function () {
       sinon.stub(model, 'getLogs').yieldsAsync(null, { stream: true })
       done()
     })
+
     afterEach(function (done) {
       model.getLogs.restore()
       done()
@@ -733,7 +820,8 @@ describe('docker: ' + moduleName, function () {
         done()
       })
     })
-    it('should retry ETIMEDOUT error', { timeout: 4000 }, function (done) {
+
+    it('should retry ETIMEDOUT error', function (done) {
       var timeoutError = new Error('Docker error')
       timeoutError.data = {
         err: {
@@ -1008,7 +1096,7 @@ describe('docker: ' + moduleName, function () {
         if (err) { return done(err) }
         expect(resp).to.equal(ctx.resp)
         sinon.assert.calledOnce(model._containerAction)
-        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'remove', {})
+        sinon.assert.calledWith(model._containerAction, 'some-container-id', 'remove', { force: true })
         done()
       })
     })
@@ -1053,7 +1141,7 @@ describe('docker: ' + moduleName, function () {
         done()
       })
     })
-    it('should retry ETIMEDOUT error', { timeout: 4000 }, function (done) {
+    it('should retry ETIMEDOUT error', function (done) {
       var timeoutError = new Error('Docker error')
       timeoutError.data = {
         err: {
@@ -1157,16 +1245,19 @@ describe('docker: ' + moduleName, function () {
         ],
         getUserContainerMemoryLimit: sinon.stub().returns(testMemory)
       }
+
       ctx.opts = {
         instance: ctx.mockInstance,
         contextVersion: ctx.mockContextVersion,
         ownerUsername: 'runnable',
-        sessionUserGithubId: 10
+        sessionUserGithubId: 10,
+        tid: 'mediocre-tid'
       }
       sinon.stub(Docker.prototype, '_createUserContainerLabels')
       sinon.stub(Docker.prototype, 'createContainer')
       done()
     })
+
     afterEach(function (done) {
       Docker.prototype._createUserContainerLabels.restore()
       Docker.prototype.createContainer.restore()
@@ -1246,6 +1337,22 @@ describe('docker: ' + moduleName, function () {
           sinon.assert.calledOnce(ctx.mockContextVersion.getUserContainerMemoryLimit)
           sinon.assert.calledWith(
             Docker.prototype.createContainer, expectedCreateOpts, sinon.match.func
+          )
+
+          expect(container).to.equal(ctx.mockContainer)
+          done()
+        })
+      })
+
+      it('should create a container with run cmd', function (done) {
+        ctx.opts.instance.containerStartCommand = 'keep calm and code on'
+
+        model.createUserContainer(ctx.opts, function (err, container) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Docker.prototype.createContainer, sinon.match({
+              Cmd: ['/bin/sh', '-c', process.env.RUNNABLE_WAIT_FOR_WEAVE + ' keep calm and code on']
+            }), sinon.match.func
           )
 
           expect(container).to.equal(ctx.mockContainer)
@@ -1611,7 +1718,8 @@ describe('docker: ' + moduleName, function () {
           }
         },
         ownerUsername: 'runnable',
-        sessionUserGithubId: 10
+        sessionUserGithubId: 10,
+        tid: 'mediocre-tid'
       }
       done()
     })
@@ -1622,6 +1730,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           var opts = ctx.opts
           expect(labels).to.equal({
+            tid: ctx.opts.tid,
             githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,
@@ -1642,6 +1751,7 @@ describe('docker: ' + moduleName, function () {
           if (err) { return done(err) }
           var opts = ctx.opts
           expect(labels).to.equal({
+            tid: ctx.opts.tid,
             githubOrgId: '132456',
             instanceId: opts.instance._id.toString(),
             instanceName: opts.instance.name,

@@ -377,15 +377,10 @@ describe('Organization Service', function () {
 
   describe('updateFlagsOnOrg', function () {
     const goodOpts = {
-      metadata: {
-        hasConfirmedSetup: true
-      }
+      metadata: {}
     }
-    const badOpts = {
-      metadata: {
-        hasConfirmedSetup: 'evenBetterName'
-      }
-    }
+    const badOpts = {}
+
     beforeEach(function (done) {
       sinon.stub(UserService, 'validateSessionUserPartOfOrg').resolves(bigPoppaUser)
       sinon.stub(OrganizationService, 'updateById').resolves(bigPoppaOrg)
@@ -402,14 +397,14 @@ describe('Organization Service', function () {
       it('should validate and fail because of Joi (bad values)', function (done) {
         OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, badOpts)
           .catch(function (err) {
-            expect(err.message).to.match(/hasConfirmedSetup/)
+            expect(err.message).to.match(/[prBotEnabled, metadata]/)
             done()
           })
       })
       it('should validate and fail because of Joi (missing values)', function (done) {
-        OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, { metadata: {} })
+        OrganizationService.updateFlagsOnOrg(bigPoppaOrg.id, sessionUser, { fact: 'Donald Trump will be president' })
           .catch(function (err) {
-            expect(err.message).to.match(/hasConfirmedSetup/)
+            expect(err.message).to.match(/[prBotEnabled, metadata]/)
             done()
           })
       })
@@ -426,6 +421,60 @@ describe('Organization Service', function () {
           })
           .asCallback(done)
       })
+    })
+  })
+
+  describe('updatePrivateRegistryOnOrgBySessionUser', function () {
+    let registryOptions
+    const bpOrgId = '41332'
+    beforeEach(function (done) {
+      sinon.stub(UserService, 'validateSessionUserPartOfOrg').resolves()
+      sinon.stub(BigPoppaClient.prototype, 'updateOrganization').resolves()
+      done()
+    })
+    beforeEach(function (done) {
+      registryOptions = {
+        username: 'username',
+        password: 'password',
+        url: 'http://example.com'
+      }
+      done()
+    })
+    afterEach(function (done) {
+      UserService.validateSessionUserPartOfOrg.restore()
+      BigPoppaClient.prototype.updateOrganization.restore()
+      done()
+    })
+    it('should validate the schema', function (done) {
+      registryOptions.url = 1234
+      OrganizationService.updatePrivateRegistryOnOrgBySessionUser(sessionUser, bpOrgId, registryOptions)
+        .asCallback((err) => {
+          expect(err).to.exist()
+          expect(err.message).to.match(/url/)
+          done()
+        })
+    })
+    it('should validate user is part of the org', function (done) {
+      OrganizationService.updatePrivateRegistryOnOrgBySessionUser(sessionUser, bpOrgId, registryOptions)
+        .asCallback((err) => {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(UserService.validateSessionUserPartOfOrg)
+          sinon.assert.calledWith(UserService.validateSessionUserPartOfOrg, sessionUser, bpOrgId)
+          done()
+        })
+    })
+    it('should update organization in big poppa', function (done) {
+      OrganizationService.updatePrivateRegistryOnOrgBySessionUser(sessionUser, bpOrgId, registryOptions)
+        .asCallback((err) => {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(BigPoppaClient.prototype.updateOrganization)
+          sinon.assert.calledWith(BigPoppaClient.prototype.updateOrganization, bpOrgId, {
+            privateRegistryUrl: registryOptions.url,
+            privateRegistryUsername: registryOptions.username,
+            privateRegistryPassword: registryOptions.password
+          })
+          done()
+        })
     })
   })
 })

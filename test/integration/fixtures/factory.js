@@ -63,6 +63,9 @@ var factory = module.exports = {
       : owner.accounts.github.id
     props = props || {}
     props.username = props.username || username
+    if (!props.cv) {
+      props.cv = factory.createNewVersion(props)
+    }
     var count = createCount(1, function () {
       var data = factory.instanceTemplate(ownerGithubId, props)
       Instance.create(data, function (err, instance) {
@@ -84,7 +87,7 @@ var factory = module.exports = {
             if (err) {
               return cb(err)
             }
-            cb(null, instance, props.build, props.cv)
+            return cb(null, instance, props.build, props.cv)
           })
         })
       })
@@ -177,10 +180,10 @@ var factory = module.exports = {
   },
   createSourceInfraCodeVersion: function (cb) {
     Context.create({
-      name: 'asdasd',
+      name: 'Blank',
+      isSource: true,
       owner: {
-        github: process.env.HELLO_RUNNABLE_GITHUB_ID,
-        isSource: true
+        github: process.env.HELLO_RUNNABLE_GITHUB_ID
       }
     }, function (err, context) {
       if (err) { return cb(err) }
@@ -226,7 +229,8 @@ var factory = module.exports = {
       advanced: true,
       appCodeVersions: opts.appCodeVersions || [],
       __v: 0,
-      dockerHost: 'http://127.0.0.1:4242'
+      dockerHost: 'http://127.0.0.1:4242',
+      buildDockerfilePath: opts.buildDockerfilePath
     }
     if (buildExtend) {
       cv.build = assign({
@@ -305,7 +309,8 @@ var factory = module.exports = {
       },
       parent: props.parent || 'sdf',
       shortHash: shortHash.slice(0, 6),
-      shouldNotAutofork: props.shouldNotAutofork
+      shouldNotAutofork: props.shouldNotAutofork,
+      shortName: props.parent || name
     }
   },
   getNextId: function () {
@@ -343,6 +348,7 @@ var factory = module.exports = {
       build: {
         dockerTag: 'adsgasdfgasdf'
       },
+      buildDockerfilePath: opts.buildDockerfilePath,
       appCodeVersions: [
         {
           additionalRepo: false,
@@ -410,8 +416,7 @@ var factory = module.exports = {
       },
       env: opts.env || [],
       isolated: opts.isolated,
-      isIsolationGroupMaster: opts.isIsolationGroupMaster,
-      imagePull: opts.imagePull || null
+      isIsolationGroupMaster: opts.isIsolationGroupMaster
     })
   }
 }

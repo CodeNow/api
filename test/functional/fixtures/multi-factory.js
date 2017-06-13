@@ -7,14 +7,12 @@ var async = require('async')
 var PermissionService = require('models/services/permission-service')
 var createCount = require('callback-count')
 var defaults = require('101/defaults')
-var dockerMockEvents = require('./docker-mock-events')
 var EventEmitter = require('events').EventEmitter
 var generateKey = require('./key-factory')
 var isFunction = require('101/is-function')
 var isObject = require('101/is-object')
 var logger = require('middlewares/logger')(__filename)
 var MongoUser = require('models/mongo/user')
-var primus = require('./primus')
 var Promise = require('bluebird')
 var randStr = require('randomstring').generate
 var sinon = require('sinon')
@@ -69,20 +67,22 @@ module.exports = {
     opts.userContentDomain = process.env.USER_CONTENT_DOMAIN
     var user = new User(host, opts)
     sessionUser(opts.orgs)
-    user.githubLogin(token, function (err) {
-      if (err) {
-        return cb(err)
-      } else {
-        user.attrs.accounts.github.accessToken = token
-        user.attrs.accounts.github.username = name
-        user.attrs.accounts._json = {}
-        log.trace({
-          token: token,
-          name: name,
-          userId: user.attrs.accounts.github.id
-        }, 'createdUser')
-        cb(null, user)
-      }
+    .then(function () {
+      user.githubLogin(token, function (err) {
+        if (err) {
+          return cb(err)
+        } else {
+          user.attrs.accounts.github.accessToken = token
+          user.attrs.accounts.github.username = name
+          user.attrs.accounts._json = {}
+          log.trace({
+            token: token,
+            name: name,
+            userId: user.attrs.accounts.github.id
+          }, 'createdUser')
+          cb(null, user)
+        }
+      })
     })
     return user
   },
@@ -378,13 +378,11 @@ module.exports = {
     })
   },
   /**
-   * Creates and waits for primus org room events indicating
-   * instance has completed deploying via background worker
+   * Creates instance that has completed deploying via background worker
    * process.
-   * @param {Object} primus - already connected primus fixture
    * @param {Function} cb
    */
-  createAndTailInstance: function (primus, buildOwnerId, buildOwnerName, createBody, cb) {
+  createAndTailInstance: function (buildOwnerId, buildOwnerName, createBody, cb) {
     log.trace({}, 'createAndTailInstance', buildOwnerId, buildOwnerName, createBody, typeof cb)
     if (isFunction(buildOwnerId)) {
       cb = buildOwnerId
@@ -450,28 +448,14 @@ module.exports = {
         require('./mocks/github/user')(user)
       }
       require('./mocks/github/user')(user)
-      var next = createCount(2, done).next
-      primus.joinOrgRoom(user.json().accounts.github.id, function (err) {
-        log.trace({}, 'createAndTailInstance', 'joined room')
-        if (err) { return next(err) }
-        primus.expectAction('start', {}, function () {
-          log.trace({}, 'createAndTailInstance', 'instance started')
-          next()
-        })
-        ctx.instance = user.createInstance(body, function (err) {
-          log.trace({}, 'createAndTailInstance', 'created instance')
-          if (err) { return next(err) }
-          next()
-        })
-      })
-      function done (err) {
+      ctx.instance = user.createInstance(body, function (err) {
         if (err) { return realCb(err) }
         log.trace({}, 'createAndTailInstance', 'done')
         ctx.instance.fetch(function (err) {
           if (err) { return realCb(err) }
           realCb(null, ctx.instance, ctx.build, ctx.user, ctx.modelsArr, ctx.srcArr)
         })
-      }
+      })
     })
   },
   createInstance: function (buildOwnerId, buildOwnerName, cb) {
@@ -527,27 +511,6 @@ module.exports = {
       })
       */
       })
-    })
-  },
-
-  createAndTailContainer: function (primus, cb) {
-    log.trace({}, 'createAndTailContainer')
-
-    var stub
-    if (!PermissionService.isOwnerOf.isSinonProxy) {
-      // Duck it, we never need to restore this stub anyways right?
-      stub = sinon.stub(PermissionService, 'isOwnerOf').returns(Promise.resolve())
-    }
-    function realCb () {
-      if (stub) {
-        stub.restore()
-      }
-      cb.apply(null, arguments)
-    }
-    this.createAndTailInstance(primus, function (err, instance, build, user, modelsArray, srcArr) {
-      if (err) { return cb(err) }
-      var container = instance.newContainer(instance.json().containers[0])
-      realCb(err, container, instance, build, user, modelsArray, srcArr)
     })
   },
 
@@ -623,22 +586,11 @@ module.exports = {
             if (err) { return realCb(err) }
             cv = cv.toJSON()
             if (cv.build.completed) { return realCb() }
-            log.trace({}, 'primus.joinOrgRoom', ownerId || user.json().accounts.github.id)
-            primus.joinOrgRoom(ownerId || user.json().accounts.github.id, function () {
-              log.trace({}, 'primus.onceVersionComplete', cv._id)
-              primus.onceVersionComplete(cv._id, function () {
-                log.trace({}, 'version complete', cv._id)
-                require('./mocks/github/user')(user)
-                var count = createCount(2, realCb)
-                build.contextVersions.models[0].fetch(count.next)
-                require('./mocks/github/user')(user)
-                build.fetch(count.next)
-              })
-
-              primus.expectActionCount('build_running', 1, function () {
-                dockerMockEvents.emitBuildComplete(cv)
-              })
-            })
+            require('./mocks/github/user')(user)
+            var count = createCount(2, realCb)
+            build.contextVersions.models[0].fetch(count.next)
+            require('./mocks/github/user')(user)
+            build.fetch(count.next)
           })
         })
       })

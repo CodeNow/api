@@ -108,7 +108,7 @@ describe('Isolation Services Integration Tests', function () {
   beforeEach(function (done) {
     // create dependency Links
     Promise.each(Object.keys(dependencyMap), function (instanceName) {
-      return makeDependecies(ctx[instanceName], getDependencyInstances(ctx, instanceName))
+      return makeDependencies(ctx[instanceName], getDependencyInstances(ctx, instanceName))
     })
     .asCallback(done)
   })
@@ -142,12 +142,12 @@ describe('Isolation Services Integration Tests', function () {
   }
 
   /**
-   * This function creates connections in Neo4J to simulate what our API does
+   * This function creates connections to simulate what our API does
    * @param {Instance} master
    * @param {[Instance]} dependents
    * @returns {Promise}
    */
-  function makeDependecies (master, dependents) {
+  function makeDependencies (master, dependents) {
     if (!dependents) { return null }
     return Promise.each(dependents, function (dependentInstance) {
       return master.addDependency(dependentInstance)
@@ -155,7 +155,7 @@ describe('Isolation Services Integration Tests', function () {
   }
 
   /**
-   * This function checks Neo4J to see if all of the given instances are actually connected
+   * This function checks to see if all of the given instances are actually connected
    * @param {Instance} master
    * @param {[Instance]} dependents
    * @returns {Promise}
@@ -214,14 +214,14 @@ describe('Isolation Services Integration Tests', function () {
         return Promise.each(Object.keys(forked), function (instanceName) {
           // It should take these newly forked instances, and bind them to the original master
           // (ctx) branches.
-          return makeDependecies(forked[instanceName], getDependencyInstances(ctx, instanceName))
+          return makeDependencies(forked[instanceName], getDependencyInstances(ctx, instanceName))
         })
           .return(childInstanceArray)
       })
   }
 
   describe('_updateDependenciesForInstanceWithChildren', function () {
-    describe('Master\'s dependecies', function () {
+    describe('Master\'s dependencies', function () {
       var toFork = ['Api', 'Link', 'MongoDB']
       beforeEach(function (done) {
         createForks('Frontend', toFork)
