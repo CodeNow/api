@@ -1992,7 +1992,6 @@ describe('Cluster Config Service Unit Tests', function () {
         return ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
           testSessionUser,
           instances,
-          githubPushInfo,
           clusterOpts,
           buildOpts,
           ownerInfo
@@ -2002,7 +2001,6 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
           testSessionUser,
           instances,
-          githubPushInfo,
           clusterOpts,
           buildOpts,
           ownerInfo
@@ -2018,7 +2016,6 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
           testSessionUser,
           instances,
-          githubPushInfo,
           clusterOpts,
           buildOpts,
           ownerInfo
@@ -2037,7 +2034,6 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
           testSessionUser,
           instances,
-          githubPushInfo,
           clusterOpts,
           buildOpts,
           ownerInfo
@@ -2058,7 +2054,6 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
           testSessionUser,
           instances,
-          githubPushInfo,
           clusterOpts,
           buildOpts,
           ownerInfo
@@ -2080,7 +2075,6 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
           testSessionUser,
           instances,
-          githubPushInfo,
           clusterOpts,
           buildOpts,
           ownerInfo
@@ -2098,7 +2092,6 @@ describe('Cluster Config Service Unit Tests', function () {
         ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
           testSessionUser,
           instances,
-          githubPushInfo,
           clusterOpts,
           buildOpts,
           ownerInfo
@@ -2250,7 +2243,6 @@ describe('Cluster Config Service Unit Tests', function () {
               ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate,
               testSessionUser,
               instanceObjs,
-              githubPushInfo,
               clusterOpts,
               sinon.match({
                 isolated: undefined,
