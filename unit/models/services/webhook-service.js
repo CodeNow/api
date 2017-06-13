@@ -22,6 +22,7 @@ const IsolationService = require('models/services/isolation-service')
 const MixPanelModel = require('models/apis/mixpanel')
 const WebhookService = require('models/services/webhook-service')
 const OrganizationService = require('models/services/organization-service')
+const UserService = require('models/services/user-service')
 const User = require('models/mongo/user')
 const rabbitMQ = require('models/rabbitmq')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
@@ -451,32 +452,38 @@ describe('Webhook Service Unit Tests', function () {
       commitPusher: username
     }
     beforeEach(function (done) {
-      sinon.stub(User, 'findOneAsync').resolves({ _id: 'some-id', allowed: true })
+      sinon.stub(UserService, 'getCompleteUserByGithubUsername').resolves({
+        _id: 'some-id',
+        allowed: true,
+        bigPoppaUser: {
+          id: 'bp-id'
+        }
+       })
       done()
     })
     afterEach(function (done) {
-      User.findOneAsync.restore()
+      UserService.getCompleteUserByGithubUsername.restore()
       done()
     })
     describe('validating errors', function () {
       it('should next with error if db call failed', function (done) {
         var mongoErr = new Error('Mongo error')
-        User.findOneAsync.rejects(mongoErr)
+        UserService.getCompleteUserByGithubUsername.rejects(mongoErr)
         WebhookService.checkCommitPusherIsRunnableUser(githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.equal(mongoErr)
-            sinon.assert.calledOnce(User.findOneAsync)
-            sinon.assert.calledWith(User.findOneAsync, {'accounts.github.username': username})
+            sinon.assert.calledOnce(UserService.getCompleteUserByGithubUsername)
+            sinon.assert.calledWith(UserService.getCompleteUserByGithubUsername, username)
             done()
           })
       })
       it('should respond with 403 if no whitelist found', function (done) {
-        User.findOneAsync.resolves()
+        UserService.getCompleteUserByGithubUsername.resolves()
         WebhookService.checkCommitPusherIsRunnableUser(githubPushInfo)
           .asCallback(function (err) {
             expect(err.message).to.match(/committer.*not.*runnable.*user/i)
-            sinon.assert.calledOnce(User.findOneAsync)
-            sinon.assert.calledWith(User.findOneAsync, { 'accounts.github.username': 'thejsj' })
+            sinon.assert.calledOnce(UserService.getCompleteUserByGithubUsername)
+            sinon.assert.calledWith(UserService.getCompleteUserByGithubUsername, 'thejsj')
             done()
           })
       })
@@ -484,7 +491,7 @@ describe('Webhook Service Unit Tests', function () {
         WebhookService.checkCommitPusherIsRunnableUser({})
           .asCallback(function (err) {
             expect(err.message).to.match(/committer.*username is empty/i)
-            sinon.assert.notCalled(User.findOneAsync)
+            sinon.assert.notCalled(UserService.getCompleteUserByGithubUsername)
             done()
           })
       })
@@ -493,8 +500,9 @@ describe('Webhook Service Unit Tests', function () {
     it('should next without error if everything worked', function (done) {
       WebhookService.checkCommitPusherIsRunnableUser(githubPushInfo)
         .then(function () {
-          sinon.assert.calledOnce(User.findOneAsync)
-          sinon.assert.calledWith(User.findOneAsync, { 'accounts.github.username': username })
+          sinon.assert.calledOnce(UserService.getCompleteUserByGithubUsername)
+          sinon.assert.calledWith(UserService.getCompleteUserByGithubUsername, username)
+          expect(githubPushInfo.bpUserId).to.equal('bp-id')
         })
         .asCallback(done)
     })
@@ -507,7 +515,7 @@ describe('Webhook Service Unit Tests', function () {
       })
       WebhookService.checkCommitPusherIsRunnableUser(newInfo)
         .then(function () {
-          sinon.assert.notCalled(User.findOneAsync)
+          sinon.assert.notCalled(UserService.getCompleteUserByGithubUsername)
         })
         .asCallback(done)
     })
@@ -517,9 +525,10 @@ describe('Webhook Service Unit Tests', function () {
     var githubPushInfo = {
       repoOwnerOrgName: 'Runnable'
     }
+    const bpOrganizationId = 23423
 
     beforeEach(function (done) {
-      sinon.stub(OrganizationService, 'getByGithubUsername').resolves({ id: 23423, allowed: true })
+      sinon.stub(OrganizationService, 'getByGithubUsername').resolves({ id: bpOrganizationId, allowed: true })
       done()
     })
     afterEach(function (done) {
@@ -567,6 +576,7 @@ describe('Webhook Service Unit Tests', function () {
         .then(function () {
           sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
           sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
+          expect(githubPushInfo.bpOrganizationId).to.equal(bpOrganizationId)
         })
         .asCallback(done)
     })
