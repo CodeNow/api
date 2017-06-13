@@ -188,6 +188,7 @@ describe('Cluster Config Service Unit Tests', function () {
     const repoFullName = orgName + '/' + repoName
     const branchName = 'feature-1'
     const clusterName = 'api-unit'
+    const shouldNotAutoFork = true
     const parsedInput = {
       repositoryName: clusterName,
       ownerUsername: orgName,
@@ -203,7 +204,7 @@ describe('Cluster Config Service Unit Tests', function () {
     }
 
     const testData = {
-      triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName, parentInputClusterConfigId
+      triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName, parentInputClusterConfigId, shouldNotAutoFork
     }
 
     beforeEach(function (done) {
@@ -264,7 +265,7 @@ describe('Cluster Config Service Unit Tests', function () {
             ClusterConfigService.createFromRunnableConfig,
             testSessionUser,
             { results: testParsedContent.results, envFiles: [], files: testParsedContent.files },
-            { triggeredAction, repoFullName },
+            { triggeredAction, repoFullName, shouldNotAutoFork },
             sinon.match({
               clusterName,
               files: testParsedContent.files,
@@ -942,7 +943,8 @@ describe('Cluster Config Service Unit Tests', function () {
       }
       buildOpts = {
         isolated: objectId('407f191e810c19729de860e1'),
-        masterShorthash: 'asdasdsad'
+        masterShorthash: 'asdasdsad',
+        shouldNotAutoFork: true
       }
       sinon.stub(InstanceService, 'createInstance')
       done()
@@ -993,7 +995,7 @@ describe('Cluster Config Service Unit Tests', function () {
             isTestReporter,
             isolated: buildOpts.isolated,
             isIsolationGroupMaster: false,
-            shouldNotAutofork: false,
+            shouldNotAutofork: true,
             masterPod: false,
             ipWhitelist: {
               enabled: false

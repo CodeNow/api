@@ -34,6 +34,7 @@ describe('/docker-compose-cluster', function () {
   const sessionUserBigPoppaId = 8084808
   const parentInputClusterConfigId = 'funk flex'
   const githubId = sessionUserGithubId
+  const shouldNotAutoFork = true
   beforeEach(function (done) {
     nextStub = sinon.stub()
     resMock = {
@@ -55,7 +56,7 @@ describe('/docker-compose-cluster', function () {
       createClusterStub = sinon.stub(rabbitMQ, 'createCluster')
       validateOrBoomStub = sinon.spy(joi, 'validateOrBoomAsync')
       reqMock = {
-        body: { repo, branch, filePath, name, parentInputClusterConfigId, githubId },
+        body: { repo, branch, filePath, name, parentInputClusterConfigId, githubId, shouldNotAutoFork },
         sessionUser: {
           accounts: {
             github: { id: sessionUserGithubId }
@@ -107,7 +108,8 @@ describe('/docker-compose-cluster', function () {
               isTesting,
               parentInputClusterConfigId,
               testReporters,
-              clusterName: name
+              clusterName: name,
+              shouldNotAutoFork
             })
           })
           .asCallback(done)
