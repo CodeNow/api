@@ -49,7 +49,7 @@ module.exports.up = function (done) {
       const instance = model.instance
       icc.set('repo', instance.getRepoName())
       icc.set('branch', instance.getMainBranchName())
-      return icc.save()
+      return icc.saveAsync()
     })
     .tap(() => logStuff('done'))
     .then(() => Promise.fromCallback(cb => mongoose.disconnect(cb)))
