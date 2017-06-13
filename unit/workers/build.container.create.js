@@ -8,7 +8,6 @@ const noop = require('101/noop')
 const Promise = require('bluebird')
 const sinon = require('sinon')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
-const sshKeyService = require('models/services/ssh-key-service')
 
 const BuildService = require('models/services/build-service')
 const ContextVersion = require('models/mongo/context-version')
@@ -67,14 +66,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
       noCache: false,
       tid: 'job-tid'
     }
-    const mockUser = {
-      _id: 'user-id',
-      accounts: {
-        github: {
-          accessToken: 'token'
-        }
-      }
-    }
+    const mockUser = { _id: 'user-id' }
     const mockContextVersion = {
       _id: 'context-version-id',
       build: {
@@ -102,7 +94,6 @@ describe('ContainerImageBuilderCreate unit test', function () {
       sinon.stub(PermissionService, 'checkOwnerAllowed').resolves()
       sinon.stub(OrganizationService, 'getByGithubUsername').resolves(organization)
       sinon.stub(BuildService, 'updateFailedBuild')
-      sinon.stub(sshKeyService, 'getSshKeysByOrg').resolves(organization)
       done()
     })
 
@@ -116,7 +107,6 @@ describe('ContainerImageBuilderCreate unit test', function () {
       PermissionService.checkOwnerAllowed.restore()
       OrganizationService.getByGithubUsername.restore()
       BuildService.updateFailedBuild.restore()
-      sshKeyService.getSshKeysByOrg.restore()
       done()
     })
 
