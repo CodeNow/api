@@ -152,6 +152,15 @@ Builds - groupings of built components component versions
 Instances - Running build which consists of running containers for each project component
 * This is a grouping on running docker containers for a build's docker images.
 
+# Migration
+Runs during the start command
+
+- Need to rerun the migrations?
+ - SSH into mongo
+ - connect
+ - db.getCollection("_migrations").remove({})
+ - rerun api start
+
 # Help and Tips
 
 ### Problems npm installing?
