@@ -24,7 +24,6 @@ const messenger = require('socket/messenger')
 const mongoose = require('mongoose')
 const Promise = require('bluebird')
 const rabbitMQ = require('models/rabbitmq/index')
-const sinon = require('sinon')
 const User = require('models/mongo/user')
 
 const sources = [{
@@ -94,15 +93,13 @@ const sources = [{
   name: 'RethinkDB',
   body: fs.readFileSync('./scripts/sourceDockerfiles/rethinkdb').toString()
 }]
-sinon.stub(messenger)
+const oldMessageRoom = messenger.messageRoom
+messenger.messageRoom = function () {}
 
 var ctx = {}
 var createdBy
 
-/*
- * START SCRIPT
- */
-main()
+module.exports.seedVersions = main
 
 function main () {
   return Promise.all([
@@ -141,15 +138,13 @@ function main () {
       throw err
     })
     .finally(() => {
+      messenger.messageRoom = oldMessageRoom
       return Promise.all([
         rabbitMQ.disconnect(),
         Promise.fromCallback(cb => {
           mongoose.disconnect(cb)
         })
       ])
-      .asCallback(err => {
-        return process.exit(err ? 1 : 0)
-      })
     })
 }
 
