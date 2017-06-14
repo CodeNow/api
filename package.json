@@ -1,7 +1,7 @@
 {
   "name": "api",
   "description": "Runnable API Server",
-  "version": "12.4.3",
+  "version": "12.5.1",
   "repository": {
     "type": "git",
     "url": "http://github.com/CodeNow/api.git"
@@ -152,7 +152,9 @@
     "generate-toc": "doctoc ./README.md",
     "generate-whitelist": "find ./test -path ./test/functional/fixtures -prune -o -name '*.js' -print | sort > test/whitelist.txt",
     "lint": "standard --verbose",
+    "migrate-down": "NODE_PATH=./lib node ./mm-migrations/migrator-down.js",
     "migrate-up": "NODE_PATH=./lib node ./mm-migrations/migrator-up.js",
+    "migrate-and-start": "npm run migrate-up; NODE_PATH=./lib node --abort-on-uncaught-exception index.js",
     "start": "NODE_PATH=./lib node --abort-on-uncaught-exception index.js",
     "start-debug": "NODE_PATH=./lib node --debug index.js",
     "todo": "grep -nR TODO lib test",
