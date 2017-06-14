@@ -155,7 +155,11 @@ describe('Cluster Config Service Unit Tests', function () {
         path: '/docker-compose.extended.yml',
         sha: '5de165f117827881f929b5456ad4081e0445885e',
         _id:  '5930e9d37d9b580e009ce4d2'
-      }]
+      }],
+      mains: {
+        builds: {},
+        externals: {}
+      }
     }
     done()
   })
@@ -257,24 +261,24 @@ describe('Cluster Config Service Unit Tests', function () {
 
       it('should call ClusterConfigService.createFromRunnableConfig with correct args', function (done) {
         ClusterConfigService.create(testSessionUser, testData)
-        .tap(function () {
-          sinon.assert.calledOnce(ClusterConfigService.createFromRunnableConfig)
-          const args = ClusterConfigService.createFromRunnableConfig.getCall(0).args
-          sinon.assert.calledWithExactly(
-            ClusterConfigService.createFromRunnableConfig,
-            testSessionUser,
-            { results: testParsedContent.results, envFiles: [], files: testParsedContent.files },
-            { triggeredAction, repoFullName },
-            sinon.match({
-              clusterName,
-              files: testParsedContent.files,
-              isTesting,
-              testReporters,
-              parentInputClusterConfigId
-            })
-          )
-        })
-        .asCallback(done)
+          .tap(function () {
+            sinon.assert.calledOnce(ClusterConfigService.createFromRunnableConfig)
+            const args = ClusterConfigService.createFromRunnableConfig.getCall(0).args
+            sinon.assert.calledWithExactly(
+              ClusterConfigService.createFromRunnableConfig,
+              testSessionUser,
+              { results: testParsedContent.results, envFiles: [], files: testParsedContent.files },
+              { triggeredAction, repoFullName },
+              sinon.match({
+                clusterName,
+                files: testParsedContent.files,
+                isTesting,
+                testReporters,
+                parentInputClusterConfigId
+              })
+            )
+          })
+          .asCallback(done)
       })
 
       it('should call all the functions in the order', function (done) {
@@ -1821,16 +1825,6 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return main instance and dep', function (done) {
         instances = [mainInstanceObj, depInstanceObj]
         const model = ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances, mainInstance)
-        expect(model).to.exist()
-        expect(model.instance).to.equal(mainInstanceId)
-        expect(model.requestedDependencies.length).to.equal(1)
-        expect(model.requestedDependencies[0].instance).to.equal(depInstanceId)
-        expect(model.requestedDependencies[0].matchBranch).to.be.undefined()
-        done()
-      })
-      it('should return main instance and dep (without giving mainInstance)', function (done) {
-        instances = [mainInstanceObj, depInstanceObj]
-        const model = ClusterConfigService._createAutoIsolationModelsFromClusterInstances(instances)
         expect(model).to.exist()
         expect(model.instance).to.equal(mainInstanceId)
         expect(model.requestedDependencies.length).to.equal(1)
