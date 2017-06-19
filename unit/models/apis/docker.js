@@ -366,7 +366,7 @@ describe('docker: ' + moduleName, function () {
           contextVersion: ctx.mockContextVersion,
           organization: {
             githubUsername: 'runnable',
-            sshKeys: undefined
+            sshKeys: ''
           },
           noCache: false,
           tid: 'mediocre-tid'
@@ -397,7 +397,7 @@ describe('docker: ' + moduleName, function () {
             contextVersion: opts.contextVersion,
             organization: {
               githubUsername: 'runnable',
-              sshKeys: undefined
+              sshKeys: ''
             }
           })
 
@@ -528,7 +528,7 @@ describe('docker: ' + moduleName, function () {
           contextVersion: ctx.mockContextVersion,
           organization: {
             githubUsername: 'runnable',
-            sshKeys: undefined
+            sshKeys: ''
           },
           noCache: false,
           tid: 'mediocre-tid'
@@ -558,7 +558,7 @@ describe('docker: ' + moduleName, function () {
             contextVersion: opts.contextVersion,
             organization: {
               githubUsername: 'runnable',
-              sshKeys: undefined
+              sshKeys: ''
             }
           })
 
