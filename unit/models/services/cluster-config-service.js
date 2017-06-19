@@ -1006,6 +1006,58 @@ describe('Cluster Config Service Unit Tests', function () {
         })
     })
 
+    it('should set shouldNotAutoFork to true by default', () => {
+      const testParentBuildId = objectId('407f191e810c19729de860ef')
+      const testParentComposeData = {
+        env: 'env',
+        aliases: {
+          'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
+            'instanceName': 'compose-test-5-1-rethinkdb4',
+            'alias': 'three-changing-the-hostname'
+          }
+        },
+        containerStartCommand: 'containerStartCommand',
+        name: 'name'
+      }
+      const composeData = {
+        metadata: {
+          name: 'a1',
+          isMain: true
+        },
+        instance: testParentComposeData,
+        build: {
+          dockerFilePath: 'Nathan219/hello'
+        }
+      }
+      const testInstance = 'build'
+      buildOpts.shouldNotAutoFork = undefined
+      InstanceService.createInstance.resolves(testInstance)
+
+      return ClusterConfigService._createInstance(testSessionUser, composeData, testParentBuildId, testingOpts, buildOpts)
+        .then(instance => {
+          sinon.assert.calledOnce(InstanceService.createInstance)
+          sinon.assert.calledWithExactly(InstanceService.createInstance, {
+            shortName: composeData.metadata.name,
+            build: testParentBuildId,
+            aliases: testParentComposeData.aliases,
+            env: testParentComposeData.env,
+            containerStartCommand: testParentComposeData.containerStartCommand,
+            name: buildOpts.masterShorthash + '--' + testParentComposeData.name,
+            isTesting,
+            isTestReporter,
+            isolated: buildOpts.isolated,
+            isIsolationGroupMaster: false,
+            shouldNotAutofork: true,
+            masterPod: false,
+            ipWhitelist: {
+              enabled: false
+            }
+          }, testSessionUser)
+
+          expect(instance).to.equal(testInstance)
+        })
+    })
+
     it('should create non-test non-isolated instance', () => {
       testingOpts.isTesting = false
       delete buildOpts.isolated
