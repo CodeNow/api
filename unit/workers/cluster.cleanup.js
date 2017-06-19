@@ -27,8 +27,8 @@ const Worker = require('workers/cluster.cleanup')
 describe('Cluster Cleanup Worker', () => {
   describe('worker', () => {
     const testData = {
-      githubId: 999999,
-      clusterName: 'Henry\'s-Cluster'
+      clusterName: 'Henry\'s-Cluster',
+      clusterCreateId: 'garmonbozia'
     }
     const mockInstance1 = {
       _id: 'l33t h4x',

@@ -10,9 +10,9 @@ const sinon = require('sinon')
 const Code = require('code')
 require('sinon-as-promised')(Promise)
 
-const clusterCreateJobUuid = 'LGM!'
+const clusterCreateId = 'LGM!'
 sinon.stub( require.cache[ require.resolve( 'uuid' ) ], 'exports', () => {
-  return clusterCreateJobUuid;
+  return clusterCreateId;
 });
 
 const joi = require('utils/joi')
@@ -112,7 +112,7 @@ describe('/docker-compose-cluster', function () {
               isTesting,
               parentInputClusterConfigId,
               testReporters,
-              clusterCreateJobUuid,
+              clusterCreateId,
               clusterName: name
             })
           })

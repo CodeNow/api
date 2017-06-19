@@ -2151,8 +2151,7 @@ describe('Instance Model Tests', function () {
   describe('findInstancesByClusterUUID', function () {
     const data = {
       githubId: 'phi slamma jamma',
-      clusterName: 'honey bunches',
-      clusterCreateJobUuid: 'UB40'
+      clusterCreateId: 'UB40'
     }
     beforeEach(function (done) {
       sinon.stub(Instance, 'aggregateAsync').resolves({})
@@ -2165,7 +2164,7 @@ describe('Instance Model Tests', function () {
     })
 
     it('should query for instances', function (done) {
-      Instance.findInstancesByClusterUUID(data.githubId, data.clusterName, data.clusterCreateJobUuid)
+      Instance.findInstancesByClusterUUID(data.githubId, data.clusterCreateId)
         .then(() => {
           sinon.assert.calledOnce(Instance.aggregateAsync)
           sinon.assert.calledWithExactly(
@@ -2173,8 +2172,7 @@ describe('Instance Model Tests', function () {
             [{
               '$match': {
                 'owner.github': data.githubId,
-                'name': { $regex: data.clusterName, $options: 'g' },
-                'clusterCreateJobUuid': data.clusterCreateJobUuid
+                'clusterCreateId': data.clusterCreateId
               }
             }]
           )

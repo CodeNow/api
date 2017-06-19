@@ -40,7 +40,7 @@ describe('Cluster Config Service Unit Tests', function () {
   const isTestReporter = false
   const parentInputClusterConfigId = 'dk2kj3492'
   const testReporters = []
-  const clusterCreateJobUuid = 'bruce leroy'
+  const clusterCreateId = 'bruce leroy'
   let testOrgInfo
 
   let testMainParsedContent
@@ -204,7 +204,7 @@ describe('Cluster Config Service Unit Tests', function () {
     }
 
     const testData = {
-      triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName, clusterCreateJobUuid, parentInputClusterConfigId
+      triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName, clusterCreateId, parentInputClusterConfigId
     }
 
     beforeEach(function (done) {
@@ -265,7 +265,7 @@ describe('Cluster Config Service Unit Tests', function () {
             ClusterConfigService.createFromRunnableConfig,
             testSessionUser,
             { results: testParsedContent.results, envFiles: [], files: testParsedContent.files },
-            { triggeredAction, clusterCreateJobUuid, repoFullName },
+            { triggeredAction, clusterCreateId, repoFullName },
             sinon.match({
               clusterName,
               files: testParsedContent.files,
@@ -944,7 +944,7 @@ describe('Cluster Config Service Unit Tests', function () {
       buildOpts = {
         isolated: objectId('407f191e810c19729de860e1'),
         masterShorthash: 'asdasdsad',
-        clusterCreateJobUuid
+        clusterCreateId
       }
       sinon.stub(InstanceService, 'createInstance')
       done()
@@ -993,7 +993,7 @@ describe('Cluster Config Service Unit Tests', function () {
             name: buildOpts.masterShorthash + '--' + testParentComposeData.name,
             isTesting,
             isTestReporter,
-            clusterCreateJobUuid,
+            clusterCreateId,
             isolated: buildOpts.isolated,
             isIsolationGroupMaster: false,
             shouldNotAutofork: false,
@@ -1010,8 +1010,8 @@ describe('Cluster Config Service Unit Tests', function () {
     it('should create non-test non-isolated instance', () => {
       testingOpts.isTesting = false
       delete buildOpts.isolated
-      const clusterCreateJobUuid = 'aaaaaaa'
-      buildOpts.clusterCreateJobUuid = 'aaaaaaa'
+      const clusterCreateId = 'aaaaaaa'
+      buildOpts.clusterCreateId = 'aaaaaaa'
       const testParentBuildId = objectId('407f191e810c19729de860ef')
       const testParentComposeData = {
         env: 'env',
@@ -1049,7 +1049,7 @@ describe('Cluster Config Service Unit Tests', function () {
             isTestReporter,
             masterPod: true,
             isolated: undefined,
-            clusterCreateJobUuid,
+            clusterCreateId,
             ipWhitelist: {
               enabled: false
             }
