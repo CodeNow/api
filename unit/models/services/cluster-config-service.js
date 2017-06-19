@@ -2582,7 +2582,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
   })
 
-  describe('fetchClusterInfoByInstanceId', function () {
+  describe('fetchComposeInfoByInstanceId', function () {
     const filePath = 'config/compose.yml'
     const fileString = 'version: \'2\'\nservices:\n  web:\n    build: \'./src/\'\n    command: [node, index.js]\n    ports:\n      - "5000:5000"\n    environment:\n      - NODE_ENV=development\n      - SHOW=true\n      - HELLO=678\n'
     const orgName = 'runnable'
@@ -2634,20 +2634,20 @@ describe('Cluster Config Service Unit Tests', function () {
     })
 
     beforeEach(function (done) {
-      sinon.stub(ClusterConfigService, '_fetchComposeInfoForConfig').resolves()
+      sinon.stub(ClusterConfigService, '_parseComposeInfoForConfig').resolves()
       sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(config)
       done()
     })
     afterEach(function (done) {
-      ClusterConfigService._fetchComposeInfoForConfig.restore()
+      ClusterConfigService._parseComposeInfoForConfig.restore()
       ClusterConfigService.fetchConfigByInstanceId.restore()
       done()
     })
     describe('errors', function () {
-      it('should return error if _fetchComposeInfoForConfig failed', function (done) {
+      it('should return error if _parseComposeInfoForConfig failed', function (done) {
         const error = new Error('Some error')
-        ClusterConfigService._fetchComposeInfoForConfig.rejects(error)
-        ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData)
+        ClusterConfigService._parseComposeInfoForConfig.rejects(error)
+        ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -2657,8 +2657,8 @@ describe('Cluster Config Service Unit Tests', function () {
 
       it('should return error if fetchConfigByInstanceId failed', function (done) {
         const error = new Error('Some error')
-        ClusterConfigService.fetchConfigByInstanceId.throws(error)
-        ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData, instanceId)
+        ClusterConfigService.fetchConfigByInstanceId.rejects(error)
+        ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -2668,45 +2668,24 @@ describe('Cluster Config Service Unit Tests', function () {
     })
 
     describe('success', function () {
-      it('should run successfully without instanceId', function () {
-        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData)
-      })
       it('should run successfully without clusterInfo, but with instanceId', function () {
-        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, null, instanceId)
-      })
-
-      it('should call fetchConfigByInstanceId when an instanceId is not given', function () {
-        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData)
-          .tap(() => {
-            sinon.assert.calledWith(
-              ClusterConfigService._fetchComposeInfoForConfig,
-              testSessionUser,
-              testData
-            )
-          })
+        return ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId)
       })
 
       it('should call fetchConfigByInstanceId when an instanceId is given', function () {
-        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData, instanceId)
+        return ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId)
           .tap(() => {
             sinon.assert.calledWith(
-              ClusterConfigService._fetchComposeInfoForConfig,
+              ClusterConfigService._parseComposeInfoForConfig,
               testSessionUser,
               config
             )
           })
       })
 
-      it('should call fetchConfigByInstanceId when an instanceId is not given', function () {
-        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData)
-          .tap(() => {
-            sinon.assert.notCalled(ClusterConfigService.fetchConfigByInstanceId)
-          })
-      })
-
       it('should set the config.commit when the repo and branch matches the gitPushInfo ', function () {
         const commit = 'asdasdasdasd'
-        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData, instanceId, {
+        return ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId, {
           repo: testData.repo,
           branch: testData.branch,
           commit
@@ -2717,7 +2696,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
       it('should not the config.commit when the repo and branch don\'t match the gitPushInfo ', function () {
         const commit = 'asdasdasdasd'
-        return ClusterConfigService.fetchClusterInfoByInstanceId(testSessionUser, testData, instanceId, {
+        return ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId, {
           repo: testData.repo,
           branch: 'sadasdasdasd',
           commit
@@ -2729,7 +2708,7 @@ describe('Cluster Config Service Unit Tests', function () {
     })
   })
 
-  describe('_fetchComposeInfoForConfig', function () {
+  describe('_parseComposeInfoForConfig', function () {
     const filePath = 'config/compose.yml'
     const fileString = 'version: \'2\'\nservices:\n  web:\n    build: \'./src/\'\n    command: [node, index.js]\n    ports:\n      - "5000:5000"\n    environment:\n      - NODE_ENV=development\n      - SHOW=true\n      - HELLO=678\n'
     const orgName = 'runnable'
@@ -2785,7 +2764,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if ClusterConfigService.parseComposeFileAndPopulateENVs failed', function (done) {
         const error = new Error('Some error')
         ClusterConfigService.parseComposeFileAndPopulateENVs.throws(error)
-        ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+        ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -2796,11 +2775,11 @@ describe('Cluster Config Service Unit Tests', function () {
 
     describe('success', function () {
       it('should run successfully', function () {
-        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
       })
 
       it('should return a model with clusterOpts and octobearInfo', function () {
-        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
           .tap(results => {
             expect(results).to.be.object()
             expect(results.clusterOpts).to.equal(testData)
@@ -2809,14 +2788,14 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should add files from testParsedContent to clusterOpts', function () {
-        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
           .tap(results => {
             expect(results.clusterOpts.files).to.equal(testParsedContent.files)
           })
       })
 
       it('should call getBranchAsync when a commit is not given', function () {
-        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
           .tap(function () {
             sinon.assert.calledOnce(GitHub.prototype.getBranchAsync)
             sinon.assert.calledWithExactly(GitHub.prototype.getBranchAsync, testData.repo, testData.branch)
@@ -2825,7 +2804,7 @@ describe('Cluster Config Service Unit Tests', function () {
 
       it('should not call getBranchAsync when a commit is given', function () {
         testData.commit = 'asdadasdasdasd'
-        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
           .tap(function () {
             sinon.assert.notCalled(GitHub.prototype.getBranchAsync)
           })
@@ -2833,7 +2812,7 @@ describe('Cluster Config Service Unit Tests', function () {
 
       it('should call parseComposeFileAndPopulateENVs with commit from testData', function () {
         testData.commit = 'asdadasdasdasd'
-        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
           .tap(function () {
             sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
             sinon.assert.calledWithExactly(
@@ -2848,7 +2827,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call parseComposeFileAndPopulateENVs with commit from branch', function () {
-        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
           .tap(function () {
             sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
             sinon.assert.calledWithExactly(
@@ -2863,7 +2842,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call all the functions in the order', function () {
-        return ClusterConfigService._fetchComposeInfoForConfig(testSessionUser, testData)
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
           .tap(function () {
             sinon.assert.callOrder(
               GitHub.prototype.getBranchAsync,
