@@ -73,7 +73,14 @@ describe('Debug Containers Integration Tests', function () {
 
     it('should create, start, and inspect a container', function (done) {
       var containerStart = sinon.stub().yieldsAsync(null)
-      var containerInspect = sinon.stub().yieldsAsync(null, { Id: 4 })
+      var containerInspect = sinon.stub().yieldsAsync(null, {
+        Id: 4,
+        'hello.nope.this.should.be.replaced': {
+          'with.something.that': {
+            'doesnt.have.dots': 'hello'
+          }
+        }
+      })
       var container = {
         start: containerStart,
         inspect: containerInspect
@@ -95,6 +102,8 @@ describe('Debug Containers Integration Tests', function () {
         expect(containerInspect.calledOnce).to.be.true()
         Docker.prototype.createContainer.restore()
         expect(dc.id).to.equal(ctx.dc.id)
+        expect(dc.inspect['hello-nope-this-should-be-replaced']).to.exist()
+        expect(dc.inspect['hello.nope.this.should.be.replaced']).to.not.exist()
         done()
       })
     })
