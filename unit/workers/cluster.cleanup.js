@@ -44,7 +44,7 @@ describe('Cluster Cleanup Worker', () => {
 
     beforeEach((done) => {
       sinon.stub(Promise, 'delay').resolves()
-      sinon.stub(Instance, 'aggregateAsync').resolves([
+      sinon.stub(Instance, 'findInstancesByClusterUUID').resolves([
         mockInstance1,
         mockInstance2
       ])
@@ -58,7 +58,7 @@ describe('Cluster Cleanup Worker', () => {
 
     afterEach((done) => {
       Promise.delay.restore()
-      Instance.aggregateAsync.restore()
+      Instance.findInstancesByClusterUUID.restore()
       ClusterDataService.populateInstanceWithClusterInfo.restore()
       rabbitMQ.deleteInstance.restore()
       done()

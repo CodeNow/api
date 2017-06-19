@@ -2147,4 +2147,39 @@ describe('Instance Model Tests', function () {
       })
     })
   })
+
+  describe('findInstancesByClusterUUID', function () {
+    const data = {
+      githubId: 'phi slamma jamma',
+      clusterName: 'honey bunches',
+      clusterCreateJobUuid: 'UB40'
+    }
+    beforeEach(function (done) {
+      sinon.stub(Instance, 'aggregateAsync').resolves({})
+      done()
+    })
+
+    afterEach(function (done) {
+      Instance.aggregateAsync.restore()
+      done()
+    })
+
+    it('should query for instances', function (done) {
+      Instance.findInstancesByClusterUUID(data.githubId, data.clusterName, data.clusterCreateJobUuid)
+        .then(() => {
+          sinon.assert.calledOnce(Instance.aggregateAsync)
+          sinon.assert.calledWithExactly(
+            Instance.aggregateAsync,
+            [{
+              '$match': {
+                'owner.github': data.githubId,
+                'name': { $regex: data.clusterName, $options: 'g' },
+                'clusterCreateJobUuid': data.clusterCreateJobUuid
+              }
+            }]
+          )
+          done()
+        })
+    })
+  })
 })
