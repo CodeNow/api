@@ -39,26 +39,24 @@ describe('Cluster Update Worker', function () {
       commit: 'asdasdsad',
       user: user
     }
-    const config = {
-      files: [{
-        path: 'github.com',
-        sha: 'ab17haa9a'
-      }],
-      clusterName: 'asdasd'
-    }
-    const composeData = {
-      files: [{
-        path: 'github.com',
-        sha: 'ab17haa9a'
-      }]
-    }
     const octobearInfo = {}
     var testInstance
     const job = {
       instanceId: testInstanceId,
       pushInfo: githubPushInfo
     }
+    const files = [{
+      path: 'github.com',
+      sha: 'ab17haa9a'
+    }]
+    const config = {
+      repo: user.login + '/repo',
+      branch: 'branch',
+      files: files,
+      clusterName: 'asdasd'
+    }
     beforeEach(function (done) {
+      octobearInfo.files = files
       testInstance = new Instance({
         _id: testInstanceId,
         name: 'name1',

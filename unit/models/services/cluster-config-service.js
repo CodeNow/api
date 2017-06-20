@@ -261,24 +261,40 @@ describe('Cluster Config Service Unit Tests', function () {
 
       it('should call ClusterConfigService.createFromRunnableConfig with correct args', function (done) {
         ClusterConfigService.create(testSessionUser, testData)
-          .tap(function () {
-            sinon.assert.calledOnce(ClusterConfigService.createFromRunnableConfig)
-            const args = ClusterConfigService.createFromRunnableConfig.getCall(0).args
-            sinon.assert.calledWithExactly(
-              ClusterConfigService.createFromRunnableConfig,
-              testSessionUser,
-              { results: testParsedContent.results, envFiles: [], files: testParsedContent.files },
-              { triggeredAction, repoFullName },
-              sinon.match({
-                clusterName,
-                files: testParsedContent.files,
-                isTesting,
-                testReporters,
-                parentInputClusterConfigId
-              })
-            )
+        .tap(function () {
+          sinon.assert.calledOnce(ClusterConfigService.createFromRunnableConfig)
+          const args = ClusterConfigService.createFromRunnableConfig.getCall(0).args
+          expect(args[0]).to.equal(testSessionUser)
+          expect(args[1]).to.equal(testParsedContent.results)
+          expect(args[2]).to.equal( { triggeredAction, repoFullName })
+          expect(args[3]).to.equal({
+            branch: branchName,
+            commit: commitSha,
+            repo: repoFullName,
+            clusterName,
+            files: testParsedContent.files,
+            isTesting,
+            testReporters,
+            parentInputClusterConfigId
           })
-          .asCallback(done)
+          sinon.assert.calledWithExactly(
+            ClusterConfigService.createFromRunnableConfig,
+            testSessionUser,
+            testParsedContent.results,
+            { triggeredAction, repoFullName },
+            sinon.match({
+              branch: branchName,
+              commit: commitSha,
+              repo: repoFullName,
+              clusterName,
+              files: testParsedContent.files,
+              isTesting,
+              testReporters,
+              parentInputClusterConfigId
+            })
+          )
+        })
+        .asCallback(done)
       })
 
       it('should call all the functions in the order', function (done) {
@@ -348,7 +364,7 @@ describe('Cluster Config Service Unit Tests', function () {
         const error = new Error('Some error')
         ClusterConfigService._createNewInstanceForNewConfig.onCall(0).rejects(error)
         ClusterConfigService._createNewInstanceForNewConfig.onCall(1).rejects(error)
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, buildOpts, clusterOpts)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent.results, buildOpts, clusterOpts)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -359,7 +375,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if createClusterContext failed', function (done) {
         const error = new Error('Some error')
         ClusterConfigService.createClusterContext.rejects(error)
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, buildOpts, clusterOpts)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent.results, buildOpts, clusterOpts)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -370,7 +386,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if createOrUpdateIsolationConfig failed', function (done) {
         const error = new Error('Some error')
         ClusterConfigService.createOrUpdateIsolationConfig.rejects(error)
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, buildOpts, clusterOpts)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent.results, buildOpts, clusterOpts)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -380,10 +396,10 @@ describe('Cluster Config Service Unit Tests', function () {
     })
     describe('success', function () {
       it('should run successfully', function () {
-        return ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, buildOpts, clusterOpts)
+        return ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent.results, buildOpts, clusterOpts)
       })
       it('should call ClusterConfigService.createClusterContext with correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, buildOpts, clusterOpts)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent.results, buildOpts, clusterOpts)
           .tap(function () {
             sinon.assert.calledTwice(ClusterConfigService.createClusterContext)
             sinon.assert.calledWithExactly(ClusterConfigService.createClusterContext,
@@ -395,7 +411,7 @@ describe('Cluster Config Service Unit Tests', function () {
               }))
             sinon.assert.calledWithExactly(ClusterConfigService.createClusterContext,
               testSessionUser,
-              testParsedContent.results[0],
+              testParsedContent.results[1],
               sinon.match({
                 githubOrgId: testOrgGithubId,
                 bigPoppaOrgId: testOrgBpId
@@ -404,7 +420,7 @@ describe('Cluster Config Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should call ClusterConfigService.addAliasesToContexts with correct args', function (done) {
-        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, buildOpts, clusterOpts)
+        ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent.results, buildOpts, clusterOpts)
           .tap(function () {
             sinon.assert.calledOnce(ClusterConfigService.addAliasesToContexts)
             sinon.assert.calledWithExactly(ClusterConfigService.addAliasesToContexts,
@@ -415,7 +431,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call _createNewInstanceForNewConfig with correct args', () => {
-        return ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, buildOpts, clusterOpts)
+        return ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent.results, buildOpts, clusterOpts)
           .tap(function () {
             sinon.assert.calledTwice(ClusterConfigService._createNewInstanceForNewConfig)
             sinon.assert.calledWithExactly(ClusterConfigService._createNewInstanceForNewConfig,
@@ -436,7 +452,7 @@ describe('Cluster Config Service Unit Tests', function () {
       })
 
       it('should call createOrUpdateIsolationConfig correct args', () => {
-        return ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, buildOpts, clusterOpts)
+        return ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent.results, buildOpts, clusterOpts)
           .tap(function () {
             sinon.assert.calledOnce(ClusterConfigService.createOrUpdateIsolationConfig)
             sinon.assert.calledWithExactly(
@@ -448,7 +464,7 @@ describe('Cluster Config Service Unit Tests', function () {
           })
       })
       it('should call all the functions in the order', () => {
-        return ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent, buildOpts, clusterOpts)
+        return ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent.results, buildOpts, clusterOpts)
           .tap(function () {
             sinon.assert.callOrder(
               ClusterConfigService._getOwnerInfo,
@@ -2556,6 +2572,277 @@ describe('Cluster Config Service Unit Tests', function () {
         expect(services[0].build.dockerBuildContext).to.equal('./')
         expect(services[1].build).to.equal(undefined)
         done()
+      })
+    })
+  })
+
+  describe('fetchComposeInfoByInstanceId', function () {
+    const filePath = 'config/compose.yml'
+    const fileString = 'version: \'2\'\nservices:\n  web:\n    build: \'./src/\'\n    command: [node, index.js]\n    ports:\n      - "5000:5000"\n    environment:\n      - NODE_ENV=development\n      - SHOW=true\n      - HELLO=678\n'
+    const orgName = 'runnable'
+    const ownerUsername = orgName.toLowerCase()
+    const repoName = 'api'
+    const repoFullName = orgName + '/' + repoName
+    const branchName = 'feature-1'
+    const clusterName = 'api-unit'
+    const dockerComposeContent = {
+      fileString: fileString,
+      filePath: filePath,
+      fileSha: '13ec49b1014891c7b494126226f95e318e1d3e82',
+      repo: repoFullName,
+      commitRef: 'asdasdasdsadasdasd'
+    }
+    const instanceId = 'asdfas34arfw3fwdasafsdf'
+    const commitSha = 'abcc0b9'
+    const branchMock = {
+      commit: {
+        sha: commitSha
+      }
+    }
+    let testData = {}
+    let config = {}
+
+    beforeEach(done =>{
+      testData = {
+        repo: repoFullName,
+        branch: branchName,
+        clusterName,
+        filePath,
+        isTesting,
+        testReporters,
+        parentInputClusterConfigId
+      }
+      config = {
+        repo: repoFullName,
+        branch: branchName,
+        clusterName,
+        files: [{
+          path: filePath,
+          sha: 'filesha'
+        }],
+        isTesting,
+        testReporters,
+        parentInputClusterConfigId
+      }
+      done()
+    })
+
+    beforeEach(function (done) {
+      sinon.stub(ClusterConfigService, '_parseComposeInfoForConfig').resolves()
+      sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(config)
+      done()
+    })
+    afterEach(function (done) {
+      ClusterConfigService._parseComposeInfoForConfig.restore()
+      ClusterConfigService.fetchConfigByInstanceId.restore()
+      done()
+    })
+    describe('errors', function () {
+      it('should return error if _parseComposeInfoForConfig failed', function (done) {
+        const error = new Error('Some error')
+        ClusterConfigService._parseComposeInfoForConfig.rejects(error)
+        ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+
+      it('should return error if fetchConfigByInstanceId failed', function (done) {
+        const error = new Error('Some error')
+        ClusterConfigService.fetchConfigByInstanceId.rejects(error)
+        ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+    })
+
+    describe('success', function () {
+      it('should run successfully without clusterInfo, but with instanceId', function () {
+        return ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId)
+      })
+
+      it('should call fetchConfigByInstanceId when an instanceId is given', function () {
+        return ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId)
+          .tap(() => {
+            sinon.assert.calledWith(
+              ClusterConfigService._parseComposeInfoForConfig,
+              testSessionUser,
+              config
+            )
+          })
+      })
+
+      it('should set the config.commit when the repo and branch matches the gitPushInfo ', function () {
+        const commit = 'asdasdasdasd'
+        return ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId, {
+          repo: testData.repo,
+          branch: testData.branch,
+          commit
+        })
+          .tap(() => {
+            expect(config.commit).to.equal(commit)
+          })
+      })
+      it('should not the config.commit when the repo and branch don\'t match the gitPushInfo ', function () {
+        const commit = 'asdasdasdasd'
+        return ClusterConfigService.fetchComposeInfoByInstanceId(testSessionUser, instanceId, {
+          repo: testData.repo,
+          branch: 'sadasdasdasd',
+          commit
+        })
+          .tap(() => {
+            expect(testData.commit).to.be.undefined()
+          })
+      })
+    })
+  })
+
+  describe('_parseComposeInfoForConfig', function () {
+    const filePath = 'config/compose.yml'
+    const fileString = 'version: \'2\'\nservices:\n  web:\n    build: \'./src/\'\n    command: [node, index.js]\n    ports:\n      - "5000:5000"\n    environment:\n      - NODE_ENV=development\n      - SHOW=true\n      - HELLO=678\n'
+    const orgName = 'runnable'
+    const ownerUsername = orgName.toLowerCase()
+    const repoName = 'api'
+    const repoFullName = orgName + '/' + repoName
+    const branchName = 'feature-1'
+    const clusterName = 'api-unit'
+    const dockerComposeContent = {
+      fileString: fileString,
+      filePath: filePath,
+      fileSha: '13ec49b1014891c7b494126226f95e318e1d3e82',
+      repo: repoFullName,
+      commitRef: 'asdasdasdsadasdasd'
+    }
+    const commitSha = 'abcc0b9'
+    const branchMock = {
+      commit: {
+        sha: commitSha
+      }
+    }
+    let testData = {}
+
+    beforeEach(done =>{
+      testData = {
+        repo: repoFullName,
+        branch: branchName,
+        clusterName,
+        files: [{
+          path: filePath,
+          sha: dockerComposeContent.fileSha
+        }],
+        isTesting,
+        testReporters,
+        parentInputClusterConfigId
+      }
+      done()
+    })
+
+    beforeEach(function (done) {
+      sinon.stub(ClusterConfigService, 'fetchFileFromGithub').resolves(dockerComposeContent)
+      sinon.stub(GitHub.prototype, 'getBranchAsync').resolves(branchMock)
+      sinon.stub(ClusterConfigService, 'parseComposeFileAndPopulateENVs').resolves(testParsedContent)
+      done()
+    })
+    afterEach(function (done) {
+      ClusterConfigService.fetchFileFromGithub.restore()
+      GitHub.prototype.getBranchAsync.restore()
+      ClusterConfigService.parseComposeFileAndPopulateENVs.restore()
+      done()
+    })
+    describe('errors', function () {
+      it('should return error if ClusterConfigService.parseComposeFileAndPopulateENVs failed', function (done) {
+        const error = new Error('Some error')
+        ClusterConfigService.parseComposeFileAndPopulateENVs.throws(error)
+        ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
+          .asCallback(function (err) {
+            expect(err).to.exist()
+            expect(err.message).to.equal(error.message)
+            done()
+          })
+      })
+    })
+
+    describe('success', function () {
+      it('should run successfully', function () {
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
+      })
+
+      it('should return a model with clusterOpts and services', function () {
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
+          .tap(results => {
+            expect(results).to.be.object()
+            expect(results.clusterOpts).to.equal(testData)
+            expect(results.services).to.equal(testParsedContent.results)
+          })
+      })
+
+      it('should add files from testParsedContent to clusterOpts', function () {
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
+          .tap(results => {
+            expect(results.clusterOpts.files).to.equal(testParsedContent.files)
+          })
+      })
+
+      it('should call getBranchAsync when a commit is not given', function () {
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.calledOnce(GitHub.prototype.getBranchAsync)
+            sinon.assert.calledWithExactly(GitHub.prototype.getBranchAsync, testData.repo, testData.branch)
+          })
+      })
+
+      it('should not call getBranchAsync when a commit is given', function () {
+        testData.commit = 'asdadasdasdasd'
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.notCalled(GitHub.prototype.getBranchAsync)
+          })
+      })
+
+      it('should call parseComposeFileAndPopulateENVs with commit from testData', function () {
+        testData.commit = 'asdadasdasdasd'
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
+            sinon.assert.calledWithExactly(
+              ClusterConfigService.parseComposeFileAndPopulateENVs,
+              repoFullName,
+              clusterName,
+              testSessionUser.bigPoppaUser,
+              filePath,
+              'asdadasdasdasd'
+            )
+          })
+      })
+
+      it('should call parseComposeFileAndPopulateENVs with commit from branch', function () {
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
+            sinon.assert.calledWithExactly(
+              ClusterConfigService.parseComposeFileAndPopulateENVs,
+              repoFullName,
+              clusterName,
+              testSessionUser.bigPoppaUser,
+              filePath,
+              commitSha
+            )
+          })
+      })
+
+      it('should call all the functions in the order', function () {
+        return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
+          .tap(function () {
+            sinon.assert.callOrder(
+              GitHub.prototype.getBranchAsync,
+              ClusterConfigService.parseComposeFileAndPopulateENVs
+            )
+          })
       })
     })
   })
