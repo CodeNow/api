@@ -1,5 +1,5 @@
 /**
- * @module unit/workers/instance.delete
+ * @module unit/workers/context-version.delete
  */
 'use strict'
 

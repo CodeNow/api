@@ -2,29 +2,31 @@
  * @module unit/workers/build.container.create
  */
 'use strict'
-var Code = require('code')
-var Lab = require('lab')
-var noop = require('101/noop')
-var Promise = require('bluebird')
-var sinon = require('sinon')
-var WorkerStopError = require('error-cat/errors/worker-stop-error')
+const Code = require('code')
+const Lab = require('lab')
+const noop = require('101/noop')
+const Promise = require('bluebird')
+const sinon = require('sinon')
+const WorkerStopError = require('error-cat/errors/worker-stop-error')
+const sshKeyService = require('models/services/ssh-key-service')
 
-var BuildService = require('models/services/build-service')
-var ContextVersion = require('models/mongo/context-version')
-var Docker = require('models/apis/docker')
-var errors = require('errors')
-var PermissionService = require('models/services/permission-service')
-var User = require('models/mongo/user')
-var Worker = require('workers/build.container.create')
+const BuildService = require('models/services/build-service')
+const ContextVersion = require('models/mongo/context-version')
+const Docker = require('models/apis/docker')
+const errors = require('errors')
+const OrganizationService = require('models/services/organization-service')
+const PermissionService = require('models/services/permission-service')
+const User = require('models/mongo/user')
+const Worker = require('workers/build.container.create')
 
 require('sinon-as-promised')(Promise)
-var lab = exports.lab = Lab.script()
+const lab = exports.lab = Lab.script()
 
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
 describe('ContainerImageBuilderCreate unit test', function () {
   describe('finalRetryFn', function () {
@@ -55,7 +57,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
   }) // end finalRetryFn
 
   describe('task', function () {
-    var validJob = {
+    const validJob = {
       contextId: 'context-id',
       contextVersionId: 'context-version-id',
       contextVersionBuildId: 'context-version-build-id',
@@ -65,19 +67,31 @@ describe('ContainerImageBuilderCreate unit test', function () {
       noCache: false,
       tid: 'job-tid'
     }
-    var mockUser = { _id: 'user-id' }
-    var mockContextVersion = {
+    const mockUser = {
+      _id: 'user-id',
+      accounts: {
+        github: {
+          accessToken: 'token'
+        }
+      }
+    }
+    const mockContextVersion = {
       _id: 'context-version-id',
       build: {
         _id: 'some-build-id'
       },
       populateAsync: noop
     }
-    var mockContainer = {
+    const mockContainer = {
       id: 'container-id'
     }
-    var mockDockerTag = 'docker-tag'
-
+    const mockDockerTag = 'docker-tag'
+    const organization = {
+      id: 111,
+      githubId: 8888,
+      privateRegistryUrl: 'dockerhub.com',
+      privateRegistryUsername: 'runnabot'
+    }
     beforeEach(function (done) {
       sinon.stub(User, 'findByGithubIdAsync').resolves(mockUser)
       sinon.stub(ContextVersion, 'findOneCreating').resolves(mockContextVersion)
@@ -86,7 +100,9 @@ describe('ContainerImageBuilderCreate unit test', function () {
       sinon.stub(Docker.prototype, 'createImageBuilderAsync').resolves(mockContainer)
       sinon.stub(Docker, 'getDockerTag').returns(mockDockerTag)
       sinon.stub(PermissionService, 'checkOwnerAllowed').resolves()
+      sinon.stub(OrganizationService, 'getByGithubUsername').resolves(organization)
       sinon.stub(BuildService, 'updateFailedBuild')
+      sinon.stub(sshKeyService, 'getSshKeysByOrg').resolves(organization)
       done()
     })
 
@@ -98,7 +114,9 @@ describe('ContainerImageBuilderCreate unit test', function () {
       Docker.prototype.createImageBuilderAsync.restore()
       Docker.getDockerTag.restore()
       PermissionService.checkOwnerAllowed.restore()
+      OrganizationService.getByGithubUsername.restore()
       BuildService.updateFailedBuild.restore()
+      sshKeyService.getSshKeysByOrg.restore()
       done()
     })
 
@@ -218,7 +236,9 @@ describe('ContainerImageBuilderCreate unit test', function () {
 
         beforeEach(function (done) {
           BuildService.updateFailedBuild.resolves()
-          ContextVersion.findOneCreating.rejects(new ContextVersion.IncorrectStateError('funning', {}))
+          ContextVersion.findOneCreating.rejects(new ContextVersion.IncorrectStateError('funning', {
+            state: 'not funning'
+          }))
           Worker.task(validJob).asCallback(function (err) {
             rejectError = err
             done()
@@ -232,7 +252,7 @@ describe('ContainerImageBuilderCreate unit test', function () {
         })
 
         it('should set the correct error message', function (done) {
-          expect(rejectError.message).to.match(/ContextVersion not in correct state/)
+          expect(rejectError.message).to.match(/ContextVersion.*funning.*not funning/)
           done()
         })
 
@@ -280,8 +300,12 @@ describe('ContainerImageBuilderCreate unit test', function () {
           done()
         })
 
-        it('should pass the correct owner username', function (done) {
-          expect(createOpts.ownerUsername).to.equal(validJob.ownerUsername)
+        it('should pass the correct oragnization', function (done) {
+          expect(createOpts.organization.id).to.equal(organization.id)
+          expect(createOpts.organization.githubUsername).to.equal(validJob.ownerUsername)
+          expect(createOpts.organization.githubId).to.equal(organization.githubId)
+          expect(createOpts.organization.privateRegistryUrl).to.equal(organization.privateRegistryUrl)
+          expect(createOpts.organization.privateRegistryUsername).to.equal(organization.privateRegistryUsername)
           done()
         })
 

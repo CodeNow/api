@@ -12,7 +12,7 @@
       - [Tests](#tests)
 - [Logs](#logs)
       - [[Guide to Using Log Levels](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Using-Log-Levels)](#guide-to-using-log-levelshttpsgithubcomcodenowdevops-scriptswikiguide-to-using-log-levels)
-      - [[Guide to Development & Production CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)](#guide-to-development-&-production-cli-log-toolshttpsgithubcomcodenowdevops-scriptswikiguide-to-development-cli-log-tools)
+      - [[Guide to Development & Production CLI Log Tools](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Development-CLI-Log-Tools)](#guide-to-development--production-cli-log-toolshttpsgithubcomcodenowdevops-scriptswikiguide-to-development-cli-log-tools)
       - [[Guide to Debugging Production API with Logs](https://github.com/CodeNow/devops-scripts/wiki/Guide-to-Debugging-production-API-with-Logs)](#guide-to-debugging-production-api-with-logshttpsgithubcomcodenowdevops-scriptswikiguide-to-debugging-production-api-with-logs)
 - [Shrinkwrap](#shrinkwrap)
 - [Running Tests](#running-tests)
@@ -26,7 +26,7 @@
 - [Resource Overview](#resource-overview)
 - [Help and Tips](#help-and-tips)
     - [Problems npm installing?](#problems-npm-installing)
-    - [Rapid Prototyping with Runnable-Api-Client](#rapid-prototyping-with-runnable-api-client)
+    - [Models](#models)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -63,21 +63,11 @@ A quick informational blurb about `shrinkwrap`.
 
 In order to keep our tests running and consistently installing the same thing for everyone, we are going to be using shrinkwrap. If you are not changing dependencies, you will not need to do anything in particular; `npm install` will follow the rules in `npm-shrinkwrap.json` and everyone will be happy.
 
-If you _are_ interested in changing dependencies, you must have the following installed as a prerequisite:
+If you _are_ interested in changing dependencies, you can do so pretty easily.
 
-```bash
-npm install -g npm-shrinkwrap
-```
+When you are adding a dependency, do your `npm install --save(-dev)` as you normally would. Then, when everything is confirmed to be working, run `npm shrinkwrap` to generate a new `npm-shrinkwrap.json`. This will shrinkwrap all your dependencies and dev dependencies, updating `npm-shrinkwrap.json`.
 
-Note: I decided to make it a required global install because it seems scary to me to make shrinkwrap shrinkwrap itself.
-
-This installs Uber's awesome shrinkwrap utility. It has a few more bells and whistles than `npm`'s.
-
-When you are adding a dependency, do your `npm install --save(-dev)` as you normally would. Then, when everything is confirmed to be working, run `npm run shrinkwrap` to generate a new `npm-shrinkwrap.json`. This will shrinkwrap all your dependencies and dev dependencies, updating `npm-shrinkwrap.json`.
-
-Protip: if you want to see the difference in a nice format, use `npm-shrinkwrap diff` with a dirty `npm-shrinkwrap.json` and it'll show you what changed.
-
-Commit the new `npm-shrinkwrap.json` along with your changes. You _may_ want to run some tests locally after doing a clean `npm install` to verify it's validity. Also, feel free to destroy all the [Travis CI caches](https://travis-ci.com/CodeNow/api/caches) to ensure that `npm-shrinkwrap.json` is working properly.
+Commit the new `npm-shrinkwrap.json` along with your changes. You _may_ want to run some tests locally after doing a clean `npm install` to verify it's validity.
 
 # Running Tests
 
@@ -161,6 +151,15 @@ Builds - groupings of built components component versions
 
 Instances - Running build which consists of running containers for each project component
 * This is a grouping on running docker containers for a build's docker images.
+
+# Migration
+Runs during the start command
+
+- Need to rerun the migrations?
+ - SSH into mongo
+ - connect
+ - db.getCollection("_migrations").remove({})
+ - rerun api start
 
 # Help and Tips
 

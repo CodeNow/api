@@ -769,7 +769,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
         sinon.stub(Github.prototype, 'addDeployKeyIfNotAlready', function (repo, cb) {
           cb(null, {privateKey: 'private', publicKey: 'public'})
         })
-        ContextVersion.addGithubRepoToVersion(user, ctx.cv.id, repoInfo, function (err) {
+        ContextVersion.addGithubRepoToVersion(user, ctx.cv.id, repoInfo).asCallback(function (err) {
           if (err) {
             return done(err)
           }
@@ -1004,12 +1004,14 @@ describe('ContextVersion ModelIntegration Tests', function () {
         var repo = 'CodeNow'
         var branch = 'SAN-master'
         var commit = 'deadbeef'
+        const pullRequest = 1
         ContextVersion.findOneAndUpdate.yieldsAsync(null, ctx.mockContextVersion)
         ContextVersion.modifyAppCodeVersionByRepo(
           ctx.mockContextVersion._id,
           repo,
           branch,
           commit,
+          pullRequest,
           function (err, doc) {
             if (err) {
               return done(err)
@@ -1025,7 +1027,8 @@ describe('ContextVersion ModelIntegration Tests', function () {
                 $set: {
                   'appCodeVersions.$.branch': branch,
                   'appCodeVersions.$.lowerBranch': branch.toLowerCase(),
-                  'appCodeVersions.$.commit': commit
+                  'appCodeVersions.$.commit': commit,
+                  'appCodeVersions.$.pullRequest': pullRequest
                 }
               },
               sinon.match.func
@@ -1038,7 +1041,7 @@ describe('ContextVersion ModelIntegration Tests', function () {
       it('should bubble update errors', function (done) {
         var error = new Error('KAAAHHHNNN')
         ContextVersion.findOneAndUpdate.yieldsAsync(error)
-        ContextVersion.modifyAppCodeVersionByRepo('hi', 'hi', 'hi', 'hi', function (err) {
+        ContextVersion.modifyAppCodeVersionByRepo('hi', 'hi', 'hi', 'hi', 0, function (err) {
           expect(err).to.equal(error)
           done()
         })
@@ -1915,4 +1918,3 @@ describe('ContextVersion ModelIntegration Tests', function () {
     return cv
   }
 })
-

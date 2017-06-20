@@ -1,26 +1,28 @@
 'use strict'
 
-var Lab = require('lab')
-var lab = exports.lab = Lab.script()
-var describe = lab.describe
-var it = lab.it
-var beforeEach = lab.beforeEach
-// var after = lab.after
-var afterEach = lab.afterEach
-var Code = require('code')
-var expect = Code.expect
+const Lab = require('lab')
+const lab = exports.lab = Lab.script()
+const describe = lab.describe
+const it = lab.it
+const beforeEach = lab.beforeEach
+// const after = lab.after
+const afterEach = lab.afterEach
+const Code = require('code')
+const expect = Code.expect
 
-var sinon = require('sinon')
-var EventEmitter = require('events').EventEmitter
-var util = require('util')
+const sinon = require('sinon')
+const EventEmitter = require('events').EventEmitter
+const util = require('util')
 
-var logStream = require('socket/log-stream')
-var Instance = require('models/mongo/instance')
+const logStream = require('socket/log-stream')
+const Instance = require('models/mongo/instance')
+const InstanceService = require('models/services/instance-service')
 
-var Promise = require('bluebird')
+const Promise = require('bluebird')
 require('sinon-as-promised')(Promise)
-var commonStream = require('socket/common-stream')
-var PermissionService = require('models/services/permission-service')
+const commonStream = require('socket/common-stream')
+const commonS3 = require('socket/common-s3')
+const rabbitMQ = require('models/rabbitmq')
 
 function ClientStream () {
   EventEmitter.call(this)
@@ -46,6 +48,18 @@ describe('log stream: ' + moduleName, function () {
     error = new Error('not owner')
     rejectionPromise = Promise.reject(error)
     rejectionPromise.suppressUnhandledRejections()
+    done()
+  })
+
+  beforeEach((done) => {
+    sinon.stub(rabbitMQ, 'publishLogStreamConnected')
+    sinon.stub(Instance, 'findByIdAsync').resolves()
+    done()
+  })
+
+  afterEach((done) => {
+    rabbitMQ.publishLogStreamConnected.restore()
+    Instance.findByIdAsync.restore()
     done()
   })
 
@@ -80,7 +94,12 @@ describe('log stream: ' + moduleName, function () {
           github: 123
         },
         container: {
-          dockerContainer: ctx.data.containerId
+          dockerContainer: ctx.data.containerId,
+          inspect: {
+            State: {
+              Running: true
+            }
+          }
         }
       }
       writeStream = new ClientStream()
@@ -88,22 +107,20 @@ describe('log stream: ' + moduleName, function () {
     })
     beforeEach(function (done) {
       sinon.stub(commonStream, 'pipeLogsToClient').resolves(writeStream)
-      sinon.stub(PermissionService, 'ensureModelAccess').resolves(true)
-      sinon.stub(Instance, 'findOneByContainerIdAsync').resolves(ctx.instance)
+      sinon.stub(InstanceService, 'fetchInstanceByContainerIdAndEnsureAccess').resolves({ instance: ctx.instance, isCurrentContainer: true })
       done()
     })
 
     afterEach(function (done) {
-      Instance.findOneByContainerIdAsync.restore()
-      PermissionService.ensureModelAccess.restore()
+      InstanceService.fetchInstanceByContainerIdAndEnsureAccess.restore()
       commonStream.pipeLogsToClient.restore()
       done()
     })
 
     describe('Failures', function () {
       describe('Instance fetch failures', function () {
-        it('should do nothing if the instance fetch returns nothing', function (done) {
-          Instance.findOneByContainerIdAsync.resolves()
+        it('should do nothing if the instance fetch returns nothing or there is a fetch error', function (done) {
+          InstanceService.fetchInstanceByContainerIdAndEnsureAccess.rejects(new Error('Missing instance'))
           logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
             .catch(function (err) {
               expect(err.message).to.equal('Missing instance')
@@ -117,35 +134,19 @@ describe('log stream: ' + moduleName, function () {
             })
             .catch(done)
         })
-
-        it('should do nothing if the instance fetch returns an error', function (done) {
-          Instance.findOneByContainerIdAsync.rejects(error)
-          logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
-            .catch(function (err) {
-              expect(err.message).to.equal(error.message)
-              sinon.assert.calledOnce(ctx.socket.write)
-              sinon.assert.calledWith(ctx.socket.write, {
-                id: ctx.socket.id,
-                error: 'You don\'t have access to this stream',
-                message: error.message
-              })
-              done()
-            })
-            .catch(done)
-        })
       })
 
       describe('Other failures', function () {
         it('should do nothing if the args are invalid', function (done) {
-          PermissionService.ensureModelAccess.rejects(error)
+          InstanceService.fetchInstanceByContainerIdAndEnsureAccess.rejects(error)
           logStream.logStreamHandler(ctx.socket, ctx.id, {})
             .catch(function (err) {
-              expect(err.message).to.equal('dockHost and containerId are required')
+              expect(err.message).to.equal('containerId are required')
               sinon.assert.calledOnce(ctx.socket.write)
               sinon.assert.calledWith(ctx.socket.write, {
                 id: ctx.id,
                 error: 'You don\'t have access to this stream',
-                message: 'dockHost and containerId are required'
+                message: 'containerId are required'
               })
               done()
             })
@@ -153,7 +154,7 @@ describe('log stream: ' + moduleName, function () {
         })
 
         it('should do nothing if the ownership check fails', function (done) {
-          PermissionService.ensureModelAccess.rejects(error)
+          InstanceService.fetchInstanceByContainerIdAndEnsureAccess.rejects(error)
           logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
             .catch(function (err) {
               expect(err).to.equal(error)
@@ -173,8 +174,8 @@ describe('log stream: ' + moduleName, function () {
       it('should allow logs when check ownership passes', function (done) {
         logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
           .then(function () {
-            sinon.assert.calledOnce(PermissionService.ensureModelAccess)
-            sinon.assert.calledWith(PermissionService.ensureModelAccess, ctx.sessionUser, ctx.instance)
+            sinon.assert.calledOnce(InstanceService.fetchInstanceByContainerIdAndEnsureAccess)
+            sinon.assert.calledWith(InstanceService.fetchInstanceByContainerIdAndEnsureAccess, ctx.data.containerId, ctx.sessionUser)
             sinon.assert.calledOnce(ctx.socket.substream)
             sinon.assert.calledWith(ctx.socket.substream, ctx.data.containerId)
             sinon.assert.calledOnce(commonStream.pipeLogsToClient)
@@ -219,6 +220,92 @@ describe('log stream: ' + moduleName, function () {
             done()
           })
           .catch(done)
+      })
+
+      describe('When container is stopped', () => {
+        beforeEach((done) => {
+          ctx.instance.container.inspect.State.Running = false
+          sinon.stub(commonS3, 'pipeLogsToClient').resolves({})
+          done()
+        })
+        afterEach((done) => {
+          commonS3.pipeLogsToClient.restore()
+          done()
+        })
+        describe('file exists in s3', () => {
+          it('should stream logs from s3 file', (done) => {
+            logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
+              .then(() => {
+                sinon.assert.notCalled(commonStream.pipeLogsToClient)
+                sinon.assert.calledOnce(commonS3.pipeLogsToClient)
+                sinon.assert.calledWith(
+                  commonS3.pipeLogsToClient,
+                  substream,
+                  ctx.data.containerId
+                )
+              })
+              .asCallback(done)
+          })
+        })
+        describe('and file does not exist in s3', () => {
+          beforeEach((done) => {
+            commonS3.pipeLogsToClient.rejects({code: 'NoSuchKey'})
+            done()
+          })
+          it('should stream logs from docker file', (done) => {
+            logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
+              .then(() => {
+                sinon.assert.calledOnce(commonS3.pipeLogsToClient)
+                sinon.assert.calledWith(
+                  commonS3.pipeLogsToClient,
+                  substream,
+                  ctx.data.containerId
+                )
+                sinon.assert.calledOnce(commonStream.pipeLogsToClient)
+                sinon.assert.calledWith(
+                  commonStream.pipeLogsToClient,
+                  substream,
+                  'api.socket.log',
+                  sinon.match.object,
+                  ctx.data.containerId,
+                  {
+                    tailLimit: process.env.DOCKER_LOG_TAIL_LIMIT
+                  }
+                )
+              })
+              .asCallback(done)
+          })
+        })
+      })
+
+      describe('when fetching old instance', () => {
+        const oldContainerId = 'deadbeef'
+
+        beforeEach((done) => {
+          ctx.instance.container.inspect.State.Running = false
+          sinon.stub(commonS3, 'pipeLogsToClient').resolves({})
+          ctx.data.containerId = oldContainerId
+          done()
+        })
+        afterEach((done) => {
+          commonS3.pipeLogsToClient.restore()
+          done()
+        })
+        it('should load logs for instance', (done) => {
+          logStream.logStreamHandler(ctx.socket, ctx.id, ctx.data)
+            .then(() => {
+              sinon.assert.calledOnce(InstanceService.fetchInstanceByContainerIdAndEnsureAccess)
+              sinon.assert.calledWith(InstanceService.fetchInstanceByContainerIdAndEnsureAccess, ctx.data.containerId, ctx.sessionUser)
+              sinon.assert.notCalled(commonStream.pipeLogsToClient)
+              sinon.assert.calledOnce(commonS3.pipeLogsToClient)
+              sinon.assert.calledWith(
+                commonS3.pipeLogsToClient,
+                substream,
+                ctx.data.containerId
+              )
+            })
+            .asCallback(done)
+        })
       })
     })
   })

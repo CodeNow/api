@@ -16,28 +16,30 @@ const Promise = require('bluebird')
 const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
-const DockerComposeClusterService = require('models/services/docker-compose-cluster-service')
+const ClusterConfigService = require('models/services/cluster-config-service')
 const Worker = require('workers/cluster.delete')
 
 describe('Cluster Delete Worker', function () {
   describe('worker', function () {
     const testData = {
-      parentInstanceId: 'some-id'
+      cluster: {
+        id: 'some-id'
+      }
     }
     beforeEach(function (done) {
-      sinon.stub(DockerComposeClusterService, 'delete').resolves()
+      sinon.stub(ClusterConfigService, 'delete').resolves()
       done()
     })
 
     afterEach(function (done) {
-      DockerComposeClusterService.delete.restore()
+      ClusterConfigService.delete.restore()
       done()
     })
 
     describe('errors', function () {
-      it('should reject with any DockerComposeClusterService.delete error', function (done) {
+      it('should reject with any ClusterConfigService.delete error', function (done) {
         const mongoError = new Error('Mongo failed')
-        DockerComposeClusterService.delete.rejects(mongoError)
+        ClusterConfigService.delete.rejects(mongoError)
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
           expect(err).to.equal(mongoError)
@@ -46,16 +48,18 @@ describe('Cluster Delete Worker', function () {
       })
     })
 
-    it('should return no error', function (done) {
-      Worker.task(testData).asCallback(done)
-    })
+    describe('success', function () {
+      it('should return no error', function (done) {
+        Worker.task(testData).asCallback(done)
+      })
 
-    it('should find an instance by id', function (done) {
-      Worker.task(testData).asCallback(function (err) {
-        expect(err).to.not.exist()
-        sinon.assert.calledOnce(DockerComposeClusterService.delete)
-        sinon.assert.calledWithExactly(DockerComposeClusterService.delete, testData.parentInstanceId)
-        done()
+      it('should call ClusterConfigService.delete', function (done) {
+        Worker.task(testData).asCallback(function (err) {
+          expect(err).to.not.exist()
+          sinon.assert.calledOnce(ClusterConfigService.delete)
+          sinon.assert.calledWithExactly(ClusterConfigService.delete, testData.cluster.id)
+          done()
+        })
       })
     })
   })

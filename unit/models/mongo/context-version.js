@@ -1,42 +1,266 @@
 'use strict'
-var Code = require('code')
-var Lab = require('lab')
-var Promise = require('bluebird')
-var sinon = require('sinon')
+const Code = require('code')
+const Lab = require('lab')
+const Promise = require('bluebird')
+const sinon = require('sinon')
 
-var ContextVersion = require('models/mongo/context-version')
-var messenger = require('socket/messenger')
+const ContextVersion = require('models/mongo/context-version')
+const Github = require('models/apis/github')
+const messenger = require('socket/messenger')
 
+const lab = exports.lab = Lab.script()
 require('sinon-as-promised')(Promise)
-var lab = exports.lab = Lab.script()
 
-var afterEach = lab.afterEach
-var beforeEach = lab.beforeEach
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
+const afterEach = lab.afterEach
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
 describe('Context Version Unit Test', function () {
-  describe('updateAndGetFailedBuild', function () {
-    var mockContextVersion
-    beforeEach(function (done) {
-      mockContextVersion = {
-        _id: '55d3ef733e1b620e00eb6292',
-        state: 'starting',
-        name: 'name1',
-        owner: {
-          github: '2335750'
-        },
-        createdBy: {
-          github: '146592'
-        },
-        build: {
-          _id: '23412312h3nk1lj2h3l1k2',
-          completed: true
+  let testContextVersion
+  const testContextVersionId = '55d3ef733e1b620e00eb6292'
+  beforeEach((done) => {
+    testContextVersion = {
+      _id: testContextVersionId,
+      state: 'starting',
+      name: 'name1',
+      owner: {
+        github: '2335750'
+      },
+      createdBy: {
+        github: '146592'
+      },
+      build: {
+        _id: '23412312h3nk1lj2h3l1k2',
+        completed: true
+      }
+    }
+    done()
+  })
+
+  describe('findContextVersionById', () => {
+    beforeEach((done) => {
+      sinon.stub(ContextVersion, 'findAndAssert')
+      done()
+    })
+
+    afterEach((done) => {
+      ContextVersion.findAndAssert.restore()
+      done()
+    })
+
+    it('should pass correct query', (done) => {
+      ContextVersion.findAndAssert.resolves(testContextVersion)
+      ContextVersion.findContextVersionById(testContextVersionId).asCallback((err, build) => {
+        if (err) { return done(err) }
+        expect(build).to.equal(testContextVersion)
+        sinon.assert.calledOnce(ContextVersion.findAndAssert)
+        sinon.assert.calledWith(ContextVersion.findAndAssert, {
+          _id: testContextVersionId
+        })
+        done()
+      })
+    })
+  }) // end findContextVersionById
+
+  describe('findAndAssert', () => {
+    beforeEach((done) => {
+      sinon.stub(ContextVersion, 'findOneAsync')
+      done()
+    })
+
+    afterEach((done) => {
+      ContextVersion.findOneAsync.restore()
+      done()
+    })
+
+    it('should return build for query', (done) => {
+      const testQuery = {
+        _id: testContextVersionId
+      }
+      ContextVersion.findOneAsync.resolves(testContextVersion)
+
+      ContextVersion.findAndAssert(testQuery).asCallback((err, build) => {
+        if (err) { return done(err) }
+        expect(build).to.equal(testContextVersion)
+        sinon.assert.calledOnce(ContextVersion.findOneAsync)
+        sinon.assert.calledWith(ContextVersion.findOneAsync, testQuery)
+        done()
+      })
+    })
+
+    it('should return ContextVersion.NotFoundError if not found', (done) => {
+      ContextVersion.findOneAsync.resolves()
+
+      ContextVersion.findAndAssert({}).asCallback((err) => {
+        expect(err).to.be.instanceof(ContextVersion.NotFoundError)
+        done()
+      })
+    })
+  }) // end findAndAssert
+
+  describe('createAppcodeVersion', () => {
+    beforeEach((done) => {
+      sinon.stub(Github.prototype, 'getBranchAsync')
+      sinon.stub(Github.prototype, 'createHooksAndKeys')
+      sinon.stub(Github.prototype, 'getRepoAsync')
+      done()
+    })
+
+    afterEach((done) => {
+      Github.prototype.getRepoAsync.restore()
+      Github.prototype.createHooksAndKeys.restore()
+      Github.prototype.getBranchAsync.restore()
+      done()
+    })
+    it('should return appCodeVersion', (done) => {
+      const testBranch = 'master'
+      const testRepoName = 'runnable/octorbear'
+      const testCommit = '123123'
+      const testPubKey = 'key.pub'
+      const testPrivKey = 'key.pem'
+      const testSessionUser = {
+        accounts: {
+          github: {
+            accessToken: '1'
+          }
         }
       }
+      Github.prototype.getRepoAsync.resolves({
+        default_branch: testBranch
+      })
+      Github.prototype.createHooksAndKeys.resolves({
+        publicKey: testPubKey,
+        privateKey: testPrivKey
+      })
+      Github.prototype.getBranchAsync.resolves({
+        commit: {
+          sha: testCommit
+        }
+      })
+
+      ContextVersion.createAppcodeVersion(testSessionUser, testRepoName).asCallback((err, appCodeVersion) => {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(Github.prototype.getRepoAsync)
+        sinon.assert.calledWithExactly(Github.prototype.getRepoAsync, testRepoName)
+        sinon.assert.calledOnce(Github.prototype.createHooksAndKeys)
+        sinon.assert.calledWithExactly(Github.prototype.createHooksAndKeys, testRepoName)
+        sinon.assert.calledOnce(Github.prototype.getBranchAsync)
+        sinon.assert.calledWithExactly(Github.prototype.getBranchAsync, testRepoName, testBranch)
+        expect(appCodeVersion).to.equal({
+          repo: testRepoName,
+          lowerRepo: testRepoName.toLowerCase(),
+          commit: testCommit,
+          branch: testBranch,
+          publicKey: testPubKey,
+          privateKey: testPrivKey
+        })
+        done()
+      })
+    })
+    it('should return appCodeVersion if branch name was passed', (done) => {
+      const testBranch = 'master'
+      const testRepoName = 'runnable/octorbear'
+      const testCommit = '123123'
+      const testPubKey = 'key.pub'
+      const testPrivKey = 'key.pem'
+      const testSessionUser = {
+        accounts: {
+          github: {
+            accessToken: '1'
+          }
+        }
+      }
+      const testCommitish = 'feature1'
+      Github.prototype.getRepoAsync.resolves({
+        default_branch: testBranch
+      })
+      Github.prototype.createHooksAndKeys.resolves({
+        publicKey: testPubKey,
+        privateKey: testPrivKey
+      })
+      Github.prototype.getBranchAsync.resolves({
+        name: testCommitish,
+        commit: {
+          sha: testCommit
+        }
+      })
+
+      ContextVersion.createAppcodeVersion(testSessionUser, testRepoName, testCommitish).asCallback((err, appCodeVersion) => {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(Github.prototype.getRepoAsync)
+        sinon.assert.calledWithExactly(Github.prototype.getRepoAsync, testRepoName)
+        sinon.assert.calledOnce(Github.prototype.createHooksAndKeys)
+        sinon.assert.calledWithExactly(Github.prototype.createHooksAndKeys, testRepoName)
+        sinon.assert.calledOnce(Github.prototype.getBranchAsync)
+        sinon.assert.calledWithExactly(Github.prototype.getBranchAsync, testRepoName, testCommitish)
+        expect(appCodeVersion).to.equal({
+          repo: testRepoName,
+          lowerRepo: testRepoName.toLowerCase(),
+          commit: testCommit,
+          branch: testCommitish,
+          publicKey: testPubKey,
+          privateKey: testPrivKey
+        })
+        done()
+      })
+    })
+    it('should return appCodeVersion if commit was passed', (done) => {
+      const testBranch = 'master'
+      const testRepoName = 'runnable/octorbear'
+      const testCommit = '123123'
+      const testPubKey = 'key.pub'
+      const testPrivKey = 'key.pem'
+      const testSessionUser = {
+        accounts: {
+          github: {
+            accessToken: '1'
+          }
+        }
+      }
+      const testCommitish = '1111111'
+      Github.prototype.getRepoAsync.resolves({
+        default_branch: testBranch
+      })
+      Github.prototype.createHooksAndKeys.resolves({
+        publicKey: testPubKey,
+        privateKey: testPrivKey
+      })
+      Github.prototype.getBranchAsync
+      .withArgs(testRepoName, testCommitish).resolves(null)
+      .withArgs(testRepoName, testBranch).resolves({
+        commit: {
+          sha: testCommit
+        }
+      })
+
+      ContextVersion.createAppcodeVersion(testSessionUser, testRepoName, testCommitish).asCallback((err, appCodeVersion) => {
+        if (err) { return done(err) }
+        sinon.assert.calledOnce(Github.prototype.getRepoAsync)
+        sinon.assert.calledWithExactly(Github.prototype.getRepoAsync, testRepoName)
+        sinon.assert.calledOnce(Github.prototype.createHooksAndKeys)
+        sinon.assert.calledWithExactly(Github.prototype.createHooksAndKeys, testRepoName)
+        sinon.assert.calledTwice(Github.prototype.getBranchAsync)
+        sinon.assert.calledWithExactly(Github.prototype.getBranchAsync, testRepoName, testCommitish)
+        sinon.assert.calledWithExactly(Github.prototype.getBranchAsync, testRepoName, testBranch)
+        expect(appCodeVersion).to.equal({
+          repo: testRepoName,
+          lowerRepo: testRepoName.toLowerCase(),
+          commit: testCommit,
+          branch: testBranch,
+          publicKey: testPubKey,
+          privateKey: testPrivKey
+        })
+        done()
+      })
+    })
+  }) // end createAppcodeVersion
+
+  describe('updateAndGetFailedBuild', function () {
+    beforeEach(function (done) {
       sinon.stub(ContextVersion, 'updateByAsync').resolves()
-      sinon.stub(ContextVersion, 'findByAsync').resolves([mockContextVersion])
+      sinon.stub(ContextVersion, 'findByAsync').resolves([testContextVersion])
       sinon.stub(messenger, 'emitContextVersionUpdate').returns()
       done()
     })
@@ -71,25 +295,9 @@ describe('Context Version Unit Test', function () {
   }) // end updateAndGetFailedBuild
 
   describe('updateAndGetSuccessfulBuild', () => {
-    var mockContextVersion
     beforeEach((done) => {
-      mockContextVersion = {
-        _id: '55d3ef733e1b620e00eb6292',
-        state: 'starting',
-        name: 'name1',
-        owner: {
-          github: '2335750'
-        },
-        createdBy: {
-          github: '146592'
-        },
-        build: {
-          _id: '23412312h3nk1lj2h3l1k2',
-          completed: true
-        }
-      }
       sinon.stub(ContextVersion, 'updateByAsync').resolves()
-      sinon.stub(ContextVersion, 'findByAsync').resolves([mockContextVersion])
+      sinon.stub(ContextVersion, 'findByAsync').resolves([testContextVersion])
       sinon.stub(messenger, 'emitContextVersionUpdate').returns()
       done()
     })
@@ -157,13 +365,13 @@ describe('Context Version Unit Test', function () {
     })
 
     it('should find creating instance', function (done) {
-      const mockContextVersion = {
+      const testContextVersion = {
         _id: mockContextVersionId
       }
-      ContextVersion.findOneAsync.resolves(mockContextVersion)
+      ContextVersion.findOneAsync.resolves(testContextVersion)
       ContextVersion.findOneCreating(mockContextVersionId).asCallback(function (err, instance) {
         if (err) { return done(err) }
-        expect(instance).to.equal(mockContextVersion)
+        expect(instance).to.equal(testContextVersion)
         sinon.assert.calledOnce(ContextVersion.findOneAsync)
         var query = {
           _id: mockContextVersionId
@@ -374,4 +582,41 @@ describe('Context Version Unit Test', function () {
       })
     })
   })
+  describe('addGithubRepoToVersion', function () {
+    let testSessionUser
+    let repoInfo
+    beforeEach(function (done) {
+      repoInfo = {
+        repo: 'repoName'
+      }
+      testSessionUser = {
+        accounts: {
+          github: {
+            accessToken: '1'
+          }
+        }
+      }
+      sinon.stub(Github.prototype, 'getRepoAsync').resolves({
+        'default_branch': 'not-master' // eslint-disable-line quote-props
+      })
+      sinon.stub(ContextVersion, 'findOneAndUpdateAsync').resolves(testContextVersion)
+      sinon.stub(Github.prototype, 'createHooksAndKeys')
+        .resolves({privateKey: 'private', publicKey: 'public'})
+      done()
+    })
+    afterEach(function (done) {
+      Github.prototype.getRepoAsync.restore()
+      ContextVersion.findOneAndUpdateAsync.restore()
+      Github.prototype.createHooksAndKeys.restore()
+      done()
+    })
+    it('should error with a ContextVersion deploy failure', function (done) {
+      Github.prototype.createHooksAndKeys.resolves()
+      ContextVersion.addGithubRepoToVersion(testSessionUser, testContextVersionId, repoInfo)
+        .asCallback(function (err) {
+          expect(err).to.be.an.instanceOf(ContextVersion.DeployKeyError)
+          done()
+        })
+      })
+    })
 })

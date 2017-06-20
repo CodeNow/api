@@ -1,23 +1,22 @@
-/**
- * @module unit/models/apis/docker
- */
 'use strict'
 require('loadenv')()
 
-var Boom = require('dat-middleware').Boom
-var Code = require('code')
-var Lab = require('lab')
-var path = require('path')
-var sinon = require('sinon')
+const Boom = require('dat-middleware').Boom
+const Code = require('code')
+const Lab = require('lab')
+const path = require('path')
+const sinon = require('sinon')
+require('sinon-as-promised')(require('bluebird'))
 
-var Github = require('models/apis/github')
+const Github = require('models/apis/github')
 
-var lab = exports.lab = Lab.script()
+const lab = exports.lab = Lab.script()
+const moduleName = path.relative(process.cwd(), __filename)
 
-var describe = lab.describe
-var expect = Code.expect
-var it = lab.it
-var moduleName = path.relative(process.cwd(), __filename)
+const beforeEach = lab.beforeEach
+const describe = lab.describe
+const expect = Code.expect
+const it = lab.it
 
 describe('github: ' + moduleName, function () {
   describe('isOrgMember', function () {
@@ -105,7 +104,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.data.err.code).to.equal(err.code)
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.getHooks.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         done()
       })
@@ -120,7 +119,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.output.payload.message).to.equal('Failed to get github repo hooks for codenow/api')
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.getHooks.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         done()
       })
@@ -148,7 +147,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.output.statusCode).to.equal(404)
         expect(boomErr.output.payload.message).to.equal('Github repo codenow/api not found, because it moved')
         var query = github.repos.getHooks.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         done()
       })
@@ -178,7 +177,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.deleteHook.getCall(0).args[0]
         expect(query.id).to.equal(1)
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         done()
       })
@@ -194,7 +193,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.deleteHook.getCall(0).args[0]
         expect(query.id).to.equal(1)
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         done()
       })
@@ -221,7 +220,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.data.err.code).to.equal(err.code)
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.createHook.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
         var hookUrl = process.env.GITHUB_WEBHOOK_URL
@@ -241,7 +240,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.output.payload.message).to.equal('Failed to create github repo hook for codenow/api')
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.createHook.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
         var hookUrl = process.env.GITHUB_WEBHOOK_URL
@@ -271,7 +270,7 @@ describe('github: ' + moduleName, function () {
         expect(boomErr.output.payload.message).to.equal('Github repo codenow/api already has a hook.')
         expect(boomErr.data.err.message).to.equal(err.message)
         var query = github.repos.createHook.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
         var hookUrl = process.env.GITHUB_WEBHOOK_URL
@@ -290,7 +289,7 @@ describe('github: ' + moduleName, function () {
         expect(err).to.not.exist()
         expect(hook._id).to.equal(1)
         var query = github.repos.createHook.getCall(0).args[0]
-        expect(query.user).to.equal('codenow')
+        expect(query.owner).to.equal('codenow')
         expect(query.repo).to.equal('api')
         expect(query.name).to.equal(process.env.GITHUB_HOOK_NAME)
         var hookUrl = process.env.GITHUB_WEBHOOK_URL
@@ -363,4 +362,34 @@ describe('github: ' + moduleName, function () {
       })
     })
   })
+
+  describe('createHooksAndKeys', () => {
+    var github
+
+    beforeEach((done) => {
+      github = new Github({token: 'some-token'})
+      sinon.stub(github, 'createRepoHookIfNotAlready')
+      sinon.stub(github, 'addDeployKeyIfNotAlreadyAsync')
+      done()
+    })
+
+    it('should return keys', (done) => {
+      const testRepoName = 'runnable/robot'
+      const testKeys = {
+        fire: '0',
+        ice: '1'
+      }
+      github.createRepoHookIfNotAlready.yieldsAsync()
+      github.addDeployKeyIfNotAlreadyAsync.resolves(testKeys)
+      github.createHooksAndKeys(testRepoName)
+        .then((keys) => {
+          sinon.assert.calledOnce(github.createRepoHookIfNotAlready)
+          sinon.assert.calledWith(github.createRepoHookIfNotAlready, testRepoName)
+          sinon.assert.calledOnce(github.addDeployKeyIfNotAlreadyAsync)
+          sinon.assert.calledWith(github.addDeployKeyIfNotAlreadyAsync, testRepoName)
+          expect(keys).to.equal(testKeys)
+          done()
+        })
+    })
+  }) // end createHooksAndKeys
 })

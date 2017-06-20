@@ -246,23 +246,42 @@ describe('docker: ' + moduleName, function () {
     })
   }) // end _handleCreateContainerError
 
-  describe('_addCmdToDataFromInstance', () => {
+  describe('_addCmdAndPortsToDataFromInstance', () => {
     it('should not add Cmd if command does not exist', (done) => {
       let output = {}
-      Docker._addCmdToDataFromInstance(output, {})
+      Docker._addCmdAndPortsToDataFromInstance(output, {})
       expect(output.Cmd).to.be.undefined()
       done()
     })
 
     it('should return command in array form', (done) => {
       let output = {}
-      Docker._addCmdToDataFromInstance(output, {
-        containerRunCommand: 'this command runs'
+      Docker._addCmdAndPortsToDataFromInstance(output, {
+        containerStartCommand: 'this command runs'
       })
-      expect(output.Cmd).to.equal(['this', 'command', 'runs'])
+      expect(output.Cmd).to.equal(['/bin/sh', '-c', process.env.RUNNABLE_WAIT_FOR_WEAVE + ' this command runs'])
       done()
     })
-  }) // end _addCmdToDataFromInstance
+
+    it('should not add ExposedPorts if ports does not exist', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {})
+      expect(output.ExposedPorts).to.be.undefined()
+      done()
+    })
+
+    it('should return ExposedPorts in object form', (done) => {
+      let output = {}
+      Docker._addCmdAndPortsToDataFromInstance(output, {
+        ports: [8080, 9090]
+      })
+      expect(output.ExposedPorts).to.equal({
+        '8080/tcp': {},
+        '9090/tcp': {}
+      })
+      done()
+    })
+  }) // end _addCmdAndPortsToDataFromInstance
 
   describe('_isImageNotFoundErr', function () {
     it('should return true if error matches', function (done) {
@@ -345,7 +364,10 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          ownerUsername: 'runnable',
+          organization: {
+            githubUsername: 'runnable',
+            sshKeys: ''
+          },
           noCache: false,
           tid: 'mediocre-tid'
         }
@@ -365,14 +387,18 @@ describe('docker: ' + moduleName, function () {
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername,
+            organization: opts.organization,
             tid: opts.tid,
             dockerTag: ctx.mockDockerTag
           })
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
             noCache: opts.noCache,
-            contextVersion: opts.contextVersion
+            contextVersion: opts.contextVersion,
+            organization: {
+              githubUsername: 'runnable',
+              sshKeys: ''
+            }
           })
 
           var expected = {
@@ -393,6 +419,74 @@ describe('docker: ' + moduleName, function () {
         })
       })
 
+      it('should pass ssh keys to an image builder container', function (done) {
+        var opts = {
+          manualBuild: true,
+          sessionUser: ctx.mockSessionUser,
+          contextVersion: ctx.mockContextVersion,
+          organization: {
+            githubUsername: 'runnable',
+            sshKeys: [{
+              keyName: 'f#%& up some commas',
+              userId: 1000000
+            },{
+              keyName: 'smashing pumpkins',
+              userId: 1979
+            }
+            ]
+          },
+          noCache: false,
+          tid: 'mediocre-tid'
+        }
+        model.createImageBuilder(opts, function (err) {
+          if (err) { return done(err) }
+          sinon.assert.calledWith(
+            Docker.prototype._createImageBuilderValidateCV,
+            opts.contextVersion
+          )
+          sinon.assert.calledWith(
+            Docker.getDockerTag,
+            opts.contextVersion
+          )
+
+          expect(Docker.prototype._createImageBuilderLabels.firstCall.args[0]).to.equal({
+            contextVersion: opts.contextVersion,
+            manualBuild: opts.manualBuild,
+            noCache: opts.noCache,
+            sessionUser: opts.sessionUser,
+            organization: opts.organization,
+            tid: opts.tid,
+            dockerTag: ctx.mockDockerTag
+          })
+          expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
+            dockerTag: ctx.mockDockerTag,
+            noCache: opts.noCache,
+            contextVersion: opts.contextVersion,
+            organization: {
+              githubUsername: 'runnable',
+              sshKeys: '1000000,1979'
+              }
+          })
+
+          var expected = {
+            Image: process.env.DOCKER_IMAGE_BUILDER_NAME + ':' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
+            Env: ctx.mockEnv,
+            HostConfig: {
+              Binds: ['/var/run/docker.sock:/var/run/docker.sock','/opt/runnable/dock-init/user-private-registry-token:/opt/runnable/dock-init/user-private-registry-token'],
+              CapDrop: process.env.CAP_DROP.split(','),
+              Memory: process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES,
+              MemoryReservation: testMemory
+            },
+            Labels: ctx.mockLabels,
+            Volumes: { '/opt/runnable/dock-init/user-private-registry-token': {  } }
+          }
+
+          sinon.assert.calledOnce(Docker.prototype.createContainer)
+          sinon.assert.calledWith(Docker.prototype.createContainer, expected)
+          done()
+        })
+      })
+
       it('should create an image builder container with more memory than the max memory', function (done) {
         var newMemory = process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES + 10000
         ctx.mockContextVersion.getUserContainerMemoryLimit.returns(newMemory)
@@ -400,7 +494,10 @@ describe('docker: ' + moduleName, function () {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          noCache: false
+          noCache: false,
+          organization: {
+            sshKeys: []
+          }
         }
         model.createImageBuilder(opts, function (err) {
           if (err) { return done(err) }
@@ -425,11 +522,14 @@ describe('docker: ' + moduleName, function () {
       it('should handle error if createContainer failed', function (done) {
         Docker.prototype.createContainer.yieldsAsync(new Error('boo'))
 
-        var opts = {
+        const opts = {
           manualBuild: true,
           sessionUser: ctx.mockSessionUser,
           contextVersion: ctx.mockContextVersion,
-          ownerUsername: 'runnable',
+          organization: {
+            githubUsername: 'runnable',
+            sshKeys: ''
+          },
           noCache: false,
           tid: 'mediocre-tid'
         }
@@ -450,12 +550,16 @@ describe('docker: ' + moduleName, function () {
             manualBuild: opts.manualBuild,
             noCache: opts.noCache,
             sessionUser: opts.sessionUser,
-            ownerUsername: opts.ownerUsername
+            organization: opts.organization
           })
           expect(Docker.prototype._createImageBuilderEnv.firstCall.args[0]).to.equal({
             dockerTag: ctx.mockDockerTag,
             noCache: opts.noCache,
-            contextVersion: opts.contextVersion
+            contextVersion: opts.contextVersion,
+            organization: {
+              githubUsername: 'runnable',
+              sshKeys: ''
+            }
           })
 
           var expected = {
@@ -467,7 +571,7 @@ describe('docker: ' + moduleName, function () {
               Memory: process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES,
               MemoryReservation: testMemory
             },
-            Labels: ctx.mockLabels
+            Labels: ctx.mockLabels,
           }
 
           sinon.assert.calledWith(
@@ -499,7 +603,10 @@ describe('docker: ' + moduleName, function () {
             sessionUser: ctx.mockSessionUser,
             contextVersion: ctx.mockContextVersion,
             network: ctx.mockNetwork,
-            noCache: false
+            noCache: false,
+            organization: {
+              sshKeys: []
+            }
           }
           model.createImageBuilder(opts, function (err) {
             if (err) { return done(err) }
@@ -518,7 +625,7 @@ describe('docker: ' + moduleName, function () {
                 Memory: process.env.CONTAINER_HARD_MEMORY_LIMIT_BYTES,
                 MemoryReservation: testMemory
               },
-              Labels: ctx.mockLabels
+              Labels: ctx.mockLabels,
             })
             done()
           })
@@ -580,7 +687,10 @@ describe('docker: ' + moduleName, function () {
         manualBuild: 'manualBuild',
         noCache: 'noCache',
         sessionUser: ctx.mockSessionUser,
-        ownerUsername: 'ownerUsername',
+        organization: {
+          githubUsername: 'ownerUsername',
+          sshKeys: []
+        },
         tid: 'mediocre-tid'
       }
       var labels = model._createImageBuilderLabels(opts)
@@ -597,7 +707,7 @@ describe('docker: ' + moduleName, function () {
         sessionUserDisplayName: opts.sessionUser.accounts.github.displayName,
         sessionUserGithubId: opts.sessionUser.accounts.github.id.toString(),
         sessionUserUsername: opts.sessionUser.accounts.github.username,
-        ownerUsername: opts.ownerUsername,
+        ownerUsername: opts.organization.githubUsername,
         'com.docker.swarm.constraints': '["org==owner"]',
         type: 'image-builder-container'
       }
@@ -612,10 +722,30 @@ describe('docker: ' + moduleName, function () {
         noCache: false,
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser
+        sessionUser: ctx.mockSessionUser,
+        organization: {
+          githubUsername: 'runnable',
+          sshKeys: []
+        }
       })
       expect(imageBuilderContainerLabels['contextVersion._id']).to.equal(ctx.mockContextVersion._id)
       expect(imageBuilderContainerLabels.noCache).to.equal('false')
+      done()
+    })
+
+    it('should return a swarm constraint orgId of 1 for personal account', function (done) {
+      var imageBuilderContainerLabels = model._createImageBuilderLabels({
+        noCache: false,
+        contextVersion: ctx.mockContextVersion,
+        network: ctx.mockNetwork,
+        organization: {
+          githubUsername: 'runnable',
+          sshKeys: []
+        },
+        sessionUser: Object.assign({}, ctx.mockSessionUser, { accounts: { github: { id: 'owner' }}})
+    })
+      expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
+        .to.equal('["org==1"]')
       done()
     })
 
@@ -624,7 +754,11 @@ describe('docker: ' + moduleName, function () {
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser
+        sessionUser: ctx.mockSessionUser,
+        organization: {
+          githubUsername: 'runnable',
+          sshKeys: []
+        }
       })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
         .to.equal('["org==owner"]')
@@ -636,7 +770,11 @@ describe('docker: ' + moduleName, function () {
       var imageBuilderContainerLabels = model._createImageBuilderLabels({
         contextVersion: ctx.mockContextVersion,
         network: ctx.mockNetwork,
-        sessionUser: ctx.mockSessionUser
+        sessionUser: ctx.mockSessionUser,
+        organization: {
+          githubUsername: 'runnable',
+          sshKeys: []
+        }
       })
       expect(imageBuilderContainerLabels['com.docker.swarm.constraints'])
         .to.equal('["org==owner"]')
@@ -671,8 +809,12 @@ describe('docker: ' + moduleName, function () {
 
       it('should return an array of ENV for image builder container', function (done) {
         var opts = ctx.opts
+        opts.organization = {
+          id: 55
+        }
         var buildOpts = {
           forcerm: true,
+          pull: true,
           nocache: true
         }
         var envs = model._createImageBuilderEnv(opts)
@@ -689,9 +831,13 @@ describe('docker: ' + moduleName, function () {
           'RUNNABLE_IMAGE_BUILDER_NAME=' + process.env.DOCKER_IMAGE_BUILDER_NAME,
           'RUNNABLE_IMAGE_BUILDER_TAG=' + process.env.DOCKER_IMAGE_BUILDER_VERSION,
           'RUNNABLE_PREFIX=' + path.join(cv.infraCodeVersion.bucket().sourcePath, '/'),
+          'RUNNABLE_VAULT_TOKEN_FILE_PATH=' + process.env.RUNNABLE_VAULT_TOKEN_FILE_PATH,
+          'RUNNABLE_VAULT_ENDPOINT=' + process.env.USER_VAULT_ENDPOINT,
+          'RUNNABLE_ORG_ID=' + opts.organization.id,
           // acv envs
           'RUNNABLE_REPO=' + 'git@github.com:' + appCodeVersions.map(pluck('repo')).join(';git@github.com:'),
           'RUNNABLE_COMMITISH=' + [ appCodeVersions[0].commit, appCodeVersions[1].branch, 'master' ].join(';'),
+          'RUNNABLE_PRS=;;',
           'RUNNABLE_KEYS_BUCKET=' + process.env.GITHUB_DEPLOY_KEYS_BUCKET,
           'RUNNABLE_DEPLOYKEY=' + appCodeVersions.map(pluck('privateKey')).join(';'),
           // network envs
@@ -718,14 +864,53 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should return conditional container env', function (done) {
-        var envs = model._createImageBuilderEnv(ctx.opts)
+        let opts = ctx.opts
+        opts.organization = {
+          id: 55
+        }
+        var envs = model._createImageBuilderEnv(opts)
         var buildOpts = {
-          forcerm: true
+          forcerm: true,
+          pull: true
         }
         expect(envs).to.contain([
           'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
           'DOCKER_IMAGE_BUILDER_LAYER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE,
           'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts)
+        ])
+        done()
+      })
+    })
+    describe('adding ssh keys', () => {
+      beforeEach(function (done) {
+        ctx.DOCKER_IMAGE_BUILDER_CACHE = process.env.DOCKER_IMAGE_BUILDER_CACHE
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = '/cache'
+        ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE = process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = '/layer-cache'
+        done()
+      })
+      afterEach(function (done) {
+        process.env.DOCKER_IMAGE_BUILDER_CACHE = ctx.DOCKER_IMAGE_BUILDER_CACHE
+        process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE = ctx.DOCKER_IMAGE_BUILDER_LAYER_CACHE
+        done()
+      })
+
+      it('should add ssh_key_id env', function (done) {
+        let opts = ctx.opts
+        opts.organization = {
+          id: 55,
+          sshKeys: '19,91'
+        }
+        var envs = model._createImageBuilderEnv(opts)
+        var buildOpts = {
+          forcerm: true,
+          pull: true
+        }
+        expect(envs).to.contain([
+          'DOCKER_IMAGE_BUILDER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_CACHE,
+          'DOCKER_IMAGE_BUILDER_LAYER_CACHE=' + process.env.DOCKER_IMAGE_BUILDER_LAYER_CACHE,
+          'RUNNABLE_BUILD_FLAGS=' + JSON.stringify(buildOpts),
+          'RUNNABLE_SSH_KEY_IDS=19,91'
         ])
         done()
       })
@@ -986,6 +1171,14 @@ describe('docker: ' + moduleName, function () {
         sinon.assert.calledOnce(model._containerAction)
         done()
       })
+    })
+  })
+
+  describe('addSshKeysToOrgHelper', function () {
+    it('should call addSshKeyEnvs and return a string', function (done) {
+      let keyIds = model.addSshKeyEnvs([{ userId: 99 }])
+      expect(keyIds).to.equal('99')
+      done()
     })
   })
 
@@ -1287,13 +1480,13 @@ describe('docker: ' + moduleName, function () {
       })
 
       it('should create a container with run cmd', function (done) {
-        ctx.opts.instance.containerRunCommand = 'keep calm and code on'
+        ctx.opts.instance.containerStartCommand = 'keep calm and code on'
 
         model.createUserContainer(ctx.opts, function (err, container) {
           if (err) { return done(err) }
           sinon.assert.calledWith(
             Docker.prototype.createContainer, sinon.match({
-              Cmd: ['keep', 'calm', 'and', 'code', 'on']
+              Cmd: ['/bin/sh', '-c', process.env.RUNNABLE_WAIT_FOR_WEAVE + ' keep calm and code on']
             }), sinon.match.func
           )
 

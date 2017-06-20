@@ -1,0 +1,19 @@
+FROM node:argon
+
+RUN wget https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh -O /wait.sh
+RUN chmod +x /wait.sh
+
+ENV NPM_TOKEN=064db685-2f46-45b4-957c-55bef2d6055e
+
+ADD ./keys/runnable-deploy-bot.id_rsa /root/.ssh/id_rsa
+WORKDIR /root/.ssh/
+RUN chmod 0400 id_rsa && echo "IdentityFile /root/.ssh/id_rsa" >> /etc/ssh/ssh_config && ssh-keyscan -H github.com > /etc/ssh/ssh_known_hosts
+
+ADD ./package.json /api/package.json
+WORKDIR /api
+RUN echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+RUN npm install
+
+ADD ./ /api
+
+CMD /wait.sh api-unit-redis-staging-codenow.runnableapp.com:6379 && npm run lint && npm run unit

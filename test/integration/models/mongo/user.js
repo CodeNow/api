@@ -85,7 +85,7 @@ describe('User Integration Tests', function () {
       var nonexistantUsername = 'user-that-doesnt-exist'
       githubAPIUsernameQueryMock(1, nonexistantUsername, { returnEmpty: true })
       user.findByGithubUsername(nonexistantUsername, function (err, res) {
-        if (err) { done(err) }
+        if (err) { return done(err) }
         expect(res).to.be.an.array()
         expect(res.length).to.equal(0)
         done()
@@ -95,7 +95,7 @@ describe('User Integration Tests', function () {
     it('should find a user from GitHub', function (done) {
       githubAPIUsernameQueryMock(githubId, username)
       user.findByGithubUsername(username, function (err, res) {
-        if (err) { done(err) }
+        if (err) { return done(err) }
         expect(res).to.be.an.array()
         expect(res.length).to.equal(1)
         expect(res[0]).to.be.an.object()
