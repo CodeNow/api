@@ -231,7 +231,10 @@ describe('Instances Services Model', function () {
       }
       return InstanceService.fetchInstanceByContainerIdAndEnsureAccess(testDockerContainer, mockSessionUser)
         .then((isAllowed) => {
-          expect(isAllowed).to.equal(mockInstance)
+          expect(isAllowed).to.equal({
+            instance: mockInstance,
+            isCurrentContainer: true
+          })
         })
     })
   })
