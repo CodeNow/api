@@ -48,8 +48,12 @@ describe('Input Cluster Config Model Tests', () => {
 
     beforeEach(done => {
       clusterOpts = {
-        filePath: 'dasdasd',
-        fileSha: '123e12ed',
+        repo: 'helloRepo',
+        branch: 'helloBranch',
+        files: [{
+          path: 'dasdasd',
+          sha: '123e12ed'
+        }],
         createdByUser: 'dfasf3wavf',
         ownedByOrg: 'adsfsdfa',
         isTesting: false
@@ -65,6 +69,8 @@ describe('Input Cluster Config Model Tests', () => {
       superMasterConfig = {
         parentInputClusterConfigId: null,
         clusterName: 'erwerf3afdsad',
+        createdByUser: '23211234123213',
+        ownedByOrg: '21312213123231',
         _id: 'asdasdasd'
       }
       iccModel = new InputClusterConfig({})
@@ -117,11 +123,10 @@ describe('Input Cluster Config Model Tests', () => {
               iccModel.set,
               {
                 autoIsolationConfigId: autoIsolationConfig._id,
-                filePath: 'dasdasd',
-                fileSha: '123e12ed',
-                createdByUser: 'dfasf3wavf',
-                ownedByOrg: 'adsfsdfa',
-                isTesting: false
+                files: [{
+                  path: 'dasdasd',
+                  sha: '123e12ed'
+                }]
               }
             )
             sinon.assert.calledOnce(iccModel.saveAsync)
@@ -141,11 +146,15 @@ describe('Input Cluster Config Model Tests', () => {
             sinon.assert.calledWithExactly(
               InputClusterConfig.createAsync,
               {
+                repo: 'helloRepo',
+                branch: 'helloBranch',
                 autoIsolationConfigId: autoIsolationConfig._id,
                 parentInputClusterConfigId: masterConfig.parentInputClusterConfigId,
                 clusterName: masterConfig.clusterName,
-                filePath: 'dasdasd',
-                fileSha: '123e12ed',
+                files: [{
+                  path: 'dasdasd',
+                  sha: '123e12ed'
+                }],
                 createdByUser: 'dfasf3wavf',
                 ownedByOrg: 'adsfsdfa',
                 isTesting: false
@@ -160,11 +169,15 @@ describe('Input Cluster Config Model Tests', () => {
             sinon.assert.calledWithExactly(
               InputClusterConfig.createAsync,
               {
+                repo: 'helloRepo',
+                branch: 'helloBranch',
                 autoIsolationConfigId: autoIsolationConfig._id,
                 parentInputClusterConfigId: superMasterConfig._id,
                 clusterName: superMasterConfig.clusterName,
-                filePath: 'dasdasd',
-                fileSha: '123e12ed',
+                files: [{
+                  path: 'dasdasd',
+                  sha: '123e12ed'
+                }],
                 createdByUser: 'dfasf3wavf',
                 ownedByOrg: 'adsfsdfa',
                 isTesting: false
