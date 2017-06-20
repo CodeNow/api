@@ -2778,12 +2778,12 @@ describe('Cluster Config Service Unit Tests', function () {
         return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
       })
 
-      it('should return a model with clusterOpts and octobearInfo', function () {
+      it('should return a model with clusterOpts and services', function () {
         return ClusterConfigService._parseComposeInfoForConfig(testSessionUser, testData)
           .tap(results => {
             expect(results).to.be.object()
             expect(results.clusterOpts).to.equal(testData)
-            expect(results.octobearInfo).to.equal(testParsedContent.results)
+            expect(results.services).to.equal(testParsedContent.results)
           })
       })
 
