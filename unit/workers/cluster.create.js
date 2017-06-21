@@ -78,7 +78,7 @@ describe('Cluster Create Worker', function () {
         ClusterConfigService.create.rejects(new Error('bad luck'))
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
-          sinon.assert.calledOnce(rabbitMQ.cleanupCluster)
+          sinon.assert.calledThrice(rabbitMQ.cleanupCluster)
           done()
         })
       })
