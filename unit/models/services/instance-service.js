@@ -226,7 +226,7 @@ describe('Instances Services Model', function () {
       done()
     })
     it('should return true when requesting a build for the shared github ID', () => {
-      mockInstance.contextVersion.build.owner = {
+      mockInstance.contextVersion.owner = {
         github: process.env.SHARED_GITHUB_ID
       }
       return InstanceService.fetchInstanceByContainerIdAndEnsureAccess(testDockerContainer, mockSessionUser)
