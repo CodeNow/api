@@ -2861,4 +2861,42 @@ describe('Cluster Config Service Unit Tests', function () {
       })
     })
   })
+  describe('_getInstanceFromServicesByShortName', function () {
+    let instancesWithConfigs
+    const instance1Name = 'hello'
+    const instance1 = {
+      name: instance1Name
+    }
+    const instance2Name = 'goodbye'
+    const instance2 = {
+      name: instance2Name
+    }
+    beforeEach(done =>{
+      instancesWithConfigs = [
+        {
+          config: {
+            metadata: {
+              name: instance1Name
+            }
+          },
+          instance: instance1
+        },
+        {
+          config: {
+            metadata: {
+              name: instance2Name
+            }
+          },
+          instance: instance2
+        }
+      ]
+
+      done()
+    })
+    it('should return instance1', function (done) {
+      const instance = ClusterConfigService._getInstanceFromServicesByShortName(instancesWithConfigs, instance1Name)
+      expect(instance).to.equal(instance1)
+      done()
+    })
+  })
 })
