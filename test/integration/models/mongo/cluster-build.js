@@ -2,7 +2,7 @@
 const Lab = require('lab')
 const Code = require('code')
 
-const Deployment = require('../../../../lib/models/mongo/deployment')
+const ClusterBuild = require('../../../../lib/models/mongo/cluster-build')
 const mongooseControl = require('../../../../lib/models/mongo/mongoose-control')
 
 const lab = exports.lab = Lab.script()
@@ -17,39 +17,39 @@ const expect = Code.expect
 const it = lab.it
 
 
-describe('Deployment Model Integration Tests', function () {
+describe('ClusterBuild Model Integration Tests', function () {
   const data = {
     state: 'building'
   }
 
   before(mongooseControl.start)
   afterEach(function (done) {
-    Deployment.remove({}, done)
+    ClusterBuild.remove({}, done)
   })
 
   after(mongooseControl.stop)
 
   describe('setStateToDeploying', function () {
-    let savedDeployment
+    let savedClusterBuild
 
     beforeEach(function (done) {
-      return Deployment.createAsync(data)
+      return ClusterBuild.createAsync(data)
         .tap(function (saved) {
-          savedDeployment = saved
+          savedClusterBuild = saved
         })
     })
 
     it('should set state to building', function (done) {
-      return Deployment.setStateToDeploying(savedDeployment._id)
-        .then((deployment) => {
-          expect(deployment._id).to.equal(savedDeployment._id)
-          expect(deployment.state).to.equal('deploying')
+      return ClusterBuild.setStateToDeploying(savedClusterBuild._id)
+        .then((clusterBuild) => {
+          expect(clusterBuild._id).to.equal(savedClusterBuild._id)
+          expect(clusterBuild.state).to.equal('deploying')
 
-          return Deployment.findByIdAsync(savedDeployment._id)
+          return ClusterBuild.findByIdAsync(savedClusterBuild._id)
         })
-        .then((currentDeployment) => {
-          expect(currentDeployment._id).to.equal(savedDeployment._id)
-          expect(currentDeployment.state).to.equal('deploying')
+        .then((currentClusterBuild) => {
+          expect(currentClusterBuild._id).to.equal(savedClusterBuild._id)
+          expect(currentClusterBuild.state).to.equal('deploying')
         })
 
     })
