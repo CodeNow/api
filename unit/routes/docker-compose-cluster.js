@@ -10,6 +10,11 @@ const sinon = require('sinon')
 const Code = require('code')
 require('sinon-as-promised')(Promise)
 
+const clusterCreateId = 'LGM!'
+sinon.stub( require.cache[ require.resolve( 'uuid' ) ], 'exports', () => {
+  return clusterCreateId;
+});
+
 const joi = require('utils/joi')
 const rabbitMQ = require('models/rabbitmq')
 const postRoute = require('routes/docker-compose-cluster').postRoute
@@ -108,6 +113,7 @@ describe('/docker-compose-cluster', function () {
               isTesting,
               parentInputClusterConfigId,
               testReporters,
+              clusterCreateId,
               clusterName: name,
               shouldNotAutoFork
             })
