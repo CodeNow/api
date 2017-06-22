@@ -264,7 +264,7 @@ describe('Cluster Config Service Unit Tests', function () {
           const args = ClusterConfigService.createFromRunnableConfig.getCall(0).args
           expect(args[0]).to.equal(testSessionUser)
           expect(args[1]).to.equal(testParsedContent.results)
-          expect(args[2]).to.equal( { triggeredAction, clusterCreateId, repoFullName })
+          expect(args[2]).to.equal( { triggeredAction, clusterCreateId, repoFullName, shouldNotAutoFork  })
           expect(args[3]).to.equal({
             branch: branchName,
             commit: commitSha,
@@ -1007,6 +1007,7 @@ describe('Cluster Config Service Unit Tests', function () {
             build: testParentBuildId,
             aliases: testParentComposeData.aliases,
             env: testParentComposeData.env,
+            clusterCreateId,
             containerStartCommand: testParentComposeData.containerStartCommand,
             name: buildOpts.masterShorthash + '--' + testParentComposeData.name,
             isTesting,
