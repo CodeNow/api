@@ -268,7 +268,7 @@ describe('Cluster Config Service Unit Tests', function () {
             const args = ClusterConfigService.createFromRunnableConfig.getCall(0).args
             expect(args[0]).to.equal(testSessionUser)
             expect(args[1]).to.equal(testParsedContent.results)
-            expect(args[2]).to.equal( { triggeredAction, clusterCreateId, repoFullName })
+            expect(args[2]).to.equal( { triggeredAction, clusterCreateId, repoFullName, mainInstanceKey: 'api'  })
             expect(args[3]).to.equal({
               branch: branchName,
               commit: commitSha,
@@ -284,7 +284,7 @@ describe('Cluster Config Service Unit Tests', function () {
               ClusterConfigService.createFromRunnableConfig,
               testSessionUser,
               testParsedContent.results,
-              { triggeredAction, clusterCreateId, repoFullName },
+              { triggeredAction, clusterCreateId, repoFullName, mainInstanceKey: 'api' },
               sinon.match({
                 branch: branchName,
                 commit: commitSha,
@@ -973,7 +973,8 @@ describe('Cluster Config Service Unit Tests', function () {
       buildOpts = {
         isolated: objectId('407f191e810c19729de860e1'),
         masterShorthash: 'asdasdsad',
-        clusterCreateId
+        clusterCreateId,
+        mainInstanceKey: 'a1'
       }
       sinon.stub(InstanceService, 'createInstance')
       done()
