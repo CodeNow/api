@@ -355,7 +355,7 @@ describe('Cluster Config Service Unit Tests', function () {
       sinon.stub(ClusterConfigService, '_getOwnerInfo').returns(ownerInfo)
       sinon.stub(ClusterConfigService, 'createClusterContext').resolves()
       sinon.stub(ClusterConfigService, 'addAliasesToContexts').resolves()
-      sinon.stub(ClusterConfigService, 'createOrUpdateIsolationConfig').resolves()
+      sinon.stub(ClusterConfigService, 'createIsolationConfig').resolves()
       sinon.stub(ClusterConfigService, '_getInstanceFromServicesByShortName').returns(mainInstance)
       done()
     })
@@ -364,7 +364,7 @@ describe('Cluster Config Service Unit Tests', function () {
       ClusterConfigService.createClusterContext.restore()
       ClusterConfigService._createNewInstanceForNewConfig.restore()
       ClusterConfigService.addAliasesToContexts.restore()
-      ClusterConfigService.createOrUpdateIsolationConfig.restore()
+      ClusterConfigService.createIsolationConfig.restore()
       ClusterConfigService._getInstanceFromServicesByShortName.restore()
       done()
     })
@@ -392,9 +392,9 @@ describe('Cluster Config Service Unit Tests', function () {
           })
       })
 
-      it('should return error if createOrUpdateIsolationConfig failed', function (done) {
+      it('should return error if updateIsolationConfig failed', function (done) {
         const error = new Error('Some error')
-        ClusterConfigService.createOrUpdateIsolationConfig.rejects(error)
+        ClusterConfigService.createIsolationConfig.rejects(error)
         ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent.results, buildOpts, clusterOpts, mainInstanceKey)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -460,12 +460,12 @@ describe('Cluster Config Service Unit Tests', function () {
           })
       })
 
-      it('should call createOrUpdateIsolationConfig correct args', () => {
+      it('should call updateIsolationConfig correct args', () => {
         return ClusterConfigService.createFromRunnableConfig(testSessionUser, testParsedContent.results, buildOpts, clusterOpts, mainInstanceKey)
           .tap(function () {
-            sinon.assert.calledOnce(ClusterConfigService.createOrUpdateIsolationConfig)
+            sinon.assert.calledOnce(ClusterConfigService.createIsolationConfig)
             sinon.assert.calledWithExactly(
-              ClusterConfigService.createOrUpdateIsolationConfig,
+              ClusterConfigService.createIsolationConfig,
               ownerInfo,
               [mainWithConfig, depWithConfig],
               clusterOpts,
@@ -481,7 +481,7 @@ describe('Cluster Config Service Unit Tests', function () {
               ClusterConfigService.createClusterContext,
               ClusterConfigService.addAliasesToContexts,
               ClusterConfigService._createNewInstanceForNewConfig,
-              ClusterConfigService.createOrUpdateIsolationConfig
+              ClusterConfigService.createIsolationConfig
             )
           })
       })
@@ -2199,7 +2199,7 @@ describe('Cluster Config Service Unit Tests', function () {
       sinon.stub(AutoIsolationService, 'fetchAutoIsolationDependentInstances').resolves(instanceObjs)
       sinon.stub(ClusterConfigService, '_mergeConfigsIntoInstances').resolves(instanceObjs)
       sinon.stub(ClusterConfigService, '_createUpdateAndDeleteInstancesForClusterUpdate').resolves(instanceObjs)
-      sinon.stub(ClusterConfigService, 'createOrUpdateIsolationConfig').resolves(autoIsolationObject)
+      sinon.stub(ClusterConfigService, 'updateIsolationConfig').resolves(autoIsolationObject)
       sinon.stub(rabbitMQ, 'autoDeployInstance').resolves()
       done()
     })
@@ -2207,7 +2207,7 @@ describe('Cluster Config Service Unit Tests', function () {
       AutoIsolationService.fetchAutoIsolationDependentInstances.restore()
       ClusterConfigService._mergeConfigsIntoInstances.restore()
       ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate.restore()
-      ClusterConfigService.createOrUpdateIsolationConfig.restore()
+      ClusterConfigService.updateIsolationConfig.restore()
       rabbitMQ.autoDeployInstance.restore()
       done()
     })
@@ -2223,7 +2223,7 @@ describe('Cluster Config Service Unit Tests', function () {
               AutoIsolationService.fetchAutoIsolationDependentInstances,
               ClusterConfigService._mergeConfigsIntoInstances,
               ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate,
-              ClusterConfigService.createOrUpdateIsolationConfig
+              ClusterConfigService.updateIsolationConfig
             )
           })
           .asCallback(done)
@@ -2262,12 +2262,12 @@ describe('Cluster Config Service Unit Tests', function () {
             )
           })
       })
-      it('should call createOrUpdateIsolationConfig with the right inputs', () => {
+      it('should call updateIsolationConfig with the right inputs', () => {
         return ClusterConfigService.updateCluster(testSessionUser, mainInstance, githubPushInfo, octobearInfo, clusterOpts)
           .then(() => {
-            sinon.assert.calledOnce(ClusterConfigService.createOrUpdateIsolationConfig)
+            sinon.assert.calledOnce(ClusterConfigService.updateIsolationConfig)
             sinon.assert.calledWithExactly(
-              ClusterConfigService.createOrUpdateIsolationConfig,
+              ClusterConfigService.updateIsolationConfig,
               ownerInfo,
               instanceObjs,
               clusterOpts,
