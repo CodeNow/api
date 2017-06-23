@@ -183,7 +183,9 @@ describe('Webhook Service Unit Tests', function () {
   describe('updateComposeOrAutoDeploy', function () {
     var githubPushInfo = {
       repo: 'theRepo',
-      branch: 'theBranch'
+      branch: 'theBranch',
+      bpUserId: 'bpu1',
+      bpOrganizationId: 'bpo1'
     }
     var instance
     beforeEach(function (done) {
@@ -243,11 +245,16 @@ describe('Webhook Service Unit Tests', function () {
         WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
           .then(function () {
             sinon.assert.calledOnce(ClusterBuildService.create)
+            sinon.assert.calledWithExactly(ClusterBuildService.create,
+              githubPushInfo.bpUserId,
+              githubPushInfo.bpOrganizationId,
+              { action: "webhook", branch: "theBranch", commit: undefined, repo: "theRepo" }
+            )
             sinon.assert.calledOnce(rabbitMQ.updateCluster)
-            sinon.assert.calledWith(
+            sinon.assert.calledWithExactly(
               rabbitMQ.updateCluster, {
                 instanceId: 'sdasdsaddgfasdfgasdfasdf',
-                pushInfo: githubPushInfo
+                clusterBuildId: 'cluster-build-id-1'
               }
             )
           })

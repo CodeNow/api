@@ -17,6 +17,7 @@ const sinon = require('sinon')
 require('sinon-as-promised')(Promise)
 
 const BaseSchema = require('models/mongo/schemas/base')
+const ClusterBuildService = require('models/services/cluster-build-service')
 const ClusterConfigService = require('models/services/cluster-config-service')
 const Instance = require('models/mongo/instance')
 const InstanceService = require('models/services/instance-service')
@@ -27,6 +28,7 @@ const WorkerStopError = require('error-cat/errors/worker-stop-error')
 describe('Cluster Update Worker', function () {
   describe('worker', function () {
     var testInstanceId = '5633e9273e2b5b0c0077fd41'
+    const clusterBuildId = 'abc1'
     const bpUserId = 124
     const user = {
       login: 'runnable',
@@ -34,17 +36,20 @@ describe('Cluster Update Worker', function () {
         id: bpUserId
       }
     }
-    const githubPushInfo = {
-      repo: user.login + '/repo',
-      branch: 'branch',
-      commit: 'asdasdsad',
-      bpUserId
+    const clusterBuild = {
+      _id: clusterBuildId,
+      createdByUser: bpUserId,
+      triggeredInfo: {
+        repo: user.login + '/repo',
+        branch: 'branch',
+        commit: 'asdasdsad',
+      }
     }
     const octobearInfo = {}
     var testInstance
     const job = {
       instanceId: testInstanceId,
-      pushInfo: githubPushInfo
+      clusterBuildId
     }
     const files = [{
       path: 'github.com',
@@ -82,6 +87,7 @@ describe('Cluster Update Worker', function () {
       done()
     })
     beforeEach(function (done) {
+      sinon.stub(ClusterBuildService, 'findActiveByIdAndState').resolves(clusterBuild)
       sinon.stub(UserService, 'getCompleteUserByBigPoppaId').resolves(user)
       sinon.stub(InstanceService, 'findInstanceById').resolves(testInstance)
       sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(config)
@@ -91,6 +97,7 @@ describe('Cluster Update Worker', function () {
     })
 
     afterEach(function (done) {
+      ClusterBuildService.findActiveByIdAndState.restore()
       UserService.getCompleteUserByBigPoppaId.restore()
       InstanceService.findInstanceById.restore()
       ClusterConfigService.fetchConfigByInstanceId.restore()
@@ -120,6 +127,16 @@ describe('Cluster Update Worker', function () {
             done()
           })
       })
+      it('should reject with ClusterBuild error', function (done) {
+        const error = new BaseSchema.NotFoundError('Mongo', {})
+        ClusterBuildService.findActiveByIdAndState.rejects(error)
+        Worker.task(job)
+          .asCallback(function (err) {
+            expect(err).to.be.instanceOf(WorkerStopError)
+            expect(err.message).to.equal('Config not found')
+            done()
+          })
+      })
     })
 
     describe('success', function () {
@@ -128,11 +145,20 @@ describe('Cluster Update Worker', function () {
           .asCallback(done)
       })
 
-      it('should find an user by github id from the pushInfo', function (done) {
+      it('should find ClusterBuild', function (done) {
+        Worker.task(job)
+          .then(() => {
+            sinon.assert.calledOnce(ClusterBuildService.findActiveByIdAndState)
+            sinon.assert.calledWithExactly(ClusterBuildService.findActiveByIdAndState, job.clusterBuildId, 'created')
+          })
+          .asCallback(done)
+      })
+
+      it('should find an user from clusterBuild', function (done) {
         Worker.task(job)
           .then(() => {
             sinon.assert.calledOnce(UserService.getCompleteUserByBigPoppaId)
-            sinon.assert.calledWithExactly(UserService.getCompleteUserByBigPoppaId, job.pushInfo.bpUserId)
+            sinon.assert.calledWithExactly(UserService.getCompleteUserByBigPoppaId, clusterBuild.createdByUser)
           })
           .asCallback(done)
       })
@@ -161,11 +187,11 @@ describe('Cluster Update Worker', function () {
             sinon.assert.calledOnce(ClusterConfigService.parseComposeFileAndPopulateENVs)
             sinon.assert.calledWithExactly(
               ClusterConfigService.parseComposeFileAndPopulateENVs,
-              job.pushInfo.repo,
+              clusterBuild.triggeredInfo.repo,
               config.clusterName,
               user.bigPoppaUser,
               config.files[0].path,
-              githubPushInfo.commit
+              clusterBuild.triggeredInfo.commit
             )
           })
           .asCallback(done)
@@ -175,8 +201,9 @@ describe('Cluster Update Worker', function () {
         Worker.task(job)
           .then(() => {
             sinon.assert.callOrder(
-              UserService.getCompleteUserByBigPoppaId,
               InstanceService.findInstanceById,
+              ClusterBuildService.findActiveByIdAndState,
+              UserService.getCompleteUserByBigPoppaId,
               ClusterConfigService.fetchConfigByInstanceId,
               ClusterConfigService.parseComposeFileAndPopulateENVs,
               ClusterConfigService.updateCluster

@@ -52,7 +52,7 @@ describe('/docker-compose-cluster', function () {
   describe('post', function () {
     let createClusterStub
     let reqMock
-    const repo = 'octobear'
+    const repo = 'runnable/octobear'
     const branch = 'master'
     const filePath = '/docker-compose.yml'
     const name = 'super-cool-name'
@@ -65,7 +65,10 @@ describe('/docker-compose-cluster', function () {
           accounts: {
             github: { id: sessionUserGithubId }
           },
-          _bigPoppaUser: { id: sessionUserBigPoppaId }
+          bigPoppaUser: { id: sessionUserBigPoppaId, organizations: [{
+            id: 101,
+            lowerName: 'runnable'
+          }] }
         }
       }
       done()
