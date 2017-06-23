@@ -21,6 +21,7 @@ const postRoute = require('routes/docker-compose-cluster').postRoute
 const deleteRoute = require('routes/docker-compose-cluster').deleteRoute
 const redeployRoute = require('routes/docker-compose-cluster').redeployRoute
 const Instance = require('models/mongo/instance')
+const ClusterBuildService = require('models/services/cluster-build-service')
 
 const lab = exports.lab = Lab.script()
 const describe = lab.describe
@@ -51,13 +52,18 @@ describe('/docker-compose-cluster', function () {
 
   describe('post', function () {
     let createClusterStub
+    let createClusterBuildStub
     let reqMock
     const repo = 'runnable/octobear'
     const branch = 'master'
     const filePath = '/docker-compose.yml'
     const name = 'super-cool-name'
+    const clusterBuildId = '11111'
     beforeEach(function (done) {
       createClusterStub = sinon.stub(rabbitMQ, 'createCluster')
+      createClusterBuildStub = sinon.stub(ClusterBuildService, 'create').resolves({
+        _id: clusterBuildId
+      })
       validateOrBoomStub = sinon.spy(joi, 'validateOrBoomAsync')
       reqMock = {
         body: { repo, branch, filePath, name, parentInputClusterConfigId, githubId },
@@ -75,6 +81,7 @@ describe('/docker-compose-cluster', function () {
     })
     afterEach(function (done) {
       createClusterStub.restore()
+      createClusterBuildStub.restore()
       validateOrBoomStub.restore()
       done()
     })
@@ -106,10 +113,7 @@ describe('/docker-compose-cluster', function () {
           .then(function () {
             sinon.assert.calledOnce(createClusterStub)
             sinon.assert.calledWith(createClusterStub, {
-              sessionUserBigPoppaId,
-              triggeredAction: 'user',
-              repoFullName: repo,
-              branchName: branch,
+              clusterBuildId,
               filePath,
               githubId,
               isTesting,

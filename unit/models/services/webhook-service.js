@@ -196,15 +196,13 @@ describe('Webhook Service Unit Tests', function () {
       sinon.stub(ClusterBuildService, 'create').resolves({
         _id: 'cluster-build-id-1'
       })
-      sinon.stub(ClusterConfigService, 'checkIfComposeFilesChanged').rejects(new Error())
-      sinon.stub(rabbitMQ, 'updateCluster').resolves()
+      sinon.stub(ClusterConfigService, 'checkFileChangeAndCreateUpdateJob').rejects(new Error())
       done()
     })
     afterEach(function (done) {
       ClusterBuildService.create.restore()
       BuildService.createAndBuildContextVersion.restore()
-      ClusterConfigService.checkIfComposeFilesChanged.restore()
-      rabbitMQ.updateCluster.restore()
+      ClusterConfigService.checkFileChangeAndCreateUpdateJob.restore()
       done()
     })
     describe('validating errors', function () {
@@ -233,30 +231,10 @@ describe('Webhook Service Unit Tests', function () {
           })
           .asCallback(done)
       })
-      it('should checkIfComposeFilesChanged for each instance', function (done) {
+      it('should checkFileChangeAndCreateUpdateJob for each instance', function (done) {
         WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
           .then(function () {
-            sinon.assert.calledOnce(ClusterConfigService.checkIfComposeFilesChanged)
-          })
-          .asCallback(done)
-      })
-      it('should updateCluster for instance that resolves checkIfComposeFilesChanged', function (done) {
-        ClusterConfigService.checkIfComposeFilesChanged.resolves()
-        WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
-          .then(function () {
-            sinon.assert.calledOnce(ClusterBuildService.create)
-            sinon.assert.calledWithExactly(ClusterBuildService.create,
-              githubPushInfo.bpUserId,
-              githubPushInfo.bpOrganizationId,
-              { action: "webhook", branch: "theBranch", commit: undefined, repo: "theRepo" }
-            )
-            sinon.assert.calledOnce(rabbitMQ.updateCluster)
-            sinon.assert.calledWithExactly(
-              rabbitMQ.updateCluster, {
-                instanceId: 'sdasdsaddgfasdfgasdfasdf',
-                clusterBuildId: 'cluster-build-id-1'
-              }
-            )
+            sinon.assert.calledOnce(ClusterConfigService.checkFileChangeAndCreateUpdateJob)
           })
           .asCallback(done)
       })
@@ -278,18 +256,16 @@ describe('Webhook Service Unit Tests', function () {
       }]
       contextIds = ['sadsadasdsad', 'sdgfddfsgdfsgsdfgdsfg']
       sinon.stub(Instance, 'findMasterPodsToAutoFork')
-      sinon.stub(ClusterConfigService, 'checkIfComposeFilesChanged').resolves()
+      sinon.stub(ClusterConfigService, 'checkFileChangeAndCreateUpdateJob').resolves()
       sinon.stub(InstanceForkService, 'autoFork')
       sinon.stub(IsolationService, 'autoIsolate')
-      sinon.stub(rabbitMQ, 'updateCluster').resolves
       done()
     })
     afterEach(function (done) {
       Instance.findMasterPodsToAutoFork.restore()
-      ClusterConfigService.checkIfComposeFilesChanged.restore()
+      ClusterConfigService.checkFileChangeAndCreateUpdateJob.restore()
       InstanceForkService.autoFork.restore()
       IsolationService.autoIsolate.restore()
-      rabbitMQ.updateCluster.restore()
       done()
     })
     describe('validating errors', function () {
@@ -397,41 +373,16 @@ describe('Webhook Service Unit Tests', function () {
         WebhookService.autoFork(contextIds, githubPushInfo)
           .then(function (instances) {
             expect(instances).to.equal(forkedInstances)
-            sinon.assert.calledTwice(ClusterConfigService.checkIfComposeFilesChanged)
+            sinon.assert.calledTwice(ClusterConfigService.checkFileChangeAndCreateUpdateJob)
             sinon.assert.calledWithExactly(
-              ClusterConfigService.checkIfComposeFilesChanged,
+              ClusterConfigService.checkFileChangeAndCreateUpdateJob,
               forkedInstances[0],
               githubPushInfo
             )
             sinon.assert.calledWithExactly(
-              ClusterConfigService.checkIfComposeFilesChanged,
+              ClusterConfigService.checkFileChangeAndCreateUpdateJob,
               forkedInstances[1],
               githubPushInfo
-            )
-          })
-          .asCallback(done)
-      })
-      it('should create cluster update jobs', function (done) {
-        Instance.findMasterPodsToAutoFork.resolves(instances)
-        InstanceForkService.autoFork.resolves(forkedInstances)
-        IsolationService.autoIsolate.resolves()
-        WebhookService.autoFork(contextIds, githubPushInfo)
-          .then(function (instances) {
-            expect(instances).to.equal(forkedInstances)
-            sinon.assert.calledTwice(rabbitMQ.updateCluster)
-            sinon.assert.calledWithExactly(
-              rabbitMQ.updateCluster,
-              {
-                instanceId: forkedInstances[0]._id.toString(),
-                pushInfo: githubPushInfo
-              }
-            )
-            sinon.assert.calledWithExactly(
-              rabbitMQ.updateCluster,
-              {
-                instanceId: forkedInstances[1]._id.toString(),
-                pushInfo: githubPushInfo
-              }
             )
           })
           .asCallback(done)
