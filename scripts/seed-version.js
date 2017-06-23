@@ -145,9 +145,6 @@ function main () {
           mongoose.disconnect(cb)
         })
       ])
-      .asCallback(err => {
-        return process.exit(err ? 1 : 0)
-      })
     })
 }
 
