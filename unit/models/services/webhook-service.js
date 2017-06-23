@@ -16,6 +16,7 @@ const sinon = require('sinon')
 
 const BuildService = require('models/services/build-service')
 const ClusterConfigService = require('models/services/cluster-config-service')
+const ClusterBuildService = require('models/services/cluster-build-service')
 const Instance = require('models/mongo/instance')
 const InstanceForkService = require('models/services/instance-fork-service')
 const IsolationService = require('models/services/isolation-service')
@@ -189,11 +190,15 @@ describe('Webhook Service Unit Tests', function () {
         _id: 'sdasdsaddgfasdfgasdfasdf'
       }
       sinon.stub(BuildService, 'createAndBuildContextVersion')
+      sinon.stub(ClusterBuildService, 'create').resolves({
+        _id: 'cluster-build-id-1'
+      })
       sinon.stub(ClusterConfigService, 'checkIfComposeFilesChanged').rejects(new Error())
       sinon.stub(rabbitMQ, 'updateCluster').resolves()
       done()
     })
     afterEach(function (done) {
+      ClusterBuildService.create.restore()
       BuildService.createAndBuildContextVersion.restore()
       ClusterConfigService.checkIfComposeFilesChanged.restore()
       rabbitMQ.updateCluster.restore()
@@ -236,6 +241,7 @@ describe('Webhook Service Unit Tests', function () {
         ClusterConfigService.checkIfComposeFilesChanged.resolves()
         WebhookService.updateComposeOrAutoDeploy(instance, githubPushInfo)
           .then(function () {
+            sinon.assert.calledOnce(ClusterBuildService.create)
             sinon.assert.calledOnce(rabbitMQ.updateCluster)
             sinon.assert.calledWith(
               rabbitMQ.updateCluster, {
