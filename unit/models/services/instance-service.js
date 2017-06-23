@@ -203,4 +203,39 @@ describe('Instances Services Model', function () {
      })
    })
 
+  describe('fetchInstanceByContainerIdAndEnsureAccess', () => {
+    let mockInstance = {}
+    let mockSessionUser
+    const testDockerContainer = 'testDockerContainer'
+    beforeEach((done) => {
+      mockSessionUser = {
+        id: '1234'
+      }
+      mockInstance = {
+        contextVersion: {
+          build: {
+            dockerContainer: testDockerContainer
+          }
+        }
+      }
+      sinon.stub(Instance, 'findOneByContainerIdOrBuildContainerId').resolves(mockInstance)
+      done()
+    })
+    afterEach((done) => {
+      Instance.findOneByContainerIdOrBuildContainerId.restore()
+      done()
+    })
+    it('should return true when requesting a build for the shared github ID', () => {
+      mockInstance.contextVersion.owner = {
+        github: process.env.SHARED_GITHUB_ID
+      }
+      return InstanceService.fetchInstanceByContainerIdAndEnsureAccess(testDockerContainer, mockSessionUser)
+        .then((isAllowed) => {
+          expect(isAllowed).to.equal({
+            instance: mockInstance,
+            isCurrentContainer: true
+          })
+        })
+    })
+  })
 })
