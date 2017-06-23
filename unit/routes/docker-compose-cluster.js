@@ -112,7 +112,7 @@ describe('/docker-compose-cluster', function () {
           .then(function () {
             sinon.assert.calledOnce(createClusterStub)
             sinon.assert.calledWith(createClusterStub, {
-              mainInstance: undefined,
+              mainInstanceKey: undefined,
               sessionUserBigPoppaId,
               triggeredAction: 'user',
               repoFullName: repo,
@@ -195,12 +195,12 @@ describe('/docker-compose-cluster', function () {
           })
       })
 
-      it('should enqueue a job', function (done) {
+      it('should enqueue a job', function () {
         return multiClusterCreate(mockSessionUser, body)
           .then(function () {
             sinon.assert.callCount(createClusterStub, 4)
             sinon.assert.calledWith(createClusterStub, {
-              mainInstance: 'hello',
+              mainInstanceKey: 'hello',
               sessionUserBigPoppaId,
               triggeredAction: 'user',
               repoFullName: repo,
@@ -211,7 +211,7 @@ describe('/docker-compose-cluster', function () {
               clusterCreateId,
               parentInputClusterConfigId,
               testReporters,
-              clusterName: name
+              clusterName: sinon.match.string
             })
           })
       })
