@@ -1823,27 +1823,25 @@ describe('Cluster Config Service Unit Tests', function () {
       files: clusterConfigFiles
     }
     const orgName = 'Runnable'
-    const userId = 2
+    const bpUserId = 2
     const userModel = {}
     const instanceId = 'sadasdada233awad'
     const repoName = 'api'
     const repoFullName = orgName + '/' + repoName
     const githubPushInfo = {
-      user: {
-        id: userId
-      },
+      bpUserId,
       repo: repoFullName
     }
 
     beforeEach(function (done) {
       sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(clusterConfig)
-      sinon.stub(UserService, 'getByGithubId').resolves(userModel)
+      sinon.stub(UserService, 'getByBpId').resolves(userModel)
       sinon.stub(ClusterConfigService, 'fetchFilesFromGithub').resolves(changedClusterConfigFiles)
       done()
     })
     afterEach(function (done) {
       ClusterConfigService.fetchConfigByInstanceId.restore()
-      UserService.getByGithubId.restore()
+      UserService.getByBpId.restore()
       ClusterConfigService.fetchFilesFromGithub.restore()
       done()
     })
@@ -1858,9 +1856,9 @@ describe('Cluster Config Service Unit Tests', function () {
             done()
           })
       })
-      it('should return error if UserService.getByGithubId failed', function (done) {
+      it('should return error if UserService.getByBpId failed', function (done) {
         const error = new Error('Some error')
-        UserService.getByGithubId.rejects(error)
+        UserService.getByBpId.rejects(error)
         ClusterConfigService.checkIfComposeFilesChanged(instanceId, githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.exist()
