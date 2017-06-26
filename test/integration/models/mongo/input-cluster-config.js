@@ -34,6 +34,66 @@ describe('InputClusterConfig Model Integration Tests', function () {
     parentInputClusterConfigId: objectId(parentInputClusterConfigId),
     repo: 'hello/Repo'
   }
+  const data2 = {
+    files: [
+      {
+        path: '/config/compose.yml',
+        sha: 'asdasdsasadasdasdsadsadas'
+      },
+      {
+        path: '/config/compose2.yml',
+        sha: 'sadasdasdasdwqe1d21wd'
+      }
+    ],
+    branch: 'helloBranch',
+    autoIsolationConfigId: objectId(autoIsolationConfigId),
+    createdByUser: 123123,
+    ownedByOrg: 1,
+    clusterName: 'asddasdasd',
+    isTesting: true,
+    parentInputClusterConfigId: objectId(parentInputClusterConfigId),
+    repo: 'hello/Repo'
+  }
+  const data3 = {
+    files: [
+      {
+        path: '/config/compose.yml',
+        sha: 'asdasdsasadasdasdsadsadas'
+      },
+      {
+        path: '/config/compose2.yml',
+        sha: 'sadasdasdasdwqe1d21wd'
+      }
+    ],
+    branch: 'helloBranch',
+    autoIsolationConfigId: objectId(autoIsolationConfigId),
+    createdByUser: 123123,
+    ownedByOrg: 1,
+    clusterName: 'asddasdasd',
+    isTesting: true,
+    parentInputClusterConfigId: objectId(parentInputClusterConfigId),
+    repo: 'hello/Repo'
+  }
+  const data4 = {
+    files: [
+      {
+        path: '/config/compose.yml',
+        sha: 'asdasdsasadasdasdsadsadas'
+      },
+      {
+        path: '/config/compose2.yml',
+        sha: 'sadasdasdasdwqe1d21wd'
+      }
+    ],
+    branch: 'helloBranch',
+    autoIsolationConfigId: objectId(autoIsolationConfigId),
+    createdByUser: 123123,
+    ownedByOrg: 1,
+    clusterName: 'asddasdasd',
+    isTesting: false,
+    parentInputClusterConfigId: objectId(parentInputClusterConfigId),
+    repo: 'hello/Repo'
+  }
   before(mongooseControl.start)
   afterEach(function (done) {
     InputClusterConfig.remove({}, done)
@@ -84,6 +144,175 @@ describe('InputClusterConfig Model Integration Tests', function () {
         expect(config).to.exist()
       })
       .asCallback(done)
+    })
+  })
+
+  describe('findActiveParentIcc', function () {
+    let firstICC
+    let childICC
+    const data5 = {
+      files: [
+        {
+          path: '/config/compose.yml',
+          sha: 'asdasdsasadasdasdsadsadas'
+        },
+        {
+          path: '/config/compose2.yml',
+          sha: 'sadasdasdasdwqe1d21wd'
+        }
+      ],
+      branch: 'helloBranch',
+      autoIsolationConfigId: objectId(autoIsolationConfigId),
+      createdByUser: 123123,
+      ownedByOrg: 1,
+      clusterName: 'asddasdasd',
+      isTesting: false,
+      repo: 'hello/Repo'
+    }
+    beforeEach(function () {
+      return InputClusterConfig.createAsync(data)
+        .tap(function (saved) {
+          firstICC = saved
+        })
+    })
+    beforeEach(function () {
+      data5.parentInputClusterConfigId = objectId(firstICC._id)
+      return InputClusterConfig.createAsync(data5)
+        .tap(function (saved) {
+          childICC = saved
+        })
+    })
+
+    it('should return the first, since it is the parent', function () {
+      return InputClusterConfig.findActiveParentIcc(childICC)
+        .tap((config) => {
+          expect(config._id).to.equal(firstICC._id)
+        })
+    })
+  })
+
+  describe('findAllChildren', function () {
+    let firstICC
+    let secondICC
+    let secondChildICC
+    let childICC
+    const data5 = {
+      files: [
+        {
+          path: '/config/compose.yml',
+          sha: 'asdasdsasadasdasdsadsadas'
+        },
+        {
+          path: '/config/compose2.yml',
+          sha: 'sadasdasdasdwqe1d21wd'
+        }
+      ],
+      branch: 'helloBranch',
+      autoIsolationConfigId: objectId(autoIsolationConfigId),
+      createdByUser: 123123,
+      ownedByOrg: 1,
+      clusterName: 'asddasdasd',
+      isTesting: false,
+      repo: 'hello/Repo'
+    }
+    beforeEach(function () {
+      return InputClusterConfig.createAsync(data)
+        .tap(function (saved) {
+          firstICC = saved
+        })
+    })
+    beforeEach(function () {
+      return InputClusterConfig.createAsync(data2)
+        .tap(function (saved) {
+          secondICC = saved
+        })
+    })
+    beforeEach(function () {
+      data5.parentInputClusterConfigId = objectId(firstICC._id)
+      return InputClusterConfig.createAsync(data5)
+        .tap(function (saved) {
+          childICC = saved
+        })
+    })
+    beforeEach(function () {
+      data3.parentInputClusterConfigId = objectId(secondICC._id)
+      return InputClusterConfig.createAsync(data5)
+        .tap(function (saved) {
+          secondChildICC = saved
+        })
+    })
+
+    it('should return the child, since first is it\'s parent', function () {
+      return InputClusterConfig.findAllChildren([firstICC])
+        .tap((configs) => {
+          expect(configs[0]._id).to.equal(childICC._id)
+        })
+    })
+
+    it('should return both children', function () {
+      return InputClusterConfig.findAllChildren([firstICC, secondICC])
+        .tap((configs) => {
+          expect(configs[0]._id).to.equal(childICC._id)
+          expect(configs[1]._id).to.equal(secondChildICC._id)
+        })
+    })
+  })
+
+  describe('findActiveParentIcc', function () {
+    let firstICC
+    let secondICC
+    let thirdICC
+    let fourthICC
+    beforeEach(function () {
+      return InputClusterConfig.createAsync(data)
+        .tap(function (saved) {
+          firstICC = saved
+        })
+    })
+    beforeEach(function () {
+      return InputClusterConfig.createAsync(data2)
+        .tap(function (saved) {
+          secondICC = saved
+        })
+    })
+    beforeEach(function () {
+      return InputClusterConfig.createAsync(data3)
+        .tap(function (saved) {
+          thirdICC = saved
+        })
+    })
+    beforeEach(function () {
+      return InputClusterConfig.createAsync(data4)
+        .tap(function (saved) {
+          fourthICC = saved
+        })
+    })
+
+    it('should be to fetch 2nd and 3rd', function (done) {
+      InputClusterConfig.findSimilarActive(secondICC)
+        .tap((configs) => {
+          expect(configs.length).to.equal(2) // should be 2 and 3
+          expect(configs[0]._id).to.equal(secondICC._id)
+          expect(configs[1]._id).to.equal(thirdICC._id)
+        })
+        .asCallback(done)
+    })
+
+    it('should only return the first, since it has different files', function (done) {
+      InputClusterConfig.findSimilarActive(firstICC)
+        .tap((configs) => {
+          expect(configs.length).to.equal(1)
+          expect(configs[0]._id).to.equal(firstICC._id)
+        })
+        .asCallback(done)
+    })
+    it('should only return the fourth, since it\'s the only non-test', function (done) {
+      InputClusterConfig.findSimilarActive(fourthICC)
+        .tap((configs) => {
+          expect(configs.length).to.equal(1)
+          expect(configs[0]._id).to.equal(fourthICC._id)
+        })
+        .asCallback(done)
     })
   })
 
