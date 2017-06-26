@@ -160,10 +160,15 @@ describe('/docker-compose-cluster', function () {
         rain: {}
       }
     }
+    const uniqueMains = {
+      builds: ['hello'],
+      externals: ['cheese', 'rain']
+    }
     const body = { repo, branch, filePath, name, parentInputClusterConfigId, githubId }
     beforeEach(function (done) {
       createClusterStub = sinon.stub(rabbitMQ, 'createCluster')
       validateOrBoomStub = sinon.spy(joi, 'validateOrBoomAsync')
+      sinon.stub(ClusterConfigService, 'getUniqueServicesKeysFromOctobearResults').returns(uniqueMains)
       sinon.stub(ClusterConfigService, '_parseComposeInfoForConfig').resolves({ mains })
       done()
     })
@@ -171,6 +176,7 @@ describe('/docker-compose-cluster', function () {
       createClusterStub.restore()
       validateOrBoomStub.restore()
       ClusterConfigService._parseComposeInfoForConfig.restore()
+      ClusterConfigService.getUniqueServicesKeysFromOctobearResults.restore()
       done()
     })
 
@@ -195,10 +201,10 @@ describe('/docker-compose-cluster', function () {
           })
       })
 
-      it('should enqueue a job', function () {
+      it('should enqueue a job for each unique cluster', function () {
         return multiClusterCreate(mockSessionUser, body)
           .then(function () {
-            sinon.assert.callCount(createClusterStub, 4)
+            sinon.assert.callCount(createClusterStub, 3) // not 4, because of unique
             sinon.assert.calledWith(createClusterStub, {
               mainInstanceKey: 'hello',
               sessionUserBigPoppaId,
@@ -216,7 +222,7 @@ describe('/docker-compose-cluster', function () {
           })
       })
 
-      it('should call the response handler with a 202', function (done) {
+      it('should call the response handler with a 202', function () {
         reqMock = {
           body: { repo, branch, filePath, name, parentInputClusterConfigId, githubId },
           sessionUser: {
@@ -226,13 +232,14 @@ describe('/docker-compose-cluster', function () {
             _bigPoppaUser: { id: sessionUserBigPoppaId }
           }
         }
-        multiCreateRoute(reqMock, resMock, nextStub)
+        return multiCreateRoute(reqMock, resMock, nextStub)
           .then(function () {
             sinon.assert.calledOnce(resMock.status)
             sinon.assert.calledWith(resMock.status, 202)
             sinon.assert.calledOnce(resMock.json)
-            sinon.assert.calledWith(resMock.json, { message: sinon.match.string })
-            done()
+            sinon.assert.calledWith(resMock.json,
+              { message: sinon.match.string, created: sinon.match.number }
+            )
           })
       })
     })

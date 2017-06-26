@@ -2900,4 +2900,45 @@ describe('Cluster Config Service Unit Tests', function () {
       done()
     })
   })
+
+  describe('getUniqueServicesKeysFromOctobearResults', function () {
+    let octobearConfig
+    beforeEach(done =>{
+      octobearConfig = {
+        mains: {
+          builds: {
+            hello: {
+              build: {
+                dockerFilePath: '/Dockerfile'
+              }
+            },
+            test: {
+              build: {
+                dockerFilePath: '/Dockerfile'
+              }
+            }
+          },
+          externals: {
+            github: {
+              repo: 'user/externalRepo'
+            },
+            anotherTest: {
+              repo:  'user/testRepo'
+            },
+            andAnotherTest: {
+              repo:  'user/testRepo'
+            }
+          }
+        }
+      }
+
+      done()
+    })
+    it('should return 1 build, and 2 externals', function (done) {
+      const results = ClusterConfigService.getUniqueServicesKeysFromOctobearResults(octobearConfig)
+      expect(results.builds.length).to.equal(1)
+      expect(results.externals.length).to.equal(2)
+      done()
+    })
+  })
 })
