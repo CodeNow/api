@@ -17,30 +17,29 @@ const expect = Code.expect
 const it = lab.it
 
 
-describe('ClusterBuild Model Integration Tests', function () {
-  const data = {
-    state: 'building'
-  }
-
+describe('ClusterBuild Model Integration Tests', () => {
   before(mongooseControl.start)
-  afterEach(function (done) {
+
+  afterEach((done) => {
     ClusterBuild.remove({}, done)
   })
 
   after(mongooseControl.stop)
 
-  describe('setStateToDeploying', function () {
+  describe('setStateToDeploying', () => {
     let savedClusterBuild
 
-    beforeEach(function (done) {
-      return ClusterBuild.createAsync(data)
-        .tap(function (saved) {
+    beforeEach((done) => {
+      return ClusterBuild.createAsync({
+          state: 'built'
+        })
+        .tap((saved) => {
           savedClusterBuild = saved
         })
     })
 
-    it('should set state to building', function (done) {
-      return ClusterBuild.setStateToDeploying(savedClusterBuild._id)
+    it('should set state to deploying', (done) => {
+      return ClusterBuild.setStateToDeploying(savedClusterBuild)
         .then((clusterBuild) => {
           expect(clusterBuild._id).to.equal(savedClusterBuild._id)
           expect(clusterBuild.state).to.equal('deploying')
@@ -54,4 +53,62 @@ describe('ClusterBuild Model Integration Tests', function () {
 
     })
   }) // end setStateToDeploying
+
+  describe('setStateToBuilt', () => {
+    let savedClusterBuild
+
+    beforeEach((done) => {
+      return ClusterBuild.createAsync({
+          state: 'building'
+        })
+        .tap((saved) => {
+          savedClusterBuild = saved
+        })
+    })
+
+    it('should set state to built', (done) => {
+      return ClusterBuild.setStateToBuilt(savedClusterBuild._id)
+        .then((clusterBuild) => {
+          expect(clusterBuild._id).to.equal(savedClusterBuild._id)
+          expect(clusterBuild.state).to.equal('built')
+
+          return ClusterBuild.findByIdAsync(savedClusterBuild._id)
+        })
+        .then((currentClusterBuild) => {
+          expect(currentClusterBuild._id).to.equal(savedClusterBuild._id)
+          expect(currentClusterBuild.state).to.equal('built')
+        })
+    })
+  }) // end setStateToBuilt
+
+  describe('setStateToError', () => {
+    let savedClusterBuild
+
+    beforeEach((done) => {
+      return ClusterBuild.createAsync({
+          state: 'building'
+        })
+        .tap((saved) => {
+          savedClusterBuild = saved
+        })
+    })
+
+    it('should set state to built', (done) => {
+      const testErr = new Error('Broken')
+
+      return ClusterBuild.setStateToError(savedClusterBuild._id, testErr)
+        .then((clusterBuild) => {
+          expect(clusterBuild._id).to.equal(savedClusterBuild._id)
+          expect(clusterBuild.state).to.equal('errored')
+          expect(clusterBuild.errorMessage).to.equal(testErr.message)
+
+          return ClusterBuild.findByIdAsync(savedClusterBuild._id)
+        })
+        .then((currentClusterBuild) => {
+          expect(currentClusterBuild._id).to.equal(savedClusterBuild._id)
+          expect(currentClusterBuild.state).to.equal('errored')
+          expect(currentClusterBuild.errorMessage).to.equal(testErr.message)
+        })
+    })
+  }) // end setStateToError
 })
