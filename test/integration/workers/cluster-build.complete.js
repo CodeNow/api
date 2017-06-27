@@ -92,7 +92,11 @@ describe('cluster-build.complete Integration Tests', function () {
 
         return ClusterBuild.createAsync({
           state: 'building',
-          instanceIds: [savedInstances.instance0._id, savedInstances.instance1._id]
+          specifications: [{
+            instanceId: savedInstances.instance0._id
+          }, {
+            instanceId: savedInstances.instance1._id
+          }]
         })
         .then((saved) => {
           savedClusterBuild = saved
@@ -118,18 +122,22 @@ describe('cluster-build.complete Integration Tests', function () {
           clusterBuild: {
             specifications: sinon.match([
               sinon.match({
-                name: testSpecifications[0].name,
+                buildId: savedInstances.instance0.build._id,
+                envs: testSpecifications[0].envs,
                 image: testSpecifications[0].image,
-                ports: testSpecifications[0].ports,
+                instanceId: savedInstances.instance0._id,
                 memorySoftLimit: testSpecifications[0].memorySoftLimit,
-                envs: testSpecifications[0].envs
+                name: testSpecifications[0].name,
+                ports: testSpecifications[0].ports
               }),
               sinon.match({
-                name: testSpecifications[1].name,
+                buildId: savedInstances.instance1.build._id,
+                envs: testSpecifications[1].envs,
                 image: testSpecifications[1].image,
-                ports: testSpecifications[1].ports,
+                instanceId: savedInstances.instance1._id,
                 memorySoftLimit: testSpecifications[1].memorySoftLimit,
-                envs: testSpecifications[1].envs
+                name: testSpecifications[1].name,
+                ports: testSpecifications[1].ports
               })
             ])
           }
