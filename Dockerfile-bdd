@@ -9,7 +9,7 @@ RUN apt-get update
 RUN apt-get install -y mongodb-10gen=2.4.12
 RUN mkdir -p /data/db/
 
-ENV NPM_TOKEN=c76363e9-78e0-4667-82ac-e2ac01efcfe2
+ENV NPM_TOKEN=064db685-2f46-45b4-957c-55bef2d6055e
 
 ADD ./keys/runnable-deploy-bot.id_rsa /root/.ssh/id_rsa
 WORKDIR /root/.ssh/
