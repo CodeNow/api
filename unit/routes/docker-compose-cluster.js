@@ -112,7 +112,7 @@ describe('/docker-compose-cluster', function () {
           .then(function () {
             sinon.assert.calledOnce(createClusterStub)
             sinon.assert.calledWith(createClusterStub, {
-              mainInstanceKey: undefined,
+              mainInstanceServiceName: undefined,
               sessionUserBigPoppaId,
               triggeredAction: 'user',
               repoFullName: repo,
@@ -206,7 +206,7 @@ describe('/docker-compose-cluster', function () {
           .then(function () {
             sinon.assert.callCount(createClusterStub, 3) // not 4, because of unique
             sinon.assert.calledWith(createClusterStub, {
-              mainInstanceKey: 'hello',
+              mainInstanceServiceName: 'hello',
               sessionUserBigPoppaId,
               triggeredAction: 'user',
               repoFullName: repo,
