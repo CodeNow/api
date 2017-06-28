@@ -2939,4 +2939,31 @@ describe('Cluster Config Service Unit Tests', function () {
       done()
     })
   })
+  describe('_uniquePathReduce', function () {
+    let octobearConfig
+    beforeEach(done =>{
+      octobearConfig = {
+        mains: {
+          externals: {
+            github: {
+              repo: 'user/externalRepo'
+            },
+            anotherTest: {
+              repo:  'user/testRepo'
+            },
+            andAnotherTest: {
+              repo:  'user/testRepo'
+            }
+          }
+        }
+      }
+
+      done()
+    })
+    it('should return 1 build, and 2 externals', function (done) {
+      const results = ClusterConfigService._uniquePathReduce(octobearConfig.mains.externals, 'repo')
+      expect(results.length).to.equal(2)
+      done()
+    })
+  })
 })
