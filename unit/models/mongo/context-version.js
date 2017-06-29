@@ -326,7 +326,7 @@ describe('Context Version Unit Test', function () {
           })
 
         sinon.assert.calledOnce(ContextVersion.findByAsync)
-        sinon.assert.calledWith(ContextVersion.findByAsync, 'build._id', buildId)
+        sinon.assert.calledWithExactly(ContextVersion.findByAsync, 'build._id', buildId)
         done()
       })
     })
@@ -356,7 +356,7 @@ describe('Context Version Unit Test', function () {
           })
 
         sinon.assert.calledOnce(ContextVersion.findByAsync)
-        sinon.assert.calledWith(ContextVersion.findByAsync, 'build._id', buildId)
+        sinon.assert.calledWithExactly(ContextVersion.findByAsync, 'build._id', buildId)
         done()
       })
     })
@@ -383,7 +383,7 @@ describe('Context Version Unit Test', function () {
           })
 
         sinon.assert.calledOnce(ContextVersion.findByAsync)
-        sinon.assert.calledWith(ContextVersion.findByAsync, 'build._id', buildId)
+        sinon.assert.calledWithExactly(ContextVersion.findByAsync, 'build._id', buildId)
         done()
       })
     })
