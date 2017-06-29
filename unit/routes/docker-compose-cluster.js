@@ -42,6 +42,7 @@ describe('/docker-compose-cluster', function () {
   const sessionUserBigPoppaId = 8084808
   const parentInputClusterConfigId = 'funk flex'
   const githubId = sessionUserGithubId
+  const shouldNotAutoFork = true
   const mockSessionUser ={
     accounts: {
       github: { id: sessionUserGithubId }
@@ -69,7 +70,7 @@ describe('/docker-compose-cluster', function () {
       createClusterStub = sinon.stub(rabbitMQ, 'createCluster')
       validateOrBoomStub = sinon.spy(joi, 'validateOrBoomAsync')
       reqMock = {
-        body: { repo, branch, filePath, name, parentInputClusterConfigId, githubId },
+        body: { repo, branch, filePath, name, parentInputClusterConfigId, githubId, shouldNotAutoFork },
         sessionUser: {
           accounts: {
             github: { id: sessionUserGithubId }
@@ -122,6 +123,7 @@ describe('/docker-compose-cluster', function () {
               isTesting,
               parentInputClusterConfigId,
               testReporters,
+              shouldNotAutoFork,
               clusterCreateId,
               clusterName: name
             })
@@ -150,6 +152,7 @@ describe('/docker-compose-cluster', function () {
     const branch = 'master'
     const filePath = '/docker-compose.yml'
     const name = 'super-cool-name'
+    const shouldNotAutoFork = true
     const mains = {
       builds: {
         hello: {},
@@ -164,7 +167,7 @@ describe('/docker-compose-cluster', function () {
       builds: ['hello'],
       externals: ['cheese', 'rain']
     }
-    const body = { repo, branch, filePath, name, parentInputClusterConfigId, githubId }
+    const body = { repo, branch, filePath, name, parentInputClusterConfigId, githubId, shouldNotAutoFork }
     beforeEach(function (done) {
       createClusterStub = sinon.stub(rabbitMQ, 'createCluster')
       validateOrBoomStub = sinon.spy(joi, 'validateOrBoomAsync')
@@ -216,6 +219,7 @@ describe('/docker-compose-cluster', function () {
               isTesting,
               clusterCreateId,
               parentInputClusterConfigId,
+              shouldNotAutoFork,
               testReporters,
               clusterName: sinon.match.string
             })
