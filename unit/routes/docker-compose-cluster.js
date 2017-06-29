@@ -241,9 +241,13 @@ describe('/docker-compose-cluster', function () {
             sinon.assert.calledOnce(resMock.status)
             sinon.assert.calledWith(resMock.status, 202)
             sinon.assert.calledOnce(resMock.json)
-            sinon.assert.calledWith(resMock.json,
-              { message: sinon.match.string, created: sinon.match.number }
-            )
+            sinon.assert.calledWith(resMock.json, {
+              message: sinon.match.string,
+              created: sinon.match({
+                builds: sinon.match.array,
+                externals: sinon.match.array
+              })
+            })
           })
       })
     })
