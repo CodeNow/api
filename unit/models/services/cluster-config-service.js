@@ -1027,7 +1027,7 @@ describe('Cluster Config Service Unit Tests', function () {
             isTestReporter,
             isolated: buildOpts.isolated,
             isIsolationGroupMaster: false,
-            shouldNotAutofork: false,
+            shouldNotAutofork: true,
             masterPod: false,
             ipWhitelist: {
               enabled: false
@@ -1038,7 +1038,7 @@ describe('Cluster Config Service Unit Tests', function () {
         })
     })
 
-    it('should set shouldNotAutoFork to false by default', () => {
+    it('should set shouldNotAutoFork to true if it is not supplied', () => {
       const testParentBuildId = objectId('407f191e810c19729de860ef')
       const testParentComposeData = {
         env: 'env',
@@ -1080,7 +1080,7 @@ describe('Cluster Config Service Unit Tests', function () {
             clusterCreateId,
             isolated: buildOpts.isolated,
             isIsolationGroupMaster: false,
-            shouldNotAutofork: false,
+            shouldNotAutofork: true,
             masterPod: false,
             ipWhitelist: {
               enabled: false
@@ -1091,7 +1091,7 @@ describe('Cluster Config Service Unit Tests', function () {
         })
     })
 
-    it('should set shouldNotAutoFork to false by default for main instances', () => {
+    it('should set shouldNotAutoFork to false by default for non-main instances', () => {
       const testParentBuildId = objectId('407f191e810c19729de860ef')
       const testParentComposeData = {
         env: 'env',
