@@ -2030,7 +2030,8 @@ describe('Cluster Config Service Unit Tests', function () {
       repo: repoFullName
     }
     const clusterOpts = {
-      isTesting: true
+      isTesting: true,
+      clusterName: 'asxdasdsadas'
     }
     const mainInstanceId = objectId('407f191e810c19729de860ef')
     const updateInstanceId = objectId('407f191e810c19729de860f1')
@@ -2086,7 +2087,7 @@ describe('Cluster Config Service Unit Tests', function () {
       sinon.stub(ClusterConfigService, 'createClusterContext').resolves(createInstanceConfig)
       sinon.stub(ClusterConfigService, '_updateInstanceWithConfigs').resolves(updateInstanceObj)
       sinon.stub(ClusterConfigService, '_createNewInstanceForNewConfig').resolves(postCreateInstanceObj)
-      sinon.stub(rabbitMQ, 'deleteInstance').returns()
+      sinon.stub(ClusterConfigService, 'deleteInstancesFromClustersAndEmitUpdate').returns()
       done()
     })
     afterEach(function (done) {
@@ -2094,7 +2095,7 @@ describe('Cluster Config Service Unit Tests', function () {
       ClusterConfigService.createClusterContext.restore()
       ClusterConfigService._updateInstanceWithConfigs.restore()
       ClusterConfigService._createNewInstanceForNewConfig.restore()
-      rabbitMQ.deleteInstance.restore()
+      ClusterConfigService.deleteInstancesFromClustersAndEmitUpdate.restore()
       done()
     })
     describe('success', function () {
@@ -2202,7 +2203,7 @@ describe('Cluster Config Service Unit Tests', function () {
           })
           .asCallback(done)
       })
-      it('should have called delete with deleteInstance', function (done) {
+      it('should have called deleteInstancesFromClustersAndEmitUpdate', function (done) {
         ClusterConfigService._createUpdateAndDeleteInstancesForClusterUpdate(
           testSessionUser,
           instances,
@@ -2211,10 +2212,12 @@ describe('Cluster Config Service Unit Tests', function () {
           ownerInfo
         )
           .then(() => {
-            sinon.assert.calledOnce(rabbitMQ.deleteInstance)
-            sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, {
-              instanceId: deleteInstanceId.toString()
-            })
+            sinon.assert.calledOnce(ClusterConfigService.deleteInstancesFromClustersAndEmitUpdate)
+            sinon.assert.calledWithExactly(ClusterConfigService.deleteInstancesFromClustersAndEmitUpdate,
+              ownerInfo.githubOrgId,
+              clusterOpts.clusterName,
+              [deleteInstanceObj]
+            )
           })
           .asCallback(done)
       })
@@ -3070,6 +3073,75 @@ describe('Cluster Config Service Unit Tests', function () {
       const results = ClusterConfigService._uniquePathReduce(octobearConfig.mains.externals, 'repo')
       expect(results.length).to.equal(2)
       done()
+    })
+  })
+  describe('deleteInstancesFromClustersAndEmitUpdate', function () {
+    let instancesWithConfigs
+    const instance1Name = 'hello'
+    const instance1 = {
+      shortName: instance1Name,
+      _id: 'asdff3e33f23fafdsaf'
+    }
+    const instance2Name = 'goodbye'
+    const instance2 = {
+      shortName: instance2Name,
+      _id: 'aasdfasdfasdfasdfs'
+    }
+    beforeEach(done =>{
+      instancesWithConfigs = [
+        {
+          config: {
+            metadata: {
+              name: instance1Name
+            }
+          },
+          instance: instance1
+        },
+        {
+          config: {
+            metadata: {
+              name: instance2Name
+            }
+          },
+          instance: instance2
+        }
+      ]
+      sinon.stub(ClusterConfigService, 'sendClusterSocketUpdate').resolves()
+      sinon.stub(rabbitMQ, 'deleteInstance').resolves()
+      done()
+    })
+    afterEach(function (done) {
+      rabbitMQ.deleteInstance.restore()
+      ClusterConfigService.sendClusterSocketUpdate.restore()
+      done()
+    })
+    it('should call delete twice', function () {
+      return ClusterConfigService.deleteInstancesFromClustersAndEmitUpdate(
+        'adsfasdfsd',
+        'clusterName',
+        instancesWithConfigs
+        )
+        .then(() => {
+          sinon.assert.calledTwice(rabbitMQ.deleteInstance)
+          sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, { instanceId: instance1._id })
+          sinon.assert.calledWithExactly(rabbitMQ.deleteInstance, { instanceId: instance2._id })
+        })
+    })
+    it('should emit update with both shortNames', function () {
+      return ClusterConfigService.deleteInstancesFromClustersAndEmitUpdate(
+        'adsfasdfsd',
+        'clusterName',
+        instancesWithConfigs
+        )
+        .then(() => {
+          sinon.assert.calledOnce(ClusterConfigService.sendClusterSocketUpdate)
+          sinon.assert.calledWithExactly(ClusterConfigService.sendClusterSocketUpdate,
+            'adsfasdfsd', {
+            task: 'compose-cluster-updated',
+            clusterName: 'clusterName',
+            deleted: [instance1Name, instance2Name]
+          })
+        })
     })
   })
 })
