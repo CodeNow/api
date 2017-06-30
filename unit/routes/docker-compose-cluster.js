@@ -169,7 +169,7 @@ describe('/docker-compose-cluster', function () {
     }
     const body = { repo, branch, filePath, name, parentInputClusterConfigId, githubId, shouldNotAutoFork }
     beforeEach(function (done) {
-      createClusterStub = sinon.stub(rabbitMQ, 'createCluster')
+      createClusterStub = sinon.stub(rabbitMQ, 'createCluster').resolves()
       validateOrBoomStub = sinon.spy(joi, 'validateOrBoomAsync')
       sinon.stub(ClusterConfigService, 'getUniqueServicesKeysFromOctobearResults').returns(uniqueMains)
       sinon.stub(ClusterConfigService, '_parseComposeInfoForConfig').resolves({ mains })
