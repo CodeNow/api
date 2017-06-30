@@ -22,6 +22,7 @@ const IsolationService = require('models/services/isolation-service')
 const MixPanelModel = require('models/apis/mixpanel')
 const WebhookService = require('models/services/webhook-service')
 const OrganizationService = require('models/services/organization-service')
+const UserService = require('models/services/user-service')
 const User = require('models/mongo/user')
 const rabbitMQ = require('models/rabbitmq')
 const WorkerStopError = require('error-cat/errors/worker-stop-error')
@@ -263,7 +264,6 @@ describe('Webhook Service Unit Tests', function () {
         _id: 'erfvsdfsavxscvsacfvserw'
       }]
       contextIds = ['sadsadasdsad', 'sdgfddfsgdfsgsdfgdsfg']
-      sinon.stub(WebhookService, 'checkCommitPusherIsRunnableUser')
       sinon.stub(Instance, 'findMasterPodsToAutoFork')
       sinon.stub(ClusterConfigService, 'checkIfComposeFilesChanged').resolves()
       sinon.stub(InstanceForkService, 'autoFork')
@@ -272,7 +272,6 @@ describe('Webhook Service Unit Tests', function () {
       done()
     })
     afterEach(function (done) {
-      WebhookService.checkCommitPusherIsRunnableUser.restore()
       Instance.findMasterPodsToAutoFork.restore()
       ClusterConfigService.checkIfComposeFilesChanged.restore()
       InstanceForkService.autoFork.restore()
@@ -281,18 +280,8 @@ describe('Webhook Service Unit Tests', function () {
       done()
     })
     describe('validating errors', function () {
-      it('should reject when checkCommitPusherIsRunnableUser fails', function (done) {
-        var userError = new Error('User is bad')
-        WebhookService.checkCommitPusherIsRunnableUser.rejects(userError)
-        WebhookService.autoFork(contextIds, githubPushInfo)
-          .asCallback(function (err) {
-            expect(err).to.equal(userError)
-            done()
-          })
-      })
       it('should reject if findMasterPodsToAutoFork fails', function (done) {
         var error = new Error('User is bad')
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.rejects(error)
         WebhookService.autoFork(contextIds, githubPushInfo)
           .asCallback(function (err) {
@@ -302,7 +291,6 @@ describe('Webhook Service Unit Tests', function () {
       })
       it('should reject if autoFork fails', function (done) {
         var error = new Error('User is bad')
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.rejects(error)
         WebhookService.autoFork(contextIds, githubPushInfo)
@@ -313,7 +301,6 @@ describe('Webhook Service Unit Tests', function () {
       })
       it('should reject if autoIsolate fails', function (done) {
         var error = new Error('User is bad')
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.resolves(instances)
         IsolationService.autoIsolate.rejects(error)
@@ -335,7 +322,6 @@ describe('Webhook Service Unit Tests', function () {
         done()
       })
       it('should skip autoFork when instance fetch returns null, then return null', function (done) {
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.resolves([])
         InstanceForkService.autoFork.resolves([])
         WebhookService.autoFork(contextIds, githubPushInfo)
@@ -346,7 +332,6 @@ describe('Webhook Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should fetch the MasterPods with repo, branch, and contextIds', function (done) {
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.resolves(forkedInstances)
         IsolationService.autoIsolate.resolves()
@@ -362,7 +347,6 @@ describe('Webhook Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should attempt to autoFork all instances returned from findMasterPodsToAutoFork', function (done) {
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.resolves(forkedInstances)
         IsolationService.autoIsolate.resolves()
@@ -378,7 +362,6 @@ describe('Webhook Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should autoIsolate the new forked instances from autoFork, and return the forked instances', function (done) {
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.resolves(forkedInstances)
         IsolationService.autoIsolate.resolves()
@@ -395,7 +378,6 @@ describe('Webhook Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should check the compose file for each instance', function (done) {
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.resolves(forkedInstances)
         IsolationService.autoIsolate.resolves()
@@ -417,7 +399,6 @@ describe('Webhook Service Unit Tests', function () {
           .asCallback(done)
       })
       it('should create cluster update jobs', function (done) {
-        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         Instance.findMasterPodsToAutoFork.resolves(instances)
         InstanceForkService.autoFork.resolves(forkedInstances)
         IsolationService.autoIsolate.resolves()
@@ -451,32 +432,38 @@ describe('Webhook Service Unit Tests', function () {
       commitPusher: username
     }
     beforeEach(function (done) {
-      sinon.stub(User, 'findOneAsync').resolves({ _id: 'some-id', allowed: true })
+      sinon.stub(UserService, 'getCompleteUserByGithubUsername').resolves({
+        _id: 'some-id',
+        allowed: true,
+        bigPoppaUser: {
+          id: 'bp-id'
+        }
+       })
       done()
     })
     afterEach(function (done) {
-      User.findOneAsync.restore()
+      UserService.getCompleteUserByGithubUsername.restore()
       done()
     })
     describe('validating errors', function () {
       it('should next with error if db call failed', function (done) {
         var mongoErr = new Error('Mongo error')
-        User.findOneAsync.rejects(mongoErr)
+        UserService.getCompleteUserByGithubUsername.rejects(mongoErr)
         WebhookService.checkCommitPusherIsRunnableUser(githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.equal(mongoErr)
-            sinon.assert.calledOnce(User.findOneAsync)
-            sinon.assert.calledWith(User.findOneAsync, {'accounts.github.username': username})
+            sinon.assert.calledOnce(UserService.getCompleteUserByGithubUsername)
+            sinon.assert.calledWith(UserService.getCompleteUserByGithubUsername, username)
             done()
           })
       })
       it('should respond with 403 if no whitelist found', function (done) {
-        User.findOneAsync.resolves()
+        UserService.getCompleteUserByGithubUsername.resolves()
         WebhookService.checkCommitPusherIsRunnableUser(githubPushInfo)
           .asCallback(function (err) {
             expect(err.message).to.match(/committer.*not.*runnable.*user/i)
-            sinon.assert.calledOnce(User.findOneAsync)
-            sinon.assert.calledWith(User.findOneAsync, { 'accounts.github.username': 'thejsj' })
+            sinon.assert.calledOnce(UserService.getCompleteUserByGithubUsername)
+            sinon.assert.calledWith(UserService.getCompleteUserByGithubUsername, 'thejsj')
             done()
           })
       })
@@ -484,7 +471,7 @@ describe('Webhook Service Unit Tests', function () {
         WebhookService.checkCommitPusherIsRunnableUser({})
           .asCallback(function (err) {
             expect(err.message).to.match(/committer.*username is empty/i)
-            sinon.assert.notCalled(User.findOneAsync)
+            sinon.assert.notCalled(UserService.getCompleteUserByGithubUsername)
             done()
           })
       })
@@ -493,8 +480,9 @@ describe('Webhook Service Unit Tests', function () {
     it('should next without error if everything worked', function (done) {
       WebhookService.checkCommitPusherIsRunnableUser(githubPushInfo)
         .then(function () {
-          sinon.assert.calledOnce(User.findOneAsync)
-          sinon.assert.calledWith(User.findOneAsync, { 'accounts.github.username': username })
+          sinon.assert.calledOnce(UserService.getCompleteUserByGithubUsername)
+          sinon.assert.calledWith(UserService.getCompleteUserByGithubUsername, username)
+          expect(githubPushInfo.bpUserId).to.equal('bp-id')
         })
         .asCallback(done)
     })
@@ -507,7 +495,7 @@ describe('Webhook Service Unit Tests', function () {
       })
       WebhookService.checkCommitPusherIsRunnableUser(newInfo)
         .then(function () {
-          sinon.assert.notCalled(User.findOneAsync)
+          sinon.assert.notCalled(UserService.getCompleteUserByGithubUsername)
         })
         .asCallback(done)
     })
@@ -517,9 +505,10 @@ describe('Webhook Service Unit Tests', function () {
     var githubPushInfo = {
       repoOwnerOrgName: 'Runnable'
     }
+    const bpOrganizationId = 23423
 
     beforeEach(function (done) {
-      sinon.stub(OrganizationService, 'getByGithubUsername').resolves({ id: 23423, allowed: true })
+      sinon.stub(OrganizationService, 'getByGithubUsername').resolves({ id: bpOrganizationId, allowed: true })
       done()
     })
     afterEach(function (done) {
@@ -567,6 +556,7 @@ describe('Webhook Service Unit Tests', function () {
         .then(function () {
           sinon.assert.calledOnce(OrganizationService.getByGithubUsername)
           sinon.assert.calledWith(OrganizationService.getByGithubUsername, 'Runnable')
+          expect(githubPushInfo.bpOrganizationId).to.equal(bpOrganizationId)
         })
         .asCallback(done)
     })
@@ -1107,6 +1097,7 @@ describe('Webhook Service Unit Tests', function () {
         }
       }
       sinon.stub(WebhookService, 'parseGitHubPushData')
+      sinon.stub(WebhookService, 'checkCommitPusherIsRunnableUser')
       sinon.stub(WebhookService, 'checkRepoOrganizationAgainstWhitelist')
       sinon.stub(WebhookService, 'reportMixpanelUserPush')
       sinon.stub(WebhookService, 'autoDelete')
@@ -1115,6 +1106,7 @@ describe('Webhook Service Unit Tests', function () {
     })
     afterEach(function (done) {
       WebhookService.parseGitHubPushData.restore()
+      WebhookService.checkCommitPusherIsRunnableUser.restore()
       WebhookService.checkRepoOrganizationAgainstWhitelist.restore()
       WebhookService.reportMixpanelUserPush.restore()
       WebhookService.autoDelete.restore()
@@ -1143,6 +1135,16 @@ describe('Webhook Service Unit Tests', function () {
             done()
           })
       })
+      it('should reject when checkCommitPusherIsRunnableUser fails with error', function (done) {
+        var error = new Error('dfasdfdsaf')
+        WebhookService.parseGitHubPushData.resolves(githubPushInfo)
+        WebhookService.checkCommitPusherIsRunnableUser.rejects(error)
+        WebhookService.processGithookEvent(payload)
+          .asCallback(function (err) {
+            expect(err).to.equal(error)
+            done()
+          })
+      })
       it('should reject when checkRepoOrganizationAgainstWhitelist fails with error', function (done) {
         var error = new Error('dfasdfdsaf')
         WebhookService.parseGitHubPushData.resolves(githubPushInfo)
@@ -1159,6 +1161,7 @@ describe('Webhook Service Unit Tests', function () {
           deleted: true
         }
         WebhookService.parseGitHubPushData.resolves(githubPushInfo)
+        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         WebhookService.checkRepoOrganizationAgainstWhitelist.resolves()
         WebhookService.reportMixpanelUserPush.resolves()
         WebhookService.autoDelete.rejects(error)
@@ -1172,6 +1175,7 @@ describe('Webhook Service Unit Tests', function () {
       it('should reject when doAutoDeployAndAutoFork fails with error', function (done) {
         var error = new Error('dfasdfdsaf')
         WebhookService.parseGitHubPushData.resolves(githubPushInfo)
+        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         WebhookService.checkRepoOrganizationAgainstWhitelist.resolves()
         WebhookService.reportMixpanelUserPush.resolves()
         WebhookService.doAutoDeployAndAutoFork.rejects(error)
@@ -1188,6 +1192,7 @@ describe('Webhook Service Unit Tests', function () {
         payload.deleted = true
         var instanceIds = ['asdsad', 'asdasdsadsa']
         WebhookService.parseGitHubPushData.resolves(githubPushInfo)
+        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         WebhookService.checkRepoOrganizationAgainstWhitelist.resolves()
         WebhookService.reportMixpanelUserPush.resolves()
         WebhookService.autoDelete.resolves(instanceIds)
@@ -1200,6 +1205,7 @@ describe('Webhook Service Unit Tests', function () {
       it('should run doAutoDeployAndAutoFork when deleted not in payload', function (done) {
         var instanceIds = ['asdsad', 'asdasdsadsa']
         WebhookService.parseGitHubPushData.resolves(githubPushInfo)
+        WebhookService.checkCommitPusherIsRunnableUser.resolves()
         WebhookService.checkRepoOrganizationAgainstWhitelist.resolves()
         WebhookService.reportMixpanelUserPush.resolves()
         WebhookService.doAutoDeployAndAutoFork.resolves(instanceIds)

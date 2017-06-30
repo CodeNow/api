@@ -308,6 +308,7 @@ var factory = module.exports = {
         username: props.username || ownerGithubId.toString()
       },
       parent: props.parent || 'sdf',
+      ports: props.ports || [],
       shortHash: shortHash.slice(0, 6),
       shouldNotAutofork: props.shouldNotAutofork,
       shortName: props.parent || name
@@ -346,8 +347,9 @@ var factory = module.exports = {
         VersionId: VALID_OBJECT_ID
       }],
       build: {
-        dockerTag: 'adsgasdfgasdf'
+        dockerTag: opts.dockerTag || 'adsgasdfgasdf'
       },
+      userContainerMemoryInBytes: opts.userContainerMemoryInBytes || undefined,
       buildDockerfilePath: opts.buildDockerfilePath,
       appCodeVersions: [
         {
