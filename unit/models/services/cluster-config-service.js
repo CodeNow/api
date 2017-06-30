@@ -193,6 +193,7 @@ describe('Cluster Config Service Unit Tests', function () {
     const repoFullName = orgName + '/' + repoName
     const branchName = 'feature-1'
     const clusterName = 'api-unit'
+    const shouldNotAutoFork = true
     const parsedInput = {
       repositoryName: clusterName,
       ownerUsername: orgName,
@@ -208,7 +209,7 @@ describe('Cluster Config Service Unit Tests', function () {
     }
 
     const testData = {
-      triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName, clusterCreateId, parentInputClusterConfigId
+      triggeredAction, repoFullName, branchName, filePath, isTesting, testReporters, clusterName, clusterCreateId, parentInputClusterConfigId, shouldNotAutoFork
     }
 
     beforeEach(function (done) {
@@ -268,7 +269,7 @@ describe('Cluster Config Service Unit Tests', function () {
             const args = ClusterConfigService.createFromRunnableConfig.getCall(0).args
             expect(args[0]).to.equal(testSessionUser)
             expect(args[1]).to.equal(testParsedContent.results)
-            expect(args[2]).to.equal( { triggeredAction, clusterCreateId, repoFullName, mainInstanceServiceName: 'api'  })
+            expect(args[2]).to.equal( { triggeredAction, clusterCreateId, repoFullName, shouldNotAutoFork, mainInstanceServiceName: 'api'  })
             expect(args[3]).to.equal({
               branch: branchName,
               commit: commitSha,
@@ -284,7 +285,7 @@ describe('Cluster Config Service Unit Tests', function () {
               ClusterConfigService.createFromRunnableConfig,
               testSessionUser,
               testParsedContent.results,
-              { triggeredAction, clusterCreateId, repoFullName, mainInstanceServiceName: 'api' },
+              { triggeredAction, clusterCreateId, repoFullName, shouldNotAutoFork, mainInstanceServiceName: 'api' },
               sinon.match({
                 branch: branchName,
                 commit: commitSha,
@@ -973,6 +974,7 @@ describe('Cluster Config Service Unit Tests', function () {
       buildOpts = {
         isolated: objectId('407f191e810c19729de860e1'),
         masterShorthash: 'asdasdsad',
+        shouldNotAutoFork: true,
         clusterCreateId,
         mainInstanceServiceName: 'a1'
       }
@@ -1000,8 +1002,7 @@ describe('Cluster Config Service Unit Tests', function () {
       }
       const composeData = {
         metadata: {
-          name: 'a1',
-          isMain: true
+          name: 'a1'
         },
         instance: testParentComposeData,
         build: {
@@ -1009,6 +1010,111 @@ describe('Cluster Config Service Unit Tests', function () {
         }
       }
       const testInstance = 'build'
+      InstanceService.createInstance.resolves(testInstance)
+
+      return ClusterConfigService._createInstance(testSessionUser, composeData, testParentBuildId, testingOpts, buildOpts)
+        .then(instance => {
+          sinon.assert.calledOnce(InstanceService.createInstance)
+          sinon.assert.calledWithExactly(InstanceService.createInstance, {
+            shortName: composeData.metadata.name,
+            build: testParentBuildId,
+            aliases: testParentComposeData.aliases,
+            env: testParentComposeData.env,
+            clusterCreateId,
+            containerStartCommand: testParentComposeData.containerStartCommand,
+            name: buildOpts.masterShorthash + '--' + testParentComposeData.name,
+            isTesting,
+            isTestReporter,
+            isolated: buildOpts.isolated,
+            isIsolationGroupMaster: false,
+            shouldNotAutofork: true,
+            masterPod: false,
+            ipWhitelist: {
+              enabled: false
+            }
+          }, testSessionUser)
+
+          expect(instance).to.equal(testInstance)
+        })
+    })
+
+    it('should set shouldNotAutoFork to true if it is not supplied', () => {
+      const testParentBuildId = objectId('407f191e810c19729de860ef')
+      const testParentComposeData = {
+        env: 'env',
+        aliases: {
+          'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
+            'instanceName': 'compose-test-5-1-rethinkdb4',
+            'alias': 'three-changing-the-hostname'
+          }
+        },
+        containerStartCommand: 'containerStartCommand',
+        name: 'name'
+      }
+      const composeData = {
+        metadata: {
+          name: 'a2'
+        },
+        instance: testParentComposeData,
+        build: {
+          dockerFilePath: 'Nathan219/hello'
+        }
+      }
+      const testInstance = 'build'
+      buildOpts.shouldNotAutoFork = undefined
+      InstanceService.createInstance.resolves(testInstance)
+
+      return ClusterConfigService._createInstance(testSessionUser, composeData, testParentBuildId, testingOpts, buildOpts)
+        .then(instance => {
+          sinon.assert.calledOnce(InstanceService.createInstance)
+          sinon.assert.calledWithExactly(InstanceService.createInstance, {
+            shortName: composeData.metadata.name,
+            build: testParentBuildId,
+            aliases: testParentComposeData.aliases,
+            clusterCreateId,
+            env: testParentComposeData.env,
+            containerStartCommand: testParentComposeData.containerStartCommand,
+            name: buildOpts.masterShorthash + '--' + testParentComposeData.name,
+            isTesting,
+            isTestReporter,
+            clusterCreateId,
+            isolated: buildOpts.isolated,
+            isIsolationGroupMaster: false,
+            shouldNotAutofork: true,
+            masterPod: false,
+            ipWhitelist: {
+              enabled: false
+            }
+          }, testSessionUser)
+
+          expect(instance).to.equal(testInstance)
+        })
+    })
+
+    it('should set shouldNotAutoFork to false by default for non-main instances', () => {
+      const testParentBuildId = objectId('407f191e810c19729de860ef')
+      const testParentComposeData = {
+        env: 'env',
+        aliases: {
+          'dGhyZWUtY2hhbmdpbmctdGhlLWhvc3RuYW1l': {
+            'instanceName': 'compose-test-5-1-rethinkdb4',
+            'alias': 'three-changing-the-hostname'
+          }
+        },
+        containerStartCommand: 'containerStartCommand',
+        name: 'name'
+      }
+      const composeData = {
+        metadata: {
+          name: 'a1'
+        },
+        instance: testParentComposeData,
+        build: {
+          dockerFilePath: 'Nathan219/hello'
+        }
+      }
+      const testInstance = 'build'
+      buildOpts.shouldNotAutoFork = undefined
       InstanceService.createInstance.resolves(testInstance)
 
       return ClusterConfigService._createInstance(testSessionUser, composeData, testParentBuildId, testingOpts, buildOpts)
@@ -1725,15 +1831,26 @@ describe('Cluster Config Service Unit Tests', function () {
       bpUserId,
       repo: repoFullName
     }
+    const aic = {
+      instance: instanceId
+    }
+    const parentAic = {
+      instance: 'asdasdasdassa'
+    }
+    const instance = {
+      _id: instanceId
+    }
 
     beforeEach(function (done) {
       sinon.stub(ClusterConfigService, 'fetchConfigByInstanceId').resolves(clusterConfig)
+      sinon.stub(AutoIsolationService, 'fetchAutoIsolationForInstance').resolves(aic)
       sinon.stub(UserService, 'getByBpId').resolves(userModel)
       sinon.stub(ClusterConfigService, 'fetchFilesFromGithub').resolves(changedClusterConfigFiles)
       done()
     })
     afterEach(function (done) {
       ClusterConfigService.fetchConfigByInstanceId.restore()
+      AutoIsolationService.fetchAutoIsolationForInstance.restore()
       UserService.getByBpId.restore()
       ClusterConfigService.fetchFilesFromGithub.restore()
       done()
@@ -1742,7 +1859,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if fetchConfigByInstanceId failed', function (done) {
         const error = new Error('Some error')
         ClusterConfigService.fetchConfigByInstanceId.rejects(error)
-        ClusterConfigService.checkIfComposeFilesChanged(instanceId, githubPushInfo)
+        ClusterConfigService.checkIfComposeFilesChanged(instance, githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -1752,7 +1869,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if UserService.getByBpId failed', function (done) {
         const error = new Error('Some error')
         UserService.getByBpId.rejects(error)
-        ClusterConfigService.checkIfComposeFilesChanged(instanceId, githubPushInfo)
+        ClusterConfigService.checkIfComposeFilesChanged(instance, githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -1762,7 +1879,7 @@ describe('Cluster Config Service Unit Tests', function () {
       it('should return error if ClusterConfigService.fetchFilesFromGithub failed', function (done) {
         const error = new Error('Some error')
         ClusterConfigService.fetchFilesFromGithub.rejects(error)
-        ClusterConfigService.checkIfComposeFilesChanged(instanceId, githubPushInfo)
+        ClusterConfigService.checkIfComposeFilesChanged(instance, githubPushInfo)
           .asCallback(function (err) {
             expect(err).to.exist()
             expect(err.message).to.equal(error.message)
@@ -1771,20 +1888,24 @@ describe('Cluster Config Service Unit Tests', function () {
       })
     })
     describe('success', function () {
-      it('should run successfully', function (done) {
+      it('should run successfully', function () {
         ClusterConfigService.fetchFilesFromGithub.resolves(changedClusterConfigFiles)
-        ClusterConfigService.checkIfComposeFilesChanged(instanceId, githubPushInfo)
-          .asCallback(done)
+        return ClusterConfigService.checkIfComposeFilesChanged(instance, githubPushInfo)
       })
       it('should return InputClusterConfig.NotChangedError if shas match', function (done) {
         ClusterConfigService.fetchFilesFromGithub.resolves(clusterConfigFiles)
-        ClusterConfigService.checkIfComposeFilesChanged(instanceId, githubPushInfo)
+        ClusterConfigService.checkIfComposeFilesChanged(instance, githubPushInfo)
           .then(function () {
             done(new Error('Expecting NotChangedError'))
           })
           .catch(InputClusterConfig.NotChangedError, function () {
             done()
           })
+      })
+      it('should not return InputClusterConfig.NotChangedError if aic is parent\'s', function () {
+        ClusterConfigService.fetchFilesFromGithub.resolves(changedClusterConfigFiles)
+        AutoIsolationService.fetchAutoIsolationForInstance.resolves(parentAic)
+        return ClusterConfigService.checkIfComposeFilesChanged(instance, githubPushInfo)
       })
     })
   })
