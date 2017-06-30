@@ -39,6 +39,9 @@ describe('/instances', () => {
             github: {
               id: githubId
             }
+          },
+          bigPoppaUser: {
+            id: 1
           }
         }
       }
@@ -79,7 +82,8 @@ describe('/instances', () => {
               commit: 'sha12',
               user: {
                 id: '1234'
-              }
+              },
+              bpUserId: mockReq.sessionUser.bigPoppaUser.id
             },
             'manual'
           )
@@ -111,7 +115,8 @@ describe('/instances', () => {
               commit: 'sha12',
               user: {
                 id: '1234'
-              }
+              },
+              bpUserId: mockReq.sessionUser.bigPoppaUser.id
             }
           )
         })
@@ -129,7 +134,8 @@ describe('/instances', () => {
               commit: 'sha12',
               user: {
                 id: '1234'
-              }
+              },
+              bpUserId: mockReq.sessionUser.bigPoppaUser.id
             }
           )
         })
