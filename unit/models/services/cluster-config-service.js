@@ -1077,7 +1077,6 @@ describe('Cluster Config Service Unit Tests', function () {
             name: buildOpts.masterShorthash + '--' + testParentComposeData.name,
             isTesting,
             isTestReporter,
-            clusterCreateId,
             isolated: buildOpts.isolated,
             isIsolationGroupMaster: false,
             shouldNotAutofork: true,
