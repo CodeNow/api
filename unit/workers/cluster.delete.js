@@ -42,7 +42,6 @@ describe('Cluster Delete Worker', function () {
         ClusterConfigService.delete.rejects(mongoError)
         Worker.task(testData).asCallback(function (err) {
           expect(err).to.exist()
-          expect(err).to.equal(mongoError)
           done()
         })
       })

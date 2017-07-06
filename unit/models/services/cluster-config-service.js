@@ -3041,13 +3041,19 @@ describe('Cluster Config Service Unit Tests', function () {
           },
           externals: {
             github: {
-              repo: 'user/externalRepo'
+              code: {
+                repo: 'user/externalRepo'
+              }
             },
             anotherTest: {
-              repo:  'user/testRepo'
+              code: {
+                repo: 'user/testRepo'
+              }
             },
             andAnotherTest: {
-              repo:  'user/testRepo'
+              code: {
+                repo: 'user/testRepo'
+              }
             }
           }
         }
