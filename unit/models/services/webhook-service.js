@@ -184,18 +184,27 @@ describe('Webhook Service Unit Tests', function () {
       repo: 'theRepo',
       branch: 'theBranch'
     }
+    const user = {
+      _id: 'some-id',
+      allowed: true,
+      bigPoppaUser: {
+        id: 'bp-id'
+      }
+    }
     var instance
     beforeEach(function (done) {
       instance = {
         _id: 'sdasdsaddgfasdfgasdfasdf'
       }
       sinon.stub(BuildService, 'createAndBuildContextVersion')
+      sinon.stub(UserService, 'getCompleteUserByGithubUsername').resolves(user)
       sinon.stub(ClusterConfigService, 'checkIfComposeFilesChanged').rejects(new Error())
       sinon.stub(rabbitMQ, 'updateCluster').resolves()
       done()
     })
     afterEach(function (done) {
       BuildService.createAndBuildContextVersion.restore()
+      UserService.getCompleteUserByGithubUsername.restore()
       ClusterConfigService.checkIfComposeFilesChanged.restore()
       rabbitMQ.updateCluster.restore()
       done()
@@ -255,6 +264,13 @@ describe('Webhook Service Unit Tests', function () {
       repo: 'theRepo',
       branch: 'theBranch'
     }
+    const user = {
+      _id: 'some-id',
+      allowed: true,
+      bigPoppaUser: {
+        id: 'bp-id'
+      }
+    }
     var instances
     var contextIds
     beforeEach(function (done) {
@@ -266,15 +282,17 @@ describe('Webhook Service Unit Tests', function () {
       contextIds = ['sadsadasdsad', 'sdgfddfsgdfsgsdfgdsfg']
       sinon.stub(Instance, 'findMasterPodsToAutoFork')
       sinon.stub(ClusterConfigService, 'checkIfComposeFilesChanged').resolves()
+      sinon.stub(UserService, 'getCompleteUserByGithubUsername').resolves(user)
       sinon.stub(InstanceForkService, 'autoFork')
       sinon.stub(IsolationService, 'autoIsolate')
-      sinon.stub(rabbitMQ, 'updateCluster').resolves
+      sinon.stub(rabbitMQ, 'updateCluster').resolves()
       done()
     })
     afterEach(function (done) {
       Instance.findMasterPodsToAutoFork.restore()
       ClusterConfigService.checkIfComposeFilesChanged.restore()
       InstanceForkService.autoFork.restore()
+      UserService.getCompleteUserByGithubUsername.restore()
       IsolationService.autoIsolate.restore()
       rabbitMQ.updateCluster.restore()
       done()
@@ -387,11 +405,13 @@ describe('Webhook Service Unit Tests', function () {
             sinon.assert.calledTwice(ClusterConfigService.checkIfComposeFilesChanged)
             sinon.assert.calledWithExactly(
               ClusterConfigService.checkIfComposeFilesChanged,
+              user,
               forkedInstances[0],
               githubPushInfo
             )
             sinon.assert.calledWithExactly(
               ClusterConfigService.checkIfComposeFilesChanged,
+              user,
               forkedInstances[1],
               githubPushInfo
             )

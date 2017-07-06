@@ -127,6 +127,7 @@ describe('/instances', () => {
         .then(function () {
           sinon.assert.calledOnce(ClusterConfigService.checkFileChangeAndCreateUpdateJob)
           sinon.assert.calledWith(ClusterConfigService.checkFileChangeAndCreateUpdateJob,
+            mockReq.sessionUser,
             mockForkedInstance,
             {
               repo: 'repoName',
