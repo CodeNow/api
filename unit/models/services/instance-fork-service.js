@@ -307,7 +307,7 @@ describe('InstanceForkService', function () {
       mockNewContextVersion = {}
       mockNewContextVersion.update = sinon.stub().yieldsAsync(null, mockNewContextVersion)
       sinon.stub(Context, 'findOne').yieldsAsync(null, mockFoundContext)
-      sinon.stub(ContextVersionService, 'handleVersionDeepCopy').yieldsAsync(null, mockNewContextVersion)
+      sinon.stub(ContextVersionService, 'handleVersionDeepCopy').resolves(mockNewContextVersion)
       done()
     })
 
@@ -370,7 +370,7 @@ describe('InstanceForkService', function () {
 
       it('should reject with any context version copy error', function (done) {
         var error = new Error('robot')
-        ContextVersionService.handleVersionDeepCopy.yieldsAsync(error)
+        ContextVersionService.handleVersionDeepCopy.rejects(error)
         InstanceForkService._createNewNonRepoContextVersion(mockContextVersion, mockOwnerId, mockCreatedById)
           .asCallback(function (err) {
             expect(err).to.exist()
@@ -415,8 +415,7 @@ describe('InstanceForkService', function () {
             mockFoundContext,
             mockContextVersion,
             { accounts: { github: { id: mockCreatedById } } },
-            { owner: { github: mockOwnerId } },
-            sinon.match.func
+            { owner: { github: mockOwnerId } }
           )
           done()
         })
