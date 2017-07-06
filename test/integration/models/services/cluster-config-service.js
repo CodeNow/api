@@ -11,6 +11,7 @@ const afterEach = lab.afterEach
 const rabbitMQ = require('models/rabbitmq')
 const sinon = require('sinon')
 const Instance = require('models/mongo/instance')
+const messenger = require('socket/messenger')
 require('sinon-as-promised')(require('bluebird'))
 
 const AutoIsolationConfig = require('models/mongo/auto-isolation-config')
@@ -220,6 +221,7 @@ describe('Cluster Config Services Integration Tests', function () {
       sinon.stub(rabbitMQ, 'deleteInstance').resolves()
       sinon.stub(rabbitMQ, 'createInstanceContainer').resolves()
       sinon.stub(rabbitMQ, 'instanceDeployed').resolves()
+      sinon.stub(messenger, 'messageRoom').resolves()
       sinon.spy(rabbitMQ, 'autoDeployInstance')
       sinon.stub(InstanceService, 'emitInstanceUpdate').resolves()
       done()
@@ -227,6 +229,7 @@ describe('Cluster Config Services Integration Tests', function () {
     afterEach(function (done) {
       rabbitMQ.deleteInstance.restore()
       rabbitMQ.createInstanceContainer.restore()
+      messenger.messageRoom.restore()
       rabbitMQ.instanceDeployed.restore()
       rabbitMQ.autoDeployInstance.restore()
       InstanceService.emitInstanceUpdate.restore()
